@@ -1,0 +1,5 @@
+http://localhost:3333 {
+  route * {
+    root * {$CADDY_ROOT}result
+    file_server *
+}

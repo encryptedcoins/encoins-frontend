@@ -1,0 +1,6 @@
+packages: .
+
+source-repository-package
+  type: git
+  location: https://github.com/imalsogreg/servant-reflex.git
+  tag: a6f859e52857e0eda753cf113fabfff61f06da6a
