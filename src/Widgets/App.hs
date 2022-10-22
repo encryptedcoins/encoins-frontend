@@ -1,4 +1,4 @@
-module AppWidget where
+module Widgets.App where
 
 import           Control.Monad.IO.Class  (MonadIO(..))
 import           Data.Bool               (bool)
@@ -8,7 +8,7 @@ import           Reflex.Dom
 import           JS.App                  (encoinsTx)
 import           JS.WebPage              (logInfo)
 import           Reflex.ScriptDependent  (widgetHoldUntilDefined)
-import           WebPage.Basic           (elementResultJS)
+import           Widgets.Basic           (elementResultJS)
 
 appWidget :: MonadWidget t m => m ()
 appWidget = divClass "" $ do

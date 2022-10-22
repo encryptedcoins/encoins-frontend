@@ -17,8 +17,9 @@ executable encoins-frontend-basic
     ghc-options:      -dedupe
 
   other-modules:    
-                      AppWidget
-                    , App.Common
+                      Widgets.App
+                    , Widgets.Basic
+                    , Widgets.Utils
                     , ENCOINS.Core.Bulletproofs
                     , ENCOINS.Core.Types
                     , JS
@@ -27,7 +28,6 @@ executable encoins-frontend-basic
                     , JS.WebPage
                     , Language
                     , Reflex.ScriptDependent
-                    , WebPage.Basic
 
   build-depends:      base >=4.7
                     , aeson

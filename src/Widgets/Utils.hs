@@ -1,4 +1,4 @@
-module App.Common where
+module Widgets.Utils where
 
 import           Control.Monad            (guard)
 import qualified Data.ByteString          as BS

@@ -1,4 +1,4 @@
-module WebPage.Basic where
+module Widgets.Basic where
 
 import           Data.Bool              (bool)
 import           Data.List              (elemIndex)
@@ -8,9 +8,9 @@ import           Reflex.Dom
 import           Text.Read              (readMaybe)
 import           Witherable             (catMaybes)
 
-import           App.Common
+import           Widgets.Utils          (toText, safeIndex)
 
--- TODO: correct classes and divs
+-- TODO: finish implementations in this module
 
 -- Element containing the result of a JavaScript computation
 elementResultJS :: MonadWidget t m => Text -> (Text -> a) -> m (Dynamic t a)

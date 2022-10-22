@@ -2,7 +2,7 @@ module Main where
 
 import           Reflex.Dom
 
-import           AppWidget            (appWidget)
+import           Widgets.App         (appWidget)
 import qualified JS
 
 main :: IO ()

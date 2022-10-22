@@ -11,6 +11,7 @@ import           Data.Text                   (Text)
 #ifdef __GHCJS__
 import           Data.Text                   (pack)
 import           Language.Javascript.JSaddle (ToJSVal(..), JSVal)
+import           JS.Types
 #endif
 
 import           ENCOINS.Core.Types
@@ -89,9 +90,9 @@ foreign import javascript unsafe
 encoinsTx :: MonadIO m => Text -> [GroupElement] -> Text -> m ()
 encoinsTx walletName keys resId = liftIO $ do
   walletName_js <- toJSVal walletName
-  keys_js       <- toJSVal $ (, "1000000" :: Text) $ map ((, "1" :: Text) . pack . show) keys
+  redeemer_js       <- toJSVal $ EncoinsRedeemer $ (, "1000000" :: Text) $ map ((, "1" :: Text) . pack . show) keys
   resId_js      <- toJSVal resId
-  encoinsTx_js walletName_js keys_js resId_js
+  encoinsTx_js walletName_js redeemer_js resId_js
 #else
 encoinsTx :: MonadIO m => Text -> [GroupElement] -> Text -> m ()
 encoinsTx = const . const . const $ error "GHCJS is required!"
