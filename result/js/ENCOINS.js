@@ -120,7 +120,7 @@ let walletAddress = metaWalletView("getChangeAddress");
 function walletAddressBech32(walletName, resId) {
   loader.load().then(() => {
     const CardanoWasm = loader.Cardano;
-    walletChangeAddress().then((res) => {
+    walletChangeAddress(walletName).then((res) => {
       const address = CardanoWasm.Address.from_bytes(fromHexString(res)).to_bech32();
       setInputValue(resId, address);
     }, () => { setInputValue(resId, "error_walletAPI"); });
