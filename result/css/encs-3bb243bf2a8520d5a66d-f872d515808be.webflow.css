@@ -1,5 +1,137 @@
-a {
-  text-decoration: underline;
+@import url("http://fonts.googleapis.com/css?family=Poppins:400,500,600,700,800|Inter:400,500,700|Mulish:400,500");
+
+:root {
+  --bianca: rgb(245, 251, 242, 1);
+  --white: rgb(255, 255, 255, 1);
+
+  --font-size-m: 18px;
+  --font-size-l: 20px;
+  --font-size-xl: 24px;
+
+  --font-family-poppins: "Poppins";
+
+}
+
+
+.poppins-normal-white-18px {
+  color: var(--white);
+  font-family: var(--font-family-poppins);
+  font-size: var(--font-size-m);
+  font-weight: 400;
+  font-size: normal;
+}
+
+.poppins-normal-white-20px {
+  color: var(--white);
+  font-family: var(--font-family-poppins);
+  font-size: var(--font-size-l);
+  font-weight: 400;
+  font-size: normal;
+}
+
+.poppins-extra-bold-bianca-24px {
+  color: var(--bianca);
+  font-family: var(--font-family-poppins);
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  font-size: normal;
+}
+
+.poppins-bold-bianca-32px {
+  color: var(--bianca);
+  font-family: var(--font-family-poppins);
+  font-size: 32px;
+  font-weight: 700;
+  font-size: normal;
+}
+
+.poppins-bold-bianca-24px {
+  color: var(--bianca);
+  font-family: var(--font-family-poppins);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  font-size: normal;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 163px;
+  min-width: 1337px;
+  margin-right: 37px;
+  margin-top: 43px;
+}
+
+.flex-col-1,.flex-col-2,.flex-col-3,.flex-col-4,.flex-col-5 {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-col-1,.flex-col-2 {
+  margin: 20px
+}
+
+.flex-row-2, .flex-row-1 {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: row;
+}
+
+.flex-col-3 {
+  margin: 20px;
+  margin-left: 0px;
+}
+
+.flex-col-4 > div {
+  letter-spacing: 0;
+  line-height: 35.5px;
+  white-space: nowrap;
+}
+
+.flex-row-2 {
+  margin: 20px;
+  margin-left: 0px;
+}
+
+.other-link {
+  letter-spacing: 0;
+  line-height: 50.5px;
+  width: 200px;
+  text-decoration: none;
+}
+
+.icons-small {
+  display: flex;
+  align-items: center;
+}
+
+.icons-small > a {
+  margin: 10px;
+}
+
+.valign-tex-middle {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.text-about {
+  align-self: flex-end;
+  height: 96px;
+  letter-spacing: 0;
+  line-height: 32px;
+  margin-top: 60px;
+  width: 493px;
+}
+
+.email-form {
+  align-self: flex-end;
+  height: 96px;
+  letter-spacing: 0;
+  line-height: 32px;
+  margin-top: 60px;
+  width: 493px;
 }
 
 .navbar-logo-center {
