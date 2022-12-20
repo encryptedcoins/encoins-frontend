@@ -14,7 +14,7 @@ import           Language.Javascript.JSaddle (ToJSVal(..), JSVal)
 import           JS.Types
 #endif
 
-import           ENCOINS.Core.Types
+import           ENCOINS.BaseTypes
 
 -----------------------------------------------------------------
 

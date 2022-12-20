@@ -6,7 +6,7 @@ build-type:          Simple
 
 maintainer:          team@encoins.io
 
-executable encoins-frontend-basic
+executable encoins-frontend
   main-is:             Main.hs
   hs-source-dirs:      src
 
@@ -20,8 +20,6 @@ executable encoins-frontend-basic
                       Widgets.App
                     , Widgets.Basic
                     , Widgets.Utils
-                    , ENCOINS.Core.Bulletproofs
-                    , ENCOINS.Core.Types
                     , JS
                     , JS.App
                     , JS.Types
@@ -34,6 +32,7 @@ executable encoins-frontend-basic
                     , base16-bytestring
                     , bytestring
                     , containers
+                    , encoins-bulletproofs
                     , extra
                     , ghcjs-dom
                     , http-api-data
