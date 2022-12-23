@@ -37,6 +37,8 @@ executable encoins-frontend
                     , ghcjs-dom
                     , http-api-data
                     , jsaddle
+                    , plutus-tx-extra
+                    , plutus-tx-js
                     , random
                     , reflex-dom
                     , servant

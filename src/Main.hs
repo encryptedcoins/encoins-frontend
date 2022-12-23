@@ -53,12 +53,12 @@ headWidget = do
             <> "type" =: "text/javascript"
         )
         blank
-  eEncoinsLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/ENCOINS.js" <> "type" =: "text/javascript") blank
   eCSLLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/CSL.js" <> "type" =: "text/javascript") blank
-
+  eEncoinsLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/ENCOINS.js" <> "type" =: "text/javascript") blank
+  
   dWebFontLoaded <- holdDyn False (True <$ eWebFontLoaded)
-  dEncoinsLoaded <- holdDyn False (True <$ eEncoinsLoaded)
   dCSLLoaded <- holdDyn False (True <$ eCSLLoaded)
+  dEncoinsLoaded <- holdDyn False (True <$ eEncoinsLoaded)
   let eScriptsLoaded = ffilter (== True) $ updated $ foldl (zipDynWith (&&)) (pure True) [dWebFontLoaded, dEncoinsLoaded, dCSLLoaded]
 
   performEvent_ (JS.runHeadScripts <$ eScriptsLoaded)

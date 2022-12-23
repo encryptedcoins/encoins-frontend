@@ -63,13 +63,18 @@ function setInputValue(elId, val) {
 ///////////////////////////////////// App functions //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-function walletAPI(walletName) {
+async function walletAPI(walletName) {
   switch (walletName) {
     case "nami":
       if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.nami !== 'undefined'))
         return window.cardano.nami.enable();
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.nami is not found"); });
+    case "eternl":
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.eternl !== 'undefined'))
+        return window.cardano.eternl.enable();
+      else
+        return new Promise(() => { throw new Error("window.cardano or window.cardano.eternl is not found"); });
     default:
       return new Promise(() => { throw new Error("Wallet's not identified"); });
   }
@@ -135,76 +140,27 @@ function walletAddressBech32ToBytes(addressBech32, resId) {
   });
 };
 
-function encoinsTx(walletName, mp, resId) {
-  const w = walletAPI(walletName);
-  w.then((api) => {
-    loader.load().then(() => {
-      const CardanoWasm = loader.Cardano;
+async function encoinsTx(walletName, partialTx, red, resId) {
+  // loading CardanoWasm
+  await loader.load();
+  const CardanoWasm = loader.Cardano;
 
-      // instantiate the tx builder with the Cardano protocol parameters
-      const linearFee = CardanoWasm.LinearFee.new(CardanoWasm.BigNum.from_str('44'), CardanoWasm.BigNum.from_str('155381'));
-      const txBuilderCfg = CardanoWasm.TransactionBuilderConfigBuilder.new()
-        .fee_algo(linearFee)
-        .pool_deposit(CardanoWasm.BigNum.from_str('500000000'))
-        .key_deposit(CardanoWasm.BigNum.from_str('2000000'))
-        .max_value_size(5000)
-        .max_tx_size(16384)
-        .coins_per_utxo_word(CardanoWasm.BigNum.from_str('34482'))
-        .build();
-      const txBuilder = CardanoWasm.TransactionBuilder.new(txBuilderCfg);
+  //loading wallet
+  const api = await walletAPI(walletName);
 
-      // staking validator address
-      const stakeAddressBech32 = "addr1q8297zyzq4kaafaypq599x66vxznytjyfs39gx9endwyksf9x5zdat37w6pt3lzvqkumrpdkyjf8faxek2xkjd59n0csdrsv8e";
+  // loading wallet's change address
+  const changeAddressHex = await api.getChangeAddress();
+  const changeAddress = CardanoWasm.Address.from_bytes(fromHexString(changeAddressHex));
 
-      // creating ADA stake UTXO
-      const stakeAddress = CardanoWasm.Address.from_bech32(stakeAddressBech32);
-      const stakeValue = CardanoWasm.Value.new(CardanoWasm.BigNum.from_str(mp[1]));
-      const stakeUTXO = CardanoWasm.TransactionOutput.new(stakeAddress, stakeValue);
-      txBuilder.add_output(stakeUTXO);
+  // loading wallet's utxos
+  const valueToSpend = CardanoWasm.Value.new(CardanoWasm.BigNum.from_str("10000000"));
+  const utxos = await api.getUtxos(toHexString(valueToSpend.to_bytes()), undefined);
 
-      console.log(stakeUTXO);
+  console.log("Transaction to sign:");
+  console.log(partialTx);
 
-      // referencing Beacon UTXO
-      const beaconRef = CardanoWasm.TransactionInput.new(CardanoWasm.TransactionHash.from_bytes(fromHexString("")), 0);
-      txBuilder.add_reference_input(beaconRef);
-
-      console.log(beaconRef);
-
-      // add minting coins
-      const mintingScript = CardanoWasm.PlutusScript.new_v2(fromHexString(""));
-      var an;
-      for (i = 0; i < mp[0].length; i++) {
-        an = CardanoWasm.AssetName.new(fromHexString(mp[0][i][0])), CardanoWasm.BigNum.from_str('1');
-        txBuilder.add_mint_asset(mintingScript, an, CardanoWasm.BigNum.from_str("1"));
-      }
-
-      // calculate the min fee required and send any change to an address
-      api.getChangeAddress().then((res) => {
-        const changeAddress = CardanoWasm.Address.from_bytes(fromHexString(res));
-        txBuilder.add_change_if_needed(changeAddress);
-
-        const txBody = txBuilder.build();
-        const txHash = CardanoWasm.hash_transaction(txBody);
-
-        // create the finalized transaction with witnesses
-        const partialTx = CardanoWasm.Transaction.new(
-          txBody,
-          witnesses,
-          undefined, // transaction metadata
-        );
-        const partialTx_hex = toHexString(partialTx.to_bytes());
-
-        api.signTx(partialTx_hex).then((res) => {
-          const txVkeyWitnesses = CardanoWasm.TransactionWitnessSet.from_bytes(fromHexString(res));
-          const readyToSubmit = CardanoWasm.Transaction.new(txBody, txVkeyWitnesses);
-          const finalTx = toHexString(readyToSubmit.to_bytes());
-          api.submitTx(finalTx).then((res) => {
-            setInputValue(resId, res);
-          }, () => { setInputValue(resId, "error_submit"); });
-        }, () => { setInputValue(resId, "error_sign"); });
-      });
-    });
-  }, () => { setInputValue(resId, "error_walletAPI"); });
+  const signedTx = await api.signTx(partialTx);
+  console.log(signedTx);
 };
 
 // Convert a hex string to a byte array

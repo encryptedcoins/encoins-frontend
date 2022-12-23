@@ -1,6 +1,40 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
+* @param {Uint8Array} bytes
+* @returns {TransactionMetadatum}
+*/
+export function encode_arbitrary_bytes_as_metadatum(bytes: Uint8Array): TransactionMetadatum;
+/**
+* @param {TransactionMetadatum} metadata
+* @returns {Uint8Array}
+*/
+export function decode_arbitrary_bytes_from_metadatum(metadata: TransactionMetadatum): Uint8Array;
+/**
+* @param {string} json
+* @param {number} schema
+* @returns {TransactionMetadatum}
+*/
+export function encode_json_str_to_metadatum(json: string, schema: number): TransactionMetadatum;
+/**
+* @param {TransactionMetadatum} metadatum
+* @param {number} schema
+* @returns {string}
+*/
+export function decode_metadatum_to_json_str(metadatum: TransactionMetadatum, schema: number): string;
+/**
+* @param {string} json
+* @param {number} schema
+* @returns {PlutusData}
+*/
+export function encode_json_str_to_plutus_datum(json: string, schema: number): PlutusData;
+/**
+* @param {PlutusData} datum
+* @param {number} schema
+* @returns {string}
+*/
+export function decode_plutus_datum_to_json_str(datum: PlutusData, schema: number): string;
+/**
 * @param {Transaction} tx
 * @param {LinearFee} linear_fee
 * @returns {BigNum}
@@ -32,6 +66,13 @@ export function encrypt_with_password(password: string, salt: string, nonce: str
 * @returns {string}
 */
 export function decrypt_with_password(password: string, data: string): string;
+/**
+* @param {Address} address
+* @param {TransactionUnspentOutputs} utxos
+* @param {TransactionBuilderConfig} config
+* @returns {TransactionBatchList}
+*/
+export function create_send_all(address: Address, utxos: TransactionUnspentOutputs, config: TransactionBuilderConfig): TransactionBatchList;
 /**
 * @param {TransactionHash} tx_body_hash
 * @param {ByronAddress} addr
@@ -121,40 +162,6 @@ export function min_ada_required(assets: Value, has_data_hash: boolean, coins_pe
 */
 export function encode_json_str_to_native_script(json: string, self_xpub: string, schema: number): NativeScript;
 /**
-* @param {Uint8Array} bytes
-* @returns {TransactionMetadatum}
-*/
-export function encode_arbitrary_bytes_as_metadatum(bytes: Uint8Array): TransactionMetadatum;
-/**
-* @param {TransactionMetadatum} metadata
-* @returns {Uint8Array}
-*/
-export function decode_arbitrary_bytes_from_metadatum(metadata: TransactionMetadatum): Uint8Array;
-/**
-* @param {string} json
-* @param {number} schema
-* @returns {TransactionMetadatum}
-*/
-export function encode_json_str_to_metadatum(json: string, schema: number): TransactionMetadatum;
-/**
-* @param {TransactionMetadatum} metadatum
-* @param {number} schema
-* @returns {string}
-*/
-export function decode_metadatum_to_json_str(metadatum: TransactionMetadatum, schema: number): string;
-/**
-* @param {string} json
-* @param {number} schema
-* @returns {PlutusData}
-*/
-export function encode_json_str_to_plutus_datum(json: string, schema: number): PlutusData;
-/**
-* @param {PlutusData} datum
-* @param {number} schema
-* @returns {string}
-*/
-export function decode_plutus_datum_to_json_str(datum: PlutusData, schema: number): string;
-/**
 */
 export enum CertificateKind {
   StakeRegistration,
@@ -210,39 +217,6 @@ export enum ScriptHashNamespace {
 export enum NetworkIdKind {
   Testnet,
   Mainnet,
-}
-/**
-*/
-export enum CoinSelectionStrategyCIP2 {
-/**
-* Performs CIP2's Largest First ada-only selection. Will error if outputs contain non-ADA assets.
-*/
-  LargestFirst,
-/**
-* Performs CIP2's Random Improve ada-only selection. Will error if outputs contain non-ADA assets.
-*/
-  RandomImprove,
-/**
-* Same as LargestFirst, but before adding ADA, will insert by largest-first for each asset type.
-*/
-  LargestFirstMultiAsset,
-/**
-* Same as RandomImprove, but before adding ADA, will insert by random-improve for each asset type.
-*/
-  RandomImproveMultiAsset,
-}
-/**
-*/
-export enum StakeCredKind {
-  Key,
-  Script,
-}
-/**
-* Used to choosed the schema for a script JSON string
-*/
-export enum ScriptSchema {
-  Wallet,
-  Node,
 }
 /**
 */
@@ -334,6 +308,39 @@ export enum PlutusDatumSchema {
 * * all Plutus datums should be fully supported outside of the integer range limitations outlined above.
 */
   DetailedSchema,
+}
+/**
+*/
+export enum CoinSelectionStrategyCIP2 {
+/**
+* Performs CIP2's Largest First ada-only selection. Will error if outputs contain non-ADA assets.
+*/
+  LargestFirst,
+/**
+* Performs CIP2's Random Improve ada-only selection. Will error if outputs contain non-ADA assets.
+*/
+  RandomImprove,
+/**
+* Same as LargestFirst, but before adding ADA, will insert by largest-first for each asset type.
+*/
+  LargestFirstMultiAsset,
+/**
+* Same as RandomImprove, but before adding ADA, will insert by random-improve for each asset type.
+*/
+  RandomImproveMultiAsset,
+}
+/**
+*/
+export enum StakeCredKind {
+  Key,
+  Script,
+}
+/**
+* Used to choosed the schema for a script JSON string
+*/
+export enum ScriptSchema {
+  Wallet,
+  Node,
 }
 /**
 */
@@ -605,6 +612,14 @@ export class AuxiliaryData {
 * @param {PlutusScripts} plutus_scripts
 */
   set_plutus_scripts(plutus_scripts: PlutusScripts): void;
+/**
+* @returns {boolean}
+*/
+  prefer_alonzo_format(): boolean;
+/**
+* @param {boolean} prefer
+*/
+  set_prefer_alonzo_format(prefer: boolean): void;
 }
 /**
 */
@@ -719,6 +734,19 @@ export class BigInt {
 */
   static from_hex(hex_str: string): BigInt;
 /**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {BigIntJSON}
+*/
+  to_js_value(): BigIntJSON;
+/**
+* @param {string} json
+* @returns {BigInt}
+*/
+  static from_json(json: string): BigInt;
+/**
 * @returns {boolean}
 */
   is_zero(): boolean;
@@ -786,6 +814,19 @@ export class BigNum {
 */
   static from_hex(hex_str: string): BigNum;
 /**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {BigNumJSON}
+*/
+  to_js_value(): BigNumJSON;
+/**
+* @param {string} json
+* @returns {BigNum}
+*/
+  static from_json(json: string): BigNum;
+/**
 * @param {string} string
 * @returns {BigNum}
 */
@@ -842,6 +883,10 @@ export class BigNum {
 * @returns {boolean}
 */
   less_than(rhs_value: BigNum): boolean;
+/**
+* @returns {BigNum}
+*/
+  static max_value(): BigNum;
 /**
 * @param {BigNum} a
 * @param {BigNum} b
@@ -1465,6 +1510,19 @@ export class CostModel {
 */
   static from_hex(hex_str: string): CostModel;
 /**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {CostModelJSON}
+*/
+  to_js_value(): CostModelJSON;
+/**
+* @param {string} json
+* @returns {CostModel}
+*/
+  static from_json(json: string): CostModel;
+/**
 * Creates a new CostModels instance of an unrestricted length
 * @returns {CostModel}
 */
@@ -1511,6 +1569,19 @@ export class Costmdls {
 */
   static from_hex(hex_str: string): Costmdls;
 /**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {CostmdlsJSON}
+*/
+  to_js_value(): CostmdlsJSON;
+/**
+* @param {string} json
+* @returns {Costmdls}
+*/
+  static from_json(json: string): Costmdls;
+/**
 * @returns {Costmdls}
 */
   static new(): Costmdls;
@@ -1533,6 +1604,11 @@ export class Costmdls {
 * @returns {Languages}
 */
   keys(): Languages;
+/**
+* @param {Languages} languages
+* @returns {Costmdls}
+*/
+  retain_language_versions(languages: Languages): Costmdls;
 }
 /**
 */
@@ -1556,6 +1632,19 @@ export class DNSRecordAorAAAA {
 * @returns {DNSRecordAorAAAA}
 */
   static from_hex(hex_str: string): DNSRecordAorAAAA;
+/**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {DNSRecordAorAAAAJSON}
+*/
+  to_js_value(): DNSRecordAorAAAAJSON;
+/**
+* @param {string} json
+* @returns {DNSRecordAorAAAA}
+*/
+  static from_json(json: string): DNSRecordAorAAAA;
 /**
 * @param {string} dns_name
 * @returns {DNSRecordAorAAAA}
@@ -1588,6 +1677,19 @@ export class DNSRecordSRV {
 * @returns {DNSRecordSRV}
 */
   static from_hex(hex_str: string): DNSRecordSRV;
+/**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {DNSRecordSRVJSON}
+*/
+  to_js_value(): DNSRecordSRVJSON;
+/**
+* @param {string} json
+* @returns {DNSRecordSRV}
+*/
+  static from_json(json: string): DNSRecordSRV;
 /**
 * @param {string} dns_name
 * @returns {DNSRecordSRV}
@@ -1651,6 +1753,21 @@ export class DataHash {
 * @returns {DataHash}
 */
   static from_hex(hex: string): DataHash;
+}
+/**
+*/
+export class DatumSource {
+  free(): void;
+/**
+* @param {PlutusData} datum
+* @returns {DatumSource}
+*/
+  static new(datum: PlutusData): DatumSource;
+/**
+* @param {TransactionInput} input
+* @returns {DatumSource}
+*/
+  static new_ref_input(input: TransactionInput): DatumSource;
 }
 /**
 */
@@ -1821,6 +1938,19 @@ export class ExUnitPrices {
 */
   static from_hex(hex_str: string): ExUnitPrices;
 /**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {ExUnitPricesJSON}
+*/
+  to_js_value(): ExUnitPricesJSON;
+/**
+* @param {string} json
+* @returns {ExUnitPrices}
+*/
+  static from_json(json: string): ExUnitPrices;
+/**
 * @returns {UnitInterval}
 */
   mem_price(): UnitInterval;
@@ -1857,6 +1987,19 @@ export class ExUnits {
 * @returns {ExUnits}
 */
   static from_hex(hex_str: string): ExUnits;
+/**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {ExUnitsJSON}
+*/
+  to_js_value(): ExUnitsJSON;
+/**
+* @param {string} json
+* @returns {ExUnits}
+*/
+  static from_json(json: string): ExUnits;
 /**
 * @returns {BigNum}
 */
@@ -2295,6 +2438,49 @@ export class HeaderBody {
 }
 /**
 */
+export class InputWithScriptWitness {
+  free(): void;
+/**
+* @param {TransactionInput} input
+* @param {NativeScript} witness
+* @returns {InputWithScriptWitness}
+*/
+  static new_with_native_script_witness(input: TransactionInput, witness: NativeScript): InputWithScriptWitness;
+/**
+* @param {TransactionInput} input
+* @param {PlutusWitness} witness
+* @returns {InputWithScriptWitness}
+*/
+  static new_with_plutus_witness(input: TransactionInput, witness: PlutusWitness): InputWithScriptWitness;
+/**
+* @returns {TransactionInput}
+*/
+  input(): TransactionInput;
+}
+/**
+*/
+export class InputsWithScriptWitness {
+  free(): void;
+/**
+* @returns {InputsWithScriptWitness}
+*/
+  static new(): InputsWithScriptWitness;
+/**
+* @param {InputWithScriptWitness} input
+*/
+  add(input: InputWithScriptWitness): void;
+/**
+* @param {number} index
+* @returns {InputWithScriptWitness}
+*/
+  get(index: number): InputWithScriptWitness;
+/**
+* @returns {number}
+*/
+  len(): number;
+}
+/**
+*/
 export class Int {
   free(): void;
 /**
@@ -2315,6 +2501,19 @@ export class Int {
 * @returns {Int}
 */
   static from_hex(hex_str: string): Int;
+/**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {IntJSON}
+*/
+  to_js_value(): IntJSON;
+/**
+* @param {string} json
+* @returns {Int}
+*/
+  static from_json(json: string): Int;
 /**
 * @param {BigNum} x
 * @returns {Int}
@@ -2545,6 +2744,19 @@ export class Language {
 */
   static from_hex(hex_str: string): Language;
 /**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {LanguageJSON}
+*/
+  to_js_value(): LanguageJSON;
+/**
+* @param {string} json
+* @returns {Language}
+*/
+  static from_json(json: string): Language;
+/**
 * @returns {Language}
 */
   static new_plutus_v1(): Language;
@@ -2578,6 +2790,10 @@ export class Languages {
 * @param {Language} elem
 */
   add(elem: Language): void;
+/**
+* @returns {Languages}
+*/
+  static list(): Languages;
 }
 /**
 */
@@ -2844,10 +3060,18 @@ export class Mint {
 */
   insert(key: ScriptHash, value: MintAssets): MintAssets | undefined;
 /**
+* !!! DEPRECATED !!!
+* Mint can store multiple entries for the same policy id.
+* Use `.get_all` instead.
 * @param {ScriptHash} key
 * @returns {MintAssets | undefined}
 */
   get(key: ScriptHash): MintAssets | undefined;
+/**
+* @param {ScriptHash} key
+* @returns {MintsAssets | undefined}
+*/
+  get_all(key: ScriptHash): MintsAssets | undefined;
 /**
 * @returns {ScriptHashes}
 */
@@ -2896,6 +3120,72 @@ export class MintAssets {
 * @returns {AssetNames}
 */
   keys(): AssetNames;
+}
+/**
+*/
+export class MintBuilder {
+  free(): void;
+/**
+* @returns {MintBuilder}
+*/
+  static new(): MintBuilder;
+/**
+* @param {MintWitness} mint
+* @param {AssetName} asset_name
+* @param {Int} amount
+*/
+  add_asset(mint: MintWitness, asset_name: AssetName, amount: Int): void;
+/**
+* @param {MintWitness} mint
+* @param {AssetName} asset_name
+* @param {Int} amount
+*/
+  set_asset(mint: MintWitness, asset_name: AssetName, amount: Int): void;
+/**
+* @returns {Mint}
+*/
+  build(): Mint;
+/**
+* @returns {NativeScripts}
+*/
+  get_native_scripts(): NativeScripts;
+/**
+* @returns {PlutusWitnesses}
+*/
+  get_plutus_witnesses(): PlutusWitnesses;
+/**
+* @returns {Redeemers}
+*/
+  get_redeeemers(): Redeemers;
+/**
+* @returns {boolean}
+*/
+  has_plutus_scripts(): boolean;
+/**
+* @returns {boolean}
+*/
+  has_native_scripts(): boolean;
+}
+/**
+*/
+export class MintWitness {
+  free(): void;
+/**
+* @param {NativeScript} native_script
+* @returns {MintWitness}
+*/
+  static new_native_script(native_script: NativeScript): MintWitness;
+/**
+* @param {PlutusScriptSource} plutus_script
+* @param {Redeemer} redeemer
+* @returns {MintWitness}
+*/
+  static new_plutus_script(plutus_script: PlutusScriptSource, redeemer: Redeemer): MintWitness;
+}
+/**
+*/
+export class MintsAssets {
+  free(): void;
 }
 /**
 */
@@ -3334,6 +3624,16 @@ export class NetworkInfo {
 /**
 * @returns {NetworkInfo}
 */
+  static testnet_preview(): NetworkInfo;
+/**
+* @returns {NetworkInfo}
+*/
+  static testnet_preprod(): NetworkInfo;
+/**
+* !!! DEPRECATED !!!
+* This network does not exist anymore. Use `.testnet_preview()` or `.testnet_preprod()`
+* @returns {NetworkInfo}
+*/
   static testnet(): NetworkInfo;
 /**
 * @returns {NetworkInfo}
@@ -3362,6 +3662,19 @@ export class Nonce {
 * @returns {Nonce}
 */
   static from_hex(hex_str: string): Nonce;
+/**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {NonceJSON}
+*/
+  to_js_value(): NonceJSON;
+/**
+* @param {string} json
+* @returns {Nonce}
+*/
+  static from_json(json: string): Nonce;
 /**
 * @returns {Nonce}
 */
@@ -3513,6 +3826,17 @@ export class PlutusData {
 * @returns {Uint8Array | undefined}
 */
   as_bytes(): Uint8Array | undefined;
+/**
+* @param {number} schema
+* @returns {string}
+*/
+  to_json(schema: number): string;
+/**
+* @param {string} json
+* @param {number} schema
+* @returns {PlutusData}
+*/
+  static from_json(json: string, schema: number): PlutusData;
 }
 /**
 */
@@ -3675,6 +3999,13 @@ export class PlutusScript {
 */
   static from_bytes_with_version(bytes: Uint8Array, language: Language): PlutusScript;
 /**
+* Same as .from_hex but will consider the script as requiring the specified language version
+* @param {string} hex_str
+* @param {Language} language
+* @returns {PlutusScript}
+*/
+  static from_hex_with_version(hex_str: string, language: Language): PlutusScript;
+/**
 * @returns {ScriptHash}
 */
   hash(): ScriptHash;
@@ -3682,6 +4013,29 @@ export class PlutusScript {
 * @returns {Language}
 */
   language_version(): Language;
+}
+/**
+*/
+export class PlutusScriptSource {
+  free(): void;
+/**
+* @param {PlutusScript} script
+* @returns {PlutusScriptSource}
+*/
+  static new(script: PlutusScript): PlutusScriptSource;
+/**
+* @param {ScriptHash} script_hash
+* @param {TransactionInput} input
+* @returns {PlutusScriptSource}
+*/
+  static new_ref_input(script_hash: ScriptHash, input: TransactionInput): PlutusScriptSource;
+/**
+* @param {ScriptHash} script_hash
+* @param {TransactionInput} input
+* @param {Language} lang_ver
+* @returns {PlutusScriptSource}
+*/
+  static new_ref_input_with_lang_ver(script_hash: ScriptHash, input: TransactionInput, lang_ver: Language): PlutusScriptSource;
 }
 /**
 */
@@ -3706,6 +4060,19 @@ export class PlutusScripts {
 */
   static from_hex(hex_str: string): PlutusScripts;
 /**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {PlutusScriptsJSON}
+*/
+  to_js_value(): PlutusScriptsJSON;
+/**
+* @param {string} json
+* @returns {PlutusScripts}
+*/
+  static from_json(json: string): PlutusScripts;
+/**
 * @returns {PlutusScripts}
 */
   static new(): PlutusScripts;
@@ -3728,19 +4095,6 @@ export class PlutusScripts {
 export class PlutusWitness {
   free(): void;
 /**
-* @returns {string}
-*/
-  to_json(): string;
-/**
-* @returns {PlutusWitnessJSON}
-*/
-  to_js_value(): PlutusWitnessJSON;
-/**
-* @param {string} json
-* @returns {PlutusWitness}
-*/
-  static from_json(json: string): PlutusWitness;
-/**
 * @param {PlutusScript} script
 * @param {PlutusData} datum
 * @param {Redeemer} redeemer
@@ -3748,13 +4102,26 @@ export class PlutusWitness {
 */
   static new(script: PlutusScript, datum: PlutusData, redeemer: Redeemer): PlutusWitness;
 /**
-* @returns {PlutusScript}
+* @param {PlutusScriptSource} script
+* @param {DatumSource} datum
+* @param {Redeemer} redeemer
+* @returns {PlutusWitness}
 */
-  script(): PlutusScript;
+  static new_with_ref(script: PlutusScriptSource, datum: DatumSource, redeemer: Redeemer): PlutusWitness;
 /**
-* @returns {PlutusData}
+* @param {PlutusScript} script
+* @param {Redeemer} redeemer
+* @returns {PlutusWitness}
 */
-  datum(): PlutusData;
+  static new_without_datum(script: PlutusScript, redeemer: Redeemer): PlutusWitness;
+/**
+* @returns {PlutusScript | undefined}
+*/
+  script(): PlutusScript | undefined;
+/**
+* @returns {PlutusData | undefined}
+*/
+  datum(): PlutusData | undefined;
 /**
 * @returns {Redeemer}
 */
@@ -3764,19 +4131,6 @@ export class PlutusWitness {
 */
 export class PlutusWitnesses {
   free(): void;
-/**
-* @returns {string}
-*/
-  to_json(): string;
-/**
-* @returns {PlutusWitnessesJSON}
-*/
-  to_js_value(): PlutusWitnessesJSON;
-/**
-* @param {string} json
-* @returns {PlutusWitnesses}
-*/
-  static from_json(json: string): PlutusWitnesses;
 /**
 * @returns {PlutusWitnesses}
 */
@@ -4624,6 +4978,19 @@ export class Redeemer {
 */
   static from_hex(hex_str: string): Redeemer;
 /**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {RedeemerJSON}
+*/
+  to_js_value(): RedeemerJSON;
+/**
+* @param {string} json
+* @returns {Redeemer}
+*/
+  static from_json(json: string): Redeemer;
+/**
 * @returns {RedeemerTag}
 */
   tag(): RedeemerTag;
@@ -4671,6 +5038,19 @@ export class RedeemerTag {
 */
   static from_hex(hex_str: string): RedeemerTag;
 /**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {RedeemerTagJSON}
+*/
+  to_js_value(): RedeemerTagJSON;
+/**
+* @param {string} json
+* @returns {RedeemerTag}
+*/
+  static from_json(json: string): RedeemerTag;
+/**
 * @returns {RedeemerTag}
 */
   static new_spend(): RedeemerTag;
@@ -4713,6 +5093,19 @@ export class Redeemers {
 * @returns {Redeemers}
 */
   static from_hex(hex_str: string): Redeemers;
+/**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {RedeemersJSON}
+*/
+  to_js_value(): RedeemersJSON;
+/**
+* @param {string} json
+* @returns {Redeemers}
+*/
+  static from_json(json: string): Redeemers;
 /**
 * @returns {Redeemers}
 */
@@ -5859,6 +6252,34 @@ export class Transaction {
 }
 /**
 */
+export class TransactionBatch {
+  free(): void;
+/**
+* @returns {number}
+*/
+  len(): number;
+/**
+* @param {number} index
+* @returns {Transaction}
+*/
+  get(index: number): Transaction;
+}
+/**
+*/
+export class TransactionBatchList {
+  free(): void;
+/**
+* @returns {number}
+*/
+  len(): number;
+/**
+* @param {number} index
+* @returns {TransactionBatch}
+*/
+  get(index: number): TransactionBatch;
+}
+/**
+*/
 export class TransactionBodies {
   free(): void;
 /**
@@ -6348,6 +6769,17 @@ export class TransactionBuilder {
 */
   add_json_metadatum_with_schema(key: BigNum, val: string, schema: number): void;
 /**
+* @param {MintBuilder} mint_builder
+*/
+  set_mint_builder(mint_builder: MintBuilder): void;
+/**
+* @returns {MintBuilder | undefined}
+*/
+  get_mint_builder(): MintBuilder | undefined;
+/**
+* !!! DEPRECATED !!!
+* Mints are defining by MintBuilder now.
+* Use `.set_mint_builder()` and `MintBuilder` instead.
 * Set explicit Mint object and the required witnesses to this builder
 * it will replace any previously existing mint and mint scripts
 * NOTE! Error will be returned in case a mint policy does not have a matching script
@@ -6356,6 +6788,9 @@ export class TransactionBuilder {
 */
   set_mint(mint: Mint, mint_scripts: NativeScripts): void;
 /**
+* !!! DEPRECATED !!!
+* Mints are defining by MintBuilder now.
+* Use `.get_mint_builder()` and `.build()` instead.
 * Returns a copy of the current mint state in the builder
 * @returns {Mint | undefined}
 */
@@ -6366,6 +6801,9 @@ export class TransactionBuilder {
 */
   get_mint_scripts(): NativeScripts | undefined;
 /**
+* !!! DEPRECATED !!!
+* Mints are defining by MintBuilder now.
+* Use `.set_mint_builder()` and `MintBuilder` instead.
 * Add a mint entry to this builder using a PolicyID and MintAssets object
 * It will be securely added to existing or new Mint in this builder
 * It will replace any existing mint assets with the same PolicyID
@@ -6374,6 +6812,9 @@ export class TransactionBuilder {
 */
   set_mint_asset(policy_script: NativeScript, mint_assets: MintAssets): void;
 /**
+* !!! DEPRECATED !!!
+* Mints are defining by MintBuilder now.
+* Use `.set_mint_builder()` and `MintBuilder` instead.
 * Add a mint entry to this builder using a PolicyID, AssetName, and Int object for amount
 * It will be securely added to existing or new Mint in this builder
 * It will replace any previous existing amount same PolicyID and AssetName
@@ -7078,6 +7519,19 @@ export class TransactionUnspentOutput {
 */
   static from_hex(hex_str: string): TransactionUnspentOutput;
 /**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {TransactionUnspentOutputJSON}
+*/
+  to_js_value(): TransactionUnspentOutputJSON;
+/**
+* @param {string} json
+* @returns {TransactionUnspentOutput}
+*/
+  static from_json(json: string): TransactionUnspentOutput;
+/**
 * @param {TransactionInput} input
 * @param {TransactionOutput} output
 * @returns {TransactionUnspentOutput}
@@ -7096,6 +7550,19 @@ export class TransactionUnspentOutput {
 */
 export class TransactionUnspentOutputs {
   free(): void;
+/**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {TransactionUnspentOutputsJSON}
+*/
+  to_js_value(): TransactionUnspentOutputsJSON;
+/**
+* @param {string} json
+* @returns {TransactionUnspentOutputs}
+*/
+  static from_json(json: string): TransactionUnspentOutputs;
 /**
 * @returns {TransactionUnspentOutputs}
 */
@@ -7290,6 +7757,8 @@ export class TxInputsBuilder {
 */
   add_key_input(hash: Ed25519KeyHash, input: TransactionInput, amount: Value): void;
 /**
+* !!! DEPRECATED !!!
+* This function can make a mistake in choosing right input index. Use `.add_native_script_input` or `.add_plutus_script_input` instead.
 * This method adds the input to the builder BUT leaves a missing spot for the witness native script
 *
 * After adding the input with this method, use `.add_required_native_input_scripts`
@@ -7347,6 +7816,8 @@ export class TxInputsBuilder {
 */
   add_required_native_input_scripts(scripts: NativeScripts): number;
 /**
+* !!! DEPRECATED !!!
+* This function can make a mistake in choosing right input index. Use `.add_required_script_input_witnesses` instead.
 * Try adding the specified scripts as witnesses for ALREADY ADDED script inputs
 * Any scripts that don't match any of the previously added inputs will be ignored
 * Returns the number of remaining required missing witness scripts
@@ -7355,6 +7826,19 @@ export class TxInputsBuilder {
 * @returns {number}
 */
   add_required_plutus_input_scripts(scripts: PlutusWitnesses): number;
+/**
+* Try adding the specified scripts as witnesses for ALREADY ADDED script inputs
+* Any scripts that don't match any of the previously added inputs will be ignored
+* Returns the number of remaining required missing witness scripts
+* Use `.count_missing_input_scripts` to find the number of still missing scripts
+* @param {InputsWithScriptWitness} inputs_with_wit
+* @returns {number}
+*/
+  add_required_script_input_witnesses(inputs_with_wit: InputsWithScriptWitness): number;
+/**
+* @returns {TransactionInputs}
+*/
+  get_ref_inputs(): TransactionInputs;
 /**
 * Returns a copy of the current script input witness scripts in the builder
 * @returns {NativeScripts | undefined}
@@ -7413,6 +7897,19 @@ export class URL {
 * @returns {URL}
 */
   static from_hex(hex_str: string): URL;
+/**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {URLJSON}
+*/
+  to_js_value(): URLJSON;
+/**
+* @param {string} json
+* @returns {URL}
+*/
+  static from_json(json: string): URL;
 /**
 * @param {string} url
 * @returns {URL}
@@ -7759,6 +8256,19 @@ export class Vkey {
 */
   static from_hex(hex_str: string): Vkey;
 /**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {VkeyJSON}
+*/
+  to_js_value(): VkeyJSON;
+/**
+* @param {string} json
+* @returns {Vkey}
+*/
+  static from_json(json: string): Vkey;
+/**
 * @param {PublicKey} pk
 * @returns {Vkey}
 */
@@ -7844,6 +8354,37 @@ export class Vkeywitness {
 */
 export class Vkeywitnesses {
   free(): void;
+/**
+* @returns {Uint8Array}
+*/
+  to_bytes(): Uint8Array;
+/**
+* @param {Uint8Array} bytes
+* @returns {Vkeywitnesses}
+*/
+  static from_bytes(bytes: Uint8Array): Vkeywitnesses;
+/**
+* @returns {string}
+*/
+  to_hex(): string;
+/**
+* @param {string} hex_str
+* @returns {Vkeywitnesses}
+*/
+  static from_hex(hex_str: string): Vkeywitnesses;
+/**
+* @returns {string}
+*/
+  to_json(): string;
+/**
+* @returns {VkeywitnessesJSON}
+*/
+  to_js_value(): VkeywitnessesJSON;
+/**
+* @param {string} json
+* @returns {Vkeywitnesses}
+*/
+  static from_json(json: string): Vkeywitnesses;
 /**
 * @returns {Vkeywitnesses}
 */
@@ -7983,10 +8524,6 @@ export type CertificateEnumJSON =
       MoveInstantaneousRewardsCertJSON: MoveInstantaneousRewardsCert;
     };
 export type CertificatesJSON = CertificateJSON[];
-export interface ConstrPlutusDataJSON {
-  alternative: string;
-  data: PlutusListJSON;
-}
 export type CostModelJSON = string[];
 export interface CostmdlsJSON {
   [k: string]: CostModelJSON;
@@ -7999,7 +8536,7 @@ export type DataOptionJSON =
       DataHashJSON: string;
     }
   | {
-      Data: PlutusDataJSON;
+      Data: string;
     };
 export type Ed25519KeyHashJSON = string;
 export type Ed25519KeyHashesJSON = string[];
@@ -8083,9 +8620,7 @@ export type MIRPotJSON = "Reserves" | "Treasury";
 export interface MIRToStakeCredentialsJSON {
   [k: string]: ProtocolParamUpdateJSON;
 }
-export interface MintJSON {
-  [k: string]: MintAssetsJSON;
-}
+export type MintJSON = [string, MintAssetsJSON][];
 export interface MintAssetsJSON {
   [k: string]: string;
 }
@@ -8169,25 +8704,8 @@ export interface OperationalCertJSON {
   sequence_number: number;
   sigma: string;
 }
-export interface PlutusDataJSON {
-  datum: PlutusDataEnum;
-  original_bytes?: number[] | null;
-}
-export interface PlutusListJSON {
-  definite_encoding?: boolean | null;
-  elems: PlutusDataJSON[];
-}
-export interface PlutusMapJSON {
-  [k: string]: PlutusDataJSON;
-}
 export type PlutusScriptJSON = string;
 export type PlutusScriptsJSON = string[];
-export interface PlutusWitnessJSON {
-  datum: PlutusDataJSON;
-  redeemer: RedeemerJSON;
-  script: string;
-}
-export type PlutusWitnessesJSON = PlutusWitnessJSON[];
 export interface PoolMetadataJSON {
   pool_metadata_hash: string;
   url: URLJSON;
@@ -8246,7 +8764,7 @@ export interface ProtocolVersionJSON {
 }
 export type PublicKeyJSON = string;
 export interface RedeemerJSON {
-  data: PlutusDataJSON;
+  data: string;
   ex_units: ExUnitsJSON;
   index: string;
   tag: RedeemerTagJSON;
@@ -8368,10 +8886,15 @@ export interface TransactionOutputJSON {
   script_ref?: ScriptRefJSON | null;
 }
 export type TransactionOutputsJSON = TransactionOutputJSON[];
+export interface TransactionUnspentOutputJSON {
+  input: TransactionInputJSON;
+  output: TransactionOutputJSON;
+}
+export type TransactionUnspentOutputsJSON = TransactionUnspentOutputJSON[];
 export interface TransactionWitnessSetJSON {
   bootstraps?: BootstrapWitnessesJSON | null;
   native_scripts?: NativeScriptsJSON | null;
-  plutus_data?: PlutusListJSON | null;
+  plutus_data?: PlutusList | null;
   plutus_scripts?: PlutusScriptsJSON | null;
   redeemers?: RedeemersJSON | null;
   vkeys?: VkeywitnessesJSON | null;

@@ -9,12 +9,10 @@ import           Control.Monad.IO.Class      (MonadIO(..))
 import           Data.Text                   (Text)
 
 #ifdef __GHCJS__
-import           Data.Text                   (pack)
 import           Language.Javascript.JSaddle (ToJSVal(..), JSVal)
-import           JS.Types
 #endif
 
-import           ENCOINS.BaseTypes
+import           JS.Types
 
 -----------------------------------------------------------------
 
@@ -84,16 +82,17 @@ walletAddressBech32ToBytes = const $ error "GHCJS is required!"
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
-  "encoinsTx($1, $2, $3);"
-  encoinsTx_js :: JSVal -> JSVal -> JSVal -> IO ()
+  "encoinsTx($1, $2, $3, $4);"
+  encoinsTx_js :: JSVal -> JSVal -> JSVal -> JSVal -> IO ()
 
-encoinsTx :: MonadIO m => Text -> [GroupElement] -> Text -> m ()
-encoinsTx walletName keys resId = liftIO $ do
+encoinsTx :: MonadIO m => Text -> Text -> EncoinsRedeemer -> Text -> m ()
+encoinsTx walletName tx red resId = liftIO $ do
   walletName_js <- toJSVal walletName
-  redeemer_js       <- toJSVal $ EncoinsRedeemer $ (, "1000000" :: Text) $ map ((, "1" :: Text) . pack . show) keys
+  tx_js         <- toJSVal tx
+  redeemer_js   <- toJSVal $ EncoinsRedeemerJS red
   resId_js      <- toJSVal resId
-  encoinsTx_js walletName_js redeemer_js resId_js
+  encoinsTx_js walletName_js tx_js redeemer_js resId_js
 #else
-encoinsTx :: MonadIO m => Text -> [GroupElement] -> Text -> m ()
-encoinsTx = const . const . const $ error "GHCJS is required!"
+encoinsTx :: MonadIO m => Text -> Text -> EncoinsRedeemer -> Text -> m ()
+encoinsTx = const . const . const . const $ error "GHCJS is required!"
 #endif
