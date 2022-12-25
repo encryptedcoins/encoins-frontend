@@ -17,8 +17,12 @@ executable encoins-frontend
     ghc-options:      -dedupe
 
   other-modules:    
-                      Widgets.App
+                      Backend.Client
+                    , Backend.EncoinsTx
+                    , Backend.Requests
+                    , Widgets.App
                     , Widgets.Basic
+                    , Widgets.CoinEntry
                     , Widgets.Utils
                     , JS
                     , JS.App
@@ -34,13 +38,16 @@ executable encoins-frontend
                     , containers
                     , encoins-bulletproofs
                     , extra
+                    , file-embed
                     , ghcjs-dom
+                    , hex-text
                     , http-api-data
                     , jsaddle
                     , plutus-tx-extra
                     , plutus-tx-js
                     , random
                     , reflex-dom
+                    , reflex-dom-core
                     , servant
                     , servant-reflex
                     , stm

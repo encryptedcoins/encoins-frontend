@@ -34,48 +34,28 @@ enable = const $ error "GHCJS is required!"
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
-  "walletAddress($1, $2);" walletAddress_js :: JSVal -> JSVal -> IO ()
+  "walletLoad($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);" walletLoad_js :: 
+    JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> IO ()
 
-walletAddress :: MonadIO m => Text -> Text -> m ()
-walletAddress walletName resId = liftIO $ do
-  walletName_js <- toJSVal walletName
-  resId_js      <- toJSVal resId
-  walletAddress_js walletName_js resId_js
+walletLoad :: MonadIO m => Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> m ()
+walletLoad walletName networkIdElement balanceElement changeAddressElement changeAddressBech32Element pubKeyHashElement
+    stakeKeyHashElement collateralElement utxosElement unusedAddressesElement rewardAddressesElement = liftIO $ do
+  walletName_js  <- toJSVal walletName
+  networkIdElement_js  <- toJSVal networkIdElement
+  balanceElement_js  <- toJSVal balanceElement
+  changeAddressElement_js  <- toJSVal changeAddressElement
+  changeAddressBech32Element_js  <- toJSVal changeAddressBech32Element
+  pubKeyHashElement_js  <- toJSVal pubKeyHashElement
+  stakeKeyHashElement_js  <- toJSVal stakeKeyHashElement
+  collateralElement_js  <- toJSVal collateralElement
+  utxosElement_js  <- toJSVal utxosElement
+  unusedAddressesElement_js  <- toJSVal unusedAddressesElement
+  rewardAddressesElement_js  <- toJSVal rewardAddressesElement
+  walletLoad_js walletName_js networkIdElement_js balanceElement_js changeAddressElement_js changeAddressBech32Element_js
+    pubKeyHashElement_js stakeKeyHashElement_js collateralElement_js utxosElement_js unusedAddressesElement_js rewardAddressesElement_js
 #else
-walletAddress :: MonadIO m => Text -> Text -> m ()
-walletAddress = const $ error "GHCJS is required!"
-#endif
-
------------------------------------------------------------------
-
-#ifdef __GHCJS__
-foreign import javascript unsafe
-  "walletAddressBech32($1, $2);" walletAddressBech32_js :: JSVal -> JSVal -> IO ()
-
-walletAddressBech32 :: MonadIO m => Text -> Text -> m ()
-walletAddressBech32 walletName resId = liftIO $ do
-  walletName_js <- toJSVal walletName
-  resId_js      <- toJSVal resId
-  walletAddressBech32_js walletName_js resId_js
-#else
-walletAddressBech32 :: MonadIO m => Text -> Text -> m ()
-walletAddressBech32 = const $ error "GHCJS is required!"
-#endif
-
------------------------------------------------------------------
-
-#ifdef __GHCJS__
-foreign import javascript unsafe
-  "walletAddressBech32ToBytes($1, $2);" walletAddressBech32ToBytes_js :: JSVal -> JSVal -> IO ()
-
-walletAddressBech32ToBytes :: MonadIO m => Text -> Text -> m ()
-walletAddressBech32ToBytes addrBech32 resId = liftIO $ do
-  addrBech32_js <- toJSVal addrBech32
-  resId_js      <- toJSVal resId
-  walletAddressBech32ToBytes_js addrBech32_js resId_js
-#else
-walletAddressBech32ToBytes :: MonadIO m => Text -> Text -> m ()
-walletAddressBech32ToBytes = const $ error "GHCJS is required!"
+walletLoad :: MonadIO m => Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> m ()
+walletLoad = const $ error "GHCJS is required!"
 #endif
 
 -----------------------------------------------------------------
@@ -83,16 +63,51 @@ walletAddressBech32ToBytes = const $ error "GHCJS is required!"
 #ifdef __GHCJS__
 foreign import javascript unsafe
   "encoinsTx($1, $2, $3, $4);"
-  encoinsTx_js :: JSVal -> JSVal -> JSVal -> JSVal -> IO ()
+  encoinsTxSubmit_js :: JSVal -> JSVal -> JSVal -> JSVal -> IO ()
 
-encoinsTx :: MonadIO m => Text -> Text -> EncoinsRedeemer -> Text -> m ()
-encoinsTx walletName tx red resId = liftIO $ do
+encoinsTxSubmit :: MonadIO m => Text -> Text -> EncoinsRedeemerFrontend -> Text -> m ()
+encoinsTxSubmit walletName tx red resId = liftIO $ do
   walletName_js <- toJSVal walletName
   tx_js         <- toJSVal tx
   redeemer_js   <- toJSVal $ EncoinsRedeemerJS red
   resId_js      <- toJSVal resId
-  encoinsTx_js walletName_js tx_js redeemer_js resId_js
+  encoinsTxSubmit_js walletName_js tx_js redeemer_js resId_js
 #else
-encoinsTx :: MonadIO m => Text -> Text -> EncoinsRedeemer -> Text -> m ()
-encoinsTx = const . const . const . const $ error "GHCJS is required!"
+encoinsTxSubmit :: MonadIO m => Text -> Text -> EncoinsRedeemerFrontend -> Text -> m ()
+encoinsTxSubmit = const . const . const . const $ error "GHCJS is required!"
+#endif
+
+-----------------------------------------------------------------
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
+  "sha2_256($1, $2);"
+  sha2_256_js :: JSVal -> JSVal -> IO ()
+
+sha2_256 :: MonadIO m => Text -> Text -> m ()
+sha2_256 bs resId = liftIO $ do
+  bs_js    <- toJSVal bs
+  resId_js <- toJSVal resId
+  sha2_256_js bs_js resId_js
+#else
+sha2_256 :: MonadIO m => Text -> Text -> m ()
+sha2_256 = const $ error "GHCJS is required!"
+#endif
+
+-----------------------------------------------------------------
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
+  "ed25519Sign($1, $2, $3);"
+  ed25519Sign_js :: JSVal -> JSVal -> JSVal -> IO ()
+
+ed25519Sign :: MonadIO m => Text -> Text -> Text -> m ()
+ed25519Sign prvKey msg resId = liftIO $ do
+  prvKey_js <- toJSVal prvKey
+  msg_js    <- toJSVal msg
+  resId_js  <- toJSVal resId
+  ed25519Sign_js prvKey_js msg_js resId_js
+#else
+ed25519Sign :: MonadIO m => Text -> Text -> Text -> m ()
+ed25519Sign = const $ error "GHCJS is required!"
 #endif

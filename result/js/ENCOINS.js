@@ -2,28 +2,6 @@
 /////////////////////////////////// WebPage functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-function runHeadScripts() {
-  // Loading modules
-  loader.load();
-
-  // Webflow
-  WebFont.load(
-    {
-      google: {
-        families:
-          ['Droid Serif:400,400italic,700,700italic',
-            'Corben:regular', 'Fenix:regular']
-      }
-    });
-  !function (o, c) {
-    var n = c.documentElement, t = ' w-mod-';
-    n.className += t + 'js';
-    if ('ontouchstart' in o || o.DocumentTouch && c instanceof DocumentTouch) {
-      n.className += t + 'touch';
-    }
-  }(window, document);
-};
-
 function copyElemContent(elId) {
   var el = document.getElementById(elId);
   if (el != null && navigator && navigator.clipboard && navigator.clipboard.writeText) {
@@ -60,7 +38,7 @@ function setInputValue(elId, val) {
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////// App functions //////////////////////////////////////////////
+/////////////////////////////////// Wallet API Wrapper////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 async function walletAPI(walletName) {
@@ -86,23 +64,16 @@ function metaWallet(method) {
   }
 }
 
-function walletEnable(walletName, resId) {
-  const w = walletAPI(walletName);
-  w.then(() => { setInputValue(resId, "true"); }, () => { setInputValue(resId, "error_walletAPI"); });
-};
+let walletNetworkId       = metaWallet("getNetworkId");
+let walletBalance         = metaWallet("getBalance");
+let walletChangeAddress   = metaWallet("getChangeAddress");
+let walletCollateral      = metaWallet("getCollateral");
+let walletUnusedAddresses = metaWallet("getUnusedAddresses");
+let walletRewardAddresses = metaWallet("getRewardAddresses");
 
-let walletBalance = metaWallet("getBalance");
-let walletNetworkId = metaWallet("getNetworkId");
-
-// let walletUtxos = metaWallet("getUtxos");
 function walletUtxos(walletName, amount, paginate) {
   return walletAPI(walletName).then((api) => { return api.getUtxos(amount, paginate) });
 }
-
-let walletCollateral = metaWallet("getCollateral");
-let walletUnusedAddresses = metaWallet("getUnusedAddresses");
-let walletChangeAddress = metaWallet("getChangeAddress");
-let getRewardAddresses = metaWallet("getRewardAddresses");
 
 function walletSignTx(walletName, tx, partialSign) {
   return walletAPI(walletName).then((api) => { return api.signTx(tx, partialSign) });
@@ -112,6 +83,11 @@ function walletSubmitTx(walletName, tx) {
   return walletAPI(walletName).then((api) => { return api.signTx(tx) });
 }
 
+function walletEnable(walletName, resId) {
+  const w = walletAPI(walletName);
+  w.then(() => { setInputValue(resId, "true"); }, () => { setInputValue(resId, "error_walletAPI"); });
+};
+
 function metaWalletView(method) {
   return (walletName, resId) => {
     return metaWallet(method)(walletName)
@@ -120,25 +96,45 @@ function metaWalletView(method) {
   }
 }
 
-let walletAddress = metaWalletView("getChangeAddress");
+//////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////// App functions //////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
-function walletAddressBech32(walletName, resId) {
-  loader.load().then(() => {
-    const CardanoWasm = loader.Cardano;
-    walletChangeAddress(walletName).then((res) => {
-      const address = CardanoWasm.Address.from_bytes(fromHexString(res)).to_bech32();
-      setInputValue(resId, address);
-    }, () => { setInputValue(resId, "error_walletAPI"); });
-  });
-};
+async function walletLoad(walletName, networkIdElement, balanceElement, changeAddressElement, changeAddressBech32Element,
+  pubKeyHashElement, stakeKeyHashElement, collateralElement, utxosElement, unusedAddressesElement, rewardAddressesElement)
+{
+  await loader.load();
+  const CardanoWasm = loader.Cardano;
+  const api         = await walletAPI(walletName);
 
-function walletAddressBech32ToBytes(addressBech32, resId) {
-  loader.load().then(() => {
-    const CardanoWasm = loader.Cardano;
-    const address = toHexString(CardanoWasm.Address.from_bech32(addressBech32).to_bytes());
-    setInputValue(resId, address);
-  });
-};
+  const networkId           = await api.getNetworkId();
+  setInputValue(networkIdElement, networkId);
+
+  const balance             = await api.getBalance();
+  setInputValue(balanceElement, balance);
+
+  const changeAddress       = await api.getChangeAddress();
+  const changeAddressBech32 = CardanoWasm.Address.from_bytes(fromHexString(changeAddress)).to_bech32();
+  const baseAddress         = CardanoWasm.BaseAddress.from_address(CardanoWasm.Address.from_bech32(changeAddressBech32));
+  const pubKeyHash          = toHexString(baseAddress.payment_cred().to_keyhash().to_bytes());
+  const stakeKeyHash        = toHexString(baseAddress.stake_cred().to_keyhash().to_bytes());
+  setInputValue(changeAddressElement, changeAddress);
+  setInputValue(changeAddressBech32Element, changeAddressBech32);
+  setInputValue(pubKeyHashElement, pubKeyHash);
+  setInputValue(stakeKeyHashElement, stakeKeyHash);
+  
+  const collateral          = await api.experimental.getCollateral();
+  setInputValue(collateralElement, collateral);
+
+  const utxos               = await api.getUtxos();
+  setInputValue(utxosElement, utxos);
+
+  const unusedAddresses     = await api.getUnusedAddresses();
+  setInputValue(unusedAddressesElement, unusedAddresses);
+
+  const rewardAddresses     = await api.getRewardAddresses();
+  setInputValue(rewardAddressesElement, rewardAddresses);
+}
 
 async function encoinsTx(walletName, partialTx, red, resId) {
   // loading CardanoWasm
@@ -174,4 +170,19 @@ function toHexString(byteArray) {
   return Array.from(byteArray, function (byte) {
     return ('0' + (byte & 0xFF).toString(16)).slice(-2);
   }).join('')
+}
+
+// takes a hex string 'str' and puts the hash as a hex string into an element 'resId'
+async function sha2_256(str, resId) {
+  const hashBuffer = await crypto.subtle.digest('SHA-256', new Uint8Array(fromHexString(str)));
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  setInputValue(resId, toHexString(hashArray));
+}
+
+// NOTE: this is for testing purposes
+// signs a hex string 'msg' with Ed25519 private key 'prvKey'
+async function ed25519Sign(prvKey, msg, resId) {
+  const sig = await window.nobleEd25519.sign(msg, prvKey);
+  console.log(sig);
+  setInputValue(resId, sig);
 }

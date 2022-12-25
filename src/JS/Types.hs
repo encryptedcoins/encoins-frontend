@@ -5,24 +5,31 @@
 
 module JS.Types where
 
+import           Data.Aeson                  (ToJSON(..))
+import           Data.ByteString             (ByteString)
 import           Data.Text                   (Text, pack)
 import           GHC.Generics                (Generic)
 import           Language.Javascript.JSaddle (ToJSVal(..))
 import           PlutusTx.Builtins
+import           Text.Hex                    (encodeHex)
 
 import           ENCOINS.BaseTypes           (MintingPolarity, GroupElement (..))
 import           ENCOINS.Bulletproofs        (Proof (..))
 import           ENCOINS.Crypto.Field        (Field(..))
 
 -- Types that are passed to our JS functions as arguments
-type Address = Text
 
-type TxParams = Address
+type AddressBech32 = Text
+
+type TxParamsFrontend = AddressBech32
 type EncoinsInput = (Integer, [(BuiltinByteString, MintingPolarity)])
 type ProofSignature = BuiltinByteString
-type EncoinsRedeemer = (TxParams, EncoinsInput, Proof, ProofSignature)
+type EncoinsRedeemerFrontend = (TxParamsFrontend, EncoinsInput, Proof, ProofSignature)
 
-newtype EncoinsRedeemerJS = EncoinsRedeemerJS EncoinsRedeemer
+instance ToJSON BuiltinByteString where
+    toJSON bs = toJSON $ encodeHex (fromBuiltin bs :: ByteString)
+
+newtype EncoinsRedeemerJS = EncoinsRedeemerJS EncoinsRedeemerFrontend
     deriving (Eq, Show, Generic, ToJSVal)
 
 instance ToJSVal Integer where
