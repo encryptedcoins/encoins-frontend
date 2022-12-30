@@ -42,6 +42,7 @@ executable encoins-frontend
                     , ghcjs-dom
                     , hex-text
                     , http-api-data
+                    , ilist
                     , jsaddle
                     , plutus-tx-extra
                     , plutus-tx-js
