@@ -20,6 +20,13 @@ executable encoins-frontend
                       Backend.Client
                     , Backend.EncoinsTx
                     , Backend.Requests
+                    , ENCOINS.Frontend
+                    , ENCOINS.Frontend.Head
+                    , ENCOINS.Frontend.Body
+                    , ENCOINS.Website.Widgets
+                    , ENCOINS.Website.Widgets.Basic
+                    , ENCOINS.Website.Widgets.Navbar
+                    , ENCOINS.Website.Widgets.LandingPage
                     , Widgets.App
                     , Widgets.Basic
                     , Widgets.CoinEntry

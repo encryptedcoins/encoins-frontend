@@ -1,12 +1,9 @@
 body {
+  background-color: #000;
   font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
   color: #333;
   font-size: 14px;
   line-height: 20px;
-}
-
-.body {
-  background-color: #000;
 }
 
 .navbar {
@@ -178,11 +175,16 @@ body {
   color: rgba(24, 24, 24, 0);
 }
 
-.div-our-resources {
+.div-our-resourses {
   display: -webkit-box;
   display: -webkit-flex;
   display: -ms-flexbox;
   display: flex;
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
+  -webkit-flex-direction: row;
+  -ms-flex-direction: row;
+  flex-direction: row;
   -webkit-box-pack: center;
   -webkit-justify-content: center;
   -ms-flex-pack: center;
@@ -239,6 +241,8 @@ body {
   border-width: 1px;
   border-color: rgba(245, 251, 242, 0);
   border-radius: 15px;
+  background: linear-gradient(rgba(0, 0, 0, 100), rgba(0, 0, 0, 100)) padding-box,
+              linear-gradient(to top left, rgba(245, 251, 242, 0.44), rgba(245, 251, 242, 0)) border-box;
 }
 
 .p-explainer {
@@ -274,7 +278,7 @@ body {
   border-top-left-radius: 100px;
   border-bottom-left-radius: 100px;
   background-color: hsla(0, 0%, 41.6%, 0.2);
-  background-image: url('../images/Milky-Way.png');
+  background-image: url('../images/Milky-Way.svg');
   background-position: 35% 50%;
   background-size: 1153px;
   background-repeat: no-repeat;
@@ -291,7 +295,7 @@ body {
   border-top-right-radius: 100px;
   border-bottom-right-radius: 100px;
   background-color: hsla(0, 0%, 41.6%, 0.2);
-  background-image: url('../images/Milky-Way.png');
+  background-image: url('../images/Milky-Way.svg');
   background-position: 65% 50%;
   background-size: 1153px;
   background-repeat: no-repeat;
@@ -309,6 +313,8 @@ body {
   font-size: 129px;
   line-height: 150px;
   font-weight: 700;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 1px #FFFFFF;
 }
 
 .h5 {
@@ -522,6 +528,55 @@ body {
   margin-left: 30px;
   -webkit-filter: invert(100%);
   filter: invert(100%);
+}
+
+.utility-page-wrap {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  max-height: 100%;
+  max-width: 100%;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+.utility-page-content {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  width: 260px;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -webkit-flex-direction: column;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  text-align: center;
+}
+
+.utility-page-form {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -webkit-flex-direction: column;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  -webkit-box-align: stretch;
+  -webkit-align-items: stretch;
+  -ms-flex-align: stretch;
+  align-items: stretch;
 }
 
 @media screen and (max-width: 991px) {
