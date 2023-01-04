@@ -12,6 +12,7 @@ headWidget = do
   stylesheet "css/normalize.css"
   stylesheet "css/webflow.css"
   stylesheet "css/encoins.webflow.css"
+  stylesheet "css/encoins.webflow-extra.css"
   elAttr "link" ("href" =: "images/favicon.png" <> "rel" =: "shortcut icon" <> "type" =: "image/x-icon") blank
   elAttr "link" ("href" =: "images/webclip.png" <> "rel" =: "apple-touch-icon") blank
 

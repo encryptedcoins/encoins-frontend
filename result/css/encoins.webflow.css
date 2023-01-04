@@ -33,6 +33,10 @@ body {
   letter-spacing: 0.02em;
 }
 
+.menu-item:hover {
+  font-weight: 800;
+}
+
 .menu-item.menu-item-selected {
   font-weight: 800;
 }
@@ -40,6 +44,10 @@ body {
 .menu-item.menu-item-disabled {
   color: hsla(0, 0%, 100%, 0.25);
   cursor: default;
+}
+
+.menu-item.menu-item-disabled:hover {
+  font-weight: 400;
 }
 
 .nav-menu {
@@ -92,9 +100,6 @@ body {
   -webkit-flex: 1;
   -ms-flex: 1;
   flex: 1;
-  background-image: url('../images/rect.svg');
-  background-position: 0px 0px;
-  background-size: auto;
 }
 
 .section {
@@ -194,7 +199,7 @@ body {
   flex-wrap: wrap;
 }
 
-.div-our-resources.div-justify-left {
+.div-our-resourses.div-justify-left {
   -webkit-box-pack: start;
   -webkit-justify-content: flex-start;
   -ms-flex-pack: start;
@@ -241,8 +246,6 @@ body {
   border-width: 1px;
   border-color: rgba(245, 251, 242, 0);
   border-radius: 15px;
-  background: linear-gradient(rgba(0, 0, 0, 100), rgba(0, 0, 0, 100)) padding-box,
-              linear-gradient(to top left, rgba(245, 251, 242, 0.44), rgba(245, 251, 242, 0)) border-box;
 }
 
 .p-explainer {
@@ -313,8 +316,6 @@ body {
   font-size: 129px;
   line-height: 150px;
   font-weight: 700;
-  -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 1px #FFFFFF;
 }
 
 .h5 {
@@ -358,12 +359,17 @@ body {
   display: -webkit-flex;
   display: -ms-flexbox;
   display: flex;
+  max-width: 2000px;
   margin-right: 100px;
   margin-left: 100px;
   -webkit-box-align: stretch;
   -webkit-align-items: stretch;
   -ms-flex-align: stretch;
   align-items: stretch;
+  -webkit-box-flex: 1;
+  -webkit-flex: 1;
+  -ms-flex: 1;
+  flex: 1;
 }
 
 .columns-footer.border-top {
@@ -404,6 +410,10 @@ body {
   line-height: 32px;
 }
 
+.text-footer:hover {
+  font-weight: 800;
+}
+
 .text-footer.text-invisible {
   display: none;
 }
@@ -411,6 +421,10 @@ body {
 .text-footer.text-disabled {
   color: hsla(0, 0%, 100%, 0.25);
   cursor: default;
+}
+
+.text-footer.text-disabled:hover {
+  font-weight: 400;
 }
 
 .form-email-submit {
@@ -579,6 +593,71 @@ body {
   align-items: stretch;
 }
 
+.container-footer {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+}
+
+.div-calculator {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  margin-right: 0px;
+  margin-bottom: 10px;
+  margin-left: 0px;
+  -webkit-box-pack: start;
+  -webkit-justify-content: flex-start;
+  -ms-flex-pack: start;
+  justify-content: flex-start;
+  -webkit-flex-wrap: wrap;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+.text-calculator {
+  margin-bottom: 0px;
+  font-family: Poppins, sans-serif;
+  color: #b8b8b8;
+  font-size: 18px;
+  line-height: 32px;
+  text-align: left;
+}
+
+.text-calculator.input-calculator {
+  display: block;
+  overflow: auto;
+  padding-left: 10px;
+  -webkit-box-flex: 1;
+  -webkit-flex: 1;
+  -ms-flex: 1;
+  flex: 1;
+  color: #000;
+  font-size: 16px;
+  line-height: 32px;
+}
+
+.column-calculator {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: start;
+  -webkit-justify-content: flex-start;
+  -ms-flex-pack: start;
+  justify-content: flex-start;
+}
+
 @media screen and (max-width: 991px) {
   .nav-menu {
     background-color: #000;
@@ -652,10 +731,10 @@ body {
     padding-right: 10%;
     padding-left: 10%;
     -webkit-box-orient: vertical;
-    -webkit-box-direction: normal;
-    -webkit-flex-direction: column;
-    -ms-flex-direction: column;
-    flex-direction: column;
+    -webkit-box-direction: reverse;
+    -webkit-flex-direction: column-reverse;
+    -ms-flex-direction: column-reverse;
+    flex-direction: column-reverse;
     border-radius: 100px;
     background-image: none;
   }
@@ -734,7 +813,7 @@ body {
     padding-left: 20px;
   }
 
-  .div-our-resources.div-justify-left {
+  .div-our-resourses.div-justify-left {
     -webkit-box-pack: center;
     -webkit-justify-content: center;
     -ms-flex-pack: center;
