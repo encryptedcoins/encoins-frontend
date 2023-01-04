@@ -32,7 +32,7 @@ menuItemWidget txt w ref isDisabled dTxt = divClass "menu-item-div " $ do
         clsDisabled    = bool "" "menu-item-disabled " isDisabled
         attrExternal   = bool mempty ("target" =: "_blank") (ref /= "#")
         mkAttrs v      = "href" =: ref <> "class" =: "menu-item w-nav-link " `Text.append` clsSelected v  `Text.append` clsDisabled
-            <> attrExternal <> "style" =: "width: " `Text.append` w `Text.append` "px;"
+            <> attrExternal <> "style" =: "min-width: " `Text.append` w `Text.append` "px;"
         mkSelector v   = when (isSelected v) $ divClass "menu-selector" blank
     (e, _) <- elDynAttr' "a" (fmap mkAttrs dTxt) $ text txt
     dyn_ (fmap mkSelector dTxt)

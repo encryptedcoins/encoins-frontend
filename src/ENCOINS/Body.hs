@@ -1,4 +1,4 @@
-module ENCOINS.Frontend.Body where
+module ENCOINS.Body (bodyWidget) where
 
 import           Data.Functor                (($>))
 import           Data.Text                   (Text)

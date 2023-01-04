@@ -664,6 +664,10 @@ body {
   }
 
   .menu-item-div {
+    -webkit-box-align: start;
+    -webkit-align-items: flex-start;
+    -ms-flex-align: start;
+    align-items: flex-start;
     border-style: solid;
     border-width: 1px;
     border-color: #fff;

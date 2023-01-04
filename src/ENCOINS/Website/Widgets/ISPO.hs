@@ -1,14 +1,13 @@
 module ENCOINS.Website.Widgets.ISPO (ispoPage) where
 
-import           Data.Text                         (Text)
 import           Reflex.Dom
 
 import           ENCOINS.App.Widgets.ISPO          (calculator)
 import           ENCOINS.Website.Widgets.Basic
-import           ENCOINS.Website.Widgets.Resourses (ourResourses)
 
 ispoPage :: MonadWidget t m => m ()
 ispoPage = do
+    -- Printing ISPO page
     titleSection
     aboutSection
     rewardsCalculatorSection

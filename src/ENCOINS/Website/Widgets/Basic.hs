@@ -1,16 +1,9 @@
 module ENCOINS.Website.Widgets.Basic where
 
-import           Control.Monad          (when)
 import           Data.Bool              (bool)
-import           Data.List              (elemIndex)
-import           Data.Map               (Map)
 import           Data.Text              (Text, unpack)
 import qualified Data.Text              as Text
 import           Reflex.Dom
-import           Text.Read              (readMaybe)
-import           Witherable             (catMaybes)
-
-import           Widgets.Utils          (toText, safeIndex)
 
 section :: MonadWidget t m => Text -> Text -> m a -> m a
 section elemId cls = elAttr "div" ("id" =: elemId <> "class" =: "section wf-section " `Text.append` cls)

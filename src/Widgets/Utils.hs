@@ -9,7 +9,6 @@ import           Data.Text.Encoding       (encodeUtf8)
 import           Reflex.Dom
 import           Witherable               (catMaybes)
 
-
 toText :: Show a => a -> Text
 toText = pack . show
 

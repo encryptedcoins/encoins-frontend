@@ -1,20 +1,22 @@
 module ENCOINS.Website.Widgets.LandingPage (landingPage) where
 
+import           Data.Bool                         (bool)
 import           Data.Text                         (Text)
 import           Reflex.Dom
+import           Reflex.ScriptDependent            (widgetHoldUntilDefined)
 
 import           ENCOINS.Website.Widgets.Basic
 import           ENCOINS.Website.Widgets.Resourses (ourResourses)
-import Data.Bool (bool)
-import Reflex.ScriptDependent (widgetHoldUntilDefined)
-import JS.WebPage (scrollIntoView, logInfo)
+import           JS.WebPage                        (scrollIntoView)
 
 landingPage :: MonadWidget t m => Text -> m (Event t (Text, Text))
-landingPage idFocus = do
+landingPage elemId = do
+    -- Scrolling to a specific element
     ePB <- getPostBuild
     eWebpageLoaded <- updated <$> widgetHoldUntilDefined "scrollIntoView" ("js/Webpage.js" <$ ePB) blank blank
-    performEvent_ (scrollIntoView idFocus <$ eWebpageLoaded)
+    performEvent_ (scrollIntoView elemId <$ eWebpageLoaded)
 
+    -- Printing landing page
     titleSection
     communitySection
     featuresSection
@@ -52,13 +54,13 @@ featuresSection = section "Features" "" $ do
 roadmapSection :: MonadWidget t m => m ()
 roadmapSection = section "Roadmap" "" $ do
     container "" $ h3 "ROADMAP"
-    roadmapItemLeft "01" True "ENCOINS Announced" "ENCOINS protocol was announced in August 2023. The team released White Paper v0.1. The project recieved community funding through the ISPO and Project Catalyst."
+    roadmapItemLeft "01" True "ENCOINS Announced" "ENCOINS protocol was announced in August 2023. The team released White Paper v0.1. The project received community funding through the ISPO and Project Catalyst."
     roadmapItemRight "02" False "Token Generation Event" "Shortly after our ISPO ends in February 2023, we will have the final ENCS token distribution. ENCS can then be generated and distributed using the algorithm presented here."
     roadmapItemLeft  "03" False "Public Test" "In March 2023, ENCOINS Public Test will commence. Users will be able to test the base dApp on Cardano testnets. In the second phase, we expect relayers to join in."
     roadmapItemRight "04" False "Mainnet Launch" "After the Public Test, everything will be ready for the mainnet launch. Users can now mint, trade, and transfer ENCOINS using their wallet or ENCOINS Ledger."
     roadmapItemLeft  "05" False "ENSHARE Integrations" "ENSHARE, our upcoming protocol for confidential data sharing, will be integrated with ENCOINS, enabling on-chain sharing of minting keys."
-    roadmapItemRight "06" False "Ecosystem Integrations" "We plan to integrate ENCOINS with selected Cardano Ecosystem projects, including wallets, DeFi, and NFT dApps. All potential partners are wellcome!"
-    roadmapItemLeft  "07" False "Native Assets Support" "Currently, ENCOINS protocol only supports wrapping of ADA. This support will be eventually extended to all native assets on Cardano, including Cardano NFTs."
+    roadmapItemRight "06" False "Ecosystem Integrations" "We plan to integrate ENCOINS with selected Cardano Ecosystem projects, including wallets, DeFi, and NFT dApps. All potential partners are welcome!"
+    roadmapItemLeft  "07" False "Native Assets Support" "Currently, ENCOINS protocol only supports wrapping of ADA. This support will eventually be extended to all native assets on Cardano, including Cardano NFTs."
     where
         roadmapItemComplete = bool "text-roadmap-numbers" "text-roadmap-numbers text-roadmap-numbers-complete" 
         roadmapItemRight num b txtTitle txtDesc = divClass "div-roadmap-item div-roadmap-item-right" $ do

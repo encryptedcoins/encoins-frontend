@@ -1,9 +1,6 @@
 module ENCOINS.Website.Widgets.Footer (footerWidget) where
 
-import           Control.Monad          (when)
-import           Data.Bool              (bool)
-import           Data.Text              (Text)
-import qualified Data.Text              as Text
+import           Data.Text                         (Text)
 import           Reflex.Dom
 
 import           ENCOINS.Website.Widgets.Basic

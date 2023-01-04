@@ -21,9 +21,8 @@ executable encoins-frontend
                     , Backend.EncoinsTx
                     , Backend.Requests
                     , ENCOINS.App.Widgets.ISPO
-                    , ENCOINS.Frontend
-                    , ENCOINS.Frontend.Head
-                    , ENCOINS.Frontend.Body
+                    , ENCOINS.Body
+                    , ENCOINS.Head                    
                     , ENCOINS.Website.Widgets
                     , ENCOINS.Website.Widgets.Basic
                     , ENCOINS.Website.Widgets.Footer
@@ -31,17 +30,17 @@ executable encoins-frontend
                     , ENCOINS.Website.Widgets.LandingPage
                     , ENCOINS.Website.Widgets.Navbar
                     , ENCOINS.Website.Widgets.Resourses
-                    , Widgets.App
-                    , Widgets.Basic
-                    , Widgets.CoinEntry
-                    , Widgets.Utils
                     , JS
                     , JS.App
                     , JS.Types
                     , JS.WebPage
                     , Language
                     , Reflex.ScriptDependent
-
+                    , Widgets.App
+                    , Widgets.Basic
+                    , Widgets.CoinEntry
+                    , Widgets.Utils
+                    
   build-depends:      base >=4.7
                     , aeson
                     , base16-bytestring

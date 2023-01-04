@@ -1,7 +1,8 @@
-module ENCOINS.Frontend.Head where
+module ENCOINS.Head (headWidget) where
+
+import           Reflex.Dom
 
 import qualified JS
-import Reflex.Dom
 
 headWidget :: MonadWidget t m => m ()
 headWidget = do
