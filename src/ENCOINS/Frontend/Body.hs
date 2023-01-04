@@ -6,9 +6,9 @@ import           Reflex.Dom
 
 import           ENCOINS.Website.Widgets
 
-pageSelect :: MonadWidget t m => Text -> m (Event t Text)
-pageSelect page = case page of
-  "Home" -> landingPage
+pageSelect :: MonadWidget t m => (Text, Text) -> m (Event t (Text, Text))
+pageSelect (page, idFocus) = case page of
+  "Home" -> landingPage idFocus
   "ISPO" -> never <$ ispoPage
   _      -> return never
     
@@ -16,11 +16,12 @@ bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = mdo
   divClass "hero" blank
 
-  eNavbarPageSelected <- navbarWidget dPage
-  eBodyPageSelected   <- dyn (fmap pageSelect dPage) >>= switchHold never
+  eNavbarPageSelected <- navbarWidget dPageFocus
+  eBodyPageSelected   <- dyn (fmap pageSelect dPageFocus) >>= switchHold never
   eFooterPageSelected <- footerWidget
 
-  dPage <- holdDyn "Home" (leftmost [eNavbarPageSelected, eBodyPageSelected, eFooterPageSelected]) >>= holdUniqDyn
+  dPageFocus <- holdDyn ("Home", "Navbar") (leftmost [eNavbarPageSelected, eBodyPageSelected, eFooterPageSelected])
+    >>= holdUniqDynBy (\a b -> fst a == fst b)
 
   blank
 

@@ -6,8 +6,8 @@ import           Data.Text              (Text)
 import qualified Data.Text              as Text
 import           Reflex.Dom
 
-navbarWidget :: MonadWidget t m => Dynamic t Text -> m (Event t Text)
-navbarWidget dPage = do
+navbarWidget :: MonadWidget t m => Dynamic t (Text, Text) -> m (Event t (Text, Text))
+navbarWidget dPageFocus = do
   elAttr "div" ("data-animation" =: "default" <> "data-collapse" =: "medium" <> "data-duration" =: "400" <> "id" =: "Navbar"
     <> "data-easing" =: "ease" <> "data-easing2" =: "ease" <> "role" =: "banner" <> "class" =: "navbar w-nav") $
     divClass "div-navbar" $
@@ -18,11 +18,12 @@ navbarWidget dPage = do
             divClass "menu-button w-nav-button" $
                 divClass "w-icon-nav-menu" blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ mdo
+                let dPage = fmap fst dPageFocus
                 eHome <- menuItemWidget "Home" "56.56" "#Navbar" False dPage
                 eISPO <- menuItemWidget "ISPO" "43.77" "#Navbar" False dPage
                 _     <- menuItemWidget "Governance" "118.45" "#" True dPage
                 _     <- menuItemWidget "White paper" "120.02" "docs/whitepaper.pdf" False dPage
-                return $ leftmost [eHome, eISPO]
+                return $ (, "Navbar") <$> leftmost [eHome, eISPO]
 
 menuItemWidget :: MonadWidget t m => Text -> Text -> Text -> Bool -> Dynamic t Text -> m (Event t Text)
 menuItemWidget txt w ref isDisabled dTxt = divClass "menu-item-div " $ do

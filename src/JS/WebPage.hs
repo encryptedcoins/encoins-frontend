@@ -28,6 +28,21 @@ runHeadScripts = error "GHCJS is required!"
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
+  "scrollIntoView($1);" scrollIntoView_js :: JSVal -> IO ()
+
+scrollIntoView :: MonadIO m => Text -> m ()
+scrollIntoView elemId = liftIO $ do
+  elemId_js <- toJSVal elemId
+  scrollIntoView_js elemId_js
+#else
+scrollIntoView :: MonadIO m => Text -> m ()
+scrollIntoView = error "GHCJS is required!"
+#endif
+
+-----------------------------------------------------------------
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
   "setElementText($1, $2);" setElementText_js :: JSVal -> JSVal -> IO ()
 
 setElementText :: MonadIO m => Text -> Text -> m ()

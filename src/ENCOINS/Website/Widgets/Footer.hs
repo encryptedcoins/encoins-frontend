@@ -9,7 +9,7 @@ import           Reflex.Dom
 import           ENCOINS.Website.Widgets.Basic
 import           ENCOINS.Website.Widgets.Resourses (ourResourses)
 
-footerWidget :: MonadWidget t m => m (Event t Text)
+footerWidget :: MonadWidget t m => m (Event t (Text, Text))
 footerWidget = divClass "footer wf-section" $ divClass "container-footer" $
     divClass "columns-footer w-row" $ do
         divClass "column-footer border-right w-col w-col-6" $ do
@@ -29,16 +29,16 @@ footerWidget = divClass "footer wf-section" $ divClass "container-footer" $
                 blank
             divClass "div-vertical-margin div-horizontal-margin div-invisible" blank
             divClass "div-horizontal-margin" $ divClass "columns-footer w-row" $ do
-                divClass "column-footer w-col w-col-6" $ do
+                e <- divClass "column-footer w-col w-col-6" $ do
                     h5Bold "About"
-                    _ <- lnk "#Features" "" $ divClass "text-footer" $ text "Features"
-                    _ <- lnk "#Roadmap" "" $ divClass "text-footer" $ text "Roadmap"
-                    _ <- lnk "#Partners" "" $ divClass "text-footer text-invisible" $ text "Partners"
-                    blank
+                    eFeatures <- lnk "#Features" "" $ divClass "text-footer" $ text "Features"
+                    eRoadmap  <- lnk "#Roadmap" "" $ divClass "text-footer" $ text "Roadmap"
+                    _         <- lnk "#Partners" "" $ divClass "text-footer text-invisible" $ text "Partners"
+                    return $ leftmost [("Home", "Features") <$ eFeatures, ("Home", "Roadmap") <$ eRoadmap]
                 divClass "column-footer w-col w-col-6" $ do
                     h5Bold "Links"
                     eHome <- lnk "#Navbar" "" $ divClass "text-footer" $ text "Home"
                     eISPO <- lnk "#Navbar" "" $ divClass "text-footer" $ text "ISPO"
                     _     <- lnk "#Navbar" "" $ divClass "text-footer text-disabled" $ text "Governance"
                     _     <- lnk "docs/whitepaper.pdf" "" $ divClass "text-footer" $ text "White Paper"
-                    return $ leftmost ["Home" <$ eHome, "ISPO" <$ eISPO]
+                    return $ leftmost [("Home", "Navbar") <$ eHome, ("ISPO", "Navbar") <$ eISPO, e]

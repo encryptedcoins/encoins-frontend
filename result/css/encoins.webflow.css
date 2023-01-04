@@ -253,7 +253,7 @@ body {
   margin-left: 20px;
   font-family: Poppins, sans-serif;
   color: #f5fbf2;
-  font-size: 30px;
+  font-size: 24px;
   line-height: 150%;
   font-weight: 500;
 }
@@ -503,7 +503,7 @@ body {
   color: #b8b8b8;
   font-size: 18px;
   line-height: 32px;
-  text-align: left;
+  text-align: justify;
 }
 
 .link-inline {
@@ -675,11 +675,6 @@ body {
 
   .h1.h1-mini {
     font-size: 50px;
-  }
-
-  .h4 {
-    font-size: 24px;
-    line-height: 30px;
   }
 
   .h2 {
@@ -909,8 +904,8 @@ body {
   }
 
   .h4 {
-    font-size: 20px;
-    line-height: 24px;
+    font-size: 24px;
+    line-height: 28px;
   }
 
   .h2 {

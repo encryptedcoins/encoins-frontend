@@ -11,13 +11,3 @@
   background: linear-gradient(rgba(0, 0, 0, 100), rgba(0, 0, 0, 100)) padding-box,
               linear-gradient(to top left, rgba(245, 251, 242, 0.44), rgba(245, 251, 242, 0)) border-box;
 }
-
-/* .div-calculator {
-  overflow: auto;
-  color: #000;
-}
-
-.input-calculator {
-  overflow: auto;
-  color: #000;
-} */

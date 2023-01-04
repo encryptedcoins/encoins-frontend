@@ -6,9 +6,15 @@ import           Reflex.Dom
 import           ENCOINS.Website.Widgets.Basic
 import           ENCOINS.Website.Widgets.Resourses (ourResourses)
 import Data.Bool (bool)
+import Reflex.ScriptDependent (widgetHoldUntilDefined)
+import JS.WebPage (scrollIntoView, logInfo)
 
-landingPage :: MonadWidget t m => m (Event t Text)
-landingPage = do
+landingPage :: MonadWidget t m => Text -> m (Event t (Text, Text))
+landingPage idFocus = do
+    ePB <- getPostBuild
+    eWebpageLoaded <- updated <$> widgetHoldUntilDefined "scrollIntoView" ("js/Webpage.js" <$ ePB) blank blank
+    performEvent_ (scrollIntoView idFocus <$ eWebpageLoaded)
+
     titleSection
     communitySection
     featuresSection
@@ -68,10 +74,10 @@ roadmapSection = section "Roadmap" "" $ do
                 divClass "p-roadmap-item" $ text txtDesc
             divClass (roadmapItemComplete b) $ text num
             
-ispoCallSection :: MonadWidget t m => m (Event t Text)
+ispoCallSection :: MonadWidget t m => m (Event t (Text, Text))
 ispoCallSection = section "" "" $ container "" $ do
      (e, _) <- elAttr' "a" ("href" =: "#Navbar" <> "class" =: "h3") $ text "Participate in the ISPO to support our project!"
-     return $ "ISPO" <$ domEvent Click e
+     return $ ("ISPO", "Navbar") <$ domEvent Click e
 
 partnersSection :: MonadWidget t m => m ()
 partnersSection = section "Partners" "div-invisible" $ do

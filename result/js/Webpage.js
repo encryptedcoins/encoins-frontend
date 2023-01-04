@@ -17,3 +17,8 @@ function runHeadScripts() {
     n.className += t+"js", ("ontouchstart" in o || o.DocumentTouch && c instanceof DocumentTouch) && (n.className += t + "touch")
   }(window,document);
 };
+
+function scrollIntoView(elemId) {
+  const elem = document.getElementById(elemId);
+  elem.scrollIntoView();
+}
