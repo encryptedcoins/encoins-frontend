@@ -16,6 +16,11 @@ Copy `all.js` file to `result/`:
 cp dist-newstyle/build/x86_64-linux/ghcjs-8.6.0.1/encoins-frontend-0.1.0.0/x/encoins-frontend/build/encoins-frontend/encoins-frontend.jsexe/all.js result/
 ```
 
+Alternatively, simply run
+```
+./build.sh
+```
+
 ## Setup for local development
 
 Switch to cabal 3.2.0.0 and GHC 8.6.5 for HLS support.
