@@ -1,6 +1,6 @@
-# ENCOINS Basic Frontend
+# ENCOINS Frontend
 
-## Building Reflex frontend
+## Building with Reflex FRP
 
 This project is built with cabal 3.2.0.0 and GHCJS 8.6.5.
 
