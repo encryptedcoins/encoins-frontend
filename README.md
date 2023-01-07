@@ -1,6 +1,6 @@
-# ENCOINS Basic Frontend
+# ENCOINS Frontend
 
-## Building Reflex frontend
+## Building with Reflex FRP
 
 This project is built with cabal 3.2.0.0 and GHCJS 8.6.5.
 
@@ -8,12 +8,11 @@ In the shell, run
 ```
 cabal new-build --ghcjs
 ```
-to build it.
+to build all webpages. Copy `all.js` files to the respective files in `result/`.
 
-Copy `all.js` file to `result/`:
-
+Alternatively, simply run
 ```
-cp dist-newstyle/build/x86_64-linux/ghcjs-8.6.0.1/encoins-frontend-0.1.0.0/x/encoins-frontend/build/encoins-frontend/encoins-frontend.jsexe/all.js result/
+./build.sh
 ```
 
 ## Setup for local development
