@@ -19,8 +19,8 @@ navbarWidget dPageFocus = do
                 divClass "w-icon-nav-menu" blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ mdo
                 let dPage = fmap fst dPageFocus
-                eHome <- menuItemWidget "Home" "56.56" "#Navbar" False dPage
-                eISPO <- menuItemWidget "ISPO" "43.77" "#Navbar" False dPage
+                eHome <- menuItemWidget "Home" "56.56" "#" False dPage
+                eISPO <- menuItemWidget "ISPO" "43.77" "#" False dPage
                 _     <- menuItemWidget "Governance" "118.45" "#" True dPage
                 _     <- menuItemWidget "White paper" "120.02" "docs/whitepaper.pdf" False dPage
                 return $ (, "Navbar") <$> leftmost [eHome, eISPO]

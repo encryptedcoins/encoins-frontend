@@ -658,6 +658,14 @@ body {
   justify-content: flex-start;
 }
 
+.div-vertical-space-56 {
+  min-height: 56px;
+}
+
+.div-vertical-space-78 {
+  min-height: 78px;
+}
+
 @media screen and (max-width: 991px) {
   .nav-menu {
     background-color: #000;
@@ -894,10 +902,15 @@ body {
   }
 
   .p-ispo {
+    overflow: auto;
     text-align: center;
   }
 
   .list.p-ispo {
+    overflow: scroll;
+  }
+
+  .text-calculator.input-calculator {
     overflow: scroll;
   }
 }
@@ -935,6 +948,7 @@ body {
 
   .columns-footer {
     margin-right: 0px;
+    margin-bottom: 100px;
     margin-left: 0px;
     -webkit-flex-wrap: wrap;
     -ms-flex-wrap: wrap;
