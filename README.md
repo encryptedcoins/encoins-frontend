@@ -8,13 +8,7 @@ In the shell, run
 ```
 cabal new-build --ghcjs
 ```
-to build it.
-
-Copy `all.js` file to `result/`:
-
-```
-cp dist-newstyle/build/x86_64-linux/ghcjs-8.6.0.1/encoins-frontend-0.1.0.0/x/encoins-frontend/build/encoins-frontend/encoins-frontend.jsexe/all.js result/
-```
+to build all webpages. Copy `all.js` files to the respective files in `result/`.
 
 Alternatively, simply run
 ```
