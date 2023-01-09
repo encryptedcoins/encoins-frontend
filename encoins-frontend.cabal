@@ -78,7 +78,6 @@ library
     FlexibleInstances,
     FunctionalDependencies,
     GADTs,
-    GeneralizedNewtypeDeriving,
     LambdaCase,
     NamedFieldPuns,
     OverloadedLabels,

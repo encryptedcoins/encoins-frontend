@@ -1,23 +1,23 @@
 module Backend.EncoinsTx where
 
 import           Control.Monad.IO.Class    (MonadIO(..))
-import           Data.Aeson                (decode)
+import           Data.Aeson                (decode, encode)
 import           Data.ByteString.Lazy      (fromStrict)
 import           Data.FileEmbed            (embedFile)
 import           Data.Maybe                (fromJust)
-import           Data.Text                 (pack)
 import qualified Data.Text                 as Text
 import           PlutusTx.Builtins
 import           Reflex.Dom                hiding (Input)
 import           System.Random.Stateful    (randomIO)
 import           Text.Hex                  (encodeHex, decodeHex)
+import           Witherable                (catMaybes)
 
 import           Backend.Requests
 import           ENCOINS.Crypto.Field      (Field(..))
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           JS.App                    (walletLoad, sha2_256, ed25519Sign)
-import           JS.Types                  (EncoinsRedeemerFrontend, AddressBech32)
+import           JS.Types                  (EncoinsRedeemerFrontend, AddressBech32, mkAddressFromPubKeys)
 import           JS.WebPage                (logInfo)
 import           PlutusTx.Extra.ByteString (ToBuiltinByteString(..))
 import           Reflex.ScriptDependent    (widgetHoldUntilDefined)
@@ -37,7 +37,7 @@ mkRedeemer addrBech32 bp secrets mps rs = red
 encoinsTx :: MonadWidget t m => m ()
 encoinsTx = mdo
     ePb <- getPostBuild
-    eEncoinsLoaded <- updated <$> widgetHoldUntilDefined "walletEnable" ("js/ENCOINS.js" <$ ePb) blank blank
+    eEncoinsLoaded <- updated <$> widgetHoldUntilDefined "walletLoad" ("js/ENCOINS.js" <$ ePb) blank blank
 
     -- TODO: implement wallet switcher
     -- dWalletName <- holdDyn "nami" never
@@ -49,41 +49,56 @@ encoinsTx = mdo
     --   & inputElementConfig_initialValue .~ "false"
 
     -- Retrieving wallet info
-    _  <- elementResultJS "changeAddressElement" id
     dWalletAddressBech32 <- elementResultJS "changeAddressBech32Element" id
     dPubKeyHash <- elementResultJS "pubKeyHashElement" id
     dStakeKeyHash <- elementResultJS "stakeKeyHashElement" id
-    let dAddrBytes = zipDynWith Text.append dPubKeyHash dStakeKeyHash
-    performEvent_ (walletLoad "nami" "" "" "changeAddressElement" "changeAddressBech32Element"
+    let bAddrBytes = current dPubKeyHash <> current dStakeKeyHash
+        bAddr      =  ffor2 (current dPubKeyHash) (current dStakeKeyHash) mkAddressFromPubKeys
+    performEvent_ (walletLoad "nami" "" "" "" "changeAddressBech32Element"
         "pubKeyHashElement" "stakeKeyHashElement" "" "" "" "" <$ eEncoinsLoaded)
 
-    -- Defining bulletproof algorithm arguments
-    dBulletproofParams <- elementResultJS "bulletproofParamsElement" (fromJust . toGroupElement . toBuiltin . fromJust . decodeHex)
-    performEvent_ (flip sha2_256 "bulletproofParamsElement" <$> updated dAddrBytes)
+    -- Button that sends the request
+    (elButton, _) <- el' "button" $
+        text "Click me!"
+    let eSend = domEvent Click elButton
+
+    -- Obtaining BulletproofParams
+    dBulletproofParams <- elementResultJS "bulletproofParamsElement" (parseBulletproofParams . toBuiltin . fromJust . decodeHex)
+    performEvent_ (flip sha2_256 "bulletproofParamsElement" <$> bAddrBytes `tag` eSend)
+    let eBulletproofParamsUpdated = () <$ updated dBulletproofParams
+
+    -- Obtaining Secrets and [MintingPolarity]
     dLst <- fmap unzip <$> coinCollectionWidget
     let dSecrets = fmap fst dLst
         dMPs     = fmap snd dLst
-    eRandomness <- performEvent $ liftIO randomIO <$ eEncoinsLoaded
+
+    -- Obtaining Randomness
+    eRandomness <- performEvent $ liftIO randomIO <$ eBulletproofParamsUpdated
     dRandomness <- holdDyn (Randomness (F 3417) (map F [1..20]) (map F [21..40]) (F 8532) (F 16512) (F 1235)) eRandomness
 
     -- Obtaining EncoinsRedeemer
-    let dRed = mkRedeemer <$> dWalletAddressBech32 <*> dBulletproofParams <*> dSecrets <*> dMPs <*> dRandomness
+    let bRed = mkRedeemer <$> current dWalletAddressBech32 <*> current dBulletproofParams <*> current dSecrets <*>
+            current dMPs <*> current dRandomness
+        bRed' = ffor2 bRed bAddr (\(_, i, p, s) a -> (a, i, p, s))
 
     -- NOTE: for testing purposes we sign the redeemer on frontend
     -- Obtaining redeemer hash
     let redToBytes (a, i, p, _) = a `Text.append` encodeHex (fromBuiltin $ toBytes i) `Text.append` encodeHex (fromBuiltin $ toBytes p)
     dRedeemerHash <- elementResultJS "redeemerHashElement" id
-    performEvent_ (flip sha2_256 "redeemerHashElement" <$> updated (fmap redToBytes dRed))
+    performEvent_ (flip sha2_256 "redeemerHashElement" <$> (fmap redToBytes bRed `tag` updated dRandomness))
     -- Obtaining signature
     dSig <- elementResultJS "ed25519SigElement" (toBuiltin . fromJust . decodeHex)
     let prvKey = "1DA4194798C1D3AA8B7E5E39EDA1F130D9123ACCC8CA31A82E033A6D007DA7EC"
     performEvent_ (flip (ed25519Sign prvKey) "ed25519SigElement" <$> updated dRedeemerHash)
+    let eSig = updated dSig
 
     -- Constructing the final redeemer
-    let dFinalRedeemer = zipDynWith (\(a, i, p, _) s -> (a, i, p, s)) dRed dSig
+    dFinalRedeemer <- holdDyn Nothing $ Just <$> attachWith (\(a, i, p, _) s -> (a, i, p, s)) bRed' eSig
+    let eFinalRedeemer = () <$ catMaybes (updated dFinalRedeemer)
 
-    performEvent_ $ logInfo . pack . show <$> updated dFinalRedeemer
-    _ <- newEncoinsTxRequest dFinalRedeemer
+    eRes <- newEncoinsTxRequest (fromJust <$> dFinalRedeemer) eFinalRedeemer
+    performEvent_ $ logInfo . Text.pack . show . encode . fromJust <$> updated dFinalRedeemer
+    performEvent_ $ logInfo <$> eRes
 
     -- TODO: add transaction submit logic
     -- _ <- elementResultJS "testResultElement" id

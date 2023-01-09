@@ -13,10 +13,10 @@ eventMaybe :: Reflex t => b -> Event t (Maybe a) -> (Event t a, Event t b)
 eventMaybe errValue e = (catMaybes e, errValue <$ ffilter isNothing e)
 
 pabIP :: BaseUrl
-pabIP = BasePath "http://localhost:9080"
+pabIP = BasePath "http://localhost:3000"
 
-newEncoinsTxRequest :: MonadWidget t m => Dynamic t EncoinsRedeemerFrontend -> m (Event t Text)
-newEncoinsTxRequest dRed = do
+newEncoinsTxRequest :: MonadWidget t m => Dynamic t EncoinsRedeemer -> Event t () -> m (Event t Text)
+newEncoinsTxRequest dRed e = do
   let ApiClient{..} = mkApiClient pabIP
-  e' <- fmap makeResponse <$> relayRequest (fmap Right dRed) (() <$ updated dRed)
+  e' <- fmap makeResponse <$> relayRequest (fmap Right dRed) e
   return $ catMaybes e'

@@ -1,4 +1,6 @@
 cradle:
   cabal:
     - path: "src"
-      component: "encoins-frontend:exe:encoins-frontend"
+      component: "encoins-frontend:lib:encoins-frontend"
+    - path: "apps"
+      component: "encoins-frontend:exe:encoins-website"
