@@ -14,6 +14,8 @@ library
     Backend.Client,
     Backend.EncoinsTx,
     Backend.Requests,
+    ENCOINS.App,
+    ENCOINS.App.Widgets.CoinEntry,
     ENCOINS.App.Widgets.ISPO,
     ENCOINS.Website,
     ENCOINS.Website.Body,
@@ -33,7 +35,7 @@ library
     Reflex.ScriptDependent,
     Widgets.App,
     Widgets.Basic,
-    Widgets.CoinEntry,
+    
     Widgets.Utils
   build-depends:
     base                      >=4.7,
@@ -41,6 +43,7 @@ library
     base16-bytestring          -any,
     bytestring                 -any,
     containers                 -any,
+    csl-types                  -any,
     encoins-bulletproofs       -any,
     extra                      -any,
     file-embed                 -any,

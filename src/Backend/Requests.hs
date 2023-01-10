@@ -18,5 +18,5 @@ pabIP = BasePath "http://localhost:3000"
 newEncoinsTxRequest :: MonadWidget t m => Dynamic t EncoinsRedeemer -> Event t () -> m (Event t Text)
 newEncoinsTxRequest dRed e = do
   let ApiClient{..} = mkApiClient pabIP
-  e' <- fmap makeResponse <$> relayRequest (fmap Right dRed) e
+  e' <- fmap makeResponse <$> relayRequest (Right <$> zipDyn dRed (constDyn [])) e
   return $ catMaybes e'

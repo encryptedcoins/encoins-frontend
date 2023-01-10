@@ -131,7 +131,12 @@ async function walletLoad(walletName, networkIdElement, balanceElement, changeAd
   setInputValue(collateralElement, collateral);
 
   const utxos               = await api.getUtxos();
-  setInputValue(utxosElement, utxos);
+  const utxosJSON           = [];
+  for (i = 0; i<utxos.length; i++)
+  {
+    utxosJSON.push(CardanoWasm.TransactionUnspentOutput.from_bytes(fromHexString(utxos[i])).to_json());
+  }
+  setInputValue(utxosElement, "[" + utxosJSON.join(', ') + "]");
 
   const unusedAddresses     = await api.getUnusedAddresses();
   setInputValue(unusedAddressesElement, unusedAddresses);

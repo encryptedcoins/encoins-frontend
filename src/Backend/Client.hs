@@ -8,7 +8,9 @@ import           Servant.Reflex
 
 import           JS.Types
 
-type API = "relayRequestNewTx"  :> ReqBody '[JSON] EncoinsRedeemer :> Post '[JSON] Text
+type MapUTXO = [(TxOutRef, DecoratedTxOut)]
+
+type API = "relayRequestNewTx"  :> ReqBody '[JSON] (EncoinsRedeemer, MapUTXO) :> Post '[JSON] Text
         :<|> "relayRequestPing" :> Get '[JSON] ()
 
 type RespEvent t a      = Event t (ReqResult () a)
@@ -18,7 +20,7 @@ type ReqRes t m req res = DynReqBody t req -> Res t m res
 
 data ApiClient t m = ApiClient
   {
-    relayRequest :: ReqRes t m EncoinsRedeemer Text,
+    relayRequest :: ReqRes t m (EncoinsRedeemer, MapUTXO) Text,
     pingRequest  :: Res t m ()
   }
 

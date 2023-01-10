@@ -1,28 +1,29 @@
 module Backend.EncoinsTx where
 
-import           Control.Monad.IO.Class    (MonadIO(..))
-import           Data.Aeson                (decode, encode)
-import           Data.ByteString.Lazy      (fromStrict)
-import           Data.FileEmbed            (embedFile)
-import           Data.Maybe                (fromJust)
-import qualified Data.Text                 as Text
+import           Control.Monad.IO.Class          (MonadIO(..))
+import           Data.Aeson                      (decode, encode)
+import           Data.ByteString.Lazy            (fromStrict)
+import           Data.FileEmbed                  (embedFile)
+import           Data.Maybe                      (fromJust)
+import qualified Data.Text                       as Text
 import           PlutusTx.Builtins
-import           Reflex.Dom                hiding (Input)
-import           System.Random.Stateful    (randomIO)
-import           Text.Hex                  (encodeHex, decodeHex)
-import           Witherable                (catMaybes)
+import           Reflex.Dom                      hiding (Input)
+import           System.Random.Stateful          (randomIO)
+import           Text.Hex                        (encodeHex, decodeHex)
+import           Witherable                      (catMaybes)
 
-import           Backend.Requests
-import           ENCOINS.Crypto.Field      (Field(..))
+import           Backend.Requests                (newEncoinsTxRequest)
+import           CSL                             (TransactionUnspentOutputs)
+import           ENCOINS.App.Widgets.CoinEntry   (coinCollectionWidget)
+import           ENCOINS.Crypto.Field            (Field(..))
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
-import           JS.App                    (walletLoad, sha2_256, ed25519Sign)
-import           JS.Types                  (EncoinsRedeemerFrontend, AddressBech32, mkAddressFromPubKeys)
-import           JS.WebPage                (logInfo)
-import           PlutusTx.Extra.ByteString (ToBuiltinByteString(..))
-import           Reflex.ScriptDependent    (widgetHoldUntilDefined)
-import           Widgets.Basic             (elementResultJS)
-import           Widgets.CoinEntry         (coinCollectionWidget)
+import           JS.App                          (walletLoad, sha2_256, ed25519Sign)
+import           JS.Types                        (EncoinsRedeemerFrontend, AddressBech32, mkAddressFromPubKeys)
+import           JS.WebPage                      (logInfo)
+import           PlutusTx.Extra.ByteString       (ToBuiltinByteString(..))
+import           Reflex.ScriptDependent          (widgetHoldUntilDefined)
+import           Widgets.Basic                   (elementResultJS)
 
 bulletproofSetup :: BulletproofSetup
 bulletproofSetup = fromJust $ decode $ fromStrict $(embedFile "config/bulletproof_setup.json")
@@ -52,14 +53,16 @@ encoinsTx = mdo
     dWalletAddressBech32 <- elementResultJS "changeAddressBech32Element" id
     dPubKeyHash <- elementResultJS "pubKeyHashElement" id
     dStakeKeyHash <- elementResultJS "stakeKeyHashElement" id
+    dUtxos <- elementResultJS "utxosElement" (fromJust . decodeText :: Text.Text -> TransactionUnspentOutputs)
+
     let bAddrBytes = current dPubKeyHash <> current dStakeKeyHash
         bAddr      =  ffor2 (current dPubKeyHash) (current dStakeKeyHash) mkAddressFromPubKeys
-    performEvent_ (walletLoad "nami" "" "" "" "changeAddressBech32Element"
-        "pubKeyHashElement" "stakeKeyHashElement" "" "" "" "" <$ eEncoinsLoaded)
+    performEvent_ (walletLoad "eternl" "" "" "" "changeAddressBech32Element"
+        "pubKeyHashElement" "stakeKeyHashElement" "" "utxosElement" "" "" <$ eEncoinsLoaded)
+    performEvent_ $ logInfo . Text.pack . show <$> updated dUtxos
 
     -- Button that sends the request
-    (elButton, _) <- el' "button" $
-        text "Click me!"
+    (elButton, _) <- el' "button" $ text "Click me!"
     let eSend = domEvent Click elButton
 
     -- Obtaining BulletproofParams
@@ -95,7 +98,7 @@ encoinsTx = mdo
     -- Constructing the final redeemer
     dFinalRedeemer <- holdDyn Nothing $ Just <$> attachWith (\(a, i, p, _) s -> (a, i, p, s)) bRed' eSig
     let eFinalRedeemer = () <$ catMaybes (updated dFinalRedeemer)
-
+    
     eRes <- newEncoinsTxRequest (fromJust <$> dFinalRedeemer) eFinalRedeemer
     performEvent_ $ logInfo . Text.pack . show . encode . fromJust <$> updated dFinalRedeemer
     performEvent_ $ logInfo <$> eRes

@@ -10,7 +10,12 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/encryptedcoins/plutus-tx-js.git
-  tag: 824480141b7c48ee4407c43e09b34c2b74569c80
+  tag: 72ba8fb13b2295b52b7c98b90c0e5906190440e2
+
+source-repository-package
+  type: git
+  location: https://github.com/encryptedcoins/csl-types.git
+  tag: 9e6db74c8cb51f8e9d8f8e573228b1892ff80ffa
 
 source-repository-package
   type: git
