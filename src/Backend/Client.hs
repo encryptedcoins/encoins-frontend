@@ -6,9 +6,10 @@ import           Reflex.Dom                   hiding (Value)
 import           Servant.API
 import           Servant.Reflex
 
+import           CSL                          (TransactionUnspentOutputs)
 import           JS.Types
 
-type MapUTXO = [(TxOutRef, DecoratedTxOut)]
+type MapUTXO = TransactionUnspentOutputs
 
 type API = "relayRequestNewTx"  :> ReqBody '[JSON] (EncoinsRedeemer, MapUTXO) :> Post '[JSON] Text
         :<|> "relayRequestPing" :> Get '[JSON] ()

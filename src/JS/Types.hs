@@ -6,15 +6,13 @@
 
 module JS.Types where
 
-import           Data.Aeson                  (ToJSON(..), FromJSON (parseJSON), ToJSONKey, FromJSONKey, withObject, (.:))
-import           Data.ByteString             (ByteString)
-import qualified Data.Map                    as Map
+import           Data.Aeson                  (ToJSON(..), FromJSON (..))
 import           Data.Maybe                  (fromJust)
 import           Data.Text                   (Text, pack)
 import           GHC.Generics                (Generic)
 import           Language.Javascript.JSaddle (ToJSVal(..))
 import           PlutusTx.Builtins
-import           Text.Hex                    (encodeHex, decodeHex)
+import           Text.Hex                    (decodeHex)
 
 import           ENCOINS.BaseTypes           (MintingPolarity, GroupElement (..))
 import           ENCOINS.Bulletproofs        (Proof (..))
@@ -72,111 +70,3 @@ instance ToJSVal GroupElement where
 
 instance ToJSVal Proof where
     toJSVal (Proof commitA commitS commitT1 commitT2 taux mu lx rx tHat) = toJSVal ([commitA, commitS, commitT1, commitT2], [taux, mu, tHat], lx, rx)
-
-newtype TxId = TxId { getTxId :: BuiltinByteString }
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving (ToJSON, FromJSON)
-
-data TxOutRef = TxOutRef {
-    txOutRefId  :: TxId, -- ^ The transaction ID.
-    txOutRefIdx :: Integer -- ^ Index into the referenced transaction's outputs
-    }
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving (ToJSON)
-
-instance FromJSON TxOutRef where
-    parseJSON = withObject "TxOutRef" $ \v -> do
-        txId  <- v .: "transaction_id"
-        txIdx <- v .: "index"
-        return $ TxOutRef (TxId txId) txIdx
-
-data DecoratedTxOut =
-    PublicKeyDecoratedTxOut {
-      -- | The pubKey hash that protects the transaction address
-      _decoratedTxOutPubKeyHash        :: PubKeyHash,
-      -- | The staking credential of the transaction address, if any
-      _decoratedTxOutStakingCredential :: Maybe StakingCredential,
-      -- | Value of the transaction output.
-      _decoratedTxOutValue             :: Value,
-      -- | Optional datum (inline datum or datum in transaction body) attached to the transaction output.
-      _decoratedTxOutPubKeyDatum       :: Maybe (DatumHash, DatumFromQuery),
-      -- | Value of the transaction output.
-      _decoratedTxOutReferenceScript   :: Maybe (Versioned Script)
-    }
-    | ScriptDecoratedTxOut {
-      -- | The hash of the script that protects the transaction address
-      _decoratedTxOutValidatorHash     :: ValidatorHash,
-      -- | The staking credential of the transaction address, if any
-      _decoratedTxOutStakingCredential :: Maybe StakingCredential,
-      -- | Value of the transaction output.
-      _decoratedTxOutValue             :: Value,
-      -- | Datum attached to the transaction output, either in full (inline datum or datum in transaction body) or as a
-      -- hash reference. A transaction output protected by a Plutus script
-      -- is guardateed to have an associated datum.
-      _decoratedTxOutScriptDatum       :: (DatumHash, DatumFromQuery),
-      -- The reference script is, in genereal, unrelated to the validator
-      -- script althought it could also be the same.
-      _decoratedTxOutReferenceScript   :: Maybe (Versioned Script),
-      -- | Full version of the validator protecting the transaction output
-      _decoratedTxOutValidator         :: Maybe (Versioned Validator)
-    }
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving (ToJSON, FromJSON)
-
--- instance FromJSON DecoratedTxOut where
---     parseJSON = withObject "PublicKeyDecoratedTxOut" $ \v -> do
---         pkh  <- v .: "transaction_id"
---         txIdx <- v .: "index"
---         return $ DecoratedTxOut pkh skh val Nothing Nothing
-
-newtype CurrencySymbol = CurrencySymbol { unCurrencySymbol :: BuiltinByteString }
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving (ToJSON, FromJSON, ToJSONKey, FromJSONKey)
-
-newtype TokenName = TokenName { unTokenName :: BuiltinByteString }
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving (ToJSON, FromJSON, ToJSONKey, FromJSONKey)
-
-newtype AssetClass = AssetClass { unAssetClass :: (CurrencySymbol, TokenName) }
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving (ToJSON, FromJSON)
-
-newtype Value = Value { getValue :: Map.Map CurrencySymbol (Map.Map TokenName Integer) }
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving (ToJSON, FromJSON)
-
-data DatumFromQuery
-    = DatumUnknown
-    | DatumInline Datum
-    | DatumInBody Datum
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving (ToJSON, FromJSON)
-
-type Datum = ()
--- newtype Datum = Datum { getDatum :: BuiltinData  }
---     deriving stock (Eq, Ord, Show, Generic)
---     deriving (ToJSON, FromJSON)
-
-newtype DatumHash = DatumHash BuiltinByteString
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving (ToJSON, FromJSON)
-
-newtype ValidatorHash = ValidatorHash BuiltinByteString
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving (ToJSON, FromJSON)
-
-newtype Script = Script { unScript :: BuiltinByteString }
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving (ToJSON, FromJSON)
-
-newtype Validator = Validator { getValidator :: Script }
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving (ToJSON, FromJSON)
-
-data Language = PlutusV1 | PlutusV2
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving (ToJSON, FromJSON)
-
-data Versioned script = Versioned { unversioned :: script, version :: Language }
-    deriving stock (Eq, Ord, Show, Generic)
-    deriving (ToJSON, FromJSON)

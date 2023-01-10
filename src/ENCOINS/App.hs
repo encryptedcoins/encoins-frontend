@@ -1,4 +1,4 @@
-module ENCOINS.Website (website) where
+module ENCOINS.App (app) where
 
 import           Data.Functor                (($>))
 import           Reflex.Dom
@@ -15,5 +15,5 @@ bodyWidget = do
   let e = eJQueryLoaded $> elAttr "script" ("src" =: "js/webflow.js" <> "type" =: "text/javascript") blank
   widgetHold_ blank e
 
-website :: IO ()
-website = mainWidgetWithHead headWidget bodyWidget
+app :: IO ()
+app = mainWidgetWithHead headWidget bodyWidget
