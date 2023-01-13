@@ -2,21 +2,17 @@
 {-# LANGUAGE DeriveAnyClass      #-}
 {-# LANGUAGE JavaScriptFFI       #-}
 
-{-# OPTIONS_GHC -Wno-orphans     #-}
-
-module JS.Types where
+module Backend.Types where
 
 import           Data.Aeson                  (ToJSON(..), FromJSON (..))
 import           Data.Maybe                  (fromJust)
-import           Data.Text                   (Text, pack)
+import           Data.Text                   (Text)
 import           GHC.Generics                (Generic)
-import           Language.Javascript.JSaddle (ToJSVal(..))
 import           PlutusTx.Builtins
 import           Text.Hex                    (decodeHex)
 
-import           ENCOINS.BaseTypes           (MintingPolarity, GroupElement (..))
+import           ENCOINS.BaseTypes           (MintingPolarity)
 import           ENCOINS.Bulletproofs        (Proof (..))
-import           ENCOINS.Crypto.Field        (Field(..))
 
 type TxParams = Address
 
@@ -46,21 +42,3 @@ type EncoinsInput = (Integer, [(BuiltinByteString, MintingPolarity)])
 type ProofSignature = BuiltinByteString
 type EncoinsRedeemer = (TxParams, EncoinsInput, Proof, ProofSignature)
 type EncoinsRedeemerWithData = (Address, EncoinsRedeemer)
-
-instance ToJSVal Integer where
-    toJSVal = toJSVal . pack . show
-
-instance ToJSVal BuiltinByteString where
-    toJSVal = toJSVal . pack . show
-
-instance ToJSVal MintingPolarity where
-    toJSVal = toJSVal . pack . show
-
-instance ToJSVal (Field c) where
-    toJSVal (F a) = toJSVal a
-
-instance ToJSVal GroupElement where
-    toJSVal (GroupElement (x, y)) = toJSVal (x, y)
-
-instance ToJSVal Proof where
-    toJSVal (Proof commitA commitS commitT1 commitT2 taux mu lx rx tHat) = toJSVal ([commitA, commitS, commitT1, commitT2], [taux, mu, tHat], lx, rx)

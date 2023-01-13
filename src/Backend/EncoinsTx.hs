@@ -15,13 +15,13 @@ import           Text.Hex                        (encodeHex, decodeHex)
 import           Witherable                      (catMaybes)
 
 import           Backend.Servant.Requests        (submitTxRequestWrapper)
+import           Backend.Types                   
 import           CSL                             (TransactionUnspentOutputs)
 import           ENCOINS.App.Widgets.CoinEntry   (coinCollectionWidget)
 import           ENCOINS.Crypto.Field            (Field(..), fromFieldElement)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           JS.App                          (walletLoad, sha2_256, ed25519Sign)
-import           JS.Types                        
 import           PlutusTx.Extra.ByteString       (ToBuiltinByteString(..))
 import           Reflex.ScriptDependent          (widgetHoldUntilDefined)
 import           Widgets.Basic                   (elementResultJS)

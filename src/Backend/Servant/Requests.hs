@@ -6,8 +6,8 @@ import           Servant.Reflex             (BaseUrl(..))
 import           Witherable                 (catMaybes)
 
 import           Backend.Servant.Client
+import           Backend.Types
 import           CSL                        (TransactionUnspentOutputs)
-import           JS.Types
 
 pabIP :: BaseUrl
 pabIP = BasePath "http://localhost:3000"

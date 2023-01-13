@@ -8,8 +8,8 @@ import           Servant.API
 import           Servant.Reflex
 import           Witherable                   (catMaybes)
 
+import           Backend.Types
 import           CSL                          (TransactionUnspentOutputs)
-import           JS.Types
 
 type AddSignatureReqBody = (Text, Text)
 
