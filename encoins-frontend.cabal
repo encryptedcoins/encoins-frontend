@@ -28,14 +28,11 @@ library
     ENCOINS.Website.Widgets.LandingPage,
     ENCOINS.Website.Widgets.Navbar,
     ENCOINS.Website.Widgets.Resourses,
-    JS,
     JS.App,
-    JS.WebPage,
+    JS.Website,
     Language,
     Reflex.ScriptDependent,
-    Widgets.App,
     Widgets.Basic,
-    
     Widgets.Utils
   build-depends:
     base                      >=4.7,

@@ -4,7 +4,7 @@ import           Control.Monad.Extra     (mconcatMapM)
 import           Data.Text               (Text)
 import           Reflex.Dom
 
-import qualified JS
+import qualified JS.Website              as JS
 
 -- Multi-language support
 

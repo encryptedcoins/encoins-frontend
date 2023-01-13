@@ -2,7 +2,7 @@ module ENCOINS.Website.Head (headWidget) where
 
 import           Reflex.Dom
 
-import qualified JS
+import qualified JS.Website as JS
 
 headWidget :: MonadWidget t m => m ()
 headWidget = do

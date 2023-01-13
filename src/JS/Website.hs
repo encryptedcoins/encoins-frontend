@@ -3,7 +3,7 @@
 
 {-# HLINT ignore "Use camelCase" #-}
 
-module JS.WebPage where
+module JS.Website where
 
 import           Control.Monad.IO.Class      (MonadIO(..))
 import           Data.Text                   (Text)

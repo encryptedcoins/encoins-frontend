@@ -10,14 +10,12 @@ import           Witherable             (catMaybes)
 
 import           Widgets.Utils          (toText, safeIndex)
 
--- TODO: finish implementations in this module
-
 -- Element containing the result of a JavaScript computation
 elementResultJS :: MonadWidget t m => Text -> (Text -> a) -> m (Dynamic t a)
 elementResultJS resId f = fmap (fmap f . value) $ inputElement $ def & initialAttributes .~ "style" =: "display:none;" <> "id" =: resId
 
+-- TODO: complete and move this to ENCOINS.App.Widgets
 -- Title of the input element along with a hint about the expected input
--- TODO: add help popup
 inputTitle :: MonadWidget t m => Text -> Text -> m ()
 inputTitle title hint = divClass "" $ do
   divClass colCls1 . elAttr "label" ("class" =: elAttrCls1) $ text title
@@ -29,6 +27,7 @@ inputTitle title hint = divClass "" $ do
     elAttrCls1 = ""
     elAttrCls2 = ""
 
+-- TODO: complete and move this to ENCOINS.App.Widgets
 -- Dropdown list element
 selectInput :: (MonadWidget t m, Eq a) => Text -> Text -> (a -> Text) -> a
   -> [a] -> m (Event t a)
@@ -46,22 +45,3 @@ selectInput title hint showFunc initVal valsRange = do
     parseVal txt = readMaybe @Int (unpack txt) >>= safeIndex valsRange
     initValIdx = maybe "-1" toText $ elemIndex initVal valsRange
     inputCls = ""
-
-appButton :: MonadWidget t m => Text -> Dynamic t Bool -> (a -> Map Text Text)-> Dynamic t a -> m (Event t ())
-appButton title dVisible mkLinkAttrs linkState = do
-  let mkVisible = bool ("style" =: "display: none;") ("class" =: mainButtonWrapperCls)
-  (e, _) <- elDynAttr' "div" (mkVisible <$> dVisible) . elDynAttr' "a"
-    (mkLinkAttrs <$> linkState) $ text title
-  return (domEvent Click e)
-  where
-    mainButtonWrapperCls = ""
-
-appButtonAttrs :: Map Text Text
-appButtonAttrs = "class" =: appButtonCls <> "style" =: "cursor:pointer;"
-  where
-    appButtonCls = ""
-
-appButtonAttrsDisabled :: Map Text Text
-appButtonAttrsDisabled = "class" =: appButtonDisabledCls <> "disabled" =: ""
-  where
-    appButtonDisabledCls = ""

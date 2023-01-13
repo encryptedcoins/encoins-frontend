@@ -7,7 +7,7 @@ import           Reflex.ScriptDependent            (widgetHoldUntilDefined)
 
 import           ENCOINS.Website.Widgets.Basic
 import           ENCOINS.Website.Widgets.Resourses (ourResourses)
-import           JS.WebPage                        (scrollIntoView)
+import           JS.Website                        (scrollIntoView)
 
 landingPage :: MonadWidget t m => Text -> m (Event t (Text, Text))
 landingPage elemId = do

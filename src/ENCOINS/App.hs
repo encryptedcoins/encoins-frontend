@@ -3,8 +3,8 @@ module ENCOINS.App (app) where
 import           Data.Functor                (($>))
 import           Reflex.Dom
 
-import           Backend.EncoinsTx    (encoinsTx)
-import           ENCOINS.Website.Head (headWidget)
+import           Backend.EncoinsTx           (encoinsTx)
+import           ENCOINS.Website.Head        (headWidget)
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = do
