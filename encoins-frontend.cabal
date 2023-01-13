@@ -11,9 +11,9 @@ library
   default-language:   Haskell2010
   ghc-options:        -Wall -Wno-unrecognised-pragmas
   exposed-modules:
-    Backend.Client,
     Backend.EncoinsTx,
-    Backend.Requests,
+    Backend.Servant.Client,
+    Backend.Servant.Requests,
     ENCOINS.App,
     ENCOINS.App.Widgets.CoinEntry,
     ENCOINS.App.Widgets.ISPO,
@@ -102,6 +102,22 @@ library
 
 executable encoins-website
   main-is:             Website.hs
+  hs-source-dirs:      apps
+
+  default-language:   Haskell2010
+  ghc-options:        -Wall -Wno-unrecognised-pragmas
+
+  if impl(ghcjs)
+    ghc-options:      -dedupe
+  build-depends:
+    base                       >=4.7,
+    encoins-frontend            -any
+  if impl(ghcjs)
+    build-depends:
+      ghcjs-base                -any
+
+executable encoins-app
+  main-is:             App.hs
   hs-source-dirs:      apps
 
   default-language:   Haskell2010

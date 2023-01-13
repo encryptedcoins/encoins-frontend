@@ -18,16 +18,13 @@ import           ENCOINS.BaseTypes           (MintingPolarity, GroupElement (..)
 import           ENCOINS.Bulletproofs        (Proof (..))
 import           ENCOINS.Crypto.Field        (Field(..))
 
-type AddressBech32 = Text
-
-type TxParamsFrontend = AddressBech32
 type TxParams = Address
 
 -- Defining Address data type for sending it as JSON
 data Address = Address{ addressCredential :: Credential, addressStakingCredential :: Maybe StakingCredential }
     deriving stock (Eq, Ord, Show, Generic)
     deriving (ToJSON, FromJSON)
-data Credential = PubKeyCredential PubKeyHash | ScriptCredential ScriptHash
+data Credential = PubKeyCredential PubKeyHash | ScriptCredential ValidatorHash
     deriving stock (Eq, Ord, Show, Generic)
     deriving (ToJSON, FromJSON)
 data StakingCredential = StakingHash Credential | StakingPtr Integer Integer Integer
@@ -36,7 +33,7 @@ data StakingCredential = StakingHash Credential | StakingPtr Integer Integer Int
 newtype PubKeyHash = PubKeyHash { getPubKeyHash :: BuiltinByteString }
     deriving stock (Show, Eq, Ord, Generic)
     deriving (ToJSON, FromJSON)
-newtype ScriptHash = ScriptHash { getScriptHash :: BuiltinByteString }
+newtype ValidatorHash = ValidatorHash BuiltinByteString
     deriving stock (Generic, Show, Eq, Ord)
     deriving (ToJSON, FromJSON)
 
@@ -47,11 +44,8 @@ mkAddressFromPubKeys pkhHex skhHex = Address (PubKeyCredential $ PubKeyHash pkh)
 
 type EncoinsInput = (Integer, [(BuiltinByteString, MintingPolarity)])
 type ProofSignature = BuiltinByteString
-type EncoinsRedeemerFrontend = (TxParamsFrontend, EncoinsInput, Proof, ProofSignature)
 type EncoinsRedeemer = (TxParams, EncoinsInput, Proof, ProofSignature)
-
-newtype EncoinsRedeemerJS = EncoinsRedeemerJS EncoinsRedeemerFrontend
-    deriving (Eq, Show, Generic, ToJSVal)
+type EncoinsRedeemerWithData = (Address, EncoinsRedeemer)
 
 instance ToJSVal Integer where
     toJSVal = toJSVal . pack . show

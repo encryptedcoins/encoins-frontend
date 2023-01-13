@@ -15,7 +15,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/encryptedcoins/csl-types.git
-  tag: 9e6db74c8cb51f8e9d8f8e573228b1892ff80ffa
+  tag: 9150efa641a316d1b48dcb92b9a2293c95fedf0d
 
 source-repository-package
   type: git

@@ -12,24 +12,6 @@ import           Data.Text                   (Text)
 import           Language.Javascript.JSaddle (ToJSVal(..), JSVal)
 #endif
 
-import           JS.Types
-
------------------------------------------------------------------
-
-#ifdef __GHCJS__
-foreign import javascript unsafe
-  "walletEnable($1, $2);" enable_js :: JSVal -> JSVal -> IO ()
-
-enable :: MonadIO m => Text -> Text -> m ()
-enable walletName resId = liftIO $ do
-  walletName_js <- toJSVal walletName
-  resId_js      <- toJSVal resId
-  enable_js walletName_js resId_js
-#else
-enable :: MonadIO m => Text -> Text -> m ()
-enable = const $ error "GHCJS is required!"
-#endif
-
 -----------------------------------------------------------------
 
 #ifdef __GHCJS__
@@ -62,19 +44,18 @@ walletLoad = const $ error "GHCJS is required!"
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
-  "encoinsTx($1, $2, $3, $4);"
-  encoinsTxSubmit_js :: JSVal -> JSVal -> JSVal -> JSVal -> IO ()
+  "walletSignTx($1, $2, $3);"
+  walletSignTx_js :: JSVal -> JSVal -> JSVal -> IO ()
 
-encoinsTxSubmit :: MonadIO m => Text -> Text -> EncoinsRedeemerFrontend -> Text -> m ()
-encoinsTxSubmit walletName tx red resId = liftIO $ do
+walletSignTx :: MonadIO m => Text -> Text -> Text -> m ()
+walletSignTx walletName tx resId = liftIO $ do
   walletName_js <- toJSVal walletName
   tx_js         <- toJSVal tx
-  redeemer_js   <- toJSVal $ EncoinsRedeemerJS red
   resId_js      <- toJSVal resId
-  encoinsTxSubmit_js walletName_js tx_js redeemer_js resId_js
+  walletSignTx_js walletName_js tx_js resId_js
 #else
-encoinsTxSubmit :: MonadIO m => Text -> Text -> EncoinsRedeemerFrontend -> Text -> m ()
-encoinsTxSubmit = const . const . const . const $ error "GHCJS is required!"
+walletSignTx :: MonadIO m => Text -> Text -> Text -> m ()
+walletSignTx = const . const . const $ error "GHCJS is required!"
 #endif
 
 -----------------------------------------------------------------

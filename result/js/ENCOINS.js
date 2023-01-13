@@ -38,7 +38,7 @@ function setInputValue(elId, val) {
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////// Wallet API Wrapper////////////////////////////////////////////
+///////////////////////////////////// App functions //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 async function walletAPI(walletName) {
@@ -57,51 +57,6 @@ async function walletAPI(walletName) {
       return new Promise(() => { throw new Error("Wallet's not identified"); });
   }
 }
-
-function metaWallet(method) {
-  return (walletName/*, ...args*/) => {
-    return walletAPI(walletName).then((api) => { return api[method](/*...args*/) });
-  }
-}
-
-let walletNetworkId       = metaWallet("getNetworkId");
-let walletBalance         = metaWallet("getBalance");
-let walletChangeAddress   = metaWallet("getChangeAddress");
-let walletCollateral      = metaWallet("getCollateral");
-let walletUnusedAddresses = metaWallet("getUnusedAddresses");
-let walletRewardAddresses = metaWallet("getRewardAddresses");
-
-async function walletUtxos(walletName, amount, paginate) {
-  const api = await walletAPI(walletName);
-  return api.getUtxos(amount, paginate);
-}
-
-async function walletSignTx(walletName, tx, partialSign) {
-  const api = await walletAPI(walletName);
-  return api.signTx(tx, partialSign);
-}
-
-async function walletSubmitTx(walletName, tx) {
-  const api = await walletAPI(walletName);
-  return api.signTx(tx);
-}
-
-function walletEnable(walletName, resId) {
-  const w = walletAPI(walletName);
-  w.then(() => { setInputValue(resId, "true"); }, () => { setInputValue(resId, "error_walletAPI"); });
-};
-
-function metaWalletView(method) {
-  return (walletName, resId) => {
-    return metaWallet(method)(walletName)
-      .then((res) => { setInputValue(resId, res); }
-        , () => { setInputValue(resId, "error_walletAPI"); });
-  }
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////// App functions //////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
 
 async function walletLoad(walletName, networkIdElement, balanceElement, changeAddressElement, changeAddressBech32Element,
   pubKeyHashElement, stakeKeyHashElement, collateralElement, utxosElement, unusedAddressesElement, rewardAddressesElement)
@@ -146,7 +101,8 @@ async function walletLoad(walletName, networkIdElement, balanceElement, changeAd
   console.log("end walletLoad");
 }
 
-async function encoinsTx(walletName, partialTx, red, resId) {
+async function walletSignTx(walletName, partialTxHex, walletSignatureElement)
+{
   // loading CardanoWasm
   await loader.load();
   const CardanoWasm = loader.Cardano;
@@ -154,36 +110,41 @@ async function encoinsTx(walletName, partialTx, red, resId) {
   //loading wallet
   const api = await walletAPI(walletName);
 
-  // loading wallet's change address
-  const changeAddressHex = await api.getChangeAddress();
-  const changeAddress = CardanoWasm.Address.from_bytes(fromHexString(changeAddressHex));
-
-  // loading wallet's utxos
-  const valueToSpend = CardanoWasm.Value.new(CardanoWasm.BigNum.from_str("10000000"));
-  const utxos = await api.getUtxos(toHexString(valueToSpend.to_bytes()), undefined);
-
   console.log("Transaction to sign:");
-  console.log(partialTx);
+  console.log(partialTxHex);
 
-  const signedTx = await api.signTx(partialTx);
-  console.log(signedTx);
+  const walletSignatureWitnessSetBytes = await api.signTx(partialTxHex, true);
+  const walletSignature = CardanoWasm.TransactionWitnessSet.from_bytes(fromHexString(walletSignatureWitnessSetBytes)).vkeys().get(0).to_json();
+
+  setInputValue(walletSignatureElement, walletSignature);
+  console.log(walletSignature);
 };
 
+async function walletSubmitTx(walletName, txHex)
+{
+  const api = await walletAPI(walletName);
+  return api.signTx(txHex);
+}
+
 // Convert a hex string to a byte array
-function fromHexString(hex) {
+function fromHexString(hex)
+{
   for (var bytes = [], c = 0; c < hex.length; c += 2)
     bytes.push(parseInt(hex.substr(c, 2), 16));
   return bytes;
 }
 
-function toHexString(byteArray) {
+// Convert a byte array to a hex string
+function toHexString(byteArray)
+{
   return Array.from(byteArray, function (byte) {
     return ('0' + (byte & 0xFF).toString(16)).slice(-2);
   }).join('')
 }
 
 // takes a hex string 'str' and puts the hash as a hex string into an element 'resId'
-async function sha2_256(str, resId) {
+async function sha2_256(str, resId)
+{
   const hashBuffer = await crypto.subtle.digest('SHA-256', new Uint8Array(fromHexString(str)));
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   setInputValue(resId, toHexString(hashArray));
@@ -191,9 +152,8 @@ async function sha2_256(str, resId) {
 
 // NOTE: this is for testing purposes
 // signs a hex string 'msg' with Ed25519 private key 'prvKey'
-async function ed25519Sign(prvKey, msg, resId) {
+async function ed25519Sign(prvKey, msg, resId)
+{
   const sig = await window.nobleEd25519.sign(msg, prvKey);
-  console.log("we are signing...");
-  console.log(toHexString(sig));
   setInputValue(resId, toHexString(sig));
 }
