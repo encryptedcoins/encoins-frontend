@@ -1,7 +1,7 @@
 body {
   background-color: #000;
   font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
-  color: #333;
+  color: #fff;
   font-size: 14px;
   line-height: 20px;
 }
@@ -50,6 +50,18 @@ body {
   font-weight: 400;
 }
 
+.menu-item.menu-item-settings {
+  width: 30px;
+  height: 31px;
+  background-image: url('../images/Settings.svg');
+  background-position: 0px 0px;
+  background-size: auto;
+}
+
+.menu-item.menu-item-settings:hover {
+  background-image: url('../images/Settings-Active.svg');
+}
+
 .nav-menu {
   display: -webkit-box;
   display: -webkit-flex;
@@ -67,13 +79,23 @@ body {
 
 .menu-item-div {
   padding: 20px;
+  -webkit-align-self: center;
+  -ms-flex-item-align: center;
+  -ms-grid-row-align: center;
+  align-self: center;
+  color: #fff;
 }
 
 .menu-item-div.buttonborder {
+  min-width: 150px;
+  margin-right: 15px;
+  padding-top: 10px;
+  padding-bottom: 10px;
   border-style: solid;
   border-width: 1px;
   border-color: #fff;
   border-radius: 5px;
+  text-align: center;
 }
 
 .navbar-container {
@@ -81,10 +103,6 @@ body {
   display: -webkit-flex;
   display: -ms-flexbox;
   display: flex;
-  -webkit-box-pack: end;
-  -webkit-justify-content: flex-end;
-  -ms-flex-pack: end;
-  justify-content: flex-end;
   -webkit-box-align: center;
   -webkit-align-items: center;
   -ms-flex-align: center;
@@ -154,8 +172,23 @@ body {
   margin-bottom: 40px;
 }
 
-.button {
-  padding: 24px 48px;
+.brand {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+.app-button {
+  min-width: 210px;
+  padding: 10px 48px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #fff;
   border-radius: 5px;
   background-color: #fff;
   font-family: Poppins, sans-serif;
@@ -163,21 +196,27 @@ body {
   font-size: 20px;
   line-height: 30px;
   font-weight: 800;
+  text-align: center;
   letter-spacing: 0.05em;
 }
 
-.button.button-disabled {
+.app-button.button-disabled {
   -webkit-filter: brightness(35%);
   filter: brightness(35%);
   cursor: default;
 }
 
-.button.button-invisible {
+.app-button.button-invisible {
   border-style: solid;
   border-width: 1px;
   border-color: transparent;
   background-color: rgba(255, 255, 255, 0);
   color: rgba(24, 24, 24, 0);
+}
+
+.app-button.button-not-selected {
+  background-color: #000;
+  color: #fff;
 }
 
 .div-our-resourses {
@@ -372,11 +411,6 @@ body {
   flex: 1;
 }
 
-.columns-footer.border-top {
-  padding-top: 50px;
-  border-top: 1px solid hsla(0, 0%, 100%, 0.32);
-}
-
 .column-footer.border-right {
   border-right: 1px solid hsla(0, 0%, 100%, 0.32);
 }
@@ -465,7 +499,7 @@ body {
   margin-right: 140px;
   margin-left: 140px;
   padding-right: 100px;
-  padding-left: 70px;
+  padding-left: 100px;
   -webkit-box-flex: 1;
   -webkit-flex: 1;
   -ms-flex: 1;
@@ -664,6 +698,194 @@ body {
 
 .div-vertical-space-78 {
   min-height: 78px;
+}
+
+.app-top-menu-div {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.menu-item-button-left {
+  margin-left: 10px;
+  -webkit-align-self: center;
+  -ms-flex-item-align: center;
+  -ms-grid-row-align: center;
+  align-self: center;
+}
+
+.menu-item-button-right {
+  margin-right: 10px;
+  -webkit-align-self: center;
+  -ms-flex-item-align: center;
+  -ms-grid-row-align: center;
+  align-self: center;
+}
+
+.section-app {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.transaction-balance-div {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  background-color: #fff;
+  color: #000;
+}
+
+.app-text-semibold {
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.app-column-head-div {
+  border-style: solid;
+  border-width: 1px;
+  border-color: #fff;
+  border-radius: 5px;
+}
+
+.coin-entry-burn-div {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  padding: 10px 5px;
+  -webkit-box-pack: justify;
+  -webkit-justify-content: space-between;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+  border-bottom: 1px solid #313135;
+}
+
+.coin-entry-mint-div {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  padding: 10px 5px;
+  -webkit-box-pack: justify;
+  -webkit-justify-content: space-between;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+  border-bottom: 1px solid #313135;
+}
+
+.checkbox-div {
+  width: 20px;
+  height: 20px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #fff;
+}
+
+.checkbox-div.checkbox-selected {
+  background-image: url('../images/Tick.svg');
+  background-position: 50% 50%;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.app-text-normal {
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+}
+
+.body {
+  border-bottom: 1px solid #313135;
+}
+
+.cross-div {
+  width: 20px;
+  height: 20px;
+  background-image: url('../images/cross.svg');
+  background-position: 50% 50%;
+  background-size: auto;
+  background-repeat: no-repeat;
+}
+
+.coin-new-div {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  padding: 20px 5px;
+  -webkit-justify-content: space-around;
+  -ms-flex-pack: distribute;
+  justify-content: space-around;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+.plus-div {
+  width: 20px;
+  height: 20px;
+  background-image: url('../images/cross.svg');
+  background-position: 50% 50%;
+  background-size: auto;
+  background-repeat: no-repeat;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+
+.coin-new-input {
+  padding-right: 10px;
+  padding-left: 10px;
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+.coin-new-input-div {
+  width: 180px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #fff;
+  border-radius: 5px;
+}
+
+.button {
+  padding: 24px 48px;
+  border-radius: 5px;
+  background-color: #fff;
+  font-family: Poppins, sans-serif;
+  color: #181818;
+  font-size: 20px;
+  line-height: 30px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.button.button-disabled {
+  -webkit-filter: brightness(35%);
+  filter: brightness(35%);
+  cursor: default;
+}
+
+.container-app {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  text-align: center;
 }
 
 @media screen and (max-width: 991px) {

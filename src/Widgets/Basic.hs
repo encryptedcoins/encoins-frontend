@@ -1,8 +1,6 @@
 module Widgets.Basic where
 
-import           Data.Bool              (bool)
 import           Data.List              (elemIndex)
-import           Data.Map               (Map)
 import           Data.Text              (Text, unpack)
 import           Reflex.Dom
 import           Text.Read              (readMaybe)

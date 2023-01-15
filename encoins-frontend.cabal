@@ -16,8 +16,13 @@ library
     Backend.Servant.Requests,
     Backend.Types,
     ENCOINS.App,
-    ENCOINS.App.Widgets.CoinEntry,
+    ENCOINS.App.Body,
+    ENCOINS.App.Widgets,
+    ENCOINS.App.Widgets.Basic,
+    ENCOINS.App.Widgets.Coin,
     ENCOINS.App.Widgets.ISPO,
+    ENCOINS.App.Widgets.MainWindow,
+    ENCOINS.App.Widgets.Navbar,
     ENCOINS.Website,
     ENCOINS.Website.Body,
     ENCOINS.Website.Head,
@@ -33,6 +38,7 @@ library
     Language,
     Reflex.ScriptDependent,
     Widgets.Basic,
+    Widgets.Events,
     Widgets.Utils
   build-depends:
     base                      >=4.7,

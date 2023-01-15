@@ -109,3 +109,35 @@ logInfo txt = liftIO $ toJSVal txt >>= logInfoJS
 logInfo :: MonadIO m => Text -> m ()
 logInfo = const $ error "GHCJS is required!"
 #endif
+
+-----------------------------------------------------------------
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
+  "saveJSON($1, $2);" saveJSON_js :: JSVal -> JSVal -> IO ()
+
+saveJSON :: MonadIO m => Text -> Text -> m ()
+saveJSON key val = liftIO $ do
+  key_js <- toJSVal key
+  val_js <- toJSVal val
+  saveJSON_js key_js val_js
+#else
+saveJSON :: MonadIO m => Text -> Text -> m ()
+saveJSON = const $ error "GHCJS is required!"
+#endif
+
+-----------------------------------------------------------------
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
+  "loadJSON($1, $2);" loadJSON_js :: JSVal -> JSVal -> IO ()
+
+loadJSON :: MonadIO m => Text -> Text -> m ()
+loadJSON key resId = liftIO $ do
+  key_js   <- toJSVal key
+  resId_js <- toJSVal resId
+  loadJSON_js key_js resId_js
+#else
+loadJSON :: MonadIO m => Text -> Text -> m ()
+loadJSON = const $ error "GHCJS is required!"
+#endif

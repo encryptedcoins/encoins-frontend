@@ -1,13 +1,7 @@
 module Widgets.Utils where
 
 import           Control.Monad            (guard)
-import qualified Data.ByteString          as BS
-import qualified Data.ByteString.Base16   as BS
-import           Data.Maybe               (isNothing)
 import           Data.Text                (Text, pack)
-import           Data.Text.Encoding       (encodeUtf8)
-import           Reflex.Dom
-import           Witherable               (catMaybes)
 
 toText :: Show a => a -> Text
 toText = pack . show

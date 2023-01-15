@@ -15,16 +15,15 @@ import           Text.Hex                        (encodeHex, decodeHex)
 import           Witherable                      (catMaybes)
 
 import           Backend.Servant.Requests        (submitTxRequestWrapper)
-import           Backend.Types                   
+import           Backend.Types
 import           CSL                             (TransactionUnspentOutputs)
-import           ENCOINS.App.Widgets.CoinEntry   (coinCollectionWidget)
 import           ENCOINS.Crypto.Field            (Field(..), fromFieldElement)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           JS.App                          (walletLoad, sha2_256, ed25519Sign)
 import           PlutusTx.Extra.ByteString       (ToBuiltinByteString(..))
-import           Reflex.ScriptDependent          (widgetHoldUntilDefined)
 import           Widgets.Basic                   (elementResultJS)
+import           Widgets.Events                  (newEvent)
 
 bulletproofSetup :: BulletproofSetup
 bulletproofSetup = fromJust $ decode $ fromStrict $(embedFile "config/bulletproof_setup.json")
@@ -59,10 +58,9 @@ addressToBytes (Address cr scr) = bs1 `Text.append` bs2
 redeemerToBytes :: EncoinsRedeemer -> Text
 redeemerToBytes (a, i, p, _) = addressToBytes a `Text.append` encodeHex (fromBuiltin $ toBytes i) `Text.append` encodeHex (fromBuiltin $ toBytes p)
 
-encoinsTx :: MonadWidget t m => m ()
-encoinsTx = mdo
-    ePb <- getPostBuild
-    eEncoinsLoaded <- updated <$> widgetHoldUntilDefined "walletLoad" ("js/ENCOINS.js" <$ ePb) blank blank
+encoinsTx :: MonadWidget t m => Dynamic t Secrets -> Dynamic t Secrets -> m ()
+encoinsTx dCoinsBurn dCoinsMint = mdo
+    e <- newEvent
 
     -- TODO: implement wallet switcher
     -- dWalletName <- holdDyn "nami" never
@@ -78,11 +76,10 @@ encoinsTx = mdo
     dStakeKeyHash <- elementResultJS "stakeKeyHashElement" id
     dUTXOs <- elementResultJS "utxosElement" (fromJust . decodeText :: Text -> TransactionUnspentOutputs)
     let dAddrWallet =  zipDynWith mkAddressFromPubKeys dPubKeyHash dStakeKeyHash
-    performEvent_ (walletLoad "eternl" "" "" "" "" "pubKeyHashElement" "stakeKeyHashElement" "" "utxosElement" "" "" <$ eEncoinsLoaded)
+    performEvent_ (walletLoad "eternl" "" "" "" "" "pubKeyHashElement" "stakeKeyHashElement" "" "utxosElement" "" "" <$ e)
 
     -- Obtaining Secrets and [MintingPolarity]
-    cc <- coinCollectionWidget
-    let dLst = fmap unzip cc
+    let dLst = unzip <$> zipDynWith (++) (fmap (map (, Burn)) dCoinsBurn) (fmap (map (, Mint)) dCoinsMint)
         dSecrets = fmap fst dLst
         dMPs     = fmap snd dLst
         dV       = zipDynWith calculateV  dSecrets dMPs
@@ -125,7 +122,7 @@ encoinsTx = mdo
     -- Signing transaction
     -- dWalletSignature <- elementResultJS "walletSignatureElement" id
     -- performEvent_ $ liftIO . flip (walletSignTx "eternl") "walletSignatureElement" <$> eTx
-    
+
     -- Submitting transaction
     _ <- submitTxRequestWrapper (fromJust <$> dFinalRedeemer) dUTXOs eFinalRedeemer
 
