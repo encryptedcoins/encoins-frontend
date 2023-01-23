@@ -42,3 +42,11 @@ type EncoinsInput = (Integer, [(BuiltinByteString, MintingPolarity)])
 type ProofSignature = BuiltinByteString
 type EncoinsRedeemer = (TxParams, EncoinsInput, Proof, ProofSignature)
 type EncoinsRedeemerWithData = (Address, EncoinsRedeemer)
+
+newtype PubKey = PubKey { getPubKey :: Text }
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving (ToJSON, FromJSON)
+
+newtype Signature = Signature { getSignature :: Text }
+    deriving stock (Eq, Ord, Show, Generic)
+    deriving (ToJSON, FromJSON)

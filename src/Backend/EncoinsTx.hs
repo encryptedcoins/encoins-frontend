@@ -5,7 +5,8 @@ import           Data.Aeson                      (decode)
 import           Data.Bool                       (bool)
 import           Data.ByteString.Lazy            (fromStrict)
 import           Data.FileEmbed                  (embedFile)
-import           Data.Maybe                      (fromJust)
+import qualified Data.Map                        as Map
+import           Data.Maybe                      (fromJust, fromMaybe)
 import           Data.Text                       (Text)
 import qualified Data.Text                       as Text
 import           PlutusTx.Builtins
@@ -16,7 +17,7 @@ import           Witherable                      (catMaybes)
 
 import           Backend.Servant.Requests        (submitTxRequestWrapper)
 import           Backend.Types
-import           CSL                             (TransactionUnspentOutputs)
+import qualified CSL
 import           ENCOINS.Crypto.Field            (Field(..), fromFieldElement)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
@@ -24,9 +25,20 @@ import           JS.App                          (walletLoad, sha2_256, ed25519S
 import           PlutusTx.Extra.ByteString       (ToBuiltinByteString(..))
 import           Widgets.Basic                   (elementResultJS)
 import           Widgets.Events                  (newEvent)
+import JS.Website (logInfo)
+import Widgets.Utils (toText)
 
 bulletproofSetup :: BulletproofSetup
 bulletproofSetup = fromJust $ decode $ fromStrict $(embedFile "config/bulletproof_setup.json")
+
+encoinsCurrencySymbol :: Text
+encoinsCurrencySymbol = "e4f0400be19a0fd2327265184399c682e9ab5f07fb5bbca281d9c13b"
+
+getEncoinsInUtxos :: CSL.TransactionUnspentOutputs -> [Text]
+getEncoinsInUtxos utxos = maybe [] Map.keys assets
+  where getMultiAsset (CSL.MultiAsset a) = a
+        assets = Map.lookup encoinsCurrencySymbol $ foldr (Map.union . getMultiAsset)
+                  Map.empty (mapMaybe (CSL.multiasset . CSL.amount . CSL.output) utxos)
 
 mkRedeemer :: Address -> BulletproofParams -> Secrets -> [MintingPolarity] -> Randomness -> EncoinsRedeemer
 mkRedeemer addr bp secrets mps rs = red
@@ -58,8 +70,8 @@ addressToBytes (Address cr scr) = bs1 `Text.append` bs2
 redeemerToBytes :: EncoinsRedeemer -> Text
 redeemerToBytes (a, i, p, _) = addressToBytes a `Text.append` encodeHex (fromBuiltin $ toBytes i) `Text.append` encodeHex (fromBuiltin $ toBytes p)
 
-encoinsTx :: MonadWidget t m => Dynamic t Secrets -> Dynamic t Secrets -> m ()
-encoinsTx dCoinsBurn dCoinsMint = mdo
+encoinsTx :: MonadWidget t m => Dynamic t Secrets -> Dynamic t Secrets -> Event t () -> m (Dynamic t [Text])
+encoinsTx dCoinsBurn dCoinsMint eSend = mdo
     e <- newEvent
 
     -- TODO: implement wallet switcher
@@ -74,11 +86,13 @@ encoinsTx dCoinsBurn dCoinsMint = mdo
     -- Retrieving wallet info
     dPubKeyHash <- elementResultJS "pubKeyHashElement" id
     dStakeKeyHash <- elementResultJS "stakeKeyHashElement" id
-    dUTXOs <- elementResultJS "utxosElement" (fromJust . decodeText :: Text -> TransactionUnspentOutputs)
+    dUTXOs <- elementResultJS "utxosElement" (fromMaybe [] . decodeText :: Text -> CSL.TransactionUnspentOutputs)
     let dAddrWallet =  zipDynWith mkAddressFromPubKeys dPubKeyHash dStakeKeyHash
     performEvent_ (walletLoad "eternl" "" "" "" "" "pubKeyHashElement" "stakeKeyHashElement" "" "utxosElement" "" "" <$ e)
 
     -- Obtaining Secrets and [MintingPolarity]
+    performEvent_ (logInfo "dCoinsBurn updated" <$ updated dCoinsBurn)
+    performEvent_ (logInfo "dCoinsMint updated" <$ updated dCoinsMint)
     let dLst = unzip <$> zipDynWith (++) (fmap (map (, Burn)) dCoinsBurn) (fmap (map (, Mint)) dCoinsMint)
         dSecrets = fmap fst dLst
         dMPs     = fmap snd dLst
@@ -92,10 +106,6 @@ encoinsTx dCoinsBurn dCoinsMint = mdo
     -- Obtaining Randomness
     eRandomness <- performEvent $ liftIO randomIO <$ updated dBulletproofParams
     bRandomness <- hold (Randomness (F 3417) (map F [1..20]) (map F [21..40]) (F 8532) (F 16512) (F 1235)) eRandomness
-
-    -- Button that sends the request
-    (elButton, _) <- el' "button" $ text "Click me!"
-    let eSend = domEvent Click elButton
 
     -- Obtaining EncoinsRedeemer
     let bRed = mkRedeemer <$> current dAddr <*> current dBulletproofParams <*> current dSecrets <*> current dMPs <*> bRandomness
@@ -126,4 +136,4 @@ encoinsTx dCoinsBurn dCoinsMint = mdo
     -- Submitting transaction
     _ <- submitTxRequestWrapper (fromJust <$> dFinalRedeemer) dUTXOs eFinalRedeemer
 
-    blank
+    return $ fmap getEncoinsInUtxos dUTXOs

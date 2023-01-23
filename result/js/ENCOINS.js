@@ -156,6 +156,7 @@ async function sha2_256(str, resId)
 {
   const hashBuffer = await crypto.subtle.digest('SHA-256', new Uint8Array(fromHexString(str)));
   const hashArray = Array.from(new Uint8Array(hashBuffer));
+  console.log("inside sha");
   setInputValue(resId, toHexString(hashArray));
 }
 

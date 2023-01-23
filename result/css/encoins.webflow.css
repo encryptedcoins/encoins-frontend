@@ -790,6 +790,7 @@ body {
   border-style: solid;
   border-width: 1px;
   border-color: #fff;
+  cursor: pointer;
 }
 
 .checkbox-div.checkbox-selected {
@@ -816,6 +817,7 @@ body {
   background-position: 50% 50%;
   background-size: auto;
   background-repeat: no-repeat;
+  cursor: pointer;
 }
 
 .coin-new-div {
@@ -843,25 +845,19 @@ body {
   -webkit-transform: rotate(45deg);
   -ms-transform: rotate(45deg);
   transform: rotate(45deg);
+  cursor: pointer;
 }
 
 .coin-new-input {
+  width: 300px;
+  margin-bottom: 0px;
   padding-right: 10px;
   padding-left: 10px;
   font-family: Poppins, sans-serif;
+  color: #000;
   font-size: 18px;
   line-height: 32px;
   font-weight: 600;
-}
-
-.coin-new-input-div {
-  width: 180px;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  border-style: solid;
-  border-width: 1px;
-  border-color: #fff;
-  border-radius: 5px;
 }
 
 .button {
@@ -1018,6 +1014,10 @@ body {
   .image-fireworks {
     display: none;
   }
+
+  .coin-new-input {
+    width: 250px;
+  }
 }
 
 @media screen and (max-width: 767px) {
@@ -1135,6 +1135,10 @@ body {
   .text-calculator.input-calculator {
     overflow: scroll;
   }
+
+  .coin-new-input {
+    width: 250px;
+  }
 }
 
 @media screen and (max-width: 479px) {
@@ -1187,6 +1191,10 @@ body {
     -webkit-justify-content: center;
     -ms-flex-pack: center;
     justify-content: center;
+  }
+
+  .coin-new-input {
+    width: 200px;
   }
 }
 

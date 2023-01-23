@@ -4,6 +4,7 @@ import           Data.Text              (Text)
 import qualified Data.Text              as Text
 import           Reflex.Dom
 import           Reflex.ScriptDependent (widgetHoldUntilDefined)
+import Data.Bool (bool)
 
 sectionApp :: MonadWidget t m => Text -> Text -> m a -> m a
 sectionApp elemId cls = elAttr "div" ("id" =: elemId <> "class" =: "section-app wf-section " `Text.append` cls)
@@ -15,6 +16,13 @@ btnApp :: MonadWidget t m => Text -> Text -> m (Event t ())
 btnApp cls txt = do
     (e, _) <- elAttr' "a" ("href" =: "#" <> "class" =: "app-button  w-button " `Text.append` cls) $ text txt
     return $ () <$ domEvent Click e
+
+checkboxApp :: MonadWidget t m => m (Dynamic t Bool)
+checkboxApp = mdo
+  let mkClass = bool "checkbox-div" "checkbox-div checkbox-selected"
+  (e, _) <- elDynClass' "div" (fmap mkClass d) blank
+  d <- toggle False $ domEvent Click e
+  return d
 
 waitForScripts :: MonadWidget t m => m () -> m () -> m ()
 waitForScripts placeholderWidget actualWidget = do
