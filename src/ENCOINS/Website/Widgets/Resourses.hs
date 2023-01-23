@@ -19,5 +19,5 @@ ourResourses w = do
     resourseButton "" "mailto:team@encoins.io" "Email.svg" w
     resourseButton "" "https://t.me/encoins_io" "Telegram.svg" w
     resourseButton "image-disabled" "#" "GitBook.svg" w
-    resourseButton "image-disabled" "#" "GitHub.svg" w
+    resourseButton "" "https://github.com/encryptedcoins" "GitHub.svg" w
     resourseButton "" "https://www.youtube.com/channel/UCk4QtReP4kQKfIIoWw7Q1wg" "YouTube.svg" w
