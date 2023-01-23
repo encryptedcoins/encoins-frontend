@@ -1,24 +1,24 @@
 module ENCOINS.App.Widgets.MainWindow where
 
 import           Data.Aeson                    (encode, decodeStrict)
+import           Data.Bool                     (bool)
 import           Data.ByteString               (ByteString)
 import           Data.ByteString.Lazy          (toStrict)
 import           Data.Maybe                    (fromMaybe)
 import           Data.Text                     (Text)
+import qualified Data.Text                     as Text
 import           Data.Text.Encoding            (decodeUtf8, encodeUtf8)
 import           Reflex.Dom
 
 import           Backend.EncoinsTx             (encoinsTx)
 import           ENCOINS.App.Widgets.Basic     (btnApp, containerApp, sectionApp)
 import           ENCOINS.App.Widgets.Coin      (coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget, coinCollectionWithNames, filterKnownCoinNames)
-import           ENCOINS.Bulletproofs          (Secrets, Secret (secretV))
-import           JS.Website                    (saveJSON, loadJSON, logInfo)
+import           ENCOINS.Bulletproofs          (Secrets, Secret (..))
+import           ENCOINS.Crypto.Field          (fromFieldElement)
+import           JS.Website                    (saveJSON, loadJSON)
 import           Widgets.Basic                 (elementResultJS)
 import           Widgets.Events                (newEventWithDelay)
-import Widgets.Utils (toText)
-import qualified Data.Text as Text
-import ENCOINS.Crypto.Field (fromFieldElement)
-import Data.Bool (bool)
+import           Widgets.Utils                 (toText)
 
 transactionBalanceWidget :: MonadWidget t m => Dynamic t Secrets -> Dynamic t Secrets -> m ()
 transactionBalanceWidget dCoinsToBurn dCoinsToMint =

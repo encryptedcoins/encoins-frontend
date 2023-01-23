@@ -22,11 +22,10 @@ import           ENCOINS.Crypto.Field            (Field(..), fromFieldElement)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           JS.App                          (walletLoad, sha2_256, ed25519Sign)
+import           JS.Website                      (logInfo)
 import           PlutusTx.Extra.ByteString       (ToBuiltinByteString(..))
 import           Widgets.Basic                   (elementResultJS)
 import           Widgets.Events                  (newEvent)
-import JS.Website (logInfo)
-import Widgets.Utils (toText)
 
 bulletproofSetup :: BulletproofSetup
 bulletproofSetup = fromJust $ decode $ fromStrict $(embedFile "config/bulletproof_setup.json")
