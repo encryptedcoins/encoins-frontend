@@ -5,7 +5,7 @@
 module Backend.Types where
 
 import           Data.Aeson                  (ToJSON(..), FromJSON (..))
-import           Data.Maybe                  (fromJust)
+import           Data.Maybe                  (fromJust, fromMaybe)
 import           Data.Text                   (Text)
 import           GHC.Generics                (Generic)
 import           PlutusTx.Builtins
@@ -13,6 +13,7 @@ import           Text.Hex                    (decodeHex)
 
 import           ENCOINS.BaseTypes           (MintingPolarity)
 import           ENCOINS.Bulletproofs        (Proof (..))
+import Reflex.Dom (decodeText)
 
 type TxParams = Address
 
@@ -43,6 +44,13 @@ type ProofSignature = BuiltinByteString
 type EncoinsRedeemer = (TxParams, EncoinsInput, Proof, ProofSignature)
 type EncoinsRedeemerWithData = (Address, EncoinsRedeemer)
 
+data Witness = Witness { vkey :: Text, signature :: Text }
+    deriving stock (Eq, Show, Generic)
+    deriving (ToJSON, FromJSON)
+
+decodeWitness :: Text -> (Text, Text)
+decodeWitness = (\(Witness k s) -> (k, s)) . fromMaybe (Witness "" "") . decodeText
+
 newtype PubKey = PubKey { getPubKey :: Text }
     deriving stock (Eq, Ord, Show, Generic)
     deriving (ToJSON, FromJSON)
@@ -50,3 +58,10 @@ newtype PubKey = PubKey { getPubKey :: Text }
 newtype Signature = Signature { getSignature :: Text }
     deriving stock (Eq, Ord, Show, Generic)
     deriving (ToJSON, FromJSON)
+
+data SubmitTxReqBody = SubmitTxReqBody
+    {
+        submitReqTx         :: Text,
+        submitReqWitnesses  :: [(Text, Text)]
+    }
+    deriving (Show, Generic, ToJSON, FromJSON)

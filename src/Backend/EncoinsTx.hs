@@ -15,13 +15,13 @@ import           System.Random.Stateful          (randomIO)
 import           Text.Hex                        (encodeHex, decodeHex)
 import           Witherable                      (catMaybes)
 
-import           Backend.Servant.Requests        (submitTxRequestWrapper)
+import           Backend.Servant.Requests        (submitTxRequestWrapper, newTxRequestWrapper)
 import           Backend.Types
 import qualified CSL
 import           ENCOINS.Crypto.Field            (Field(..), fromFieldElement)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
-import           JS.App                          (walletLoad, sha2_256, ed25519Sign)
+import           JS.App                          (walletLoad, sha2_256, walletSignTx)
 import           JS.Website                      (logInfo)
 import           PlutusTx.Extra.ByteString       (ToBuiltinByteString(..))
 import           Widgets.Basic                   (elementResultJS)
@@ -109,30 +109,21 @@ encoinsTx dCoinsBurn dCoinsMint eSend = mdo
     -- Obtaining EncoinsRedeemer
     let bRed = mkRedeemer <$> current dAddr <*> current dBulletproofParams <*> current dSecrets <*> current dMPs <*> bRandomness
 
-    -- NOTE: for testing purposes we sign the redeemer on frontend
-    -- Obtaining redeemer hash
-    dRedeemerHash <- elementResultJS "redeemerHashElement" id
-    performEvent_ (flip sha2_256 "redeemerHashElement" . redeemerToBytes <$> bRed `tag` eSend)
-
-    -- Obtaining signature
-    dSig <- elementResultJS "ed25519SigElement" (toBuiltin . fromJust . decodeHex)
-    let prvKey = "1DA4194798C1D3AA8B7E5E39EDA1F130D9123ACCC8CA31A82E033A6D007DA7EC"
-    performEvent_ (flip (ed25519Sign prvKey) "ed25519SigElement" <$> updated dRedeemerHash)
-    let eSig = updated dSig
-
     -- Constructing the final redeemer
     let bRedWithData = ffor2 bRed (current dAddrWallet) (\red a -> (a, red))
-    dFinalRedeemer <- holdDyn Nothing $ Just <$> attachWith (\(ca, (a, i, p, _)) s -> (ca, (a, i, p, s))) bRedWithData eSig
+    dFinalRedeemer <- holdDyn Nothing $ Just <$> bRedWithData `tag` eSend
     let eFinalRedeemer = () <$ catMaybes (updated dFinalRedeemer)
 
     -- Constructing transaction
-    -- eTx <- newTxRequestWrapper (fromJust <$> dFinalRedeemer) dUTXOs eFinalRedeemer
+    eTx <- newTxRequestWrapper (zipDyn (fmap fromJust dFinalRedeemer) dUTXOs) eFinalRedeemer
+    dTx <- holdDyn "" eTx
 
     -- Signing transaction
-    -- dWalletSignature <- elementResultJS "walletSignatureElement" id
-    -- performEvent_ $ liftIO . flip (walletSignTx "eternl") "walletSignatureElement" <$> eTx
+    dWalletSignature <- elementResultJS "walletSignatureElement" decodeWitness
+    performEvent_ $ liftIO . flip (walletSignTx "eternl") "walletSignatureElement" <$> eTx
 
     -- Submitting transaction
-    _ <- submitTxRequestWrapper (fromJust <$> dFinalRedeemer) dUTXOs eFinalRedeemer
+    let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx $ fmap (:[]) dWalletSignature
+    _ <- submitTxRequestWrapper dSubmitReqBody eFinalRedeemer
 
     return $ fmap getEncoinsInUtxos dUTXOs

@@ -11,11 +11,11 @@ import           Witherable                   (catMaybes)
 import           Backend.Types
 import           CSL                          (TransactionUnspentOutputs)
 
-type AddSignatureReqBody = (Text, Text)
+pabIP :: BaseUrl
+pabIP = BasePath "http://localhost:3000"
 
 type API =   "newTx"        :> ReqBody '[JSON] (EncoinsRedeemerWithData, TransactionUnspentOutputs) :> Post '[JSON] Text
-        :<|> "submitTx"     :> ReqBody '[JSON] (EncoinsRedeemerWithData, TransactionUnspentOutputs) :> Post '[JSON] ()
-        :<|> "addSignature" :> ReqBody '[JSON] AddSignatureReqBody :> Post '[JSON] ()
+        :<|> "submitTx"     :> ReqBody '[JSON] SubmitTxReqBody :> Post '[JSON] ()
         :<|> "ping"         :> Get '[JSON] ()
 
 type RespEvent t a      = Event t (ReqResult () a)
@@ -26,15 +26,14 @@ type ReqRes t m req res = DynReqBody t req -> Res t m res
 data ApiClient t m = ApiClient
   {
     newTxRequest        :: ReqRes t m (EncoinsRedeemerWithData, TransactionUnspentOutputs) Text,
-    submitTxRequest     :: ReqRes t m (EncoinsRedeemerWithData, TransactionUnspentOutputs) (),
-    addSignatureRequest :: ReqRes t m AddSignatureReqBody (),
+    submitTxRequest     :: ReqRes t m SubmitTxReqBody (),
     pingRequest         :: Res t m ()
   }
 
 mkApiClient :: forall t m . MonadWidget t m => BaseUrl -> ApiClient t m
 mkApiClient host = ApiClient{..}
   where
-    (newTxRequest :<|> submitTxRequest :<|> addSignatureRequest :<|> pingRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
+    (newTxRequest :<|> submitTxRequest :<|> pingRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
 
 ---------------------------------------------- Utilities -------------------------------------
 
