@@ -54,16 +54,30 @@ async function walletAPI(walletName) {
   switch (walletName) {
     case "nami":
       if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.nami !== 'undefined'))
+      {
+        console.log("Wallet: Nami");
         return window.cardano.nami.enable();
+      }
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.nami is not found"); });
     case "eternl":
       if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.eternl !== 'undefined'))
+      {
+        console.log("Wallet: Eternl");
         return window.cardano.eternl.enable();
+      }
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.eternl is not found"); });
+    case "flint":
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.flint !== 'undefined'))
+      {
+        console.log("Wallet: Flint");
+        return window.cardano.flint.enable();
+      }
+      else
+        return new Promise(() => { throw new Error("window.cardano or window.cardano.flint is not found"); });
     default:
-      return new Promise(() => { console.log("Wallet's not identified"); });
+      return new Promise(() => { console.log("Wallet: None"); });
   }
 }
 

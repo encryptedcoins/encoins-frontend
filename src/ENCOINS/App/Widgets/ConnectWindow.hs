@@ -24,6 +24,8 @@ connectWindow isOpened =
                 divClass "app-text-semibold" $ text "Connect Wallet"
                 domEvent Click . fst <$> elAttr' "div" ("class" =: "cross-div cross-div-inverted") blank
             eEternl <- walletEntry Eternl
-            dWallet <- holdDyn None $ leftmost [eEternl]
+            eNami   <- walletEntry Nami
+            eFlint  <- walletEntry Flint
+            dWallet <- holdDyn None $ leftmost [eEternl, eNami, eFlint]
             let eConnectClose = leftmost [eCross, () <$ updated dWallet]
             return (eConnectClose, dWallet)
