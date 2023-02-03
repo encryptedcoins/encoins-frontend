@@ -5,6 +5,7 @@ import           Data.Proxy                   (Proxy(..))
 import           Data.Text                    (Text)
 import           Reflex.Dom                   hiding (Value)
 import           Servant.API
+import           Servant.Checked.Exceptions   (Envelope)
 import           Servant.Reflex
 import           Witherable                   (catMaybes)
 
@@ -14,7 +15,7 @@ import           CSL                          (TransactionUnspentOutputs)
 pabIP :: BaseUrl
 pabIP = BasePath "http://localhost:3000"
 
-type API =   "newTx"        :> ReqBody '[JSON] (EncoinsRedeemerWithData, TransactionUnspentOutputs) :> Post '[JSON] Text
+type API =   "newTx"        :> ReqBody '[JSON] (EncoinsRedeemerWithData, TransactionUnspentOutputs) :> Post '[JSON] (Envelope '[] Text)
         :<|> "submitTx"     :> ReqBody '[JSON] SubmitTxReqBody :> Post '[JSON] ()
         :<|> "ping"         :> Get '[JSON] ()
 
@@ -25,7 +26,7 @@ type ReqRes t m req res = DynReqBody t req -> Res t m res
 
 data ApiClient t m = ApiClient
   {
-    newTxRequest        :: ReqRes t m (EncoinsRedeemerWithData, TransactionUnspentOutputs) Text,
+    newTxRequest        :: ReqRes t m (EncoinsRedeemerWithData, TransactionUnspentOutputs) (Envelope '[] Text),
     submitTxRequest     :: ReqRes t m SubmitTxReqBody (),
     pingRequest         :: Res t m ()
   }

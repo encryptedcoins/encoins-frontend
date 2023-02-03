@@ -5,15 +5,15 @@
 module Backend.Types where
 
 import           Data.Aeson                  (ToJSON(..), FromJSON (..))
-import           Data.Maybe                  (fromJust, fromMaybe)
+import           Data.Maybe                  (fromJust)
 import           Data.Text                   (Text)
 import           GHC.Generics                (Generic)
 import           PlutusTx.Builtins
+import           Reflex.Dom                  (decodeText)
 import           Text.Hex                    (decodeHex)
 
 import           ENCOINS.BaseTypes           (MintingPolarity)
 import           ENCOINS.Bulletproofs        (Proof (..))
-import Reflex.Dom (decodeText)
 
 type TxParams = Address
 
@@ -48,8 +48,8 @@ data Witness = Witness { vkey :: Text, signature :: Text }
     deriving stock (Eq, Show, Generic)
     deriving (ToJSON, FromJSON)
 
-decodeWitness :: Text -> (Text, Text)
-decodeWitness = (\(Witness k s) -> (k, s)) . fromMaybe (Witness "" "") . decodeText
+decodeWitness :: Text -> [(Text, Text)]
+decodeWitness = maybe [] (map (\(Witness k s) -> (k, s))) . decodeText
 
 newtype PubKey = PubKey { getPubKey :: Text }
     deriving stock (Eq, Ord, Show, Generic)

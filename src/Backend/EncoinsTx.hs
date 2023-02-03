@@ -6,8 +6,8 @@ import           Data.Bool                       (bool)
 import           Data.ByteString.Lazy            (fromStrict)
 import           Data.FileEmbed                  (embedFile)
 import qualified Data.Map                        as Map
-import           Data.Maybe                      (fromJust, fromMaybe)
-import           Data.Text                       (Text)
+import           Data.Maybe                      (fromJust)
+import           Data.Text                       (Text, pack)
 import qualified Data.Text                       as Text
 import           PlutusTx.Builtins
 import           Reflex.Dom                      hiding (Input)
@@ -17,21 +17,21 @@ import           Witherable                      (catMaybes)
 
 import           Backend.Servant.Requests        (submitTxRequestWrapper, newTxRequestWrapper)
 import           Backend.Types
+import           Backend.Wallet                  (Wallet, loadWallet)
 import qualified CSL
 import           ENCOINS.Crypto.Field            (Field(..), fromFieldElement)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
-import           JS.App                          (walletLoad, sha2_256, walletSignTx)
+import           JS.App                          (sha2_256, walletSignTx)
 import           JS.Website                      (logInfo)
 import           PlutusTx.Extra.ByteString       (ToBuiltinByteString(..))
 import           Widgets.Basic                   (elementResultJS)
-import           Widgets.Events                  (newEvent)
 
 bulletproofSetup :: BulletproofSetup
 bulletproofSetup = fromJust $ decode $ fromStrict $(embedFile "config/bulletproof_setup.json")
 
 encoinsCurrencySymbol :: Text
-encoinsCurrencySymbol = "e4f0400be19a0fd2327265184399c682e9ab5f07fb5bbca281d9c13b"
+encoinsCurrencySymbol = "40fd7027a6e67e85f5b15fbf98818af339b2c7cdb1283115d51d6be9"
 
 getEncoinsInUtxos :: CSL.TransactionUnspentOutputs -> [Text]
 getEncoinsInUtxos utxos = maybe [] Map.keys assets
@@ -53,7 +53,7 @@ calculateV secrets mps = sum $ zipWith (\s mp -> fromFieldElement (secretV s) * 
 mkAddress :: Address -> Integer -> Address
 mkAddress addrWallet v = bool addrWallet addrVal (v > 0)
     where addrVal = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "c1a6c70cbc8f532a93c4639b3541715a1f949444a8923be41382c01b") Nothing
+            decodeHex "201954c6f771e459e6588c06d701bcdd5216fb54cc1c1a7f5e037e9b") Nothing
 
 addressToBytes :: Address -> Text
 addressToBytes (Address cr scr) = bs1 `Text.append` bs2
@@ -69,25 +69,9 @@ addressToBytes (Address cr scr) = bs1 `Text.append` bs2
 redeemerToBytes :: EncoinsRedeemer -> Text
 redeemerToBytes (a, i, p, _) = addressToBytes a `Text.append` encodeHex (fromBuiltin $ toBytes i) `Text.append` encodeHex (fromBuiltin $ toBytes p)
 
-encoinsTx :: MonadWidget t m => Dynamic t Secrets -> Dynamic t Secrets -> Event t () -> m (Dynamic t [Text])
-encoinsTx dCoinsBurn dCoinsMint eSend = mdo
-    e <- newEvent
-
-    -- TODO: implement wallet switcher
-    -- dWalletName <- holdDyn "nami" never
-
-    -- TODO: add wallet enable functionality
-    -- let parseConnected b = bool False True (b == "true")
-    -- dWalletConnected <- fmap (fmap parseConnected . value) $ inputElement $ def
-    --   & initialAttributes .~ ("style" =: "display:none;" <> "id" =: elemId)
-    --   & inputElementConfig_initialValue .~ "false"
-
-    -- Retrieving wallet info
-    dPubKeyHash <- elementResultJS "pubKeyHashElement" id
-    dStakeKeyHash <- elementResultJS "stakeKeyHashElement" id
-    dUTXOs <- elementResultJS "utxosElement" (fromMaybe [] . decodeText :: Text -> CSL.TransactionUnspentOutputs)
-    let dAddrWallet =  zipDynWith mkAddressFromPubKeys dPubKeyHash dStakeKeyHash
-    performEvent_ (walletLoad "eternl" "" "" "" "" "pubKeyHashElement" "stakeKeyHashElement" "" "utxosElement" "" "" <$ e)
+encoinsTx :: MonadWidget t m => Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () -> m (Dynamic t [Text])
+encoinsTx wallet dCoinsBurn dCoinsMint eSend = mdo
+    (dAddrWallet, dUTXOs) <- loadWallet wallet
 
     -- Obtaining Secrets and [MintingPolarity]
     performEvent_ (logInfo "dCoinsBurn updated" <$ updated dCoinsBurn)
@@ -114,16 +98,18 @@ encoinsTx dCoinsBurn dCoinsMint eSend = mdo
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRedWithData `tag` eSend
     let eFinalRedeemer = () <$ catMaybes (updated dFinalRedeemer)
 
-    -- Constructing transaction
+    -- Constructing a new transaction
     eTx <- newTxRequestWrapper (zipDyn (fmap fromJust dFinalRedeemer) dUTXOs) eFinalRedeemer
     dTx <- holdDyn "" eTx
 
-    -- Signing transaction
+    -- Signing the transaction
     dWalletSignature <- elementResultJS "walletSignatureElement" decodeWitness
     performEvent_ $ liftIO . flip (walletSignTx "eternl") "walletSignatureElement" <$> eTx
+    let eWalletSignature = () <$ updated dWalletSignature
+    performEvent_ $ liftIO . logInfo . pack . show <$> updated dWalletSignature
 
-    -- Submitting transaction
-    let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx $ fmap (:[]) dWalletSignature
-    _ <- submitTxRequestWrapper dSubmitReqBody eFinalRedeemer
+    -- Submitting the transaction
+    let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
+    _ <- submitTxRequestWrapper dSubmitReqBody eWalletSignature
 
     return $ fmap getEncoinsInUtxos dUTXOs

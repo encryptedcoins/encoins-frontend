@@ -1,10 +1,10 @@
 module ENCOINS.App.Widgets.Basic where
 
-import           Data.Text              (Text)
-import qualified Data.Text              as Text
+import           Data.Bool                (bool)
+import           Data.Text                (Text)
+import qualified Data.Text                as Text
 import           Reflex.Dom
-import           Reflex.ScriptDependent (widgetHoldUntilDefined)
-import Data.Bool (bool)
+import           Reflex.ScriptDependent   (widgetHoldUntilDefined)
 
 sectionApp :: MonadWidget t m => Text -> Text -> m a -> m a
 sectionApp elemId cls = elAttr "div" ("id" =: elemId <> "class" =: "section-app wf-section " `Text.append` cls)

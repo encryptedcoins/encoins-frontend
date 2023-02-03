@@ -1,29 +1,29 @@
 module ENCOINS.App.Widgets.Coin where
 
+import           Control.Monad               (join)
 import           Control.Monad.IO.Class      (MonadIO(..))
+import           Data.Bool                   (bool)
+import           Data.List                   (delete)
+import           Data.Maybe                  (catMaybes, fromMaybe)
 import           Data.Text                   (Text, unpack)
 import qualified Data.Text                   as Text
 import           PlutusTx.Builtins           (fromBuiltin)
 import           Reflex.Dom
 import           System.Random               (randomIO)
 import           Text.Hex                    (encodeHex)
+import           Text.Read                   (readMaybe)
 
 import           Backend.EncoinsTx           (bulletproofSetup)
+import           ENCOINS.App.Widgets.Basic   (checkboxApp)
 import           ENCOINS.BaseTypes           (FieldElement)
 import           ENCOINS.Bulletproofs        (Secret (..), fromSecret, Secrets)
+import           ENCOINS.Crypto.Field        (toFieldElement)
 import           ENCOINS.Website.Widgets     (image)
 import           JS.App                      (sha2_256)
+import           JS.Website                  (logInfo)
 import           Widgets.Basic               (elementResultJS)
 import           Widgets.Events              (newEvent)
 import           Widgets.Utils               (toText)
-import ENCOINS.App.Widgets.Basic (checkboxApp)
-import Data.Bool (bool)
-import Control.Monad (join)
-import Data.Maybe (catMaybes, fromMaybe)
-import Text.Read (readMaybe)
-import ENCOINS.Crypto.Field (toFieldElement)
-import Data.List (delete)
-import JS.Website (logInfo)
 
 coinWithName :: MonadWidget t m => Secret -> m (Dynamic t (Secret, Text))
 coinWithName s = do

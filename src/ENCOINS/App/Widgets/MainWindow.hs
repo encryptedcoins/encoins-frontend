@@ -11,6 +11,7 @@ import           Data.Text.Encoding            (decodeUtf8, encodeUtf8)
 import           Reflex.Dom
 
 import           Backend.EncoinsTx             (encoinsTx)
+import           Backend.Wallet                (Wallet)
 import           ENCOINS.App.Widgets.Basic     (btnApp, containerApp, sectionApp)
 import           ENCOINS.App.Widgets.Coin      (coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget, coinCollectionWithNames, filterKnownCoinNames)
 import           ENCOINS.Bulletproofs          (Secrets, Secret (..))
@@ -41,14 +42,8 @@ loadAppData = do
     performEvent_ (loadJSON "encoins" elId <$ e)
     elementResultJS elId (fromMaybe [] . (decodeStrict :: ByteString -> Maybe Secrets) . encodeUtf8)
 
-mainWindow :: MonadWidget t m => m ()
-mainWindow = do
-    -- let secrets = [Secret (F 78623591232) (F 3), Secret (F 21879124) (F 5)]
-
-    dSecrets <- loadAppData
-    dSecretsWithNames <- coinCollectionWithNames dSecrets
-    performEvent_ (saveJSON "encoins" . decodeUtf8 . toStrict . encode <$> updated dSecrets)
-
+mainWindow :: MonadWidget t m => Wallet -> m ()
+mainWindow wallet = mdo
     sectionApp "" "" $
         containerApp "" $
             divClass "app-top-menu-div" $ do
@@ -62,6 +57,12 @@ mainWindow = do
         containerApp "" $ transactionBalanceWidget dToBurn dToMint
         (dToBurn, dToMint) <- containerApp "" $
             divClass "app-columns w-row" $ mdo
+                dOldSecrets <- loadAppData
+                dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
+                let dSecrets = zipDynWith (++) dOldSecrets dNewSecrets
+                dSecretsWithNames <- coinCollectionWithNames dSecrets
+                performEvent_ (saveJSON "encoins" . decodeUtf8 . toStrict . encode <$> updated dSecrets)
+
                 dCoinsToBurn <- divClass "app-column w-col w-col-6" $ do
                     mainWindowColumnHeader "Coins in the Wallet"
                     coinBurnCollectionWidget dSecretsWithNamesInTheWallet
@@ -72,7 +73,7 @@ mainWindow = do
                     eNewSecret <- coinNewWidget
                     e <- btnApp "" "SEND REQUEST"
                     return (d', e)
-                dAssetNamesInTheWallet <- encoinsTx dCoinsToBurn dCoinsToMint eSend
+                dAssetNamesInTheWallet <- encoinsTx wallet dCoinsToBurn dCoinsToMint eSend
                 let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
                 return (dCoinsToBurn, dCoinsToMint)
         blank

@@ -1,18 +1,24 @@
 module ENCOINS.App.Body (bodyWidget) where
 
-import           Data.Functor                   (($>))
+import           Data.Functor                      (($>))
 import           Reflex.Dom
 
 import           ENCOINS.App.Widgets
-import           ENCOINS.App.Widgets.Basic      (waitForScripts)
-import           ENCOINS.App.Widgets.MainWindow (mainWindow)
-
+import           ENCOINS.App.Widgets.Basic         (waitForScripts)
+import           ENCOINS.App.Widgets.ConnectWindow (connectWindow)
+import           ENCOINS.App.Widgets.MainWindow    (mainWindow)
+import           JS.Website                        (logInfo)
+import           Widgets.Utils                     (toText)
     
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = mdo
-  _ <- navbarWidget $ pure ("Home", "Navbar")
+  eConnectOpen   <- navbarWidget
+  (eConnectClose, dWallet)  <- connectWindow dConnectIsOpen
+  dConnectIsOpen <- holdDyn False $ leftmost [True <$ eConnectOpen, False <$ eConnectClose]
 
-  waitForScripts blank mainWindow
+  performEvent_ $ logInfo . toText <$> updated dWallet
+
+  waitForScripts blank (dyn_ $ fmap mainWindow dWallet)
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = do
