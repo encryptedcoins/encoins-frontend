@@ -43,7 +43,7 @@ coinCollectionWithNames dSecrets = do
     join <$> holdDyn (pure []) eCoinsWithNames
 
 shortenCoinName :: Text -> Text
-shortenCoinName txt = Text.take 3 txt `Text.append` "..." `Text.append` Text.takeEnd 3 txt
+shortenCoinName txt = Text.take 4 txt `Text.append` "..." `Text.append` Text.takeEnd 4 txt
 
 coinValue :: Secret -> Text
 coinValue = toText . fst . fromSecret bulletproofSetup
