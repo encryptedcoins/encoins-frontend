@@ -16,6 +16,7 @@ import           Text.Hex                        (encodeHex, decodeHex)
 import           Witherable                      (catMaybes)
 
 import           Backend.Servant.Requests        (submitTxRequestWrapper, newTxRequestWrapper)
+import           Backend.Status                  (Status (..))
 import           Backend.Types
 import           Backend.Wallet                  (Wallet(..))
 import qualified CSL
@@ -69,7 +70,7 @@ addressToBytes (Address cr scr) = bs1 `Text.append` bs2
 redeemerToBytes :: EncoinsRedeemer -> Text
 redeemerToBytes (a, i, p, _) = addressToBytes a `Text.append` encodeHex (fromBuiltin $ toBytes i) `Text.append` encodeHex (fromBuiltin $ toBytes p)
 
-encoinsTx :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () -> m (Dynamic t [Text])
+encoinsTx :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () -> m (Dynamic t [Text], Event t Status)
 encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
     let dAddrWallet = fmap walletChangeAddress dWallet
         dUTXOs      = fmap walletUTXOs dWallet
@@ -111,6 +112,7 @@ encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
 
     -- Submitting the transaction
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
-    _ <- submitTxRequestWrapper dSubmitReqBody eWalletSignature
+    eSubmitted <- submitTxRequestWrapper dSubmitReqBody eWalletSignature
 
-    return $ fmap getEncoinsInUtxos dUTXOs
+    let eStatus = leftmost [Balancing <$ eFinalRedeemer, Signing <$ eTx, Submitting <$ eWalletSignature, Submitted <$ eSubmitted]
+    return (fmap getEncoinsInUtxos dUTXOs, eStatus)

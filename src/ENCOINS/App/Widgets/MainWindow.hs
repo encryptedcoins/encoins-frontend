@@ -55,7 +55,7 @@ mainWindow dWallet = mdo
                     blank
     sectionApp "" "" $ mdo
         containerApp "" $ transactionBalanceWidget dToBurn dToMint
-        (dToBurn, dToMint) <- containerApp "" $
+        (dToBurn, dToMint, eStatusUpdate) <- containerApp "" $
             divClass "app-columns w-row" $ mdo
                 dOldSecrets <- loadAppData
                 dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
@@ -71,9 +71,10 @@ mainWindow dWallet = mdo
                     d <- coinMintCollectionWidget eNewSecret
                     let d' = fmap (map fst) d
                     eNewSecret <- coinNewWidget
-                    e <- btnApp "" $ dynText "SEND REQUEST"
+                    e <- btnApp "button-switching" $ dynText "SEND REQUEST"
                     return (d', e)
-                dAssetNamesInTheWallet <- encoinsTx dWallet dCoinsToBurn dCoinsToMint eSend
+                (dAssetNamesInTheWallet, eStatusUpdate) <- encoinsTx dWallet dCoinsToBurn dCoinsToMint eSend
                 let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
-                return (dCoinsToBurn, dCoinsToMint)
-        blank
+                return (dCoinsToBurn, dCoinsToMint, eStatusUpdate)
+        dStatusText <- holdDyn "" $ fmap toText eStatusUpdate
+        containerApp "" $ divClass "app-text-small" $ dynText dStatusText

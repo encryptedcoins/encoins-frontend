@@ -967,8 +967,8 @@ body {
   -webkit-align-items: center;
   -ms-flex-align: center;
   align-items: center;
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: brightness(30%);
+  backdrop-filter: brightness(30%);
 }
 
 .connect-title-div {
@@ -1033,6 +1033,10 @@ body {
   top: 0%;
   right: 0%;
   bottom: 0%;
+}
+
+.app-text-small {
+  font-family: Poppins, sans-serif;
 }
 
 @media screen and (max-width: 991px) {
