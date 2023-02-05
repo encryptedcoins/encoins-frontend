@@ -17,7 +17,7 @@ import           Witherable                      (catMaybes)
 
 import           Backend.Servant.Requests        (submitTxRequestWrapper, newTxRequestWrapper)
 import           Backend.Types
-import           Backend.Wallet                  (Wallet, loadWallet)
+import           Backend.Wallet                  (Wallet(..))
 import qualified CSL
 import           ENCOINS.Crypto.Field            (Field(..), fromFieldElement)
 import           ENCOINS.BaseTypes
@@ -69,9 +69,10 @@ addressToBytes (Address cr scr) = bs1 `Text.append` bs2
 redeemerToBytes :: EncoinsRedeemer -> Text
 redeemerToBytes (a, i, p, _) = addressToBytes a `Text.append` encodeHex (fromBuiltin $ toBytes i) `Text.append` encodeHex (fromBuiltin $ toBytes p)
 
-encoinsTx :: MonadWidget t m => Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () -> m (Dynamic t [Text])
-encoinsTx wallet dCoinsBurn dCoinsMint eSend = mdo
-    (dAddrWallet, dUTXOs) <- loadWallet wallet
+encoinsTx :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () -> m (Dynamic t [Text])
+encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
+    let dAddrWallet = fmap walletChangeAddress dWallet
+        dUTXOs      = fmap walletUTXOs dWallet
 
     -- Obtaining Secrets and [MintingPolarity]
     performEvent_ (logInfo "dCoinsBurn updated" <$ updated dCoinsBurn)

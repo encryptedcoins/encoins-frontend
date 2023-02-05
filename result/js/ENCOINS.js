@@ -81,8 +81,8 @@ async function walletAPI(walletName) {
   }
 }
 
-async function walletLoad(walletName, networkIdElement, balanceElement, changeAddressElement, changeAddressBech32Element,
-  pubKeyHashElement, stakeKeyHashElement, collateralElement, utxosElement, unusedAddressesElement, rewardAddressesElement)
+async function walletLoad(networkIdElement, balanceElement, changeAddressElement, changeAddressBech32Element,
+  pubKeyHashElement, stakeKeyHashElement, collateralElement, utxosElement, unusedAddressesElement, rewardAddressesElement, walletName)
 {
   console.log("begin walletLoad");
   await loader.load();
@@ -101,7 +101,7 @@ async function walletLoad(walletName, networkIdElement, balanceElement, changeAd
   const pubKeyHash          = toHexString(baseAddress.payment_cred().to_keyhash().to_bytes());
   const stakeKeyHash        = toHexString(baseAddress.stake_cred().to_keyhash().to_bytes());
   // setInputValue(changeAddressElement, changeAddress);
-  // setInputValue(changeAddressBech32Element, changeAddressBech32);
+  setInputValue(changeAddressBech32Element, changeAddressBech32);
   setInputValue(pubKeyHashElement, pubKeyHash);
   setInputValue(stakeKeyHashElement, stakeKeyHash);
   

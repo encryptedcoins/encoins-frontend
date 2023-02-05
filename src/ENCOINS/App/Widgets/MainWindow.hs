@@ -6,7 +6,6 @@ import           Data.ByteString               (ByteString)
 import           Data.ByteString.Lazy          (toStrict)
 import           Data.Maybe                    (fromMaybe)
 import           Data.Text                     (Text)
-import qualified Data.Text                     as Text
 import           Data.Text.Encoding            (decodeUtf8, encodeUtf8)
 import           Reflex.Dom
 
@@ -25,10 +24,11 @@ transactionBalanceWidget :: MonadWidget t m => Dynamic t Secrets -> Dynamic t Se
 transactionBalanceWidget dCoinsToBurn dCoinsToMint =
     let getBalance = fmap (sum . map (fromFieldElement . secretV))
         balance = zipDynWith (-) (getBalance dCoinsToBurn) (getBalance dCoinsToMint)
-        balanceSign n = bool "- " "+ " (n >= 0)
-        balanceText n = balanceSign n `Text.append` toText (abs n) `Text.append` " ADA"
-    in divClass "transaction-balance-div" $
-        divClass "app-text-semibold" $ dynText $ fmap balanceText balance
+        balanceSign n = bool "-" "+" (n >= 0)
+        balanceADA n = balanceSign n <> toText (abs n) <> " ADA"
+    in divClass "transaction-balance-div" $ do
+        divClass "app-text-semibold" $ text "Transaction balance:"
+        divClass "app-text-semibold" $ dynText $ fmap balanceADA balance
 
 mainWindowColumnHeader :: MonadWidget t m => Text -> m ()
 mainWindowColumnHeader title =
@@ -42,16 +42,16 @@ loadAppData = do
     performEvent_ (loadJSON "encoins" elId <$ e)
     elementResultJS elId (fromMaybe [] . (decodeStrict :: ByteString -> Maybe Secrets) . encodeUtf8)
 
-mainWindow :: MonadWidget t m => Wallet -> m ()
-mainWindow wallet = mdo
+mainWindow :: MonadWidget t m => Dynamic t Wallet -> m ()
+mainWindow dWallet = mdo
     sectionApp "" "" $
         containerApp "" $
             divClass "app-top-menu-div" $ do
                 divClass "menu-item-button-right" $ do
-                    _ <- btnApp "" "Wallet"
+                    _ <- btnApp "" $ dynText "Wallet"
                     blank
                 divClass "menu-item-button-right" $ do
-                    _ <- btnApp "button-not-selected" "Ledger"
+                    _ <- btnApp "button-not-selected button-disabled" $ dynText "Ledger"
                     blank
     sectionApp "" "" $ mdo
         containerApp "" $ transactionBalanceWidget dToBurn dToMint
@@ -71,9 +71,9 @@ mainWindow wallet = mdo
                     d <- coinMintCollectionWidget eNewSecret
                     let d' = fmap (map fst) d
                     eNewSecret <- coinNewWidget
-                    e <- btnApp "" "SEND REQUEST"
+                    e <- btnApp "" $ dynText "SEND REQUEST"
                     return (d', e)
-                dAssetNamesInTheWallet <- encoinsTx wallet dCoinsToBurn dCoinsToMint eSend
+                dAssetNamesInTheWallet <- encoinsTx dWallet dCoinsToBurn dCoinsToMint eSend
                 let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
                 return (dCoinsToBurn, dCoinsToMint)
         blank

@@ -62,7 +62,7 @@ rewardsCalculatorSection = section "" "" $ do
         calculator
         pClass "p-ispo" $ do
             el "strong" $ text "Distributed in the ISPO:"
-            text " 9 265 935 ENCS (out of 10 000 000 ENCS)."
+            text " 9 390 107 ENCS (out of 10 000 000 ENCS)."
         pClass "p-ispo" $ do
             text "Each epoch, we distribute between 120 000 and 600 000 tokens depending on the pool saturation. The per-ADA rewards are higher when the saturation is low. 90% of ENCS tokens are distributed proportionally to your delegation. The rest is distributed through a lottery. Every ISPO participant with at least 1000 ADA stake is eligible. You can check the rest of the details about the ISPO "
             lnkInline "https://encoins-crypto.medium.com/all-ispo-info-summarized-c68e33747b77" "here"
@@ -70,20 +70,20 @@ rewardsCalculatorSection = section "" "" $ do
 
 lotteryWinnersSection :: MonadWidget t m => m ()
 lotteryWinnersSection = section "" "" $ do
-    container "" $ h3 "EPOCH 390 LOTTERY WINNERS"
+    container "" $ h3 "EPOCH 391 LOTTERY WINNERS"
     container "" $ do
         pClass "p-ispo" $ do
             text "At the start of each epoch, we use the hashes of the first few blocks to determine our winners. Simultaneously, we publish the list of participants for the next lottery. You can find it "
-            lnkInline "https://encoins.io/ispo/391.txt" "here"
+            lnkInline "https://encoins.io/ispo/392.txt" "here"
             text ". Below are the last epoch's winners."
         divClass "div-lottery-winners" $ do
             image "fireworks.svg" "image-fireworks" "120px"
             elAttr "ul" ("role" =: "list" <> "class" =: "list p-ispo") $ do
                 mapM_ (el "li" . text)
                     [
-                        "stake1uy46scc4xsznyeewljkmdsx2575qkacexfcuq38yj76mj0cmgx0me",
-                        "stake1uyshms5zszldyf7fnq8v3whtn4xfj6ywp4yhj6a4wuagcpqdf7ysv",
-                        "stake1u93gv6m4ktga7ynqq6t29r6u9emvmllms4z62g0vwtw3j9gdwqltp"
+                        "stake1uylwcndscgcznmt5vlzht9vleumq7katqr84xfc5fw0kwxs3m2sfd",
+                        "stake1uxu37jrd4f2ydwxw6jpxc6g7rgggsh72h4llz5g3f7nltdcegv7wh",
+                        "stake1uxwu7q8gld57mkh2vvrrycluuac5mas8p274r04pdlc8z9sfpuws5"
                     ]
             image "fireworks.svg" "image-fireworks" "120px"
         pClass "p-ispo" $ text "The winners secure additional 4000 ENCS. Congratulations!!!"

@@ -184,8 +184,20 @@ body {
 }
 
 .app-button {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
   min-width: 210px;
   padding: 10px 48px;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
   border-style: solid;
   border-width: 1px;
   border-color: #fff;
@@ -217,6 +229,16 @@ body {
 .app-button.button-not-selected {
   background-color: #000;
   color: #fff;
+}
+
+.app-button.button-switching {
+  background-color: #000;
+  color: #fff;
+}
+
+.app-button.button-switching:hover {
+  background-color: #fff;
+  color: #181818;
 }
 
 .div-our-resourses {
@@ -728,9 +750,23 @@ body {
   margin-bottom: 10px;
 }
 
+.section-app.section-app-empty {
+  min-height: 150px;
+}
+
 .transaction-balance-div {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
   padding-top: 5px;
   padding-bottom: 5px;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  grid-column-gap: 30px;
+  grid-row-gap: 30px;
   background-color: #fff;
   color: #000;
 }
@@ -741,6 +777,11 @@ body {
   line-height: 32px;
   font-weight: 600;
   letter-spacing: 0.05em;
+}
+
+.app-text-semibold.ada-value-text {
+  width: 130px;
+  text-align: right;
 }
 
 .app-column-head-div {
@@ -831,9 +872,10 @@ body {
   display: -ms-flexbox;
   display: flex;
   padding: 20px 5px;
-  -webkit-justify-content: space-around;
-  -ms-flex-pack: distribute;
-  justify-content: space-around;
+  -webkit-box-pack: justify;
+  -webkit-justify-content: space-between;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
   -webkit-box-align: center;
   -webkit-align-items: center;
   -ms-flex-align: center;
@@ -903,17 +945,16 @@ body {
   align-items: stretch;
   border-radius: 37px;
   background-color: #fff;
-  -webkit-backdrop-filter: blur(5px);
-  backdrop-filter: blur(5px);
   color: #000;
 }
 
-.container-app-fixed {
+.div-app-fixed {
   position: fixed;
   left: 0%;
   top: 0%;
   right: 0%;
   bottom: 0%;
+  z-index: 1000;
   display: -webkit-box;
   display: -webkit-flex;
   display: -ms-flexbox;
@@ -926,6 +967,8 @@ body {
   -webkit-align-items: center;
   -ms-flex-align: center;
   align-items: center;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
 }
 
 .connect-title-div {
@@ -941,8 +984,8 @@ body {
   -webkit-align-items: center;
   -ms-flex-align: center;
   align-items: center;
-  grid-column-gap: 150px;
-  grid-row-gap: 150px;
+  grid-column-gap: 100px;
+  grid-row-gap: 100px;
 }
 
 .connect-wallet-div {
@@ -954,7 +997,42 @@ body {
   -webkit-justify-content: space-between;
   -ms-flex-pack: justify;
   justify-content: space-between;
+  font-family: Poppins, sans-serif;
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 18px;
+  line-height: 32px;
   cursor: pointer;
+}
+
+.connect-wallet-div:hover {
+  color: #000;
+}
+
+.key-div-tooltip {
+  position: absolute;
+  left: 75%;
+  top: auto;
+  right: auto;
+  bottom: 75%;
+  z-index: 500;
+  display: none;
+  width: 120px;
+  padding: 0px 5px;
+  border-radius: 6px;
+  background-color: #fff;
+  color: #000;
+}
+
+.key-div-tooltip:hover {
+  display: block;
+}
+
+.key-div {
+  position: relative;
+  left: auto;
+  top: 0%;
+  right: 0%;
+  bottom: 0%;
 }
 
 @media screen and (max-width: 991px) {

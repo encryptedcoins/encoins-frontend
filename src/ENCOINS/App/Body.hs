@@ -7,18 +7,15 @@ import           ENCOINS.App.Widgets
 import           ENCOINS.App.Widgets.Basic         (waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow (connectWindow)
 import           ENCOINS.App.Widgets.MainWindow    (mainWindow)
-import           JS.Website                        (logInfo)
-import           Widgets.Utils                     (toText)
     
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = mdo
-  eConnectOpen   <- navbarWidget
-  (eConnectClose, dWallet)  <- connectWindow dConnectIsOpen
-  dConnectIsOpen <- holdDyn False $ leftmost [True <$ eConnectOpen, False <$ eConnectClose]
+  eConnectOpen   <- navbarWidget dWallet
+  dWallet        <- connectWindow eConnectOpen
 
-  performEvent_ $ logInfo . toText <$> updated dWallet
+  divClass "section-app section-app-empty wf-section" blank
 
-  waitForScripts blank (dyn_ $ fmap mainWindow dWallet)
+  waitForScripts blank (mainWindow dWallet)
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = do

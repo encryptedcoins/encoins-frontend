@@ -20,9 +20,8 @@ foreign import javascript unsafe
     JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> IO ()
 
 walletLoad :: MonadIO m => Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> m ()
-walletLoad walletName networkIdElement balanceElement changeAddressElement changeAddressBech32Element pubKeyHashElement
-    stakeKeyHashElement collateralElement utxosElement unusedAddressesElement rewardAddressesElement = liftIO $ do
-  walletName_js  <- toJSVal walletName
+walletLoad networkIdElement balanceElement changeAddressElement changeAddressBech32Element pubKeyHashElement
+    stakeKeyHashElement collateralElement utxosElement unusedAddressesElement rewardAddressesElement walletName = liftIO $ do
   networkIdElement_js  <- toJSVal networkIdElement
   balanceElement_js  <- toJSVal balanceElement
   changeAddressElement_js  <- toJSVal changeAddressElement
@@ -33,8 +32,9 @@ walletLoad walletName networkIdElement balanceElement changeAddressElement chang
   utxosElement_js  <- toJSVal utxosElement
   unusedAddressesElement_js  <- toJSVal unusedAddressesElement
   rewardAddressesElement_js  <- toJSVal rewardAddressesElement
-  walletLoad_js walletName_js networkIdElement_js balanceElement_js changeAddressElement_js changeAddressBech32Element_js
-    pubKeyHashElement_js stakeKeyHashElement_js collateralElement_js utxosElement_js unusedAddressesElement_js rewardAddressesElement_js
+  walletName_js  <- toJSVal walletName
+  walletLoad_js networkIdElement_js balanceElement_js changeAddressElement_js changeAddressBech32Element_js pubKeyHashElement_js
+    stakeKeyHashElement_js collateralElement_js utxosElement_js unusedAddressesElement_js rewardAddressesElement_js walletName_js
 #else
 walletLoad :: MonadIO m => Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> m ()
 walletLoad = const $ error "GHCJS is required!"

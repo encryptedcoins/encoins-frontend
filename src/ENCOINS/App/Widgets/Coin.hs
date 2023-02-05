@@ -57,8 +57,11 @@ coinBurnWidget :: MonadWidget t m => (Secret, Text) -> m (Dynamic t (Maybe Secre
 coinBurnWidget (s, name) = divClass "coin-entry-burn-div" $ do
     dChecked <- checkboxApp
     divClass "app-text-normal" $ text $ shortenCoinName name
-    divClass "app-text-semibold" $ text $ coinValue s `Text.append` " ADA"
-    image "Key.svg" "" "22px"
+    divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
+    divClass "key-div" $ do
+        image "Key.svg" "" "22px"
+        divClass "key-div-tooltip" $
+            divClass "app-text-normal" $ text $ "Full token name: " <> name
 
     return $ fmap (bool Nothing (Just s)) dChecked
 
@@ -74,7 +77,7 @@ coinMintWidget :: MonadWidget t m => (Secret, Text) -> m (Event t Secret)
 coinMintWidget (s, name) = divClass "coin-entry-mint-div" $ do
     e <- domEvent Click . fst <$> elClass' "div" "cross-div" blank
     divClass "app-text-normal" $ text $ shortenCoinName name
-    divClass "app-text-semibold" $ text $ coinValue s `Text.append` " ADA"
+    divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
     return $ s <$ e
 
 coinMintCollectionWidget :: MonadWidget t m => Event t Secret -> m (Dynamic t [(Secret, Text)])
