@@ -19,21 +19,15 @@ import           ENCOINS.BaseTypes           (FieldElement)
 import           ENCOINS.Bulletproofs        (Secret (..), fromSecret, Secrets)
 import           ENCOINS.Crypto.Field        (toFieldElement)
 import           ENCOINS.Website.Widgets     (image)
-import           JS.App                      (sha2_256)
 import           JS.Website                  (logInfo)
-import           Widgets.Basic               (elementResultJS)
-import           Widgets.Events              (newEvent)
 import           Widgets.Utils               (toText)
+
+data CoinUpdate = AddCoin Secret | RemoveCoin Secret | ClearCoins
 
 coinWithName :: MonadWidget t m => Secret -> m (Dynamic t (Secret, Text))
 coinWithName s = do
-    logInfo "we are in coinWithName"
     let bsHex = encodeHex . fromBuiltin . snd . fromSecret bulletproofSetup $ s
-    elemId <-  Text.append "coin-" . toText <$> liftIO (randomIO :: IO FieldElement)
-    dFullName <- elementResultJS elemId id
-    e <- newEvent
-    performEvent_ (flip sha2_256 elemId <$> (bsHex <$ e))
-    return $ fmap (s, ) dFullName
+    return $ pure (s, bsHex)
 
 -- TODO: fix recalculation on addition/deletion of secrets
 coinCollectionWithNames :: MonadWidget t m => Dynamic t Secrets -> m (Dynamic t [(Secret, Text)])
@@ -80,10 +74,12 @@ coinMintWidget (s, name) = divClass "coin-entry-mint-div" $ do
     divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
     return $ s <$ e
 
-coinMintCollectionWidget :: MonadWidget t m => Event t Secret -> m (Dynamic t [(Secret, Text)])
-coinMintCollectionWidget eAddSecret = mdo
-    let f (s, b) lst = bool (s `delete` lst) (lst ++ [s]) b
-    dCoinsToMintWithNames <-  foldDyn f [] (leftmost [fmap (, True) eAddSecret, fmap (, False) eRemoveSecret]) >>= coinCollectionWithNames
+coinMintCollectionWidget :: MonadWidget t m => Event t CoinUpdate -> m (Dynamic t [(Secret, Text)])
+coinMintCollectionWidget eCoinUpdate = mdo
+    let f (AddCoin s)    lst = lst ++ [s]
+        f (RemoveCoin s) lst = s `delete` lst
+        f ClearCoins     _   = []
+    dCoinsToMintWithNames <-  foldDyn f [] (leftmost [eCoinUpdate, fmap RemoveCoin eRemoveSecret]) >>= coinCollectionWithNames
     performEvent_ (logInfo . toText <$> updated dCoinsToMintWithNames)
     eRemoveSecret <- dyn (fmap (mapM coinMintWidget) dCoinsToMintWithNames) >>= switchHold never . fmap leftmost
     return dCoinsToMintWithNames

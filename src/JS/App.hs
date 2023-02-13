@@ -16,27 +16,12 @@ import           Language.Javascript.JSaddle (ToJSVal(..), JSVal)
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
-  "walletLoad($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);" walletLoad_js :: 
-    JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> IO ()
+  "walletLoad($1);" walletLoad_js :: JSVal -> IO ()
 
-walletLoad :: MonadIO m => Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> m ()
-walletLoad networkIdElement balanceElement changeAddressElement changeAddressBech32Element pubKeyHashElement
-    stakeKeyHashElement collateralElement utxosElement unusedAddressesElement rewardAddressesElement walletName = liftIO $ do
-  networkIdElement_js  <- toJSVal networkIdElement
-  balanceElement_js  <- toJSVal balanceElement
-  changeAddressElement_js  <- toJSVal changeAddressElement
-  changeAddressBech32Element_js  <- toJSVal changeAddressBech32Element
-  pubKeyHashElement_js  <- toJSVal pubKeyHashElement
-  stakeKeyHashElement_js  <- toJSVal stakeKeyHashElement
-  collateralElement_js  <- toJSVal collateralElement
-  utxosElement_js  <- toJSVal utxosElement
-  unusedAddressesElement_js  <- toJSVal unusedAddressesElement
-  rewardAddressesElement_js  <- toJSVal rewardAddressesElement
-  walletName_js  <- toJSVal walletName
-  walletLoad_js networkIdElement_js balanceElement_js changeAddressElement_js changeAddressBech32Element_js pubKeyHashElement_js
-    stakeKeyHashElement_js collateralElement_js utxosElement_js unusedAddressesElement_js rewardAddressesElement_js walletName_js
+walletLoad :: MonadIO m => Text -> m ()
+walletLoad walletName = liftIO $ toJSVal walletName >>= walletLoad_js
 #else
-walletLoad :: MonadIO m => Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> Text -> m ()
+walletLoad :: MonadIO m => Text -> m ()
 walletLoad = const $ error "GHCJS is required!"
 #endif
 

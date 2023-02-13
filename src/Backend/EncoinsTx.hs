@@ -32,7 +32,7 @@ bulletproofSetup :: BulletproofSetup
 bulletproofSetup = fromJust $ decode $ fromStrict $(embedFile "config/bulletproof_setup.json")
 
 encoinsCurrencySymbol :: Text
-encoinsCurrencySymbol = "40fd7027a6e67e85f5b15fbf98818af339b2c7cdb1283115d51d6be9"
+encoinsCurrencySymbol = "6d0c379d596e5fefc72d0140509a00d913ff482f00a77c0eda3f010b"
 
 getEncoinsInUtxos :: CSL.TransactionUnspentOutputs -> [Text]
 getEncoinsInUtxos utxos = maybe [] Map.keys assets
@@ -54,7 +54,7 @@ calculateV secrets mps = sum $ zipWith (\s mp -> fromFieldElement (secretV s) * 
 mkAddress :: Address -> Integer -> Address
 mkAddress addrWallet v = bool addrWallet addrVal (v > 0)
     where addrVal = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "201954c6f771e459e6588c06d701bcdd5216fb54cc1c1a7f5e037e9b") Nothing
+            decodeHex "d960867a1cf2e0c73ea2fb0b94f4b9e55152ba4f53c550a4a191a238") Nothing
 
 addressToBytes :: Address -> Text
 addressToBytes (Address cr scr) = bs1 `Text.append` bs2
@@ -99,10 +99,14 @@ encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
     let bRedWithData = ffor2 bRed (current dAddrWallet) (\red a -> (a, red))
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRedWithData `tag` eSend
     let eFinalRedeemer = () <$ catMaybes (updated dFinalRedeemer)
+    -- performEvent_ $ liftIO . logInfo . pack . show <$> updated dFinalRedeemer
 
     -- Constructing a new transaction
-    eTx <- newTxRequestWrapper (zipDyn (fmap fromJust dFinalRedeemer) dUTXOs) eFinalRedeemer
+    (eTx, eRelayDown) <- newTxRequestWrapper (zipDyn (fmap fromJust dFinalRedeemer) dUTXOs) eFinalRedeemer
     dTx <- holdDyn "" eTx
+
+    performEvent_ $ liftIO . logInfo . pack . show <$> eTx
+    performEvent_ $ liftIO . logInfo . pack . show <$> eRelayDown
 
     -- Signing the transaction
     dWalletSignature <- elementResultJS "walletSignatureElement" decodeWitness
@@ -112,7 +116,14 @@ encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
 
     -- Submitting the transaction
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
-    eSubmitted <- submitTxRequestWrapper dSubmitReqBody eWalletSignature
+    (eSubmitted, eRelayDown') <- submitTxRequestWrapper dSubmitReqBody eWalletSignature
 
-    let eStatus = leftmost [Balancing <$ eFinalRedeemer, Signing <$ eTx, Submitting <$ eWalletSignature, Submitted <$ eSubmitted]
+    let eStatus = leftmost [
+          Balancing <$ eFinalRedeemer,
+          eRelayDown,
+          Signing <$ eTx,
+          Submitting <$ eWalletSignature,
+          eRelayDown',
+          Submitted <$ eSubmitted
+          ]
     return (fmap getEncoinsInUtxos dUTXOs, eStatus)

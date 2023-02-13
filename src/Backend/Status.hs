@@ -1,6 +1,6 @@
 module Backend.Status where
 
-import           Data.Text                     (Text)
+import           Data.Text (Text, unpack)
 
 data Status = Ready | Balancing | Signing | Submitting | Submitted | StatusError Text
     deriving (Eq)
@@ -11,4 +11,4 @@ instance Show Status where
     show Signing         = "Please sign the transaction."
     show Submitting      = "Submitting..."
     show Submitted       = "The transaction is now pending..."
-    show (StatusError e) = "Error: " <> show e
+    show (StatusError e) = "Error: " <> unpack e

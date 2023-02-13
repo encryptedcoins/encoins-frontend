@@ -24,6 +24,17 @@ toJS = \case
   Begin  -> "begin"
   Typhon -> "typhon"
 
+fromJS :: Text -> WalletName
+fromJS = \case
+  "eternl"     -> Eternl
+  "nami"       -> Nami
+  "flint"      -> Flint
+  "nufi"       -> NuFi
+  "gerowallet" -> Gero
+  "begin"      -> Begin
+  "typhon"     -> Typhon
+  _            -> None
+
 data Wallet = Wallet
   {
     walletName          :: WalletName,
@@ -34,9 +45,8 @@ data Wallet = Wallet
 
 loadWallet :: MonadWidget t m => Event t WalletName -> m (Dynamic t Wallet)
 loadWallet eWalletName = mdo
-  performEvent_ (walletLoad "" "" "" "changeAddressBech32Element" "pubKeyHashElement" "stakeKeyHashElement" "" "utxosElement" "" ""
-    . toJS <$> eWalletName)
-  dWalletName <- holdDyn None eWalletName
+  performEvent_ (walletLoad . toJS <$> eWalletName)
+  dWalletName <- elementResultJS "walletNameElement" fromJS
   dWalletAddressBech32 <- elementResultJS "changeAddressBech32Element" id
   dPubKeyHash <- elementResultJS "pubKeyHashElement" id
   dStakeKeyHash <- elementResultJS "stakeKeyHashElement" id

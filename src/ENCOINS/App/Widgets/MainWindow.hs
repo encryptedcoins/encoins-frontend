@@ -4,15 +4,17 @@ import           Data.Aeson                    (encode, decodeStrict)
 import           Data.Bool                     (bool)
 import           Data.ByteString               (ByteString)
 import           Data.ByteString.Lazy          (toStrict)
+import           Data.List                     (nub)
 import           Data.Maybe                    (fromMaybe)
 import           Data.Text                     (Text)
 import           Data.Text.Encoding            (decodeUtf8, encodeUtf8)
 import           Reflex.Dom
 
 import           Backend.EncoinsTx             (encoinsTx)
+import           Backend.Status                (Status(..))
 import           Backend.Wallet                (Wallet)
 import           ENCOINS.App.Widgets.Basic     (btnApp, containerApp, sectionApp)
-import           ENCOINS.App.Widgets.Coin      (coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget, coinCollectionWithNames, filterKnownCoinNames)
+import           ENCOINS.App.Widgets.Coin      (coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget, coinCollectionWithNames, filterKnownCoinNames, CoinUpdate (..))
 import           ENCOINS.Bulletproofs          (Secrets, Secret (..))
 import           ENCOINS.Crypto.Field          (fromFieldElement)
 import           JS.Website                    (saveJSON, loadJSON)
@@ -61,14 +63,16 @@ mainWindow dWallet = mdo
                 dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
                 let dSecrets = zipDynWith (++) dOldSecrets dNewSecrets
                 dSecretsWithNames <- coinCollectionWithNames dSecrets
-                performEvent_ (saveJSON "encoins" . decodeUtf8 . toStrict . encode <$> updated dSecrets)
+                performEvent_ (saveJSON "encoins" . decodeUtf8 . toStrict . encode . nub <$> updated dSecrets)
 
                 dCoinsToBurn <- divClass "app-column w-col w-col-6" $ do
                     mainWindowColumnHeader "Coins in the Wallet"
-                    coinBurnCollectionWidget dSecretsWithNamesInTheWallet
+                    coins <- coinBurnCollectionWidget dSecretsWithNamesInTheWallet
+                    divClass "coin-entry-burn-div" $ divClass "app-text-normal" $ dynText $ fmap (bool "" "No coins found." . null) coins
+                    return coins
                 (dCoinsToMint, eSend) <- divClass "app-column w-col w-col-6" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
-                    d <- coinMintCollectionWidget eNewSecret
+                    d <- coinMintCollectionWidget $ leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Balancing)  eStatusUpdate]
                     let d' = fmap (map fst) d
                     eNewSecret <- coinNewWidget
                     e <- btnApp "button-switching" $ dynText "SEND REQUEST"
