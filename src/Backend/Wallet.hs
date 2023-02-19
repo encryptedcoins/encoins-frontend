@@ -10,8 +10,8 @@ import           ENCOINS.Website.Widgets.Basic (image)
 import           JS.App                        (walletLoad)
 import           Widgets.Basic                 (elementResultJS)
 
-data WalletName = None | Eternl | Nami | Flint | NuFi | Gero | Begin | Typhon | Lace
-  deriving (Eq, Show)
+data WalletName = Eternl | Nami | Flint | NuFi | Gero | Begin | Typhon | Lace | None
+  deriving (Eq, Show, Enum, Bounded)
 
 toJS :: WalletName -> Text
 toJS = \case

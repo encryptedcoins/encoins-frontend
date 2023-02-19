@@ -935,8 +935,7 @@ body {
   text-align: center;
 }
 
-.connect-div {
-  max-width: 500px;
+.dialog-window {
   padding: 10px 60px;
   -webkit-box-orient: vertical;
   -webkit-box-direction: normal;
@@ -952,7 +951,7 @@ body {
   color: #000;
 }
 
-.div-app-fixed {
+.dialog-window-wrapper {
   position: fixed;
   left: 0%;
   top: 0%;

@@ -44,3 +44,9 @@ waitForScripts placeholderWidget actualWidget = do
   ePB <- getPostBuild
   _ <- widgetHoldUntilDefined "walletAPI" ("js/ENCOINS.js" <$ ePB) placeholderWidget actualWidget
   blank
+
+dialogWindow :: MonadWidget t m => Dynamic t Bool -> Text -> m a -> m a
+dialogWindow dWindowIsOpen style tags = 
+  let mkClass b = "class" =: "dialog-window-wrapper" <> bool ("style" =: "display: none") mempty b
+  in elDynAttr "div" (fmap mkClass dWindowIsOpen) $ elAttr "div"
+      ("class" =: "dialog-window" <> "style" =: style) tags
