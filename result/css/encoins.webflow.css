@@ -1092,6 +1092,10 @@ body {
   align-items: center;
 }
 
+.image-button {
+  cursor: pointer;
+}
+
 @media screen and (max-width: 991px) {
   .nav-menu {
     background-color: #000;

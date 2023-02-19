@@ -1,27 +1,26 @@
 module ENCOINS.App.Widgets.MainWindow where
 
-import           Data.Aeson                    (encode, decodeStrict)
-import           Data.Bool                     (bool)
-import           Data.ByteString               (ByteString)
-import           Data.ByteString.Lazy          (toStrict)
-import           Data.List                     (nub)
-import           Data.Maybe                    (fromMaybe)
-import           Data.Text                     (Text)
-import           Data.Text.Encoding            (decodeUtf8, encodeUtf8)
+import           Data.Aeson                       (encode)
+import           Data.Bool                        (bool)
+import           Data.ByteString.Lazy             (toStrict)
+import           Data.List                        (nub)
+import           Data.Text                        (Text)
+import           Data.Text.Encoding               (decodeUtf8)
 import           Reflex.Dom
+import           Witherable                       (catMaybes)
 
-import           Backend.EncoinsTx             (encoinsTx)
-import           Backend.Status                (Status(..), walletError)
-import           Backend.Wallet                (Wallet (..), WalletName (..))
-import           ENCOINS.App.Widgets.Basic     (containerApp, sectionApp, elementResultJS)
-import           ENCOINS.App.Widgets.Coin      (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
+import           Backend.EncoinsTx                (encoinsTx)
+import           Backend.Status                   (Status(..), walletError)
+import           Backend.Wallet                   (Wallet (..), WalletName (..))
+import           ENCOINS.App.Widgets.Basic        (containerApp, sectionApp, loadAppData)
+import           ENCOINS.App.Widgets.Coin         (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
                                                     coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget)
-import           ENCOINS.Bulletproofs          (Secrets, Secret (..))
-import           ENCOINS.Common.Widgets.Basic  (btn)
-import           ENCOINS.Crypto.Field          (fromFieldElement)
-import           JS.Website                    (saveJSON, loadJSON)
-import           Widgets.Events                (newEventWithDelay)
-import           Widgets.Utils                 (toText)
+import           ENCOINS.App.Widgets.ImportWindow (importWindow)
+import           ENCOINS.Bulletproofs             (Secrets, Secret (..))
+import           ENCOINS.Common.Widgets.Basic     (btn, image)
+import           ENCOINS.Crypto.Field             (fromFieldElement)
+import           JS.Website                       (saveJSON)
+import           Widgets.Utils                    (toText)
 
 transactionBalanceWidget :: MonadWidget t m => Dynamic t Secrets -> Dynamic t Secrets -> m ()
 transactionBalanceWidget dCoinsToBurn dCoinsToMint =
@@ -37,13 +36,6 @@ mainWindowColumnHeader :: MonadWidget t m => Text -> m ()
 mainWindowColumnHeader title =
     divClass "app-column-head-div" $
         divClass "app-text-semibold" $ text title
-
-loadAppData :: MonadWidget t m => m (Dynamic t Secrets)
-loadAppData = do
-    let elId = "encoins-data"
-    e <- newEventWithDelay 0.1
-    performEvent_ (loadJSON "encoins" elId <$ e)
-    elementResultJS elId (fromMaybe [] . (decodeStrict :: ByteString -> Maybe Secrets) . encodeUtf8)
 
 data TxValidity = TxValid | TxInvalid Text
     deriving (Show, Eq)
@@ -93,7 +85,7 @@ sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint = do
 
 mainWindow :: MonadWidget t m => Dynamic t Wallet -> m ()
 mainWindow dWallet = mdo
-    sectionApp "" "" $
+    eImportSecret <- sectionApp "" "" $
         containerApp "" $
             divClass "app-top-menu-div" $ do
                 divClass "menu-item-button-right" $ do
@@ -102,13 +94,16 @@ mainWindow dWallet = mdo
                 divClass "menu-item-button-right" $ do
                     _ <- btn "button-not-selected button-disabled" $ dynText "Ledger"
                     blank
+                e <- image "import.svg" "image-button inverted" "30px"
+                importWindow e
+    dImportedSecrets <- foldDyn (:) [] $ catMaybes eImportSecret
     sectionApp "" "" $ mdo
         containerApp "" $ transactionBalanceWidget dToBurn dToMint
         (dToBurn, dToMint, eStatusUpdate) <- containerApp "" $
             divClass "app-columns w-row" $ mdo
-                dOldSecrets <- loadAppData
+                dOldSecrets <- loadAppData "encoins" id []
                 dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
-                let dSecrets = zipDynWith (++) dOldSecrets dNewSecrets
+                let dSecrets = zipDynWith (++) dImportedSecrets $ zipDynWith (++) dOldSecrets dNewSecrets
                 dSecretsWithNames <- coinCollectionWithNames dSecrets
                 performEvent_ (saveJSON "encoins" . decodeUtf8 . toStrict . encode . nub <$> updated dSecrets)
 

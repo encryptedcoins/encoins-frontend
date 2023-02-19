@@ -22,5 +22,5 @@ welcomeWindow = mdo
                         "To access encoins on another device, copy the minting key and use the \"Import\" button. Do not forget to copy the minting key before sending the coin to another user!",
                         "At the moment, the test is limited to the Wallet Mode."
                     ]
-            btn "button-switching inverted" $ text "Ok" 
+            btn "button-switching inverted flex-center" $ text "Ok" 
     blank

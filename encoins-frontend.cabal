@@ -23,6 +23,7 @@ library
     ENCOINS.App.Widgets.Basic,
     ENCOINS.App.Widgets.Coin,
     ENCOINS.App.Widgets.ConnectWindow,
+    ENCOINS.App.Widgets.ImportWindow,
     ENCOINS.App.Widgets.ISPO,
     ENCOINS.App.Widgets.MainWindow,
     ENCOINS.App.Widgets.Navbar,

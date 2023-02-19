@@ -1,14 +1,18 @@
 module ENCOINS.Common.Widgets.Advanced where
 
 import           Control.Monad                (void)
+import           Data.Bool                    (bool)
+import           Data.Text                    (Text)
 import           Reflex.Dom
 
 import           ENCOINS.Common.Widgets.Basic (image)
-import Data.Text (Text)
-import Data.Bool (bool)
 
 logo :: MonadWidget t m => m ()
 logo = void $ image "logo.svg" "logo inverted" ""
+
+imageButton :: MonadWidget t m => Dynamic t Text -> Text -> m (Event t ())
+imageButton dFile w = do
+  image dFile (pure "w-button") w
 
 copyButton :: MonadWidget t m => m (Event t ())
 copyButton = mdo
