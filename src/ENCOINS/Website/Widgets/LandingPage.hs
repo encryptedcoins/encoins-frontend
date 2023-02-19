@@ -1,10 +1,12 @@
 module ENCOINS.Website.Widgets.LandingPage (landingPage) where
 
+import           Control.Monad                     (void)
 import           Data.Bool                         (bool)
 import           Data.Text                         (Text)
 import           Reflex.Dom
 import           Reflex.ScriptDependent            (widgetHoldUntilDefined)
 
+import           ENCOINS.Common.Widgets.Basic
 import           ENCOINS.Website.Widgets.Basic
 import           ENCOINS.Website.Widgets.Resourses (ourResourses)
 import           JS.Website                        (scrollIntoView)
@@ -29,7 +31,7 @@ titleSection = section "" "" $ do
     container "" $ h4 "Protect your privacy with"
     container "" $ h1 "ENCOINS"
     container "" $ h2 "Cardano Native Tokens with Encrypted Redeeming Values"
-    _ <- container "container-extra-margin-small" $ btn "button-disabled" "Launch App"
+    _ <- container "container-extra-margin-small" $ btn "button-disabled" $ text "Launch App"
     blank
 
 communitySection :: MonadWidget t m => m ()
@@ -44,7 +46,7 @@ featuresSection = section "Features" "" $ do
     explainer "How to mint?" "Send ADA into the protocol to mint a bundle of NFTs (aka ENCOINS). Each token contains an encrypted redeeming value known only to you. The total redeeming value is equal to the ADA provided."
     explainer "How to use?" "ENCOINS can be used as any other native asset on Cardano: they can be traded, gifted, or used in other DeFi protocols that support them. They can also be used in ENCOINS Ledger, our upcoming shielded accounts system."
     explainer "How to redeem?" "ENCOINS can be burned to receive their redeeming ADA value back. Only the user who knows its minting key can redeem an ENCOINS token."
-    _ <- container "container-extra-margin-small" $ btn "button-disabled" "Launch App"
+    _ <- container "container-extra-margin-small" $ btn "button-disabled" $ text "Launch App"
     blank
     where
         explainer txtTitle txtExplainer = container "" $ divClass "div-explainer" $ do
@@ -71,9 +73,9 @@ roadmapSection = section "Roadmap" "" $ do
             divClass "div-roadmap-item-description" $ do
                 h5 txtTitle
                 divClass "p-roadmap-item" tags
-            image "Roadmap-Icon.svg" "image-roadmap-item" "100px"
+            void $ image "Roadmap-Icon.svg" "image-roadmap-item" "100px"
         roadmapItemLeft num b txtTitle tags  = divClass "div-roadmap-item div-roadmap-item-left" $ do
-            image "Roadmap-Icon.svg" "image-roadmap-item" "100px"
+            void $ image "Roadmap-Icon.svg" "image-roadmap-item" "100px"
             divClass "div-roadmap-item-description" $ do
                 h5 txtTitle
                 divClass "p-roadmap-item" tags

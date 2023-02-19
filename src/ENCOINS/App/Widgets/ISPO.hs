@@ -13,7 +13,7 @@ import           Data.Text                         (Text, pack)
 import           GHC.Generics                      (Generic)
 import           Reflex.Dom
 
-import           ENCOINS.Website.Widgets.Basic     (pClass)
+import           ENCOINS.Common.Widgets.Basic      (pClass)
 
 data DelegatorC = DelegatorC { addressC :: Text, rewardC :: Double }
   deriving (Show, Generic, ToJSON, FromJSON)

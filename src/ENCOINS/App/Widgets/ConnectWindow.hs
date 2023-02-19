@@ -1,11 +1,11 @@
 module ENCOINS.App.Widgets.ConnectWindow (connectWindow) where
 
-import           Data.Bool                     (bool)
+import           Data.Bool                       (bool)
 import           Reflex.Dom
 
-import           Backend.Wallet                (WalletName (..), Wallet (..), loadWallet, walletIcon)
-import           ENCOINS.App.Widgets.Basic     (dialogWindow)
-import           Widgets.Utils                 (toText)
+import           Backend.Wallet                  (WalletName (..), Wallet (..), loadWallet, walletIcon)
+import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
+import           Widgets.Utils                   (toText)
 
 walletEntry :: MonadWidget t m => WalletName -> m (Event t WalletName)
 walletEntry w = do

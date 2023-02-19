@@ -20,13 +20,13 @@ import           Backend.Status                  (Status (..))
 import           Backend.Types
 import           Backend.Wallet                  (Wallet(..), toJS)
 import qualified CSL
+import           ENCOINS.App.Widgets.Basic       (elementResultJS)
 import           ENCOINS.Crypto.Field            (Field(..), fromFieldElement)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           JS.App                          (sha2_256, walletSignTx)
 import           JS.Website                      (logInfo)
 import           PlutusTx.Extra.ByteString       (ToBuiltinByteString(..))
-import           Widgets.Basic                   (elementResultJS)
 
 bulletproofSetup :: BulletproofSetup
 bulletproofSetup = fromJust $ decode $ fromStrict $(embedFile "config/bulletproof_setup.json")

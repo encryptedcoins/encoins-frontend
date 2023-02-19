@@ -5,9 +5,8 @@ import           Prelude                          hiding (take)
 import           Reflex.Dom
 
 import           Backend.Wallet                   (Wallet (..), WalletName (..), walletIcon)
-import           ENCOINS.Website.Widgets.Advanced (logo)
-import           ENCOINS.App.Widgets.Basic        (btnApp)
-
+import           ENCOINS.Common.Widgets.Advanced  (logo)
+import           ENCOINS.Common.Widgets.Basic     (btn)
 
 connectText :: Wallet -> Text
 connectText w = case w of
@@ -29,6 +28,6 @@ navbarWidget w = do
                 --     _ <- btnApp "button-switching" $ dynText "RELAYER"
                 --     blank
                 divClass "menu-item-button-left" $
-                    btnApp "button-switching" $ do
+                    btn "button-switching" $ do
                         dyn_ $ fmap (walletIcon . walletName) w
                         dynText $ fmap connectText w

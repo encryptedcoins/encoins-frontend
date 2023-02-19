@@ -8,10 +8,6 @@ import           Witherable             (catMaybes)
 
 import           Widgets.Utils          (toText, safeIndex)
 
--- Element containing the result of a JavaScript computation
-elementResultJS :: MonadWidget t m => Text -> (Text -> a) -> m (Dynamic t a)
-elementResultJS resId f = fmap (fmap f . value) $ inputElement $ def & initialAttributes .~ "style" =: "display:none;" <> "id" =: resId
-
 -- TODO: complete and move this to ENCOINS.App.Widgets
 -- Title of the input element along with a hint about the expected input
 inputTitle :: MonadWidget t m => Text -> Text -> m ()

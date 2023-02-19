@@ -1,27 +1,27 @@
 module ENCOINS.App.Widgets.Coin where
 
-import           Control.Monad               (join)
-import           Control.Monad.IO.Class      (MonadIO(..))
-import           Data.Bool                   (bool)
-import           Data.List                   (delete)
-import           Data.Maybe                  (catMaybes, fromMaybe)
-import           Data.Text                   (Text, unpack)
-import qualified Data.Text                   as Text
-import           PlutusTx.Builtins           (fromBuiltin, toBuiltin)
+import           Control.Monad                   (join, void)
+import           Control.Monad.IO.Class          (MonadIO(..))
+import           Data.Bool                       (bool)
+import           Data.List                       (delete)
+import           Data.Maybe                      (catMaybes, fromMaybe)
+import           Data.Text                       (Text, unpack)
+import qualified Data.Text                       as Text
+import           PlutusTx.Builtins               (fromBuiltin, toBuiltin)
 import           Reflex.Dom
-import           System.Random               (randomIO)
-import           Text.Hex                    (encodeHex, decodeHex)
-import           Text.Read                   (readMaybe)
+import           System.Random                   (randomIO)
+import           Text.Hex                        (encodeHex, decodeHex)
+import           Text.Read                       (readMaybe)
 
-import           Backend.EncoinsTx           (bulletproofSetup)
-import           ENCOINS.App.Widgets.Basic   (checkboxApp, copyButtonApp)
-import           ENCOINS.BaseTypes           (FieldElement)
-import           ENCOINS.Bulletproofs        (Secret (..), fromSecret, Secrets)
-import           ENCOINS.Crypto.Field        (toFieldElement, fromFieldElement)
-import           ENCOINS.Website.Widgets     (image)
-import           JS.Website                  (logInfo, copyText)
-import           PlutusTx.Extra.ByteString   (toBytes, byteStringToInteger)
-import           Widgets.Utils               (toText)
+import           Backend.EncoinsTx               (bulletproofSetup)
+import           ENCOINS.Common.Widgets.Advanced (checkboxButton, copyButton)
+import           ENCOINS.Common.Widgets.Basic    (image)
+import           ENCOINS.BaseTypes               (FieldElement)
+import           ENCOINS.Bulletproofs            (Secret (..), fromSecret, Secrets)
+import           ENCOINS.Crypto.Field            (toFieldElement, fromFieldElement)
+import           JS.Website                      (logInfo, copyText)
+import           PlutusTx.Extra.ByteString       (toBytes, byteStringToInteger)
+import           Widgets.Utils                   (toText)
 
 data CoinUpdate = AddCoin Secret | RemoveCoin Secret | ClearCoins
 
@@ -51,22 +51,22 @@ filterKnownCoinNames knownNames = filter (\(_, name) -> name `elem` knownNames)
 coinBurnWidget :: MonadWidget t m => (Secret, Text) -> m (Dynamic t (Maybe Secret))
 coinBurnWidget (s, name) = divClass "coin-entry-burn-div" $ do
     let secretText = secretToHex s
-    dChecked <- checkboxApp
+    dChecked <- checkboxButton
     divClass "div-tooltip-wrapper" $ do
         divClass "app-text-normal" $ text $ shortenCoinName name
         divClass "div-tooltip" $ do
             divClass "app-text-semibold" $ text "Full token name"
             divClass "app-text-normal" $ do
-                e <- copyButtonApp
+                e <- copyButton
                 performEvent_ (liftIO (copyText name) <$ e)
                 text name
     divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
     divClass "key-div" $ do
-        image "Key.svg" "" "22px"
+        void $ image "Key.svg" "" "22px"
         divClass "div-tooltip div-position-top-right" $ do
             divClass "app-text-semibold" $ text "Minting Key"
             divClass "app-text-normal" $ do
-                e <- copyButtonApp
+                e <- copyButton
                 performEvent_ (liftIO (copyText secretText) <$ e)
                 text $ " " <> secretText
 
@@ -91,7 +91,7 @@ coinMintWidget (s, name) = divClass "coin-entry-mint-div" $ do
         divClass "div-tooltip" $ do
             divClass "app-text-semibold" $ text "Full token name"
             divClass "app-text-normal" $ do
-                eCopy <- copyButtonApp
+                eCopy <- copyButton
                 performEvent_ (liftIO (copyText name) <$ eCopy)
                 text name
     divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"

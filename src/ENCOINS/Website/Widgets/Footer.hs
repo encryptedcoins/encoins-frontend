@@ -3,10 +3,9 @@ module ENCOINS.Website.Widgets.Footer (footerWidget) where
 import           Data.Text                         (Text)
 import           Reflex.Dom
 
-import           ENCOINS.Website.Widgets.Advanced  (logo)
-import           ENCOINS.Website.Widgets.Basic
+import           ENCOINS.Common.Widgets.Advanced   (logo)
+import           ENCOINS.Common.Widgets.Basic
 import           ENCOINS.Website.Widgets.Resourses (ourResourses)
-
 
 footerWidget :: MonadWidget t m => m (Event t (Text, Text))
 footerWidget = divClass "footer wf-section" $ divClass "container-footer" $
@@ -24,7 +23,7 @@ footerWidget = divClass "footer wf-section" $ divClass "container-footer" $
             divClass "div-vertical-margin div-horizontal-margin div-invisible" $ h5 "Subscribe for updates"
             divClass "div-vertical-margin div-horizontal-margin div-invisible" $ divClass "form-email-submit" $ do
                 divClass "text-input" $ text "Email Address"
-                _ <- btn "" "Submit"
+                _ <- btn "" $ text "Submit"
                 blank
             divClass "div-vertical-margin div-horizontal-margin div-invisible" blank
             divClass "div-horizontal-margin" $ divClass "columns-footer w-row" $ do

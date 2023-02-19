@@ -1,9 +1,9 @@
 module Backend.Status where
 
-import           Data.Text     (Text, unpack)
+import           Data.Text                    (Text, unpack)
 import           Reflex.Dom
 
-import           Widgets.Basic (elementResultJS)
+import           ENCOINS.App.Widgets.Basic    (elementResultJS)
 
 data Status =
       Ready             -- ^ The default status

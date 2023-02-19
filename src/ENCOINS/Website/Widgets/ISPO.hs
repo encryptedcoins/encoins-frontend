@@ -1,8 +1,10 @@
 module ENCOINS.Website.Widgets.ISPO (ispoPage) where
 
+import           Control.Monad                     (void)
 import           Reflex.Dom
 
 import           ENCOINS.App.Widgets.ISPO          (calculator)
+import           ENCOINS.Common.Widgets.Basic
 import           ENCOINS.Website.Widgets.Basic
 
 ispoPage :: MonadWidget t m => m ()
@@ -77,7 +79,7 @@ lotteryWinnersSection = section "" "" $ do
             lnkInline "https://encoins.io/ispo/394.txt" "here"
             text ". Below are the last epoch's winners."
         divClass "div-lottery-winners" $ do
-            image "fireworks.svg" "image-fireworks inverted" "120px"
+            void $ image "fireworks.svg" "image-fireworks inverted" "120px"
             elAttr "ul" ("role" =: "list" <> "class" =: "list p-ispo") $ do
                 mapM_ (el "li" . text)
                     [
@@ -85,5 +87,5 @@ lotteryWinnersSection = section "" "" $ do
                         "stake1u9w4xku6zp9r5jp9su9wmyxc8hfyhwnx0ku8qr0wcu8xe0crd3lka",
                         "stake1u82njmga6hz53ldm8dn53kat53tzm7ucky9m4sk3av3waug9lj2tq"
                     ]
-            image "fireworks.svg" "image-fireworks inverted" "120px"
+            void $ image "fireworks.svg" "image-fireworks inverted" "120px"
         pClass "p-ispo" $ text "The winners secure additional 4000 ENCS. Congratulations!!!"

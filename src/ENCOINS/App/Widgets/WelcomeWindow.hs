@@ -2,8 +2,8 @@ module ENCOINS.App.Widgets.WelcomeWindow (welcomeWindow) where
 
 import           Reflex.Dom
 
-import           ENCOINS.App.Widgets.Basic     (btnApp, dialogWindow)
-import           ENCOINS.Website.Widgets.Basic (pClass)
+import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
+import           ENCOINS.Common.Widgets.Basic    (pClass, btn)
 
 welcomeWindow :: MonadWidget t m => m ()
 welcomeWindow = mdo
@@ -22,5 +22,5 @@ welcomeWindow = mdo
                         "To access encoins on another device, copy the minting key and use the \"Import\" button. Do not forget to copy the minting key before sending the coin to another user!",
                         "At the moment, the test is limited to the Wallet Mode."
                     ]
-            btnApp "button-switching inverted" $ text "Ok" 
+            btn "button-switching inverted" $ text "Ok" 
     blank

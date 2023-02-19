@@ -13,13 +13,13 @@ import           Reflex.Dom
 import           Backend.EncoinsTx             (encoinsTx)
 import           Backend.Status                (Status(..), walletError)
 import           Backend.Wallet                (Wallet (..), WalletName (..))
-import           ENCOINS.App.Widgets.Basic     (btnApp, containerApp, sectionApp)
-import           ENCOINS.App.Widgets.Coin      (coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
-                                                    coinCollectionWithNames, filterKnownCoinNames, CoinUpdate (..), noCoinsFoundWidget)
+import           ENCOINS.App.Widgets.Basic     (containerApp, sectionApp, elementResultJS)
+import           ENCOINS.App.Widgets.Coin      (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
+                                                    coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget)
 import           ENCOINS.Bulletproofs          (Secrets, Secret (..))
+import           ENCOINS.Common.Widgets.Basic  (btn)
 import           ENCOINS.Crypto.Field          (fromFieldElement)
 import           JS.Website                    (saveJSON, loadJSON)
-import           Widgets.Basic                 (elementResultJS)
 import           Widgets.Events                (newEventWithDelay)
 import           Widgets.Utils                 (toText)
 
@@ -81,13 +81,13 @@ sendRequestButton :: MonadWidget t m => Dynamic t Status -> Dynamic t Wallet -> 
 sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint = do
     let dTxValidity = txValidity <$> dStatus <*> dWallet <*> dCoinsToBurn <*> dCoinsToMint
         f v = case v of
-            TxValid     -> "button-switching"
-            TxInvalid _ -> "button-not-selected button-disabled"
+            TxValid     -> "button-switching flex-center"
+            TxInvalid _ -> "button-not-selected button-disabled flex-center"
         g v = case v of
             TxValid     -> blank
             TxInvalid e -> divClass "div-tooltip div-tooltip-always-visible" $
                 divClass "app-text-normal" $ text e
-    e <- btnApp (fmap f dTxValidity) $ dynText "SEND REQUEST"
+    e <- btn (fmap f dTxValidity) $ dynText "SEND REQUEST"
     dyn_ $ fmap g dTxValidity
     return $ () <$ ffilter (== TxValid) (current dTxValidity `tag` e)
 
@@ -97,10 +97,10 @@ mainWindow dWallet = mdo
         containerApp "" $
             divClass "app-top-menu-div" $ do
                 divClass "menu-item-button-right" $ do
-                    _ <- btnApp "" $ dynText "Wallet"
+                    _ <- btn "" $ dynText "Wallet"
                     blank
                 divClass "menu-item-button-right" $ do
-                    _ <- btnApp "button-not-selected button-disabled" $ dynText "Ledger"
+                    _ <- btn "button-not-selected button-disabled" $ dynText "Ledger"
                     blank
     sectionApp "" "" $ mdo
         containerApp "" $ transactionBalanceWidget dToBurn dToMint

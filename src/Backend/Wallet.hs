@@ -1,14 +1,15 @@
 module Backend.Wallet where
 
+import           Control.Monad                 (void)
 import           Data.Maybe                    (fromMaybe)
 import           Data.Text                     (Text)
 import           Reflex.Dom                    hiding (Input)
 
 import           Backend.Types
 import           CSL                           (TransactionUnspentOutputs)
-import           ENCOINS.Website.Widgets.Basic (image)
+import           ENCOINS.App.Widgets.Basic     (elementResultJS)
+import           ENCOINS.Common.Widgets.Basic  (image)
 import           JS.App                        (walletLoad)
-import           Widgets.Basic                 (elementResultJS)
 
 data WalletName = Eternl | Nami | Flint | NuFi | Gero | Begin | Typhon | Lace | None
   deriving (Eq, Show, Enum, Bounded)
@@ -60,7 +61,7 @@ loadWallet eWalletName = mdo
 walletIcon :: MonadWidget t m => WalletName -> m ()
 walletIcon w = case w of
   None -> blank
-  name -> image (toJS name <> ".svg") "wallet-image" "30px"
+  name -> void $ image (pure $ toJS name <> ".svg") "wallet-image" "30px"
 
 data WalletError = WalletError
   {
