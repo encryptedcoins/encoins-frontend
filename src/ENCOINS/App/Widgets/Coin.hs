@@ -86,7 +86,14 @@ coinBurnCollectionWidget dSecretsWithNames = do
 coinMintWidget :: MonadWidget t m => (Secret, Text) -> m (Event t Secret)
 coinMintWidget (s, name) = divClass "coin-entry-mint-div" $ do
     e <- domEvent Click . fst <$> elClass' "div" "cross-div" blank
-    divClass "app-text-normal" $ text $ shortenCoinName name
+    divClass "div-tooltip-wrapper" $ do
+        divClass "app-text-normal" $ text $ shortenCoinName name
+        divClass "div-tooltip" $ do
+            divClass "app-text-semibold" $ text "Full token name"
+            divClass "app-text-normal" $ do
+                eCopy <- copyButtonApp
+                performEvent_ (liftIO (copyText name) <$ eCopy)
+                text name
     divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
     return $ s <$ e
 

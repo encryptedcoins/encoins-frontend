@@ -22,7 +22,7 @@ connectWindow eConnectOpen = mdo
         divClass "connect-div" $ mdo
             eCross <- divClass "connect-title-div" $ do
                 divClass "app-text-semibold" $ text "Connect Wallet"
-                domEvent Click . fst <$> elAttr' "div" ("class" =: "cross-div cross-div-inverted") blank
+                domEvent Click . fst <$> elAttr' "div" ("class" =: "cross-div inverted") blank
             eEternl <- walletEntry Eternl
             eNami   <- walletEntry Nami
             eFlint  <- walletEntry Flint

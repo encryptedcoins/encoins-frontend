@@ -7,11 +7,14 @@ import           ENCOINS.App.Widgets
 import           ENCOINS.App.Widgets.Basic         (waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow (connectWindow)
 import           ENCOINS.App.Widgets.MainWindow    (mainWindow)
+import           ENCOINS.App.Widgets.WelcomeWindow (welcomeWindow)
     
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = mdo
   eConnectOpen   <- navbarWidget dWallet
   dWallet        <- connectWindow eConnectOpen
+
+  welcomeWindow
 
   divClass "section-app section-app-empty wf-section" blank
 

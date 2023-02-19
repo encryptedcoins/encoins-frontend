@@ -20,8 +20,6 @@ body {
 
 .logo {
   width: 100px;
-  -webkit-filter: invert(100%);
-  filter: invert(100%);
 }
 
 .menu-item {
@@ -597,8 +595,6 @@ body {
   width: 120px;
   margin-right: 30px;
   margin-left: 30px;
-  -webkit-filter: invert(100%);
-  filter: invert(100%);
 }
 
 .utility-page-wrap {
@@ -874,11 +870,6 @@ body {
   cursor: pointer;
 }
 
-.cross-div.cross-div-inverted {
-  -webkit-filter: invert(100%);
-  filter: invert(100%);
-}
-
 .coin-new-div {
   display: -webkit-box;
   display: -webkit-flex;
@@ -1074,7 +1065,7 @@ body {
   background-repeat: no-repeat;
 }
 
-.tick-div-inverted {
+.tick-div {
   display: inline-block;
   width: 20px;
   height: 20px;
@@ -1083,6 +1074,9 @@ body {
   background-position: 50% 50%;
   background-size: 20px;
   background-repeat: no-repeat;
+}
+
+.inverted {
   -webkit-filter: invert(100%);
   filter: invert(100%);
 }

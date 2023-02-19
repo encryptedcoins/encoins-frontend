@@ -3,15 +3,17 @@ module ENCOINS.Website.Widgets.Footer (footerWidget) where
 import           Data.Text                         (Text)
 import           Reflex.Dom
 
+import           ENCOINS.Website.Widgets.Advanced  (logo)
 import           ENCOINS.Website.Widgets.Basic
 import           ENCOINS.Website.Widgets.Resourses (ourResourses)
+
 
 footerWidget :: MonadWidget t m => m (Event t (Text, Text))
 footerWidget = divClass "footer wf-section" $ divClass "container-footer" $
     divClass "columns-footer w-row" $ do
         divClass "column-footer border-right w-col w-col-6" $ do
             divClass "div-horizontal-margin" $ divClass "div-horizontal-items" $ do
-                image "logo.svg" "logo" "100px"
+                logo
                 h3 "ENCOINS"
             divClass "div-horizontal-margin div-vertical-margin" $ pClass "p-footer" $ text "ENCOINS is a decentralized private accounts and payments protocol on the Cardano blockchain."
             divClass "div-horizontal-margin" $ do

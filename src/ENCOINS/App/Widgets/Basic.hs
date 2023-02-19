@@ -26,7 +26,7 @@ imageApp dFile dCls w =
 
 copyButtonApp :: MonadWidget t m => m (Event t ())
 copyButtonApp = mdo
-  let mkClass = bool "copy-div" "tick-div-inverted"
+  let mkClass = bool "copy-div" "tick-div inverted"
   e <- domEvent Click . fst <$> elDynClass' "div" (fmap mkClass d) blank
   e' <- delay 5 e
   d <- holdDyn False $ leftmost [True <$ e, False <$ e']

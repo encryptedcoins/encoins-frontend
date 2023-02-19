@@ -1,11 +1,13 @@
 module ENCOINS.App.Widgets.Navbar (navbarWidget) where
 
-import           Data.Text                 (Text, take, takeEnd)
-import           Prelude                   hiding (take)
+import           Data.Text                        (Text, take, takeEnd)
+import           Prelude                          hiding (take)
 import           Reflex.Dom
 
-import           Backend.Wallet            (Wallet (..), WalletName (..), walletIcon)
-import           ENCOINS.App.Widgets.Basic (btnApp)
+import           Backend.Wallet                   (Wallet (..), WalletName (..), walletIcon)
+import           ENCOINS.Website.Widgets.Advanced (logo)
+import           ENCOINS.App.Widgets.Basic        (btnApp)
+
 
 connectText :: Wallet -> Text
 connectText w = case w of
@@ -18,8 +20,7 @@ navbarWidget w = do
     <> "data-easing" =: "ease" <> "data-easing2" =: "ease" <> "role" =: "banner" <> "class" =: "navbar w-nav") $
     divClass "div-navbar" $
         divClass "navbar-container w-container" $ do
-            elAttr "a" ("href" =: "index.html" <> "class" =: "brand w-nav-brand") $
-                elAttr "img" ("src" =: "images/logo.svg" <> "loading" =: "lazy" <> "alt" =: "" <> "class" =: "logo") blank
+            elAttr "a" ("href" =: "index.html" <> "class" =: "brand w-nav-brand") logo
             divClass "h3" $ text "ENCOINS"
             divClass "menu-div-empty" blank
             -- elAttr "a" ("href" =: "#" <> "class" =: "menu-item menu-item-settings w-inline-block") blank

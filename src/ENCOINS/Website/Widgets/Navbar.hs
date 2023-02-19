@@ -1,10 +1,12 @@
 module ENCOINS.Website.Widgets.Navbar (navbarWidget) where
 
-import           Control.Monad          (when)
-import           Data.Bool              (bool)
-import           Data.Text              (Text)
-import qualified Data.Text              as Text
+import           Control.Monad                    (when)
+import           Data.Bool                        (bool)
+import           Data.Text                        (Text)
+import qualified Data.Text                        as Text
 import           Reflex.Dom
+
+import           ENCOINS.Website.Widgets.Advanced (logo)
 
 navbarWidget :: MonadWidget t m => Dynamic t (Text, Text) -> m (Event t (Text, Text))
 navbarWidget dPageFocus = do
@@ -12,8 +14,7 @@ navbarWidget dPageFocus = do
     <> "data-easing" =: "ease" <> "data-easing2" =: "ease" <> "role" =: "banner" <> "class" =: "navbar w-nav") $
     divClass "div-navbar" $
         divClass "navbar-container w-container" $ do
-            elAttr "a" ("href" =: "index.html" <> "class" =: "brand w-nav-brand") $
-                elAttr "img" ("src" =: "images/logo.svg" <> "loading" =: "lazy" <> "alt" =: "" <> "class" =: "logo") blank
+            elAttr "a" ("href" =: "index.html" <> "class" =: "brand w-nav-brand") logo
             divClass "menu-div-empty" blank
             divClass "menu-button w-nav-button" $
                 divClass "w-icon-nav-menu" blank
