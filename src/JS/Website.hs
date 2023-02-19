@@ -88,6 +88,19 @@ copyElemContent _ = liftIO $ error "GHCJS is required!"
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
+  "copyText($1);" copyText_js :: JSVal -> IO ()
+
+copyText :: MonadIO m => Text -> m ()
+copyText txt = liftIO $ toJSVal txt >>= copyText_js
+#else
+copyText :: MonadIO m => Text -> m ()
+copyText _ = liftIO $ error "GHCJS is required!"
+#endif
+
+-----------------------------------------------------------------
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
   "saveTextFile($1);" saveTextFile_js :: JSVal -> IO ()
 
 saveTextFile :: MonadIO m => Text -> m ()

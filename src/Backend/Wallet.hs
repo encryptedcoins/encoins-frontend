@@ -10,7 +10,7 @@ import           ENCOINS.Website.Widgets.Basic (image)
 import           JS.App                        (walletLoad)
 import           Widgets.Basic                 (elementResultJS)
 
-data WalletName = None | Eternl | Nami | Flint | NuFi | Gero | Begin | Typhon
+data WalletName = None | Eternl | Nami | Flint | NuFi | Gero | Begin | Typhon | Lace
   deriving (Eq, Show)
 
 toJS :: WalletName -> Text
@@ -23,6 +23,7 @@ toJS = \case
   Gero   -> "gerowallet"
   Begin  -> "begin"
   Typhon -> "typhon"
+  Lace   -> "lace"
 
 fromJS :: Text -> WalletName
 fromJS = \case
@@ -33,6 +34,7 @@ fromJS = \case
   "gerowallet" -> Gero
   "begin"      -> Begin
   "typhon"     -> Typhon
+  "lace"       -> Lace
   _            -> None
 
 data Wallet = Wallet
@@ -42,6 +44,7 @@ data Wallet = Wallet
     walletChangeAddress :: Address,
     walletUTXOs         :: TransactionUnspentOutputs
   }
+  deriving (Show, Eq)
 
 loadWallet :: MonadWidget t m => Event t WalletName -> m (Dynamic t Wallet)
 loadWallet eWalletName = mdo
@@ -51,10 +54,17 @@ loadWallet eWalletName = mdo
   dPubKeyHash <- elementResultJS "pubKeyHashElement" id
   dStakeKeyHash <- elementResultJS "stakeKeyHashElement" id
   dUTXOs <- elementResultJS "utxosElement" (fromMaybe [] . decodeText :: Text -> CSL.TransactionUnspentOutputs)
-  let dAddrWallet =  zipDynWith mkAddressFromPubKeys dPubKeyHash dStakeKeyHash
+  let dAddrWallet = zipDynWith mkAddressFromPubKeys dPubKeyHash dStakeKeyHash
   return $ Wallet <$> dWalletName <*> dWalletAddressBech32 <*> dAddrWallet <*> dUTXOs
 
 walletIcon :: MonadWidget t m => WalletName -> m ()
 walletIcon w = case w of
   None -> blank
   name -> image (toJS name <> ".svg") "wallet-image" "30px"
+
+data WalletError = WalletError
+  {
+    walletErrorName :: WalletName,
+    walletErrorText :: Text
+  }
+  deriving (Show, Eq)

@@ -184,6 +184,7 @@ body {
 }
 
 .app-button {
+  position: relative;
   display: -webkit-box;
   display: -webkit-flex;
   display: -ms-flexbox;
@@ -842,6 +843,18 @@ body {
 }
 
 .app-text-normal {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
   font-family: Poppins, sans-serif;
   font-size: 18px;
   line-height: 32px;
@@ -1008,35 +1021,70 @@ body {
   color: #000;
 }
 
-.key-div-tooltip {
+.div-tooltip {
   position: absolute;
-  left: 75%;
+  left: auto;
   top: auto;
   right: auto;
-  bottom: 75%;
+  bottom: auto;
   z-index: 500;
   display: none;
-  width: 120px;
-  padding: 0px 5px;
+  padding: 10px 40px;
   border-radius: 6px;
   background-color: #fff;
+  -webkit-filter: brightness(75%);
+  filter: brightness(75%);
   color: #000;
 }
 
-.key-div-tooltip:hover {
+.div-tooltip.div-position-top-right {
+  left: 70%;
+  bottom: 70%;
+}
+
+.div-tooltip.div-position-bottom {
+  top: 70%;
+}
+
+.div-tooltip.div-position-top {
+  bottom: 70%;
+}
+
+.div-tooltip.div-tooltip-always-visible {
+  position: static;
   display: block;
 }
 
 .key-div {
   position: relative;
-  left: auto;
-  top: 0%;
-  right: 0%;
-  bottom: 0%;
 }
 
 .app-text-small {
   font-family: Poppins, sans-serif;
+}
+
+.copy-div {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin: 3px;
+  background-image: url('../images/copy.svg');
+  background-position: 50% 50%;
+  background-size: 20px;
+  background-repeat: no-repeat;
+}
+
+.tick-div-inverted {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin: 3px;
+  background-image: url('../images/Tick.svg');
+  background-position: 50% 50%;
+  background-size: 20px;
+  background-repeat: no-repeat;
+  -webkit-filter: invert(100%);
+  filter: invert(100%);
 }
 
 @media screen and (max-width: 991px) {

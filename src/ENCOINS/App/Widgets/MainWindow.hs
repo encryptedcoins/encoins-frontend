@@ -11,10 +11,11 @@ import           Data.Text.Encoding            (decodeUtf8, encodeUtf8)
 import           Reflex.Dom
 
 import           Backend.EncoinsTx             (encoinsTx)
-import           Backend.Status                (Status(..))
-import           Backend.Wallet                (Wallet)
+import           Backend.Status                (Status(..), walletError)
+import           Backend.Wallet                (Wallet (..), WalletName (..))
 import           ENCOINS.App.Widgets.Basic     (btnApp, containerApp, sectionApp)
-import           ENCOINS.App.Widgets.Coin      (coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget, coinCollectionWithNames, filterKnownCoinNames, CoinUpdate (..))
+import           ENCOINS.App.Widgets.Coin      (coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
+                                                    coinCollectionWithNames, filterKnownCoinNames, CoinUpdate (..), noCoinsFoundWidget)
 import           ENCOINS.Bulletproofs          (Secrets, Secret (..))
 import           ENCOINS.Crypto.Field          (fromFieldElement)
 import           JS.Website                    (saveJSON, loadJSON)
@@ -44,6 +45,52 @@ loadAppData = do
     performEvent_ (loadJSON "encoins" elId <$ e)
     elementResultJS elId (fromMaybe [] . (decodeStrict :: ByteString -> Maybe Secrets) . encodeUtf8)
 
+data TxValidity = TxValid | TxInvalid Text
+    deriving (Show, Eq)
+
+instance Semigroup TxValidity where
+    TxValid <> TxValid = TxValid
+    TxValid <> TxInvalid e = TxInvalid e
+    TxInvalid e <> TxValid = TxInvalid e
+    TxInvalid e1 <> TxInvalid _ = TxInvalid e1
+
+instance Monoid TxValidity where
+    mempty = TxValid
+
+txValidity :: Status -> Wallet -> Secrets -> Secrets -> TxValidity
+txValidity s Wallet{..} toBurn toMint = mconcat $ zipWith f
+        [e0, e1, e2, e3, e4, e5]
+        [cond0, cond1, cond2, cond3, cond4, cond5]
+    where
+        f e = bool (TxInvalid e) TxValid
+        coins = toBurn ++ toMint
+        cond0 = s `notElem` [Balancing, Signing, Submitting, Submitted]
+        cond1 = walletName /= None
+        cond2 = not $ null toMint
+        cond3 = length coins >= 2
+        cond4 = length coins <= 5
+        cond5 = length coins == length (nub coins)
+        e0    = "The transaction is being processed."
+        e1    = "Connect ENCOINS DApp to a wallet first."
+        e2    = "Minting at least one coin is required to preserve privacy."
+        e3    = "At least two coins must be included in a transaction to preserve privacy."
+        e4    = "At most five coins can be included in a transaction."
+        e5    = "A transaction cannot include coin duplicates."
+
+sendRequestButton :: MonadWidget t m => Dynamic t Status -> Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> m (Event t ())
+sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint = do
+    let dTxValidity = txValidity <$> dStatus <*> dWallet <*> dCoinsToBurn <*> dCoinsToMint
+        f v = case v of
+            TxValid     -> "button-switching"
+            TxInvalid _ -> "button-not-selected button-disabled"
+        g v = case v of
+            TxValid     -> blank
+            TxInvalid e -> divClass "div-tooltip div-tooltip-always-visible" $
+                divClass "app-text-normal" $ text e
+    e <- btnApp (fmap f dTxValidity) $ dynText "SEND REQUEST"
+    dyn_ $ fmap g dTxValidity
+    return $ () <$ ffilter (== TxValid) (current dTxValidity `tag` e)
+
 mainWindow :: MonadWidget t m => Dynamic t Wallet -> m ()
 mainWindow dWallet = mdo
     sectionApp "" "" $
@@ -67,18 +114,17 @@ mainWindow dWallet = mdo
 
                 dCoinsToBurn <- divClass "app-column w-col w-col-6" $ do
                     mainWindowColumnHeader "Coins in the Wallet"
-                    coins <- coinBurnCollectionWidget dSecretsWithNamesInTheWallet
-                    divClass "coin-entry-burn-div" $ divClass "app-text-normal" $ dynText $ fmap (bool "" "No coins found." . null) coins
-                    return coins
+                    dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesInTheWallet
+                    coinBurnCollectionWidget dSecretsWithNamesInTheWallet
                 (dCoinsToMint, eSend) <- divClass "app-column w-col w-col-6" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
-                    d <- coinMintCollectionWidget $ leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Balancing)  eStatusUpdate]
-                    let d' = fmap (map fst) d
-                    eNewSecret <- coinNewWidget
-                    e <- btnApp "button-switching" $ dynText "SEND REQUEST"
-                    return (d', e)
+                    dCoinsToMint <- coinMintCollectionWidget $ leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Balancing) eStatusUpdate]
+                    eNewSecret   <- coinNewWidget
+                    eSend        <- sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint
+                    return (dCoinsToMint, eSend)
                 (dAssetNamesInTheWallet, eStatusUpdate) <- encoinsTx dWallet dCoinsToBurn dCoinsToMint eSend
                 let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
                 return (dCoinsToBurn, dCoinsToMint, eStatusUpdate)
-        dStatusText <- holdDyn "" $ fmap toText eStatusUpdate
-        containerApp "" $ divClass "app-text-small" $ dynText dStatusText
+        eWalletError <- walletError
+        dStatus <- holdDyn Ready $ leftmost [eStatusUpdate, eWalletError]
+        containerApp "" $ divClass "app-text-small" $ dynText $ fmap toText dStatus

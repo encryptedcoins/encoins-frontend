@@ -18,7 +18,7 @@ import           Witherable                      (catMaybes)
 import           Backend.Servant.Requests        (submitTxRequestWrapper, newTxRequestWrapper)
 import           Backend.Status                  (Status (..))
 import           Backend.Types
-import           Backend.Wallet                  (Wallet(..))
+import           Backend.Wallet                  (Wallet(..), toJS)
 import qualified CSL
 import           ENCOINS.Crypto.Field            (Field(..), fromFieldElement)
 import           ENCOINS.BaseTypes
@@ -35,10 +35,11 @@ encoinsCurrencySymbol :: Text
 encoinsCurrencySymbol = "6d0c379d596e5fefc72d0140509a00d913ff482f00a77c0eda3f010b"
 
 getEncoinsInUtxos :: CSL.TransactionUnspentOutputs -> [Text]
-getEncoinsInUtxos utxos = maybe [] Map.keys assets
+getEncoinsInUtxos utxos = Map.keys assets
   where getMultiAsset (CSL.MultiAsset a) = a
-        assets = Map.lookup encoinsCurrencySymbol $ foldr (Map.union . getMultiAsset)
-                  Map.empty (mapMaybe (CSL.multiasset . CSL.amount . CSL.output) utxos)
+        assets = foldr Map.union Map.empty
+          (mapMaybe (Map.lookup encoinsCurrencySymbol . getMultiAsset) $
+          mapMaybe (CSL.multiasset . CSL.amount . CSL.output) utxos)
 
 mkRedeemer :: Address -> BulletproofParams -> Secrets -> [MintingPolarity] -> Randomness -> EncoinsRedeemer
 mkRedeemer addr bp secrets mps rs = red
@@ -74,6 +75,7 @@ encoinsTx :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets -> Dynamic
 encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
     let dAddrWallet = fmap walletChangeAddress dWallet
         dUTXOs      = fmap walletUTXOs dWallet
+        bWalletName = toJS . walletName <$> current dWallet
 
     -- Obtaining Secrets and [MintingPolarity]
     performEvent_ (logInfo "dCoinsBurn updated" <$ updated dCoinsBurn)
@@ -99,7 +101,6 @@ encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
     let bRedWithData = ffor2 bRed (current dAddrWallet) (\red a -> (a, red))
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRedWithData `tag` eSend
     let eFinalRedeemer = () <$ catMaybes (updated dFinalRedeemer)
-    -- performEvent_ $ liftIO . logInfo . pack . show <$> updated dFinalRedeemer
 
     -- Constructing a new transaction
     (eTx, eRelayDown) <- newTxRequestWrapper (zipDyn (fmap fromJust dFinalRedeemer) dUTXOs) eFinalRedeemer
@@ -110,20 +111,23 @@ encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
 
     -- Signing the transaction
     dWalletSignature <- elementResultJS "walletSignatureElement" decodeWitness
-    performEvent_ $ liftIO . flip (walletSignTx "eternl") "walletSignatureElement" <$> eTx
+    performEvent_ $ liftIO . walletSignTx <$> bWalletName `attach` eTx
     let eWalletSignature = () <$ updated dWalletSignature
-    performEvent_ $ liftIO . logInfo . pack . show <$> updated dWalletSignature
 
     -- Submitting the transaction
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
     (eSubmitted, eRelayDown') <- submitTxRequestWrapper dSubmitReqBody eWalletSignature
 
+    -- Tracking the pending transaction
+    eConfirmed <- updated <$> holdUniqDyn dUTXOs
+
     let eStatus = leftmost [
-          Balancing <$ eFinalRedeemer,
+          Ready      <$ eConfirmed,
+          Balancing  <$ eFinalRedeemer,
           eRelayDown,
-          Signing <$ eTx,
+          Signing    <$ eTx,
           Submitting <$ eWalletSignature,
           eRelayDown',
-          Submitted <$ eSubmitted
+          Submitted  <$ eSubmitted
           ]
     return (fmap getEncoinsInUtxos dUTXOs, eStatus)

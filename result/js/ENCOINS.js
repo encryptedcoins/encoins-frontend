@@ -2,10 +2,16 @@
 /////////////////////////////////// WebPage functions ////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
+function copyText(txt) {
+  if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt);
+  }
+};
+
 function copyElemContent(elId) {
   var el = document.getElementById(elId);
-  if (el != null && navigator && navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(el.innerText);
+  if (el != null) {
+    navigator.clipboard.writeText(copyText(el.innerText));
   }
 };
 
@@ -50,6 +56,14 @@ function loadJSON(key, resId) {
 ///////////////////////////////////// App functions //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
+function setWalletNone() {
+  setInputValue("walletNameElement", "None");
+  setInputValue("changeAddressBech32Element", "");
+  setInputValue("pubKeyHashElement", "");
+  setInputValue("stakeKeyHashElement", "");
+  setInputValue("utxosElement", "[]");
+}
+
 async function walletAPI(walletName) {
   switch (walletName) {
     case "nami":
@@ -76,8 +90,48 @@ async function walletAPI(walletName) {
       }
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.flint is not found"); });
+    case "nufi":
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.nufi !== 'undefined'))
+      {
+        console.log("Wallet: NuFi");
+        return window.cardano.nufi.enable();
+      }
+      else
+        return new Promise(() => { throw new Error("window.cardano or window.cardano.nufi is not found"); });
+    case "gerowallet":
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.gerowallet !== 'undefined'))
+      {
+        console.log("Wallet: Gero");
+        return window.cardano.gerowallet.enable();
+      }
+      else
+        return new Promise(() => { throw new Error("window.cardano or window.cardano.gerowallet is not found"); });
+    case "begin":
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.begin !== 'undefined'))
+      {
+        console.log("Wallet: Begin");
+        return window.cardano.begin.enable();
+      }
+      else
+        return new Promise(() => { throw new Error("window.cardano or window.cardano.begin is not found"); });
+    case "typhon":
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.typhon !== 'undefined'))
+      {
+        console.log("Wallet: Typhon");
+        return window.cardano.typhon.enable();
+      }
+      else
+        return new Promise(() => { throw new Error("window.cardano or window.cardano.typhon is not found"); });
+    case "lace":
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.lace !== 'undefined'))
+      {
+        console.log("Wallet: Lace");
+        return window.cardano.lace.enable();
+      }
+      else
+        return new Promise(() => { throw new Error("window.cardano or window.cardano.lace is not found"); });
     default:
-      return new Promise(() => { console.log("Wallet: None"); });
+      return new Promise(() => { setWalletNone(); console.log("Wallet: None"); });
   }
 }
 
@@ -97,15 +151,24 @@ async function walletLoad(walletName)
     // const balance             = await api.getBalance();
     // setInputValue(balanceElement, balance);
 
-    const changeAddress       = await api.getChangeAddress();
-    const changeAddressBech32 = CardanoWasm.Address.from_bytes(fromHexString(changeAddress)).to_bech32();
-    const baseAddress         = CardanoWasm.BaseAddress.from_address(CardanoWasm.Address.from_bech32(changeAddressBech32));
-    const pubKeyHash          = toHexString(baseAddress.payment_cred().to_keyhash().to_bytes());
-    const stakeKeyHash        = toHexString(baseAddress.stake_cred().to_keyhash().to_bytes());
-    // setInputValue(changeAddressElement, changeAddress);
+    const changeAddress       = CardanoWasm.Address.from_bytes(fromHexString(await api.getChangeAddress()));
+    const changeAddressBech32 = changeAddress.to_bech32();
+    const baseAddress         = CardanoWasm.BaseAddress.from_address(changeAddress);
+    changeAddress.free();
+    const pubKeyHashCred = baseAddress.payment_cred();
+    const stakeKeyHashCred = baseAddress.stake_cred();
+    baseAddress.free();
+    const pubKeyHash = pubKeyHashCred.to_keyhash();
+    const stakeKeyHash = stakeKeyHashCred.to_keyhash();
+    pubKeyHashCred.free();
+    stakeKeyHashCred.free();
+    const pubKeyHashHex          = toHexString(pubKeyHash.to_bytes());
+    const stakeKeyHashHex        = toHexString(stakeKeyHash.to_bytes());
+    pubKeyHash.free();
+    stakeKeyHash.free();
     setInputValue("changeAddressBech32Element", changeAddressBech32);
-    setInputValue("pubKeyHashElement", pubKeyHash);
-    setInputValue("stakeKeyHashElement", stakeKeyHash);
+    setInputValue("pubKeyHashElement", pubKeyHashHex);
+    setInputValue("stakeKeyHashElement", stakeKeyHashHex);
     
     // const collateral          = await api.experimental.getCollateral();
     // setInputValue(collateralElement, collateral);
@@ -114,7 +177,9 @@ async function walletLoad(walletName)
     const utxosJSON           = [];
     for (i = 0; i<utxos.length; i++)
     {
-      utxosJSON.push(CardanoWasm.TransactionUnspentOutput.from_bytes(fromHexString(utxos[i])).to_json());
+      const utxo = CardanoWasm.TransactionUnspentOutput.from_bytes(fromHexString(utxos[i]));
+      utxosJSON.push(utxo.to_json());
+      utxo.free();
     }
     setInputValue("utxosElement", "[" + utxosJSON.join(', ') + "]");
 
@@ -125,37 +190,53 @@ async function walletLoad(walletName)
     // setInputValue(rewardAddressesElement, rewardAddresses);
     console.log("end walletLoad");
   } catch (e) {
-    setInputValue("walletNameElement", "None");
-    console.log(e);
+    setWalletNone();
+    setInputValue("walletErrorElement", "No access to the wallet.");
     return;
   }
 }
 
-async function walletSignTx(walletName, partialTxHex, walletSignatureElement)
+async function walletSignTx(walletName, partialTxHex)
 {
   // loading CardanoWasm
   await loader.load();
   const CardanoWasm = loader.Cardano;
 
-  //loading wallet
-  const api = await walletAPI(walletName);
+  try {
+    //loading wallet
+    const api = await walletAPI(walletName);
 
-  console.log("Transaction to sign:");
-  console.log(partialTxHex);
+    console.log("Transaction to sign:");
+    console.log(partialTxHex);
 
-  const walletSignatureWitnessSetBytes = await api.signTx(partialTxHex, true);
-  const walletSignatures = CardanoWasm.TransactionWitnessSet.from_bytes(fromHexString(walletSignatureWitnessSetBytes)).vkeys();
+    const walletSignatureWitnessSetBytes = await api.signTx(partialTxHex, true);
+    const walletSignatureWitnessSet = CardanoWasm.TransactionWitnessSet.from_bytes(fromHexString(walletSignatureWitnessSetBytes));
+    const walletSignatures = walletSignatureWitnessSet.vkeys();
+    walletSignatureWitnessSet.free();
 
-  console.log(CardanoWasm.TransactionWitnessSet.from_bytes(fromHexString(walletSignatureWitnessSetBytes)).vkeys().len());
-  const resultJSON = [];
-  for (i=0; i<walletSignatures.len(); i++)
-  {
-    resultJSON.push('{ \"vkey\": \"' + walletSignatures.get(i).vkey().public_key().to_hex() + 
-      '\", \"signature\": \"' + walletSignatures.get(i).signature().to_hex() + '\" }');
+    const resultJSON = [];
+    for (i=0; i<walletSignatures.len(); i++)
+    {
+      const walletSignature = walletSignatures.get(i);
+      const vkey = walletSignature.vkey();
+      const public_key = vkey.public_key();
+      const signature = walletSignature.signature();
+      resultJSON.push('{ \"vkey\": \"' + public_key.to_hex() + 
+        '\", \"signature\": \"' + signature.to_hex() + '\" }');
+      walletSignature.free();
+      vkey.free();
+      public_key.free();
+      signature.free();
+    }
+    walletSignatures.free();
+
+    setInputValue("walletSignatureElement", "[" + resultJSON.join(', ') + "]");
+    console.log("[" + resultJSON.join(', ') + "]");
+  } catch (e) {
+    console.log(e);
+    setInputValue("walletErrorElement", "Transaction declined.");
+    return;
   }
-
-  setInputValue(walletSignatureElement, "[" + resultJSON.join(', ') + "]");
-  console.log("[" + resultJSON.join(', ') + "]");
 };
 
 async function walletSubmitTx(walletName, txHex)

@@ -1,6 +1,9 @@
 module Backend.Servant.Client where
 
-import           Data.Maybe                   (isNothing)
+import           Data.Aeson                   (decode)
+import           Data.ByteString.Lazy         (fromStrict)
+import           Data.FileEmbed               (embedFile)
+import           Data.Maybe                   (isNothing, fromJust)
 import           Data.Proxy                   (Proxy(..))
 import           Data.Text                    (Text)
 import           Reflex.Dom                   hiding (Value)
@@ -13,10 +16,10 @@ import           Backend.Types
 import           CSL                          (TransactionUnspentOutputs)
 
 pabIP :: BaseUrl
-pabIP = BasePath "http://localhost:3000"
+pabIP = BasePath $ fromJust $ decode $ fromStrict $(embedFile "config/backend_url.json")
 
 type API =   "newTx"        :> ReqBody '[JSON] (EncoinsRedeemerWithData, TransactionUnspentOutputs) :> Post '[JSON] (Envelope '[] Text)
-        :<|> "submitTx"     :> ReqBody '[JSON] SubmitTxReqBody :> Post '[JSON] ()
+        :<|> "submitTx"     :> ReqBody '[JSON] SubmitTxReqBody :> Post '[JSON] NoContent
         :<|> "ping"         :> Get '[JSON] ()
 
 type RespEvent t a      = Event t (ReqResult () a)
@@ -27,7 +30,7 @@ type ReqRes t m req res = DynReqBody t req -> Res t m res
 data ApiClient t m = ApiClient
   {
     newTxRequest        :: ReqRes t m (EncoinsRedeemerWithData, TransactionUnspentOutputs) (Envelope '[] Text),
-    submitTxRequest     :: ReqRes t m SubmitTxReqBody (),
+    submitTxRequest     :: ReqRes t m SubmitTxReqBody NoContent,
     pingRequest         :: Res t m ()
   }
 

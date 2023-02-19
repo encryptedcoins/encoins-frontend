@@ -29,18 +29,17 @@ walletLoad = const $ error "GHCJS is required!"
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
-  "walletSignTx($1, $2, $3);"
-  walletSignTx_js :: JSVal -> JSVal -> JSVal -> IO ()
+  "walletSignTx($1, $2);"
+  walletSignTx_js :: JSVal -> JSVal -> IO ()
 
-walletSignTx :: MonadIO m => Text -> Text -> Text -> m ()
-walletSignTx walletName tx resId = liftIO $ do
+walletSignTx :: MonadIO m => (Text, Text) -> m ()
+walletSignTx (walletName, tx) = liftIO $ do
   walletName_js <- toJSVal walletName
   tx_js         <- toJSVal tx
-  resId_js      <- toJSVal resId
-  walletSignTx_js walletName_js tx_js resId_js
+  walletSignTx_js walletName_js tx_js
 #else
-walletSignTx :: MonadIO m => Text -> Text -> Text -> m ()
-walletSignTx = const . const . const $ error "GHCJS is required!"
+walletSignTx :: MonadIO m => (Text, Text) -> m ()
+walletSignTx = const $ error "GHCJS is required!"
 #endif
 
 -----------------------------------------------------------------

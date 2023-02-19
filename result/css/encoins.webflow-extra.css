@@ -12,6 +12,10 @@
               linear-gradient(to top left, rgba(245, 251, 242, 0.44), rgba(245, 251, 242, 0)) border-box;
 }
 
-.key-div:hover .key-div-tooltip {
+.key-div:hover .div-tooltip {
+  display: inline-block;
+}
+
+.div-tooltip-wrapper:hover .div-tooltip {
   display: inline-block;
 }
