@@ -49,6 +49,7 @@ body {
 }
 
 .menu-item.menu-item-settings {
+  display: none;
   width: 30px;
   height: 31px;
   background-image: url('../images/Settings.svg');
@@ -86,7 +87,6 @@ body {
 
 .menu-item-div.buttonborder {
   min-width: 150px;
-  margin-right: 15px;
   padding-top: 10px;
   padding-bottom: 10px;
   border-style: solid;
@@ -101,6 +101,10 @@ body {
   display: -webkit-flex;
   display: -ms-flexbox;
   display: flex;
+  -webkit-box-pack: justify;
+  -webkit-justify-content: space-between;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
   -webkit-box-align: center;
   -webkit-align-items: center;
   -ms-flex-align: center;
@@ -175,6 +179,7 @@ body {
   display: -webkit-flex;
   display: -ms-flexbox;
   display: flex;
+  padding-left: 0px;
   -webkit-box-align: center;
   -webkit-align-items: center;
   -ms-flex-align: center;
@@ -512,20 +517,6 @@ body {
   margin-left: 50px;
 }
 
-.div-navbar {
-  display: inline-block;
-  margin-right: 140px;
-  margin-left: 140px;
-  padding-right: 100px;
-  padding-left: 100px;
-  -webkit-box-flex: 1;
-  -webkit-flex: 1;
-  -ms-flex: 1;
-  flex: 1;
-  border-radius: 100px;
-  background-color: hsla(0, 0%, 72.2%, 0);
-}
-
 .hero {
   position: absolute;
   z-index: -1;
@@ -770,6 +761,7 @@ body {
   font-size: 18px;
   line-height: 32px;
   font-weight: 600;
+  text-align: center;
   letter-spacing: 0.05em;
 }
 
@@ -976,10 +968,10 @@ body {
   display: -webkit-flex;
   display: -ms-flexbox;
   display: flex;
-  -webkit-box-pack: justify;
-  -webkit-justify-content: space-between;
-  -ms-flex-pack: justify;
-  justify-content: space-between;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  justify-content: center;
   -webkit-box-align: center;
   -webkit-align-items: center;
   -ms-flex-align: center;
@@ -1010,10 +1002,6 @@ body {
 
 .div-tooltip {
   position: absolute;
-  left: auto;
-  top: auto;
-  right: auto;
-  bottom: auto;
   z-index: 500;
   display: none;
   padding: 10px 40px;
@@ -1024,16 +1012,16 @@ body {
   color: #000;
 }
 
-.div-tooltip.div-position-top-right {
+.div-tooltip.top-right {
   left: 70%;
   bottom: 70%;
 }
 
-.div-tooltip.div-position-bottom {
+.div-tooltip.bottom {
   top: 70%;
 }
 
-.div-tooltip.div-position-top {
+.div-tooltip.top {
   bottom: 70%;
 }
 
@@ -1070,6 +1058,10 @@ body {
   background-position: 50% 50%;
   background-size: 20px;
   background-repeat: no-repeat;
+}
+
+.div-tooltip-wrapper {
+  position: relative;
 }
 
 .inverted {
@@ -1203,13 +1195,6 @@ body {
     margin-left: 20px;
   }
 
-  .div-navbar {
-    margin-right: 0px;
-    margin-left: 0px;
-    padding-right: 50px;
-    padding-left: 40px;
-  }
-
   .hero {
     display: block;
     margin-top: 19%;
@@ -1233,6 +1218,38 @@ body {
 }
 
 @media screen and (max-width: 767px) {
+  .nav-menu {
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+  }
+
+  .navbar-container {
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    -webkit-box-align: stretch;
+    -webkit-align-items: stretch;
+    -ms-flex-align: stretch;
+    align-items: stretch;
+  }
+
+  .navbar-container.navbar-container-website {
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: row;
+    -ms-flex-direction: row;
+    flex-direction: row;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+  }
+
   .h1 {
     font-size: 60px;
     line-height: 50px;
@@ -1252,6 +1269,17 @@ body {
   .container {
     padding-right: 20px;
     padding-left: 20px;
+  }
+
+  .brand {
+    -webkit-align-self: center;
+    -ms-flex-item-align: center;
+    -ms-grid-row-align: center;
+    align-self: center;
+  }
+
+  .brand.w--current {
+    padding-left: 0px;
   }
 
   .div-our-resourses.div-justify-left {
@@ -1318,11 +1346,6 @@ body {
     margin-left: 0px;
   }
 
-  .div-navbar {
-    padding-right: 20px;
-    padding-left: 10px;
-  }
-
   .hero {
     display: none;
     margin-top: 23%;
@@ -1346,6 +1369,18 @@ body {
 
   .text-calculator.input-calculator {
     overflow: scroll;
+  }
+
+  .menu-item-button-left {
+    margin-left: 0px;
+    -webkit-align-self: stretch;
+    -ms-flex-item-align: stretch;
+    -ms-grid-row-align: stretch;
+    align-self: stretch;
+    -webkit-box-flex: 1;
+    -webkit-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
   }
 
   .coin-new-input {

@@ -77,9 +77,13 @@ sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint = do
             TxInvalid _ -> "button-not-selected button-disabled flex-center"
         g v = case v of
             TxValid     -> blank
-            TxInvalid e -> divClass "div-tooltip div-tooltip-always-visible" $
+            TxInvalid e -> elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visible" <>
+                "style" =: "border-top-left-radius: 0px; border-top-right-radius: 0px") $
                 divClass "app-text-normal" $ text e
-    e <- btn (fmap f dTxValidity) $ dynText "SEND REQUEST"
+        h v = case v of
+            TxValid     -> ""
+            TxInvalid _ -> "border-bottom-left-radius: 0px; border-bottom-right-radius: 0px"
+    e <- btn (fmap f dTxValidity) (fmap h dTxValidity) $ dynText "SEND REQUEST"
     dyn_ $ fmap g dTxValidity
     return $ () <$ ffilter (== TxValid) (current dTxValidity `tag` e)
 
@@ -89,10 +93,10 @@ mainWindow dWallet = mdo
         containerApp "" $
             divClass "app-top-menu-div" $ do
                 divClass "menu-item-button-right" $ do
-                    _ <- btn "" $ dynText "Wallet"
+                    _ <- btn "" "" $ dynText "Wallet"
                     blank
                 divClass "menu-item-button-right" $ do
-                    _ <- btn "button-not-selected button-disabled" $ dynText "Ledger"
+                    _ <- btn "button-not-selected button-disabled" "" $ dynText "Ledger"
                     blank
                 e <- image "import.svg" "image-button inverted" "30px"
                 importWindow e

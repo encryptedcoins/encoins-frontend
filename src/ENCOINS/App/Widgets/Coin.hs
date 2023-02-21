@@ -54,7 +54,7 @@ coinBurnWidget (s, name) = divClass "coin-entry-burn-div" $ do
     dChecked <- checkboxButton
     divClass "div-tooltip-wrapper" $ do
         divClass "app-text-normal" $ text $ shortenCoinName name
-        divClass "div-tooltip" $ do
+        elAttr "div" ("class" =: "div-tooltip" <> "style" =: "left: 0px;") $ do
             divClass "app-text-semibold" $ text "Full token name"
             divClass "app-text-normal" $ do
                 e <- copyButton
@@ -63,7 +63,7 @@ coinBurnWidget (s, name) = divClass "coin-entry-burn-div" $ do
     divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
     divClass "key-div" $ do
         void $ image "Key.svg" "" "22px"
-        divClass "div-tooltip div-position-top-right" $ do
+        elAttr "div" ("class" =: "div-tooltip top-right") $ do
             divClass "app-text-semibold" $ text "Minting Key"
             divClass "app-text-normal" $ do
                 e <- copyButton
@@ -88,7 +88,7 @@ coinMintWidget (s, name) = divClass "coin-entry-mint-div" $ do
     e <- domEvent Click . fst <$> elClass' "div" "cross-div" blank
     divClass "div-tooltip-wrapper" $ do
         divClass "app-text-normal" $ text $ shortenCoinName name
-        divClass "div-tooltip" $ do
+        elAttr "div" ("class" =: "div-tooltip" <> "style" =: "right: -150px;") $ do
             divClass "app-text-semibold" $ text "Full token name"
             divClass "app-text-normal" $ do
                 eCopy <- copyButton

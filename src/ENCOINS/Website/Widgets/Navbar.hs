@@ -12,8 +12,7 @@ navbarWidget :: MonadWidget t m => Dynamic t (Text, Text) -> m (Event t (Text, T
 navbarWidget dPageFocus = do
   elAttr "div" ("data-animation" =: "default" <> "data-collapse" =: "medium" <> "data-duration" =: "400" <> "id" =: "Navbar"
     <> "data-easing" =: "ease" <> "data-easing2" =: "ease" <> "role" =: "banner" <> "class" =: "navbar w-nav") $
-    divClass "div-navbar" $
-        divClass "navbar-container w-container" $ do
+    divClass "navbar-container w-container" $ do
             elAttr "a" ("href" =: "index.html" <> "class" =: "brand w-nav-brand") logo
             divClass "menu-div-empty" blank
             divClass "menu-button w-nav-button" $

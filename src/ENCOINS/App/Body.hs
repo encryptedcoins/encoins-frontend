@@ -8,9 +8,9 @@ import           ENCOINS.App.Widgets.Basic         (waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow (connectWindow)
 import           ENCOINS.App.Widgets.MainWindow    (mainWindow)
 import           ENCOINS.App.Widgets.WelcomeWindow (welcomeWindow)
-    
+
 bodyContentWidget :: MonadWidget t m => m ()
-bodyContentWidget = mdo
+bodyContentWidget = waitForScripts blank $ mdo
   eConnectOpen   <- navbarWidget dWallet
   dWallet        <- connectWindow eConnectOpen
 
@@ -18,7 +18,11 @@ bodyContentWidget = mdo
 
   divClass "section-app section-app-empty wf-section" blank
 
-  waitForScripts blank (mainWindow dWallet)
+  mainWindow dWallet
+
+  -- divClass "section-app section-app-empty wf-section" blank
+
+  -- divClass "footer wf-section" $ divClass "container-footer" $ divClass "div-our-resourses" $ ourResourses "50px"
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = do

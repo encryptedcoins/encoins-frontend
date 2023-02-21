@@ -15,12 +15,12 @@ connectText w = case w of
 
 navbarWidget :: MonadWidget t m => Dynamic t Wallet -> m (Event t ())
 navbarWidget w = do
-  elAttr "div" ("data-animation" =: "default" <> "data-collapse" =: "medium" <> "data-duration" =: "400" <> "id" =: "Navbar"
+  elAttr "div" ("data-animation" =: "default" <> "data-collapse" =: "none" <> "data-duration" =: "400" <> "id" =: "Navbar"
     <> "data-easing" =: "ease" <> "data-easing2" =: "ease" <> "role" =: "banner" <> "class" =: "navbar w-nav") $
-    divClass "div-navbar" $
-        divClass "navbar-container w-container" $ do
-            elAttr "a" ("href" =: "index.html" <> "class" =: "brand w-nav-brand") logo
-            divClass "h3" $ text "ENCOINS"
+    divClass "navbar-container w-container" $ do
+            elAttr "a" ("href" =: "index.html" <> "class" =: "brand w-nav-brand") do
+              logo
+              divClass "h3" $ text "ENCOINS"
             divClass "menu-div-empty" blank
             -- elAttr "a" ("href" =: "#" <> "class" =: "menu-item menu-item-settings w-inline-block") blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do
@@ -28,6 +28,6 @@ navbarWidget w = do
                 --     _ <- btnApp "button-switching" $ dynText "RELAYER"
                 --     blank
                 divClass "menu-item-button-left" $
-                    btn "button-switching" $ do
+                    btn "button-switching flex-center" "" $ do
                         dyn_ $ fmap (walletIcon . walletName) w
                         dynText $ fmap connectText w

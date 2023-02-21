@@ -35,10 +35,10 @@ h6 = elClass "h6" "h6" . text
 pClass :: MonadWidget t m => Text -> m () -> m ()
 pClass = elClass "p"
 
-btn :: MonadWidget t m => Dynamic t Text -> m () -> m (Event t ())
-btn dCls tags = do
-    let f cls = "href" =: "#" <> "class" =: "app-button  w-button " `Text.append` cls
-    (e, _) <- elDynAttr' "a" (fmap f dCls) tags
+btn :: MonadWidget t m => Dynamic t Text -> Dynamic t Text -> m () -> m (Event t ())
+btn dCls dStyle tags = do
+    let f cls style = "href" =: "#" <> "class" =: "app-button  w-button " `Text.append` cls <> "style" =: style
+    (e, _) <- elDynAttr' "a" (zipDynWith f dCls dStyle) tags
     return $ () <$ domEvent Click e
 
 lnk :: MonadWidget t m => Text -> Text -> m () -> m (Event t ())

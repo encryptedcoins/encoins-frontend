@@ -30,6 +30,6 @@ waitForScripts placeholderWidget actualWidget = do
 loadAppData :: forall t m a b . (MonadWidget t m, FromJSON a) => Text -> (a -> b) -> b -> m (Dynamic t b)
 loadAppData entry f val = do
     let elId = "elId-" <> entry
-    e <- newEventWithDelay 1
+    e <- newEventWithDelay 0.1
     performEvent_ (loadJSON entry elId <$ e)
     elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)

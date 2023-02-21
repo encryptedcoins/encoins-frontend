@@ -8,9 +8,8 @@ import           ENCOINS.Common.Widgets.Basic    (pClass, btn)
 welcomeWindow :: MonadWidget t m => m ()
 welcomeWindow = mdo
     dWelcomeIsOpen <- holdDyn True (False <$ eWelcomeClose)
-    eWelcomeClose <- dialogWindow dWelcomeIsOpen "max-width: 700px;" $ mdo
-            divClass "connect-title-div" $ do
-                divClass "app-text-semibold" $ text "Welcome to the ENCOINS v1.0 Private Test!"
+    eWelcomeClose <- dialogWindow dWelcomeIsOpen "max-width: 700px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
+            divClass "connect-title-div" $ divClass "app-text-semibold" $ text "Welcome to the ENCOINS v1.0 Private Test!"
             pClass "p-ispo inverted" $ text "This is a test version of ENCOINS v1.0 Dapp. Notes:"
             elAttr "ul" ("role" =: "list" <> "class" =: "list p-ispo inverted") $ do
                 mapM_ (el "li" . text)
@@ -22,5 +21,5 @@ welcomeWindow = mdo
                         "To access encoins on another device, copy the minting key and use the \"Import\" button. Do not forget to copy the minting key before sending the coin to another user!",
                         "At the moment, the test is limited to the Wallet Mode."
                     ]
-            btn "button-switching inverted flex-center" $ text "Ok" 
+            btn "button-switching inverted flex-center" "" $ text "Ok" 
     blank

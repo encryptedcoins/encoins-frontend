@@ -23,7 +23,7 @@ footerWidget = divClass "footer wf-section" $ divClass "container-footer" $
             divClass "div-vertical-margin div-horizontal-margin div-invisible" $ h5 "Subscribe for updates"
             divClass "div-vertical-margin div-horizontal-margin div-invisible" $ divClass "form-email-submit" $ do
                 divClass "text-input" $ text "Email Address"
-                _ <- btn "" $ text "Submit"
+                _ <- btn "" "" $ text "Submit"
                 blank
             divClass "div-vertical-margin div-horizontal-margin div-invisible" blank
             divClass "div-horizontal-margin" $ divClass "columns-footer w-row" $ do
