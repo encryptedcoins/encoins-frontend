@@ -13,12 +13,12 @@ import           Backend.Types
 import           CSL                          (TransactionUnspentOutputs)
 import           JS.Website                   (logInfo)
 
-newTxRequestWrapper :: MonadWidget t m => Dynamic t (EncoinsRedeemerWithData, TransactionUnspentOutputs) ->
-  Event t () -> m (Event t Text, Event t Status)
+newTxRequestWrapper :: MonadWidget t m => Dynamic t (EncoinsRedeemer, TransactionUnspentOutputs) ->
+  Event t () -> m (Event t (Text, Text), Event t Status)
 newTxRequestWrapper dReqBody e = do
   let ApiClient{..} = mkApiClient pabIP
   eResp <- newTxRequest (Right <$> dReqBody) e
-  let eRespUnwrapped = fmap (fmap (fromEnvelope (const "")) . makeResponse) eResp
+  let eRespUnwrapped = fmap (fmap (fromEnvelope (const ("", ""))) . makeResponse) eResp
   performEvent_ $ liftIO . logInfo . pack . show <$> eRespUnwrapped
   return $ eventMaybe (BackendError "The current relay is down. Please, select another one.") eRespUnwrapped
 

@@ -32,3 +32,4 @@ calculator = divClass "div-calculator w-row" $ do
     let f addr = pack $ show $ maybe 0 rewardC $ find (\(DelegatorC a _) -> a == addr) delegatorList
     dynText $ f <$> _inputElement_value t
     text " ENCS"
+

@@ -10,8 +10,8 @@ import           ENCOINS.Common.Widgets.Basic     (btn)
 
 connectText :: Wallet -> Text
 connectText w = case w of
-  Wallet None _    _ _ -> "CONNECT"
-  Wallet _    addr _ _ -> take 6 addr <> "..." <> takeEnd 6 addr
+  Wallet None _ _    _ _ -> "CONNECT"
+  Wallet _    _ addr _ _ -> take 6 addr <> "..." <> takeEnd 6 addr
 
 navbarWidget :: MonadWidget t m => Dynamic t Wallet -> m (Event t ())
 navbarWidget w = do
@@ -21,6 +21,7 @@ navbarWidget w = do
             elAttr "a" ("href" =: "index.html" <> "class" =: "brand w-nav-brand") do
               logo
               divClass "h3" $ text "ENCOINS"
+            divClass "h4" $ elAttr "div" ("style" =: "font-size: 20px; margin-left: 10px;") $ text "Testnet Preprod"
             divClass "menu-div-empty" blank
             -- elAttr "a" ("href" =: "#" <> "class" =: "menu-item menu-item-settings w-inline-block") blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do

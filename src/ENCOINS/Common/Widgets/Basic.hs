@@ -41,6 +41,12 @@ btn dCls dStyle tags = do
     (e, _) <- elDynAttr' "a" (zipDynWith f dCls dStyle) tags
     return $ () <$ domEvent Click e
 
+btnExternal :: MonadWidget t m => Dynamic t Text -> Dynamic t Text -> Dynamic t Text -> m () -> m (Event t ())
+btnExternal dRef dCls dStyle tags = do
+    let f ref cls style = "href" =: ref <> "class" =: "app-button  w-button " `Text.append` cls <> "style" =: style
+    (e, _) <- elDynAttr' "a" (f <$> dRef <*> dCls <*> dStyle) tags
+    return $ () <$ domEvent Click e
+
 lnk :: MonadWidget t m => Text -> Text -> m () -> m (Event t ())
 lnk ref cls tags = do
     let attrExternal = bool mempty ("target" =: "_blank") (head (unpack ref) /= '#')

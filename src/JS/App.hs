@@ -9,7 +9,8 @@ import           Control.Monad.IO.Class      (MonadIO(..))
 import           Data.Text                   (Text)
 
 #ifdef __GHCJS__
-import           Language.Javascript.JSaddle (ToJSVal(..), JSVal)
+import           Data.Text                   (pack)
+import           Language.Javascript.JSaddle (ToJSVal(..), FromJSVal(..), JSVal, JSM)
 #endif
 
 -----------------------------------------------------------------
@@ -75,4 +76,23 @@ ed25519Sign prvKey msg resId = liftIO $ do
 #else
 ed25519Sign :: MonadIO m => Text -> Text -> Text -> m ()
 ed25519Sign = const $ error "GHCJS is required!"
+#endif
+
+-----------------------------------------------------------------
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
+  "window.fingerprintFromAssetName($1, $2)"
+  fingerprintFromAssetName_js :: JSVal -> JSVal -> JSM JSVal
+
+fingerprintFromAssetName :: MonadIO m => Text -> Text -> m Text
+fingerprintFromAssetName currencySymbol tokenName = liftIO $ do
+  currencySymbol_js <- toJSVal currencySymbol
+  tokenName_js      <- toJSVal tokenName
+  res_js <- fingerprintFromAssetName_js currencySymbol_js tokenName_js
+  str_js <- fromJSValUnchecked res_js :: IO String
+  return $ pack str_js
+#else
+fingerprintFromAssetName :: MonadIO m => Text -> Text -> m Text
+fingerprintFromAssetName = const $ error "GHCJS is required!"
 #endif

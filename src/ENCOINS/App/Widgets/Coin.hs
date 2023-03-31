@@ -13,12 +13,13 @@ import           System.Random                   (randomIO)
 import           Text.Hex                        (encodeHex, decodeHex)
 import           Text.Read                       (readMaybe)
 
-import           Backend.EncoinsTx               (bulletproofSetup)
+import           Backend.EncoinsTx               (bulletproofSetup, encoinsCurrencySymbol)
 import           ENCOINS.Common.Widgets.Advanced (checkboxButton, copyButton)
 import           ENCOINS.Common.Widgets.Basic    (image)
 import           ENCOINS.BaseTypes               (FieldElement)
 import           ENCOINS.Bulletproofs            (Secret (..), fromSecret, Secrets)
 import           ENCOINS.Crypto.Field            (toFieldElement, fromFieldElement)
+import           JS.App                          (fingerprintFromAssetName)
 import           JS.Website                      (logInfo, copyText)
 import           PlutusTx.Extra.ByteString       (toBytes, byteStringToInteger)
 import           Widgets.Utils                   (toText)
@@ -51,7 +52,10 @@ filterKnownCoinNames knownNames = filter (\(_, name) -> name `elem` knownNames)
 coinBurnWidget :: MonadWidget t m => (Secret, Text) -> m (Dynamic t (Maybe Secret))
 coinBurnWidget (s, name) = divClass "coin-entry-burn-div" $ do
     let secretText = secretToHex s
-    dChecked <- checkboxButton
+    dChecked <- divClass "" $ do
+        elAttr "div" ("class" =: "div-tooltip top-right") $ do
+            divClass "app-text-normal" $ text "Select to burn this coin."
+        checkboxButton
     divClass "div-tooltip-wrapper" $ do
         divClass "app-text-normal" $ text $ shortenCoinName name
         elAttr "div" ("class" =: "div-tooltip" <> "style" =: "left: 0px;") $ do
@@ -60,6 +64,12 @@ coinBurnWidget (s, name) = divClass "coin-entry-burn-div" $ do
                 e <- copyButton
                 performEvent_ (liftIO (copyText name) <$ e)
                 text name
+            divClass "app-text-semibold" $ text "Asset fingerprint"
+            divClass "app-text-normal" $ do
+                eCopy <- copyButton
+                fp <- fingerprintFromAssetName encoinsCurrencySymbol name
+                performEvent_ (liftIO (copyText fp) <$ eCopy)
+                text fp
     divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
     divClass "key-div" $ do
         void $ image "Key.svg" "" "22px"
@@ -94,6 +104,12 @@ coinMintWidget (s, name) = divClass "coin-entry-mint-div" $ do
                 eCopy <- copyButton
                 performEvent_ (liftIO (copyText name) <$ eCopy)
                 text name
+            divClass "app-text-semibold" $ text "Asset fingerprint"
+            divClass "app-text-normal" $ do
+                eCopy <- copyButton
+                fp <- fingerprintFromAssetName encoinsCurrencySymbol name
+                performEvent_ (liftIO (copyText fp) <$ eCopy)
+                text fp
     divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
     return $ s <$ e
 

@@ -24,14 +24,15 @@ landingPage elemId = do
     featuresSection
     roadmapSection
     partnersSection
-    ispoCallSection
+    
+    return never
 
 titleSection :: MonadWidget t m => m ()
 titleSection = section "" "" $ do
     container "" $ h4 "Protect your privacy with"
     container "" $ h1 "ENCOINS"
     container "" $ h2 "Cardano Native Tokens with Encrypted Redeeming Values"
-    _ <- container "container-extra-margin-small" $ btn "button button-disabled" "" $ text "Launch App"
+    _ <- container "container-extra-margin-small" $ btnExternal "app.html" "button" "" $ text "Launch App"
     blank
 
 communitySection :: MonadWidget t m => m ()
@@ -46,7 +47,7 @@ featuresSection = section "Features" "" $ do
     explainer "How to mint?" "Send ADA into the protocol to mint a bundle of NFTs (aka ENCOINS). Each token contains an encrypted redeeming value known only to you. The total redeeming value is equal to the ADA provided."
     explainer "How to use?" "ENCOINS can be used as any other native asset on Cardano: they can be traded, gifted, or used in other DeFi protocols that support them. They can also be used in ENCOINS Ledger, our upcoming shielded accounts system."
     explainer "How to redeem?" "ENCOINS can be burned to receive their redeeming ADA value back. Only the user who knows its minting key can redeem an ENCOINS token."
-    _ <- container "container-extra-margin-small" $ btn "button button-disabled" "" $ text "Launch App"
+    _ <- container "container-extra-margin-small" $ elAttr "a" ("href" =: "app.html") $ btnExternal "app.html" "button" "" $ text "Launch App"
     blank
     where
         explainer txtTitle txtExplainer = container "" $ divClass "div-explainer" $ do
@@ -80,11 +81,6 @@ roadmapSection = section "Roadmap" "" $ do
                 h5 txtTitle
                 divClass "p-roadmap-item" tags
             divClass (roadmapItemComplete b) $ text num
-            
-ispoCallSection :: MonadWidget t m => m (Event t (Text, Text))
-ispoCallSection = section "" "" $ container "" $ do
-     (e, _) <- elAttr' "a" ("href" =: "#Navbar" <> "class" =: "h3") $ text "Participate in the ISPO to support our project!"
-     return $ ("ISPO", "Navbar") <$ domEvent Click e
 
 partnersSection :: MonadWidget t m => m ()
 partnersSection = section "Partners" "div-invisible" $ do

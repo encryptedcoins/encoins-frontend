@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@emurgo/cip14-js": "^3.0.1"
+  }
+}

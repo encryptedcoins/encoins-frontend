@@ -15,7 +15,7 @@ import           Text.Hex                    (decodeHex)
 import           ENCOINS.BaseTypes           (MintingPolarity)
 import           ENCOINS.Bulletproofs        (Proof (..))
 
-type TxParams = Address
+type TxParams = (Address, Address)
 
 -- Defining Address data type for sending it as JSON
 data Address = Address{ addressCredential :: Credential, addressStakingCredential :: Maybe StakingCredential }
@@ -42,7 +42,7 @@ mkAddressFromPubKeys pkhHex skhHex = Address (PubKeyCredential $ PubKeyHash pkh)
 type EncoinsInput = (Integer, [(BuiltinByteString, MintingPolarity)])
 type ProofSignature = BuiltinByteString
 type EncoinsRedeemer = (TxParams, EncoinsInput, Proof, ProofSignature)
-type EncoinsRedeemerWithData = (Address, EncoinsRedeemer)
+-- type EncoinsRedeemerWithData = (Address, EncoinsRedeemer)
 
 data Witness = Witness { vkey :: Text, signature :: Text }
     deriving stock (Eq, Show, Generic)

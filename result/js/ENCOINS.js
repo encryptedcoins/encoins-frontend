@@ -114,6 +114,14 @@ async function walletAPI(walletName) {
       }
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.begin is not found"); });
+    case "begin-nightly":
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano["begin-nightly"] !== 'undefined'))
+      {
+        console.log("Wallet: Begin Nightly");
+        return window.cardano["begin-nightly"].enable();
+      }
+      else
+        return new Promise(() => { throw new Error("window.cardano or window.cardano.begin-nightly is not found"); });
     case "typhon":
       if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.typhon !== 'undefined'))
       {
@@ -131,7 +139,7 @@ async function walletAPI(walletName) {
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.lace is not found"); });
     default:
-      return new Promise(() => { setWalletNone(); console.log("Wallet: None"); });
+      return new Promise(() => { setWalletNone(); console.log(walletName); console.log("Wallet: None"); });
   }
 }
 
@@ -141,12 +149,18 @@ async function walletLoad(walletName)
   await loader.load();
   const CardanoWasm = loader.Cardano;
   try {
+    // console.log(window.begin);
+    // console.log(window.cardano);
+    // console.log(window.cardano.begin);
     const api = await walletAPI(walletName);
+    console.log("api:");
+    console.log(api);
     
     setInputValue("walletNameElement", walletName);
 
-    // const networkId           = await api.getNetworkId();
-    // setInputValue(networkIdElement, networkId);
+    const networkId           = await api.getNetworkId();
+    console.log(networkId);
+    setInputValue("networkIdElement", networkId);
 
     // const balance             = await api.getBalance();
     // setInputValue(balanceElement, balance);
@@ -190,8 +204,10 @@ async function walletLoad(walletName)
     // setInputValue(rewardAddressesElement, rewardAddresses);
     console.log("end walletLoad");
   } catch (e) {
+    console.log(e.message);
     setWalletNone();
-    setInputValue("walletErrorElement", "No access to the wallet.");
+    if (e.message.includes("no account set")) { setInputValue("walletErrorElement", "No account set in Eternl wallet."); }
+    else { setInputValue("walletErrorElement", "No access to the wallet."); }
     return;
   }
 }
@@ -277,3 +293,13 @@ async function ed25519Sign(prvKey, msg, resId)
   const sig = await window.nobleEd25519.sign(msg, prvKey);
   setInputValue(resId, toHexString(sig));
 }
+
+// function fingerprintFromAssetName(currencySymbol, tokenName)
+// {
+//   const AssetFingerprint = require('@emurgo/cip14-js');
+//   const assetFingerprint = AssetFingerprint.fromParts(
+//     Buffer.from(currencySymbol, 'hex'),
+//     Buffer.from(tokenName, 'hex'),
+//   );
+//   return assetFingerprint.fingerprint();
+// }

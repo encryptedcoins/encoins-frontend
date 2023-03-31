@@ -22,12 +22,15 @@ headWidget = do
   eCSLLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/CSL.js" <> "type" =: "text/javascript") blank
   eWebpageLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/Webpage.js" <> "type" =: "text/javascript") blank
   eEd25519Loaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/noble-ed25519.js" <> "type" =: "text/javascript") blank
+  eCIP14Loaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/cip14.js" <> "type" =: "text/javascript") blank
 
   dWebFontLoaded <- holdDyn False (True <$ eWebFontLoaded)
   dCSLLoaded <- holdDyn False (True <$ eCSLLoaded)
   dWebpageLoaded <- holdDyn False (True <$ eWebpageLoaded)
   dEd25519Loaded <- holdDyn False (True <$ eEd25519Loaded)
-  let eScriptsLoaded = ffilter (== True) $ updated $ foldl (zipDynWith (&&)) (pure True) [dWebFontLoaded, dWebpageLoaded, dCSLLoaded, dEd25519Loaded]
+  dCIP14Loaded <- holdDyn False (True <$ eCIP14Loaded)
+  let eScriptsLoaded = ffilter (== True) $ updated $ foldl (zipDynWith (&&)) (pure True)
+        [dWebFontLoaded, dWebpageLoaded, dCSLLoaded, dEd25519Loaded, dCIP14Loaded]
 
   performEvent_ (JS.runHeadScripts <$ eScriptsLoaded)
  where

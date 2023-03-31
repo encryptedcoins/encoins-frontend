@@ -18,7 +18,7 @@ import           CSL                          (TransactionUnspentOutputs)
 pabIP :: BaseUrl
 pabIP = BasePath $ fromJust $ decode $ fromStrict $(embedFile "config/backend_url.json")
 
-type API =   "newTx"        :> ReqBody '[JSON] (EncoinsRedeemerWithData, TransactionUnspentOutputs) :> Post '[JSON] (Envelope '[] Text)
+type API =   "newTx"        :> ReqBody '[JSON] (EncoinsRedeemer, TransactionUnspentOutputs) :> Post '[JSON] (Envelope '[] (Text, Text))
         :<|> "submitTx"     :> ReqBody '[JSON] SubmitTxReqBody :> Post '[JSON] NoContent
         :<|> "ping"         :> Get '[JSON] ()
 
@@ -29,7 +29,7 @@ type ReqRes t m req res = DynReqBody t req -> Res t m res
 
 data ApiClient t m = ApiClient
   {
-    newTxRequest        :: ReqRes t m (EncoinsRedeemerWithData, TransactionUnspentOutputs) (Envelope '[] Text),
+    newTxRequest        :: ReqRes t m (EncoinsRedeemer, TransactionUnspentOutputs) (Envelope '[] (Text, Text)),
     submitTxRequest     :: ReqRes t m SubmitTxReqBody NoContent,
     pingRequest         :: Res t m ()
   }
@@ -39,7 +39,7 @@ mkApiClient host = ApiClient{..}
   where
     (newTxRequest :<|> submitTxRequest :<|> pingRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
 
----------------------------------------------- Utilities -------------------------------------
+---------------------------------------------- Utilities ----------------------------------------
 
 makeResponse :: ReqResult tag a -> Maybe a
 makeResponse (ResponseSuccess _ a _) = Just a
@@ -47,3 +47,4 @@ makeResponse _ = Nothing
 
 eventMaybe :: Reflex t => b -> Event t (Maybe a) -> (Event t a, Event t b)
 eventMaybe errValue e = (catMaybes e, errValue <$ ffilter isNothing e)
+
