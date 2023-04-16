@@ -124,16 +124,17 @@ coinMintCollectionWidget eCoinUpdate = mdo
 ----------------------------------------------- New coin input --------------------------------------------
 
 -- TODO: do not allow to input incorrect values
-coinNewInputWidget :: MonadWidget t m => Text -> (Text -> a) -> Event t b -> m (Dynamic t a)
+coinNewInputWidget :: MonadWidget t m => Text -> (Text -> a) -> Event t b ->
+  m (InputElement EventResult (DomBuilderSpace m) t, Dynamic t a)
 coinNewInputWidget placeholder convert eReset = do
   let conf = def { _inputElementConfig_setValue = pure ("" <$ eReset) } &
         (initialAttributes .~ ("class" =: "coin-new-input w-input" <> "maxlength" =: "7"
         <> "type" =: "number" <> "placeholder" =: placeholder))
   t <- inputElement conf
-  return $ convert <$> _inputElement_value t
+  return (t, convert <$> value t)
 
-coinNewButtonWidget :: MonadWidget t m => Dynamic t Integer -> m (Event t Secret)
-coinNewButtonWidget dV = do
+coinNewButtonWidget :: MonadWidget t m => Dynamic t Integer -> Event t () -> m (Event t Secret)
+coinNewButtonWidget dV eEnter = do
   gamma0 <- liftIO (randomIO :: IO FieldElement)
   eGamma <- performEvent $ liftIO (randomIO :: IO FieldElement) <$ updated dV
   dGamma <- holdDyn gamma0 eGamma
@@ -141,12 +142,14 @@ coinNewButtonWidget dV = do
   let bSecret = current $ zipDynWith Secret dGamma (fmap toFieldElement dV)
       maxV    = 2 ^ (20 :: Integer) - 1 :: Integer
       cond v  = 0 <= v && v <= maxV
-  return $ tag bSecret $ ffilter cond (tagPromptlyDyn dV $ domEvent Click e)
+      eNew    = leftmost [domEvent Click e, eEnter]
+  return $ tag bSecret $ ffilter cond (tagPromptlyDyn dV eNew)
 
 coinNewWidget :: MonadWidget t m => m (Event t Secret)
 coinNewWidget = divClass "coin-new-div" $ mdo
-    eNewSecret <- coinNewButtonWidget dV
-    dV <- coinNewInputWidget "Enter ADA amount..." (fromMaybe (-1 :: Integer) . readMaybe . unpack) eNewSecret
+    eNewSecret <- coinNewButtonWidget dV (keypress Enter inp)
+    (inp, dV) <- coinNewInputWidget "Enter ADA amount..."
+      (fromMaybe (-1 :: Integer) . readMaybe . unpack) eNewSecret
     divClass "app-text-semibold" $ text "ADA"
     return eNewSecret
 
