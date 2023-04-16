@@ -20,7 +20,7 @@ import           CSL                              (TransactionUnspentOutput(..),
 import           ENCOINS.App.Widgets.Basic        (containerApp, sectionApp, loadAppData)
 import           ENCOINS.App.Widgets.Coin         (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
                                                     coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget)
-import           ENCOINS.App.Widgets.ImportWindow (importWindow)
+import           ENCOINS.App.Widgets.ImportWindow (importWindow, importFileWindow)
 import           ENCOINS.Bulletproofs             (Secrets, Secret (..))
 import           ENCOINS.Common.Widgets.Basic     (btn)
 import           ENCOINS.Crypto.Field             (fromFieldElement)
@@ -121,7 +121,7 @@ mainWindow dWallet = mdo
         containerApp "" $ transactionBalanceWidget dToBurn dToMint
         (dToBurn, dToMint, eStatusUpdate, _) <- containerApp "" $
             divClass "app-columns w-row" $ mdo
-                dImportedSecrets <- foldDyn (:) [] (catMaybes eImportSecret)
+                dImportedSecrets <- foldDyn (++) [] eImportSecret
                 performEvent_ $ logInfo . toText <$> updated dImportedSecrets
                 dOldSecrets <- loadAppData "encoins" id []
                 dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
@@ -133,12 +133,13 @@ mainWindow dWallet = mdo
                     mainWindowColumnHeader "Coins in the Wallet"
                     dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesInTheWallet
                     dCTB <- coinBurnCollectionWidget dSecretsWithNamesInTheWallet
-                    e <- divClass "menu-item-button-right" $
-                        btn "button-switching flex-center" "margin-top: 20px" $ do
-                        -- void $ image "import.svg" "image-button inverted" "30px"
-                            dynText " Import"
-                    eIS <- importWindow e
-                    return (dCTB, eIS)
+                    eImport <- menuButton " Import"
+                    eImportAll <- menuButton " Import All"
+                    eExport <- menuButton " Export"
+                    eExportAll <- menuButton " Export All"
+                    eIS <- fmap pure . catMaybes <$> importWindow eImport
+                    eISAll <- importFileWindow eImportAll
+                    return (dCTB, leftmost [eIS, eISAll])
                 (dCoinsToMint, eSend) <- divClass "app-column w-col w-col-6" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
                     dCoinsToMint <- coinMintCollectionWidget $ leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Balancing) eStatusUpdate]
@@ -154,3 +155,6 @@ mainWindow dWallet = mdo
             dynText $ fmap toText dStatus
             -- let f txId s = bool blank (void $ lnk ("https://preprod.cexplorer.io/tx/" <> txId) "" $ divClass "text-footer" $ text txId) (s == Submitted)
             -- dyn_ $ f <$> dTxId <*> dStatus
+  where
+    menuButton = divClass "menu-item-button-right" .
+      btn "button-switching flex-center" "margin-top: 20px" . text
