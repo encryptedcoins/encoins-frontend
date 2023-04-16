@@ -21,7 +21,12 @@ copyButton = mdo
   e  <- domEvent Click . fst <$> elDynClass' "div" (fmap mkClass d) blank
   e' <- delay 5 e
   d  <- holdDyn False $ leftmost [True <$ e, False <$ e']
+  notification d (text "Copied!")
   return e
+
+notification :: MonadWidget t m => Dynamic t Bool -> m () -> m ()
+notification dVis innerW = dyn_ $ bool blank (divClass "bottom-notification" .
+  divClass "notification-content" $ innerW) <$> dVis
 
 checkboxButton :: MonadWidget t m => m (Dynamic t Bool)
 checkboxButton = mdo

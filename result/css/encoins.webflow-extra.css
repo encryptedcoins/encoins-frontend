@@ -11,3 +11,42 @@
   background: linear-gradient(rgba(0, 0, 0, 100), rgba(0, 0, 0, 100)) padding-box,
               linear-gradient(to top left, rgba(245, 251, 242, 0.44), rgba(245, 251, 242, 0)) border-box;
 }
+
+.bottom-notification {
+  background-color: rgb(50,50,50);
+  border-radius: 5px;
+  border-style: hidden;
+  bottom: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 7%;
+  left: 0;
+  line-height: 24px;
+  margin: auto;
+  min-height: fit-content;
+  min-width: fit-content;
+  pointer-events: none;
+  position: fixed;
+  right: 0;
+  width: 15%;
+  z-index: 9999;
+  animation: animate .5s ease-in;
+}
+
+.notification-content {
+  display: inline-block;
+  line-height: normal;
+  margin: auto;
+ }
+
+@keyframes animate {
+  from {
+    transform: translateZ(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateZ(1px);
+    opacity: 1;
+  }
+}
