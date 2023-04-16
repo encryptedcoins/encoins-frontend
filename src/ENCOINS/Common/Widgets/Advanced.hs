@@ -3,6 +3,7 @@ module ENCOINS.Common.Widgets.Advanced where
 import           Control.Monad                (void)
 import           Data.Bool                    (bool)
 import           Data.Text                    (Text)
+import           Data.Time                    (NominalDiffTime)
 import           Reflex.Dom
 
 import           ENCOINS.Common.Widgets.Basic (image)
@@ -30,7 +31,37 @@ checkboxButton = mdo
   return d
 
 dialogWindow :: MonadWidget t m => Dynamic t Bool -> Text -> m a -> m a
-dialogWindow dWindowIsOpen style tags = 
+dialogWindow dWindowIsOpen style tags =
   let mkClass b = "class" =: "dialog-window-wrapper" <> bool ("style" =: "display: none") mempty b
   in elDynAttr "div" (fmap mkClass dWindowIsOpen) $ elAttr "div"
       ("class" =: "dialog-window" <> "style" =: style) tags
+
+withTooltip :: MonadWidget t m =>
+  m a ->
+  -- ^ Element that triggers tooltip when hovered
+  Text ->
+  -- ^ Additional styles for the tooltip
+  NominalDiffTime ->
+  -- ^ Emersion delay in seconds, >= 0
+  NominalDiffTime ->
+  -- ^ Vanishing delay in seconds, >= 0
+  m () ->
+  -- ^ Inner content of the tooltip
+  m a
+withTooltip mainW style delay1 delay2 innerW = mdo
+  (e, ret) <- elClass' "div" "div-tooltip-wrapper" $ do
+    ret' <- mainW
+    let
+      eMouseIn = traceEvent "eMouseIn" $ domEvent Mouseenter e
+      eMouseOut = traceEvent "eMouseOut" $ domEvent Mouseleave e
+    eShow <- delay delay1 eMouseIn
+    eHide <- delay delay2 eMouseOut
+    dAttrs <- holdDyn hideAttrs $ leftmost [showAttrs <$ traceEvent "eShow" eShow,
+      hideAttrs <$ traceEvent "eHide" eHide]
+    elDynAttr "div" (traceDyn "dAttrs" dAttrs) innerW
+    return ret'
+  return ret
+  where
+    constAttrs = "class" =: "div-tooltip top"
+    showAttrs = constAttrs <> "style" =: ("display:inline-block;" <> style)
+    hideAttrs = constAttrs <> "style" =: ("display:none;" <> style)

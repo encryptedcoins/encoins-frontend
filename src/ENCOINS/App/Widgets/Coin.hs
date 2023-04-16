@@ -14,7 +14,7 @@ import           Text.Hex                        (encodeHex, decodeHex)
 import           Text.Read                       (readMaybe)
 
 import           Backend.EncoinsTx               (bulletproofSetup, encoinsCurrencySymbol)
-import           ENCOINS.Common.Widgets.Advanced (checkboxButton, copyButton)
+import           ENCOINS.Common.Widgets.Advanced (checkboxButton, copyButton, withTooltip)
 import           ENCOINS.Common.Widgets.Basic    (image)
 import           ENCOINS.BaseTypes               (FieldElement)
 import           ENCOINS.Bulletproofs            (Secret (..), fromSecret, Secrets)
@@ -56,20 +56,19 @@ coinBurnWidget (s, name) = divClass "coin-entry-burn-div" $ do
         elAttr "div" ("class" =: "div-tooltip top-right") $ do
             divClass "app-text-normal" $ text "Select to burn this coin."
         checkboxButton
-    divClass "div-tooltip-wrapper" $ do
-        divClass "app-text-normal" $ text $ shortenCoinName name
-        elAttr "div" ("class" =: "div-tooltip" <> "style" =: "left: 0px;") $ do
-            divClass "app-text-semibold" $ text "Full token name"
-            divClass "app-text-normal" $ do
-                e <- copyButton
-                performEvent_ (liftIO (copyText name) <$ e)
-                text name
-            divClass "app-text-semibold" $ text "Asset fingerprint"
-            divClass "app-text-normal" $ do
-                eCopy <- copyButton
-                fp <- fingerprintFromAssetName encoinsCurrencySymbol name
-                performEvent_ (liftIO (copyText fp) <$ eCopy)
-                text fp
+    withTooltip (divClass "app-text-normal" $ text $ shortenCoinName name)
+      "left: 0px;" 0 0 $ do
+        divClass "app-text-semibold" $ text "Full token name"
+        divClass "app-text-normal" $ do
+            e <- copyButton
+            performEvent_ (liftIO (copyText name) <$ e)
+            text name
+        divClass "app-text-semibold" $ text "Asset fingerprint"
+        divClass "app-text-normal" $ do
+            eCopy <- copyButton
+            fp <- fingerprintFromAssetName encoinsCurrencySymbol name
+            performEvent_ (liftIO (copyText fp) <$ eCopy)
+            text fp
     divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
     divClass "key-div" $ do
         void $ image "Key.svg" "" "22px"
@@ -96,20 +95,19 @@ coinBurnCollectionWidget dSecretsWithNames = do
 coinMintWidget :: MonadWidget t m => (Secret, Text) -> m (Event t Secret)
 coinMintWidget (s, name) = divClass "coin-entry-mint-div" $ do
     e <- domEvent Click . fst <$> elClass' "div" "cross-div" blank
-    divClass "div-tooltip-wrapper" $ do
-        divClass "app-text-normal" $ text $ shortenCoinName name
-        elAttr "div" ("class" =: "div-tooltip" <> "style" =: "right: -150px;") $ do
-            divClass "app-text-semibold" $ text "Full token name"
-            divClass "app-text-normal" $ do
-                eCopy <- copyButton
-                performEvent_ (liftIO (copyText name) <$ eCopy)
-                text name
-            divClass "app-text-semibold" $ text "Asset fingerprint"
-            divClass "app-text-normal" $ do
-                eCopy <- copyButton
-                fp <- fingerprintFromAssetName encoinsCurrencySymbol name
-                performEvent_ (liftIO (copyText fp) <$ eCopy)
-                text fp
+    withTooltip (divClass "app-text-normal" $ text $ shortenCoinName name)
+      "right: -150px;" 0 0 $ do
+        divClass "app-text-semibold" $ text "Full token name"
+        divClass "app-text-normal" $ do
+            eCopy <- copyButton
+            performEvent_ (liftIO (copyText name) <$ eCopy)
+            text name
+        divClass "app-text-semibold" $ text "Asset fingerprint"
+        divClass "app-text-normal" $ do
+            eCopy <- copyButton
+            fp <- fingerprintFromAssetName encoinsCurrencySymbol name
+            performEvent_ (liftIO (copyText fp) <$ eCopy)
+            text fp
     divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
     return $ s <$ e
 
