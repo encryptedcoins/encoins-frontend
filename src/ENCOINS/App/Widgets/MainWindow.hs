@@ -20,7 +20,7 @@ import           CSL                              (TransactionUnspentOutput(..),
 import           ENCOINS.App.Widgets.Basic        (containerApp, sectionApp, loadAppData)
 import           ENCOINS.App.Widgets.Coin         (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
                                                     coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget)
-import           ENCOINS.App.Widgets.ImportWindow (importWindow, importFileWindow)
+import           ENCOINS.App.Widgets.ImportWindow (importWindow, importFileWindow, exportWindow)
 import           ENCOINS.Bulletproofs             (Secrets, Secret (..))
 import           ENCOINS.Common.Widgets.Basic     (btn)
 import           ENCOINS.Crypto.Field             (fromFieldElement)
@@ -122,7 +122,8 @@ mainWindow dWallet = mdo
         (dToBurn, dToMint, eStatusUpdate, _) <- containerApp "" $
             divClass "app-columns w-row" $ mdo
                 dImportedSecrets <- foldDyn (++) [] eImportSecret
-                performEvent_ $ logInfo . toText <$> updated dImportedSecrets
+                performEvent_ $ logInfo . ("dImportedSecrets: "<>) . toText <$>
+                  updated dImportedSecrets
                 dOldSecrets <- loadAppData "encoins" id []
                 dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
                 let dSecrets = fmap nub $ zipDynWith (++) dImportedSecrets $ zipDynWith (++) dOldSecrets dNewSecrets
@@ -136,7 +137,9 @@ mainWindow dWallet = mdo
                     eImport <- menuButton " Import"
                     eImportAll <- menuButton " Import All"
                     eExport <- menuButton " Export"
+                    exportWindow eExport dCTB
                     eExportAll <- menuButton " Export All"
+                    exportWindow eExportAll dSecrets
                     eIS <- fmap pure . catMaybes <$> importWindow eImport
                     eISAll <- importFileWindow eImportAll
                     return (dCTB, leftmost [eIS, eISAll])

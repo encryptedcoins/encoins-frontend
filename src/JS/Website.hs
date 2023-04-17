@@ -101,13 +101,16 @@ copyText _ = liftIO $ error "GHCJS is required!"
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
-  "saveTextFile($1);" saveTextFile_js :: JSVal -> IO ()
+  "saveTextFile($1, $2);" saveTextFile_js :: JSVal -> JSVal -> IO ()
 
-saveTextFile :: MonadIO m => Text -> m ()
-saveTextFile txt = liftIO $ toJSVal txt >>= saveTextFile_js
+saveTextFile :: MonadIO m => Text -> Text -> m ()
+saveTextFile name txt = liftIO $ do
+  name_js <- toJSVal name
+  txt_js <- toJSVal txt
+  saveTextFile_js name_js txt_js
 #else
-saveTextFile :: MonadIO m => Text -> m ()
-saveTextFile = const $ error "GHCJS is required!"
+saveTextFile :: MonadIO m => Text -> Text -> m ()
+saveTextFile _ _ = error "GHCJS is required!"
 #endif
 
 -----------------------------------------------------------------

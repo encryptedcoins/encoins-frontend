@@ -50,3 +50,13 @@
     opacity: 1;
   }
 }
+
+input::file-selector-button {
+    font-weight: bold;
+    color: white;
+    padding: 0.5em;
+    border: hidden;
+    border-radius: 5px;
+    background: rgb(50,50,50)
+}
+

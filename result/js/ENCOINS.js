@@ -15,10 +15,10 @@ function copyElemContent(elId) {
   }
 };
 
-function saveTextFile(txt) {
+function saveTextFile(fname, txt) {
   var element = document.createElement('a');
   element.setAttribute('href', 'data:application/octet-stream,' + encodeURIComponent(txt));
-  element.setAttribute('download', 'key.txt');
+  element.setAttribute('download', fname);
   element.style.display = 'none';
   document.body.appendChild(element);
   element.click();
