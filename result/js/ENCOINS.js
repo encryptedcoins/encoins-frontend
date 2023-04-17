@@ -303,3 +303,10 @@ async function ed25519Sign(prvKey, msg, resId)
 //   );
 //   return assetFingerprint.fingerprint();
 // }
+
+function setElementStyle(elId, prop, val) {
+  var el = document.getElementById(elId);
+  if (el != null) {
+    el.style.setProperty(prop,val);
+  };
+};

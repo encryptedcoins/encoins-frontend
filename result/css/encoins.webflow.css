@@ -777,6 +777,23 @@ body {
   border-radius: 5px;
 }
 
+.coin-entry-burn-div-no-coins {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  padding: 10px 5px;
+  -webkit-box-pack: justify;
+  -webkit-justify-content: space-between;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+  border-bottom: 1px solid #313135;
+}
+
 .coin-entry-burn-div {
   display: -webkit-box;
   display: -webkit-flex;
@@ -794,6 +811,11 @@ body {
   border-bottom: 1px solid #313135;
 }
 
+.coin-entry-burn-div:hover {
+  background: rgb(50 50 50);
+  cursor: pointer;
+}
+
 .coin-entry-mint-div {
   display: -webkit-box;
   display: -webkit-flex;
@@ -809,6 +831,11 @@ body {
   -ms-flex-align: center;
   align-items: center;
   border-bottom: 1px solid #313135;
+}
+
+.coin-entry-mint-div:hover {
+  background: rgb(50 50 50);
+  cursor: pointer;
 }
 
 .checkbox-div {
@@ -1040,7 +1067,7 @@ body {
 
 .copy-div {
   display: inline-block;
-  width: 20px;
+  width: 35px;
   height: 20px;
   margin: 3px;
   background-image: url('../images/copy.svg');
@@ -1051,7 +1078,7 @@ body {
 
 .tick-div {
   display: inline-block;
-  width: 20px;
+  width: 35px;
   height: 20px;
   margin: 3px;
   background-image: url('../images/Tick.svg');

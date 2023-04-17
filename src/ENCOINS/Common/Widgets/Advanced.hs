@@ -7,6 +7,7 @@ import           Data.Time                    (NominalDiffTime)
 import           Reflex.Dom
 
 import           ENCOINS.Common.Widgets.Basic (image)
+import           JS.Website                   (setElementStyle)
 
 logo :: MonadWidget t m => m ()
 logo = void $ image "logo.svg" "logo inverted" ""
@@ -20,13 +21,15 @@ copyButton = mdo
   let mkClass = bool "copy-div" "tick-div inverted"
   e  <- domEvent Click . fst <$> elDynClass' "div" (fmap mkClass d) blank
   e' <- delay 5 e
-  d  <- holdDyn False $ leftmost [True <$ e, False <$ e']
-  notification d (text "Copied!")
+  d <- holdDyn False $ leftmost [True <$ e, False <$ e']
+  performEvent_ (setElementStyle "bottom-notification" "display" "flex" <$ e)
+  performEvent_ (setElementStyle "bottom-notification" "display" "none" <$ e')
   return e
 
-notification :: MonadWidget t m => Dynamic t Bool -> m () -> m ()
-notification dVis innerW = dyn_ $ bool blank (divClass "bottom-notification" .
-  divClass "notification-content" $ innerW) <$> dVis
+copiedNotification :: MonadWidget t m => m ()
+copiedNotification = elAttr "div" ("class" =: "bottom-notification" <>
+  "id" =: "bottom-notification" <> "style" =: "display:none;") .
+  divClass "notification-content" $ text "Copied!"
 
 checkboxButton :: MonadWidget t m => m (Dynamic t Bool)
 checkboxButton = mdo

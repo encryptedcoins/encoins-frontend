@@ -14,7 +14,7 @@ import           Text.Hex                        (encodeHex, decodeHex)
 import           Text.Read                       (readMaybe)
 
 import           Backend.EncoinsTx               (bulletproofSetup, encoinsCurrencySymbol)
-import           ENCOINS.Common.Widgets.Advanced (checkboxButton, copyButton, withTooltip)
+import           ENCOINS.Common.Widgets.Advanced (checkboxButton, copyButton)
 import           ENCOINS.Common.Widgets.Basic    (image)
 import           ENCOINS.BaseTypes               (FieldElement)
 import           ENCOINS.Bulletproofs            (Secret (..), fromSecret, Secrets)
@@ -49,40 +49,35 @@ filterKnownCoinNames knownNames = filter (\(_, name) -> name `elem` knownNames)
 
 -------------------------------------------- Coins in the Wallet ----------------------------------------
 
-coinBurnWidget :: MonadWidget t m => (Secret, Text) -> m (Dynamic t (Maybe Secret))
-coinBurnWidget (s, name) = divClass "coin-entry-burn-div" $ do
-    let secretText = secretToHex s
-    dChecked <- divClass "" $ do
-        elAttr "div" ("class" =: "div-tooltip top-right") $ do
-            divClass "app-text-normal" $ text "Select to burn this coin."
-        checkboxButton
-    withTooltip (divClass "app-text-normal" $ text $ shortenCoinName name)
-      "left: 0px;" 0 0 $ do
-        divClass "app-text-semibold" $ text "Full token name"
-        divClass "app-text-normal" $ do
-            e <- copyButton
-            performEvent_ (liftIO (copyText name) <$ e)
-            text name
-        divClass "app-text-semibold" $ text "Asset fingerprint"
-        divClass "app-text-normal" $ do
-            eCopy <- copyButton
-            fp <- fingerprintFromAssetName encoinsCurrencySymbol name
-            performEvent_ (liftIO (copyText fp) <$ eCopy)
-            text fp
-    divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
-    divClass "key-div" $ do
-        void $ image "Key.svg" "" "22px"
-        elAttr "div" ("class" =: "div-tooltip top-right") $ do
-            divClass "app-text-semibold" $ text "Minting Key"
-            divClass "app-text-normal" $ do
-                e <- copyButton
-                performEvent_ (liftIO (copyText secretText) <$ e)
-                text $ " " <> secretText
 
-    return $ fmap (bool Nothing (Just s)) dChecked
+coinBurnWidget :: MonadWidget t m => (Secret, Text) -> m (Dynamic t (Maybe Secret))
+coinBurnWidget (s, name) = mdo
+    (elDiv, ret) <- elDynAttr' "div" (mkAttrs <$> dTooltipVis) $ do
+        dChecked <- divClass "" $ do
+            elAttr "div" ("class" =: "div-tooltip top-right") $ do
+                divClass "app-text-normal" $ text "Select to burn this coin."
+            checkboxButton
+        divClass "app-text-normal" $ text $ shortenCoinName name
+        divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
+        divClass "key-div" $ do
+            void $ image "Key.svg" "" "22px"
+            elAttr "div" ("class" =: "div-tooltip top-right") $ do
+                divClass "app-text-semibold" $ text "Minting Key"
+                divClass "app-text-normal" $ do
+                    e <- copyButton
+                    performEvent_ (liftIO (copyText secretText) <$ e)
+                    text $ " " <> secretText
+        return dChecked
+    dTooltipVis <- toggle False (domEvent Click elDiv)
+    dyn_ $ bool blank (coinTooltip name) <$> dTooltipVis
+    return $ fmap (bool Nothing (Just s)) ret
+    where
+        mkAttrs = ("class" =: "coin-entry-burn-div" <>) . bool mempty
+            ("style" =: "background:rgb(50 50 50);")
+        secretText = secretToHex s
 
 noCoinsFoundWidget :: MonadWidget t m => [a] -> m ()
-noCoinsFoundWidget = bool (return ()) (divClass "coin-entry-burn-div" $ divClass "app-text-normal" $ text "No coins found.") . null
+noCoinsFoundWidget = bool blank (divClass "coin-entry-burn-div-no-coins" $ divClass "app-text-normal" $ text "No coins found.") . null
 
 coinBurnCollectionWidget :: MonadWidget t m => Dynamic t [(Secret, Text)] -> m (Dynamic t Secrets)
 coinBurnCollectionWidget dSecretsWithNames = do
@@ -90,26 +85,35 @@ coinBurnCollectionWidget dSecretsWithNames = do
     let eCoinsToBurn = fmap (fmap catMaybes . sequenceA) eCoinBurnWidgets
     join <$> holdDyn (pure []) eCoinsToBurn
 
+coinTooltip :: MonadWidget t m => Text -> m ()
+coinTooltip name = elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visible" <>
+    "style" =: "border-top-left-radius: 0px; border-top-right-radius: 0px") $ do
+    divClass "app-text-semibold" $ text "Full token name"
+    elAttr "div" ("class" =: "app-text-normal" <> "style" =: "font-size:16px;overflow-wrap: anywhere;") $ do
+        eCopy <- copyButton
+        performEvent_ (liftIO (copyText name) <$ eCopy)
+        text name
+    divClass "app-text-semibold" $ text "Asset fingerprint"
+    elAttr "div" ("class" =: "app-text-normal" <> "style" =: "font-size:16px;overflow-wrap: anywhere;") $ do
+        eCopy <- copyButton
+        fp <- fingerprintFromAssetName encoinsCurrencySymbol name
+        performEvent_ (liftIO (copyText fp) <$ eCopy)
+        text fp
 ---------------------------------------------- Coins to Mint ---------------------------------------------
 
 coinMintWidget :: MonadWidget t m => (Secret, Text) -> m (Event t Secret)
-coinMintWidget (s, name) = divClass "coin-entry-mint-div" $ do
-    e <- domEvent Click . fst <$> elClass' "div" "cross-div" blank
-    withTooltip (divClass "app-text-normal" $ text $ shortenCoinName name)
-      "right: -150px;" 0 0 $ do
-        divClass "app-text-semibold" $ text "Full token name"
-        divClass "app-text-normal" $ do
-            eCopy <- copyButton
-            performEvent_ (liftIO (copyText name) <$ eCopy)
-            text name
-        divClass "app-text-semibold" $ text "Asset fingerprint"
-        divClass "app-text-normal" $ do
-            eCopy <- copyButton
-            fp <- fingerprintFromAssetName encoinsCurrencySymbol name
-            performEvent_ (liftIO (copyText fp) <$ eCopy)
-            text fp
-    divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
-    return $ s <$ e
+coinMintWidget (s, name) = mdo
+    (elDiv, ret) <- elDynAttr' "div" (mkAttrs <$> dTooltipVis) $ do
+        eCross <- domEvent Click . fst <$> elClass' "div" "cross-div" blank
+        divClass "app-text-normal" $ text $ shortenCoinName name
+        divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
+        return eCross
+    dTooltipVis <- toggle False (domEvent Click elDiv)
+    dyn_ $ bool blank (coinTooltip name) <$> dTooltipVis
+    return $ s <$ ret
+    where
+        mkAttrs = ("class" =: "coin-entry-mint-div" <>) . bool mempty
+            ("style" =: "background:rgb(50 50 50);")
 
 coinMintCollectionWidget :: MonadWidget t m => Event t CoinUpdate -> m (Dynamic t Secrets)
 coinMintCollectionWidget eCoinUpdate = mdo

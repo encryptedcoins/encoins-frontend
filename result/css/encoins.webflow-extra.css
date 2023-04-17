@@ -27,17 +27,21 @@
   min-height: fit-content;
   min-width: fit-content;
   pointer-events: none;
-  position: fixed;
+  position: absolute;
   right: 0;
   width: 15%;
   z-index: 9999;
   animation: animate .5s ease-in;
+  opacity: 0.9;
+  font-size: 20px;
+  margin-bottom: 10px;
 }
 
 .notification-content {
   display: inline-block;
   line-height: normal;
   margin: auto;
+  color: white;
  }
 
 @keyframes animate {

@@ -157,3 +157,20 @@ loadJSON key resId = liftIO $ do
 loadJSON :: MonadIO m => Text -> Text -> m ()
 loadJSON = const $ error "GHCJS is required!"
 #endif
+
+-----------------------------------------------------------------
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
+  "setElementStyle($1, $2, $3);" setElementStyle_js :: JSVal -> JSVal -> JSVal -> IO ()
+
+setElementStyle :: MonadIO m => Text -> Text -> Text -> m ()
+setElementStyle elId prop val = liftIO $ do
+  elId_js <- toJSVal elId
+  prop_js <- toJSVal prop
+  val_js <- toJSVal val
+  setElementStyle_js elId_js prop_js val_js
+#else
+setElementStyle :: MonadIO m => Text -> Text -> m ()
+setElementStyle _ _ = error "GHCJS is required!"
+#endif
