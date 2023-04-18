@@ -14,7 +14,7 @@ import           Text.Hex                        (encodeHex, decodeHex)
 import           Text.Read                       (readMaybe)
 
 import           Backend.EncoinsTx               (bulletproofSetup, encoinsCurrencySymbol)
-import           ENCOINS.Common.Widgets.Advanced (checkboxButton, copyButton)
+import           ENCOINS.Common.Widgets.Advanced (checkboxButton, copyButton, withTooltip)
 import           ENCOINS.Common.Widgets.Basic    (image)
 import           ENCOINS.BaseTypes               (FieldElement)
 import           ENCOINS.Bulletproofs            (Secret (..), fromSecret, Secrets)
@@ -49,26 +49,21 @@ filterKnownCoinNames knownNames = filter (\(_, name) -> name `elem` knownNames)
 
 -------------------------------------------- Coins in the Wallet ----------------------------------------
 
-
 coinBurnWidget :: MonadWidget t m => (Secret, Text) -> m (Dynamic t (Maybe Secret))
 coinBurnWidget (s, name) = mdo
-    (elDiv, ret) <- elDynAttr' "div" (mkAttrs <$> dTooltipVis) $ do
-        dChecked <- divClass "" $ do
-            elAttr "div" ("class" =: "div-tooltip top-right") $ do
-                divClass "app-text-normal" $ text "Select to burn this coin."
-            checkboxButton
-        divClass "app-text-normal" $ text $ shortenCoinName name
+    (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
+        dChecked <- divClass "" $ withTooltip checkboxButton mempty 0 0 $
+            divClass "app-text-normal" $ text "Select to burn this coin."
+        (txt,_) <- elClass' "div" "app-text-normal" $ text $ shortenCoinName name
         divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
-        divClass "key-div" $ do
-            void $ image "Key.svg" "" "22px"
-            elAttr "div" ("class" =: "div-tooltip top-right") $ do
-                divClass "app-text-semibold" $ text "Minting Key"
-                divClass "app-text-normal" $ do
-                    e <- copyButton
-                    performEvent_ (liftIO (copyText secretText) <$ e)
-                    text $ " " <> secretText
-        return dChecked
-    dTooltipVis <- toggle False (domEvent Click elDiv)
+        divClass "key-div" $ withTooltip (void $ image "Key.svg" "" "22px") mempty 0 0 $ do
+            divClass "app-text-semibold" $ text "Minting Key"
+            divClass "app-text-normal" $ do
+                e <- copyButton
+                performEvent_ (liftIO (copyText secretText) <$ e)
+                text $ " " <> secretText
+        return (txt, dChecked)
+    dTooltipVis <- toggle False (domEvent Click elTxt)
     dyn_ $ bool blank (coinTooltip name) <$> dTooltipVis
     return $ fmap (bool Nothing (Just s)) ret
     where
