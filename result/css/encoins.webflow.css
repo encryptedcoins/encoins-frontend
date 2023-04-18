@@ -848,10 +848,14 @@ body {
 }
 
 .checkbox-div.checkbox-selected {
-  background-image: url('../images/Tick.svg');
+  background-image: url('../images/burn-white.svg');
   background-position: 50% 50%;
   background-size: contain;
   background-repeat: no-repeat;
+}
+
+.checkbox-div.checkbox-selected:hover {
+  background-image: url('../images/burn-hover.svg');
 }
 
 .app-text-normal {
