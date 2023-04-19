@@ -62,3 +62,5 @@ image dFile dCls w =
         <> "class" =: cls <> "style" =: "width: " `Text.append` w `Text.append` ";"
   in domEvent Click . fst <$> elDynAttr' "img" (f <$> dFile <*> dCls) blank
 
+br :: MonadWidget t m => m ()
+br = el "br" blank

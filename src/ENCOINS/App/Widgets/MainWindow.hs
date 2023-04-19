@@ -21,10 +21,11 @@ import           Backend.Wallet                   (Wallet (..), WalletName (..))
 import           CSL                              (TransactionUnspentOutput(..), amount, coin)
 import           ENCOINS.App.Widgets.Basic        (containerApp, sectionApp, loadAppData)
 import           ENCOINS.App.Widgets.Coin         (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
-                                                    coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget)
+                                                    coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget, secretToHex)
 import           ENCOINS.App.Widgets.ImportWindow (importWindow, importFileWindow, exportWindow)
 import           ENCOINS.Bulletproofs             (Secrets, Secret (..))
-import           ENCOINS.Common.Widgets.Basic     (btn)
+import           ENCOINS.Common.Widgets.Basic     (btn, br)
+import           ENCOINS.Common.Widgets.Advanced  (dialogWindow)
 import           ENCOINS.Crypto.Field             (fromFieldElement)
 import           JS.Website                       (saveJSON, logInfo)
 import           Widgets.Utils                    (toText)
@@ -188,7 +189,8 @@ walletTab dWallet = sectionApp "" "" $ mdo
 transferTab :: MonadWidget t m =>
     Dynamic t Wallet -> Dynamic t [(Secret, Text)] -> m (Event t [(Secret, Text)])
 transferTab _dWallet dSecretsWithNamesInTheWallet = sectionApp "" "" $ mdo
-    containerApp "" $ divClass "app-columns w-row" $ mdo
+    containerApp "" $ transactionBalanceWidget (pure []) dToBurn
+    (dToBurn, eSendToWallet, eSendToLedger) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         performEvent_ $ logInfo . ("dImportedSecrets: "<>) . toText <$>
           updated dImportedSecrets
@@ -196,7 +198,7 @@ transferTab _dWallet dSecretsWithNamesInTheWallet = sectionApp "" "" $ mdo
         let dSecrets = fmap nub $ zipDynWith (++) dImportedSecrets dOldSecrets
         performEvent_ (saveJSON "encoins" . decodeUtf8 . toStrict . encode <$> updated dSecrets)
 
-        (_dCoinsToBurn, eImportSecret) <- divClass "app-column w-col w-col-6" $ do
+        (dCoinsToBurn, eImportSecret) <- divClass "app-column w-col w-col-6" $ do
             mainWindowColumnHeader "Coins in the Wallet"
             dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesInTheWallet
             dCTB <- coinBurnCollectionWidget dSecretsWithNamesInTheWallet
@@ -209,7 +211,11 @@ transferTab _dWallet dSecretsWithNamesInTheWallet = sectionApp "" "" $ mdo
             eIS <- fmap pure . catMaybes <$> importWindow eImport
             eISAll <- importFileWindow eImportAll
             return (dCTB, leftmost [eIS, eISAll])
-        blank
+        divClass "app-column w-col w-col-6" $ do
+          eWallet <- sendButton (not . null <$> dCoinsToBurn) "" " Send to Wallet"
+          eLedger <- sendButton (not . null <$> dCoinsToBurn) "margin-top: 20px" " Send to Ledger"
+          eWalletOk <- sendToWalletDialog eWallet dCoinsToBurn
+          return (dCoinsToBurn, eWalletOk, eLedger)
     eWalletError <- walletError
     dStatus <- holdDyn Ready eWalletError
     containerApp "" $ divClass "app-text-small" $ do
@@ -220,4 +226,18 @@ transferTab _dWallet dSecretsWithNamesInTheWallet = sectionApp "" "" $ mdo
   where
     menuButton = divClass "menu-item-button-right" .
       btn "button-switching flex-center" "margin-top: 20px" . text
+    sendButton dActive stl = divClass "menu-item-button-right" .
+      btn (("button-switching flex-center " <>) . bool "button-disabled" "" <$> dActive) stl . text
 
+sendToWalletDialog :: MonadWidget t m => Event t () -> Dynamic t Secrets -> m (Event t ())
+sendToWalletDialog eOpen dSecrets = mdo
+  (eOk, eCancel) <- dialogWindow eOpen (leftmost [eOk,eCancel]) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ do
+      divClass "connect-title-div" $ divClass "app-text-semibold" $
+          text "Copy and send these keys to your recepient off-chain:"
+      elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between;text-align:left;") $
+          dyn_ $ mapM ((>> br) . text . secretToHex) <$> dSecrets
+      br
+      btnOk <- btn "button-switching inverted flex-center" "width:30%;display:inline-block;margin-right:5px;" $ text "Ok"
+      btnCancel <- btn "button-switching inverted flex-center" "width:30%;display:inline-block;margin-left:5px;" $ text "Cancel"
+      return (btnOk, btnCancel)
+  return eOk
