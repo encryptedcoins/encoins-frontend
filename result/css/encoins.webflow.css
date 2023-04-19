@@ -217,6 +217,7 @@ body {
   -webkit-filter: brightness(35%);
   filter: brightness(35%);
   cursor: default;
+  pointer-events: none;
 }
 
 .app-button.button-invisible {
@@ -947,6 +948,7 @@ body {
   -webkit-filter: brightness(35%);
   filter: brightness(35%);
   cursor: default;
+  pointer-events: none;
 }
 
 .container-app {
