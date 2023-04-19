@@ -1,6 +1,6 @@
 module ENCOINS.App.Widgets.ImportWindow (importWindow, importFileWindow, exportWindow) where
 
-import           Control.Monad                   ((<=<))
+import           Control.Monad                   ((<=<), void)
 import           Data.Aeson                      (encode, decode)
 import           Data.ByteString.Lazy            (toStrict, fromStrict)
 import           Data.Functor                    ((<&>))
@@ -22,8 +22,7 @@ import           Widgets.Utils                   (toText)
 
 importWindow :: MonadWidget t m => Event t () -> m (Event t (Maybe Secret))
 importWindow eImportOpen = mdo
-    dImportIsOpen <- holdDyn False $ leftmost [True <$ eImportOpen, False <$ eImportClose]
-    eImportClose <- dialogWindow dImportIsOpen "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
+    eImportClose <- dialogWindow eImportOpen (void eImportClose) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
       divClass "connect-title-div" $ divClass "app-text-semibold" $ text "Import a New Coin"
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
           text "All known coins are saved on the device. Enter the minting key to import a new coin:"
@@ -37,8 +36,7 @@ importWindow eImportOpen = mdo
 
 importFileWindow :: MonadWidget t m => Event t () -> m (Event t [Secret])
 importFileWindow eImportOpen = mdo
-    dImportIsOpen <- holdDyn False $ leftmost [True <$ eImportOpen, False <$ eImportClose]
-    eImportClose <- dialogWindow dImportIsOpen "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
+    eImportClose <- dialogWindow eImportOpen (void eImportClose) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
       divClass "connect-title-div" $ divClass "app-text-semibold" $ text "Import New Coins"
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
           text "Choose a file to import coins:"
@@ -67,8 +65,7 @@ readFileContent file = do
 
 exportWindow :: MonadWidget t m => Event t () -> Dynamic t [Secret] -> m ()
 exportWindow eOpen dSecrets = mdo
-    dImportIsOpen <- holdDyn False $ leftmost [True <$ eOpen, False <$ eClose]
-    eClose <- dialogWindow dImportIsOpen "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
+    eClose <- dialogWindow eOpen eClose "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
       divClass "connect-title-div" $ divClass "app-text-semibold" $ text "Export Coins"
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
           text "Enter file name:"

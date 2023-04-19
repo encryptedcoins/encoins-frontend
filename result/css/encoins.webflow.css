@@ -971,6 +971,10 @@ body {
   color: #000;
 }
 
+.dialog-window-close.cross-div {
+  margin-left: 100%;
+}
+
 .dialog-window-wrapper {
   position: fixed;
   left: 0%;
