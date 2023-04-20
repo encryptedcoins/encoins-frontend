@@ -15,7 +15,7 @@ import           PlutusTx.Prelude                 (divide)
 import           Reflex.Dom
 import           Witherable                       (catMaybes)
 
-import           Backend.EncoinsTx                (encoinsTx)
+import           Backend.EncoinsTx                (encoinsTx, encoinsTxWallet, encoinsTxLedger)
 import           Backend.Status                   (Status(..), walletError)
 import           Backend.Wallet                   (Wallet (..), WalletName (..))
 import           CSL                              (TransactionUnspentOutput(..), amount, coin)
@@ -188,9 +188,9 @@ walletTab dWallet = sectionApp "" "" $ mdo
 
 transferTab :: MonadWidget t m =>
     Dynamic t Wallet -> Dynamic t [(Secret, Text)] -> m (Event t [(Secret, Text)])
-transferTab _dWallet dSecretsWithNamesInTheWallet = sectionApp "" "" $ mdo
-    containerApp "" $ transactionBalanceWidget (pure []) dToBurn
-    (dToBurn, eSendToWallet, eSendToLedger) <- containerApp "" $ divClass "app-columns w-row" $ mdo
+transferTab dWallet dSecretsWithNamesInTheWallet = sectionApp "" "" $ mdo
+    containerApp "" $ transactionBalanceWidget (pure []) dCoins
+    (dCoins, eSendToWallet, eSendToLedger) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         performEvent_ $ logInfo . ("dImportedSecrets: "<>) . toText <$>
           updated dImportedSecrets
@@ -216,13 +216,13 @@ transferTab _dWallet dSecretsWithNamesInTheWallet = sectionApp "" "" $ mdo
           eLedger <- sendButton (not . null <$> dCoinsToBurn) "margin-top: 20px" " Send to Ledger"
           eWalletOk <- sendToWalletDialog eWallet dCoinsToBurn
           return (dCoinsToBurn, eWalletOk, eLedger)
+    (_, eStatusUpdate1, _) <- encoinsTxWallet dWallet dCoins eSendToWallet
+    (_, eStatusUpdate2, _) <- encoinsTxLedger dWallet dCoins eSendToLedger
     eWalletError <- walletError
-    dStatus <- holdDyn Ready eWalletError
+    dStatus <- holdDyn Ready $ leftmost [eWalletError, eStatusUpdate1, eStatusUpdate2]
     containerApp "" $ divClass "app-text-small" $ do
         dynText $ fmap toText dStatus
     return never
-        -- let f txId s = bool blank (void $ lnk ("https://preprod.cexplorer.io/tx/" <> txId) "" $ divClass "text-footer" $ text txId) (s == Submitted)
-        -- dyn_ $ f <$> dTxId <*> dStatus
   where
     menuButton = divClass "menu-item-button-right" .
       btn "button-switching flex-center" "margin-top: 20px" . text

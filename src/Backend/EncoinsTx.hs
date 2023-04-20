@@ -143,3 +143,15 @@ encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
           Submitted  <$ eSubmitted
           ]
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
+
+encoinsTxWallet :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets
+  -> Event t () -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
+encoinsTxWallet _dWallet _dCoins eSend = do
+    performEvent_ (logInfo "encoinsTxWallet" <$ eSend)
+    return (pure [], Submitting <$ eSend, pure "")
+
+encoinsTxLedger :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets
+  -> Event t () -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
+encoinsTxLedger _dWallet _dCoins eSend = do
+    performEvent_ (logInfo "encoinsTxLedger" <$ eSend)
+    return (pure [], Submitting <$ eSend, pure "")
