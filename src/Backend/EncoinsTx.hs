@@ -15,6 +15,7 @@ import           System.Random.Stateful          (randomIO)
 import           Text.Hex                        (encodeHex, decodeHex)
 import           Witherable                      (catMaybes)
 
+import           Backend.Servant.Client          (pabIP)
 import           Backend.Servant.Requests        (submitTxRequestWrapper, newTxRequestWrapper)
 import           Backend.Status                  (Status (..))
 import           Backend.Types
@@ -77,6 +78,7 @@ redeemerToBytes ((aL, aC), i, p, _) = addressToBytes aL `Text.append` addressToB
 encoinsTx :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () ->
   m (Dynamic t [Text], Event t Status, Dynamic t Text)
 encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
+    baseUrl <- pabIP
     let dAddrWallet = fmap walletChangeAddress dWallet
         dUTXOs      = fmap walletUTXOs dWallet
         bWalletName = toJS . walletName <$> current dWallet
@@ -112,7 +114,7 @@ encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
     let eFinalRedeemer = () <$ catMaybes (updated dFinalRedeemer)
 
     -- Constructing a new transaction
-    (eNewTxSuccess, eRelayDown) <- newTxRequestWrapper (zipDyn (fmap fromJust dFinalRedeemer) dUTXOs) eFinalRedeemer
+    (eNewTxSuccess, eRelayDown) <- newTxRequestWrapper baseUrl (zipDyn (fmap fromJust dFinalRedeemer) dUTXOs) eFinalRedeemer
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
     dTx <- holdDyn "" eTx
@@ -128,7 +130,7 @@ encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
 
     -- Submitting the transaction
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
-    (eSubmitted, eRelayDown') <- submitTxRequestWrapper dSubmitReqBody eWalletSignature
+    (eSubmitted, eRelayDown') <- submitTxRequestWrapper baseUrl dSubmitReqBody eWalletSignature
 
     -- Tracking the pending transaction
     eConfirmed <- updated <$> holdUniqDyn dUTXOs

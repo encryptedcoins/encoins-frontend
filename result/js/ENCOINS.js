@@ -310,3 +310,10 @@ function setElementStyle(elId, prop, val) {
     el.style.setProperty(prop,val);
   };
 };
+
+function pingServer(baseUrl) {
+  const request = new XMLHttpRequest();
+  request.open('GET', baseUrl + '/ping', false);  // `false` makes the request synchronous
+  request.send(null);
+  return (request.status === 200);
+}

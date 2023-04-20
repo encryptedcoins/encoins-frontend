@@ -1,5 +1,6 @@
 module Backend.Servant.Client where
 
+import           Control.Monad.IO.Class       (MonadIO)
 import           Data.Aeson                   (decode)
 import           Data.ByteString.Lazy         (fromStrict)
 import           Data.FileEmbed               (embedFile)
@@ -15,8 +16,8 @@ import           Witherable                   (catMaybes)
 import           Backend.Types
 import           CSL                          (TransactionUnspentOutputs)
 
-pabIP :: BaseUrl
-pabIP = BasePath $ fromJust $ decode $ fromStrict $(embedFile "config/backend_url.json")
+pabIP :: MonadIO m => m BaseUrl
+pabIP = pure $ BasePath $ fromJust $ decode $ fromStrict $(embedFile "config/backend_url.json")
 
 type API =   "newTx"        :> ReqBody '[JSON] (EncoinsRedeemer, TransactionUnspentOutputs) :> Post '[JSON] (Envelope '[] (Text, Text))
         :<|> "submitTx"     :> ReqBody '[JSON] SubmitTxReqBody :> Post '[JSON] NoContent

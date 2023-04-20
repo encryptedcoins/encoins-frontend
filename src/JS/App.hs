@@ -96,3 +96,21 @@ fingerprintFromAssetName currencySymbol tokenName = liftIO $ do
 fingerprintFromAssetName :: MonadIO m => Text -> Text -> m Text
 fingerprintFromAssetName = const $ error "GHCJS is required!"
 #endif
+
+-----------------------------------------------------------------
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
+  "pingServer($1);"
+  pingServer_js :: JSVal -> JSM JSVal
+
+pingServer :: MonadIO m => Text -> m Bool
+pingServer baseUrl = liftIO $ do
+  baseUrl_js <- toJSVal baseUrl
+  res_js <- pingServer_js baseUrl_js
+  bool_js <- fromJSValUnchecked res_js :: IO Bool
+  return bool_js
+#else
+pingServer :: MonadIO m => Text -> m Bool
+pingServer = const $ error "GHCJS is required!"
+#endif
