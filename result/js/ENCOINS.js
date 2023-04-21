@@ -239,7 +239,7 @@ async function walletSignTx(walletName, partialTxHex)
       const signature = walletSignature.signature();
       resultJSON.push('{ \"vkey\": \"' + public_key.to_hex() + 
         '\", \"signature\": \"' + signature.to_hex() + '\" }');
-      walletSignature.free();
+      walletSignature.free(); 
       vkey.free();
       public_key.free();
       signature.free();
@@ -314,6 +314,12 @@ function setElementStyle(elId, prop, val) {
 function pingServer(baseUrl) {
   const request = new XMLHttpRequest();
   request.open('GET', baseUrl + '/ping', false);  // `false` makes the request synchronous
-  request.send(null);
+  try {
+    request.send(null);
+  } catch(e) {
+    console.log('ping ' + baseUrl + ' ====> ' + 'failed to send request');
+    return false;
+  }
+  console.log('ping ' + baseUrl + ' ====> ' + request.status);
   return (request.status === 200);
-}
+};

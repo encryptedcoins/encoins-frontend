@@ -10,7 +10,7 @@ import           Data.Text                   (Text)
 
 #ifdef __GHCJS__
 import           Data.Text                   (pack)
-import           Language.Javascript.JSaddle (ToJSVal(..), FromJSVal(..), JSVal, JSM)
+import           Language.Javascript.JSaddle (ToJSVal(..), FromJSVal(..), JSVal, JSM, JSString, textToStr)
 #endif
 
 -----------------------------------------------------------------
@@ -101,15 +101,12 @@ fingerprintFromAssetName = const $ error "GHCJS is required!"
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
-  "pingServer($1);"
-  pingServer_js :: JSVal -> JSM JSVal
+  "pingServer($1)"
+  pingServer_js :: JSString -> JSM JSVal
 
 pingServer :: MonadIO m => Text -> m Bool
-pingServer baseUrl = liftIO $ do
-  baseUrl_js <- toJSVal baseUrl
-  res_js <- pingServer_js baseUrl_js
-  bool_js <- fromJSValUnchecked res_js :: IO Bool
-  return bool_js
+pingServer baseUrl = liftIO $ pingServer_js (textToStr baseUrl)
+  >>= fromJSValUnchecked
 #else
 pingServer :: MonadIO m => Text -> m Bool
 pingServer = const $ error "GHCJS is required!"

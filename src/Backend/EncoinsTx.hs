@@ -78,7 +78,7 @@ redeemerToBytes ((aL, aC), i, p, _) = addressToBytes aL `Text.append` addressToB
 encoinsTx :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () ->
   m (Dynamic t [Text], Event t Status, Dynamic t Text)
 encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
-    baseUrl <- pabIP
+    baseUrl <- pabIP -- this chooses random server with successful ping
     let dAddrWallet = fmap walletChangeAddress dWallet
         dUTXOs      = fmap walletUTXOs dWallet
         bWalletName = toJS . walletName <$> current dWallet
@@ -149,11 +149,13 @@ encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
 encoinsTxWallet :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets
   -> Event t () -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
 encoinsTxWallet _dWallet _dCoins eSend = do
+    _baseUrl <- pabIP -- this chooses random server with successful ping
     performEvent_ (logInfo "encoinsTxWallet" <$ eSend)
     return (pure [], Submitting <$ eSend, pure "")
 
 encoinsTxLedger :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets
   -> Event t () -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
 encoinsTxLedger _dWallet _dCoins eSend = do
+    _baseUrl <- pabIP -- this chooses random server with successful ping
     performEvent_ (logInfo "encoinsTxLedger" <$ eSend)
     return (pure [], Submitting <$ eSend, pure "")
