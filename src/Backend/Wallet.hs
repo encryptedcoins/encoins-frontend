@@ -12,14 +12,14 @@ import           ENCOINS.Common.Widgets.Basic  (image)
 import           JS.App                        (walletLoad)
 
 data WalletName =
-    Eternl 
+    Eternl
   | Nami
-  -- | Flint
-  -- | NuFi 
-  -- | Gero 
+  | Flint
+  -- | NuFi
+  -- | Gero
   -- | Begin
   -- | Typhon
-  -- | Lace
+  | Lace
   | None
   deriving (Eq, Show, Enum, Bounded)
 
@@ -28,25 +28,25 @@ toJS = \case
   None   -> "none"
   Eternl -> "eternl"
   Nami   -> "nami"
-  -- Flint  -> "flint"
+  Flint  -> "flint"
   -- NuFi   -> "nufi"
   -- Gero   -> "gerowallet"
   -- Begin  -> "begin"
   -- Begin  -> "begin-nightly"
   -- Typhon -> "typhon"
-  -- Lace   -> "lace"
+  Lace   -> "lace"
 
 fromJS :: Text -> WalletName
 fromJS = \case
   "eternl"     -> Eternl
   "nami"       -> Nami
-  -- "flint"      -> Flint
+  "flint"      -> Flint
   -- "nufi"       -> NuFi
   -- "gerowallet" -> Gero
   -- "begin"      -> Begin
   -- "begin-nightly" -> Begin
   -- "typhon"     -> Typhon
-  -- "lace"       -> Lace
+  "lace"       -> Lace
   _            -> None
 
 data Wallet = Wallet

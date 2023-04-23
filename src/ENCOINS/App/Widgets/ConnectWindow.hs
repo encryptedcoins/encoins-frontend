@@ -1,5 +1,6 @@
 module ENCOINS.App.Widgets.ConnectWindow (connectWindow) where
 
+import           Control.Monad                   (void)
 import           Data.Aeson                      (encode)
 import           Data.Bool                       (bool)
 import           Data.ByteString.Lazy            (toStrict)
@@ -23,11 +24,7 @@ walletEntry w = do
 connectWindow :: MonadWidget t m => Event t () -> m (Dynamic t Wallet)
 connectWindow eConnectOpen = mdo
     (eConnectClose, dWallet) <- dialogWindow eConnectOpen eConnectClose "" $ mdo
-        eCross <- divClass "connect-title-div" $ do
-            divClass "app-text-semibold" $ text "Connect Wallet"
-            domEvent Click . fst <$> elAttr' "div" ("class" =: "cross-div inverted") blank
         eWalletName <- leftmost . ([eLastWalletName] ++) <$> mapM walletEntry [minBound..maxBound]
-        let eCC = leftmost [eCross, () <$ eWalletName]
         eUpdate <- tag bWalletName <$> tickLossyFromPostBuildTime 10
         dW <- loadWallet (leftmost [eWalletName, eUpdate]) >>= holdUniqDyn
         let bWalletName = current $ fmap walletName dW
@@ -36,5 +33,5 @@ connectWindow eConnectOpen = mdo
         performEvent_ (saveJSON "current-wallet" . decodeUtf8 . toStrict . encode . toJS <$> eWalletName)
         eLastWalletName <- updated <$> loadAppData "current-wallet" fromJS None
 
-        return (eCC, dW)
+        return (void eWalletName, dW)
     return dWallet
