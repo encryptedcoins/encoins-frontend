@@ -7,8 +7,8 @@ import           ENCOINS.Common.Widgets.Basic    (pClass, btn)
 
 welcomeWindow :: MonadWidget t m => m ()
 welcomeWindow = mdo
-    dWelcomeIsOpen <- holdDyn True (False <$ eWelcomeClose)
-    eWelcomeClose <- dialogWindow dWelcomeIsOpen "max-width: 700px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
+    ePb <- getPostBuild
+    eWelcomeClose <- dialogWindow ePb eWelcomeClose "max-width: 700px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
             divClass "connect-title-div" $ elAttr "div" ("class" =: "app-text-semibold" <> "style" =: "font-size: 22px; margin-bottom: 20px") $
                 text "Welcome to the ENCOINS v1.0 Public Test!"
             pClass "p-ispo inverted" $ text "This is a test version of ENCOINS v1.0 Dapp. Notes:"

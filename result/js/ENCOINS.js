@@ -15,10 +15,10 @@ function copyElemContent(elId) {
   }
 };
 
-function saveTextFile(txt) {
+function saveTextFile(fname, txt) {
   var element = document.createElement('a');
   element.setAttribute('href', 'data:application/octet-stream,' + encodeURIComponent(txt));
-  element.setAttribute('download', 'key.txt');
+  element.setAttribute('download', fname);
   element.style.display = 'none';
   document.body.appendChild(element);
   element.click();
@@ -239,7 +239,7 @@ async function walletSignTx(walletName, partialTxHex)
       const signature = walletSignature.signature();
       resultJSON.push('{ \"vkey\": \"' + public_key.to_hex() + 
         '\", \"signature\": \"' + signature.to_hex() + '\" }');
-      walletSignature.free();
+      walletSignature.free(); 
       vkey.free();
       public_key.free();
       signature.free();
@@ -303,3 +303,23 @@ async function ed25519Sign(prvKey, msg, resId)
 //   );
 //   return assetFingerprint.fingerprint();
 // }
+
+function setElementStyle(elId, prop, val) {
+  var el = document.getElementById(elId);
+  if (el != null) {
+    el.style.setProperty(prop,val);
+  };
+};
+
+function pingServer(baseUrl) {
+  const request = new XMLHttpRequest();
+  request.open('GET', baseUrl + '/ping', false);  // `false` makes the request synchronous
+  try {
+    request.send(null);
+  } catch(e) {
+    console.log('ping ' + baseUrl + ' ====> ' + 'failed to send request');
+    return false;
+  }
+  console.log('ping ' + baseUrl + ' ====> ' + request.status);
+  return (request.status === 200);
+};

@@ -8,6 +8,7 @@ import           ENCOINS.App.Widgets.Basic         (waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow (connectWindow)
 import           ENCOINS.App.Widgets.MainWindow    (mainWindow)
 import           ENCOINS.App.Widgets.WelcomeWindow (welcomeWindow)
+import           ENCOINS.Common.Widgets.Advanced   (copiedNotification)
 
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = waitForScripts blank $ mdo
@@ -32,3 +33,4 @@ bodyWidget = do
     <> "type" =: "text/javascript" <> "integrity" =: "sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" <> "crossorigin" =: "anonymous") blank
   let e = eJQueryLoaded $> elAttr "script" ("src" =: "js/webflow.js" <> "type" =: "text/javascript") blank
   widgetHold_ blank e
+  copiedNotification

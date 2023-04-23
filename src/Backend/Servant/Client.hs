@@ -1,8 +1,10 @@
 module Backend.Servant.Client where
 
+import           Control.Monad.IO.Class       (MonadIO(..))
 import           Data.Aeson                   (decode)
 import           Data.ByteString.Lazy         (fromStrict)
 import           Data.FileEmbed               (embedFile)
+import           Data.List                    (delete)
 import           Data.Maybe                   (isNothing, fromJust)
 import           Data.Proxy                   (Proxy(..))
 import           Data.Text                    (Text)
@@ -10,13 +12,26 @@ import           Reflex.Dom                   hiding (Value)
 import           Servant.API
 import           Servant.Checked.Exceptions   (Envelope)
 import           Servant.Reflex
+import           System.Random                (randomRIO)
 import           Witherable                   (catMaybes)
 
 import           Backend.Types
 import           CSL                          (TransactionUnspentOutputs)
+import           JS.App                       (pingServer)
 
-pabIP :: BaseUrl
-pabIP = BasePath $ fromJust $ decode $ fromStrict $(embedFile "config/backend_url.json")
+urls :: [Text]
+urls = fromJust $ decode $ fromStrict $(embedFile "config/backend_url.json")
+
+pabIP :: MonadIO m => m BaseUrl
+pabIP = go urls
+  where
+    go l = do
+      idx <- randomRIO (0, length l - 1)
+      let url = l !! idx
+      pingOk <- pingServer url
+      if pingOk
+        then return $ BasePath url
+        else go (delete url l)
 
 type API =   "newTx"        :> ReqBody '[JSON] (EncoinsRedeemer, TransactionUnspentOutputs) :> Post '[JSON] (Envelope '[] (Text, Text))
         :<|> "submitTx"     :> ReqBody '[JSON] SubmitTxReqBody :> Post '[JSON] NoContent

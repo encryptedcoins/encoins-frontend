@@ -5,6 +5,7 @@ import           Control.Monad.IO.Class       (liftIO)
 import           Data.Text                    (Text, pack)
 import           Reflex.Dom                   hiding (Value)
 import           Servant.Checked.Exceptions   (fromEnvelope)
+import           Servant.Reflex               (BaseUrl)
 import           Witherable                   (catMaybes)
 
 import           Backend.Servant.Client
@@ -13,24 +14,24 @@ import           Backend.Types
 import           CSL                          (TransactionUnspentOutputs)
 import           JS.Website                   (logInfo)
 
-newTxRequestWrapper :: MonadWidget t m => Dynamic t (EncoinsRedeemer, TransactionUnspentOutputs) ->
+newTxRequestWrapper :: MonadWidget t m => BaseUrl -> Dynamic t (EncoinsRedeemer, TransactionUnspentOutputs) ->
   Event t () -> m (Event t (Text, Text), Event t Status)
-newTxRequestWrapper dReqBody e = do
-  let ApiClient{..} = mkApiClient pabIP
+newTxRequestWrapper baseUrl dReqBody e = do
+  let ApiClient{..} = mkApiClient baseUrl
   eResp <- newTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = fmap (fmap (fromEnvelope (const ("", ""))) . makeResponse) eResp
   performEvent_ $ liftIO . logInfo . pack . show <$> eRespUnwrapped
   return $ eventMaybe (BackendError "The current relay is down. Please, select another one.") eRespUnwrapped
 
-submitTxRequestWrapper :: MonadWidget t m => Dynamic t SubmitTxReqBody ->
+submitTxRequestWrapper :: MonadWidget t m => BaseUrl -> Dynamic t SubmitTxReqBody ->
   Event t () -> m (Event t (), Event t Status)
-submitTxRequestWrapper dReqBody e = do
-  let ApiClient{..} = mkApiClient pabIP
+submitTxRequestWrapper baseUrl dReqBody e = do
+  let ApiClient{..} = mkApiClient baseUrl
   eResp <- fmap (void . makeResponse) <$> submitTxRequest (Right <$> dReqBody) e
   return $ eventMaybe (BackendError "The current relay is down. Please, select another one.") eResp
 
-pingRequestWrapper :: MonadWidget t m => Event t () -> m (Event t ())
-pingRequestWrapper e = do
-  let ApiClient{..} = mkApiClient pabIP
+pingRequestWrapper :: MonadWidget t m => BaseUrl -> Event t () -> m (Event t ())
+pingRequestWrapper baseUrl e = do
+  let ApiClient{..} = mkApiClient baseUrl
   e' <- fmap makeResponse <$> pingRequest e
   return $ catMaybes e'

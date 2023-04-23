@@ -217,6 +217,7 @@ body {
   -webkit-filter: brightness(35%);
   filter: brightness(35%);
   cursor: default;
+  pointer-events: none;
 }
 
 .app-button.button-invisible {
@@ -777,6 +778,23 @@ body {
   border-radius: 5px;
 }
 
+.coin-entry-burn-div-no-coins {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  padding: 10px 5px;
+  -webkit-box-pack: justify;
+  -webkit-justify-content: space-between;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+  border-bottom: 1px solid #313135;
+}
+
 .coin-entry-burn-div {
   display: -webkit-box;
   display: -webkit-flex;
@@ -792,6 +810,11 @@ body {
   -ms-flex-align: center;
   align-items: center;
   border-bottom: 1px solid #313135;
+}
+
+.coin-entry-burn-div:hover {
+  background: rgb(50 50 50);
+  cursor: pointer;
 }
 
 .coin-entry-mint-div {
@@ -811,6 +834,11 @@ body {
   border-bottom: 1px solid #313135;
 }
 
+.coin-entry-mint-div:hover {
+  background: rgb(50 50 50);
+  cursor: pointer;
+}
+
 .checkbox-div {
   width: 20px;
   height: 20px;
@@ -821,10 +849,14 @@ body {
 }
 
 .checkbox-div.checkbox-selected {
-  background-image: url('../images/Tick.svg');
+  background-image: url('../images/burn-white.svg');
   background-position: 50% 50%;
   background-size: contain;
   background-repeat: no-repeat;
+}
+
+.checkbox-div.checkbox-selected:hover {
+  background-image: url('../images/burn-hover.svg');
 }
 
 .app-text-normal {
@@ -916,6 +948,7 @@ body {
   -webkit-filter: brightness(35%);
   filter: brightness(35%);
   cursor: default;
+  pointer-events: none;
 }
 
 .container-app {
@@ -938,6 +971,10 @@ body {
   border-radius: 37px;
   background-color: #fff;
   color: #000;
+}
+
+.dialog-window-close.cross-div {
+  margin-left: 100%;
 }
 
 .dialog-window-wrapper {
@@ -1040,7 +1077,7 @@ body {
 
 .copy-div {
   display: inline-block;
-  width: 20px;
+  width: 35px;
   height: 20px;
   margin: 3px;
   background-image: url('../images/copy.svg');
@@ -1051,7 +1088,7 @@ body {
 
 .tick-div {
   display: inline-block;
-  width: 20px;
+  width: 35px;
   height: 20px;
   margin: 3px;
   background-image: url('../images/Tick.svg');

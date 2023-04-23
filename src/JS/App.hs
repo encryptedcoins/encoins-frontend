@@ -10,7 +10,7 @@ import           Data.Text                   (Text)
 
 #ifdef __GHCJS__
 import           Data.Text                   (pack)
-import           Language.Javascript.JSaddle (ToJSVal(..), FromJSVal(..), JSVal, JSM)
+import           Language.Javascript.JSaddle (ToJSVal(..), FromJSVal(..), JSVal, JSM, JSString, textToStr)
 #endif
 
 -----------------------------------------------------------------
@@ -95,4 +95,19 @@ fingerprintFromAssetName currencySymbol tokenName = liftIO $ do
 #else
 fingerprintFromAssetName :: MonadIO m => Text -> Text -> m Text
 fingerprintFromAssetName = const $ error "GHCJS is required!"
+#endif
+
+-----------------------------------------------------------------
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
+  "pingServer($1)"
+  pingServer_js :: JSString -> JSM JSVal
+
+pingServer :: MonadIO m => Text -> m Bool
+pingServer baseUrl = liftIO $ pingServer_js (textToStr baseUrl)
+  >>= fromJSValUnchecked
+#else
+pingServer :: MonadIO m => Text -> m Bool
+pingServer = const $ error "GHCJS is required!"
 #endif

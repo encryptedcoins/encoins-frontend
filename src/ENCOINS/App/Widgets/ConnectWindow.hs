@@ -22,8 +22,7 @@ walletEntry w = do
 
 connectWindow :: MonadWidget t m => Event t () -> m (Dynamic t Wallet)
 connectWindow eConnectOpen = mdo
-    dConnectIsOpen <- holdDyn False $ leftmost [True <$ eConnectOpen, False <$ eConnectClose]
-    (eConnectClose, dWallet) <- dialogWindow dConnectIsOpen "" $ mdo
+    (eConnectClose, dWallet) <- dialogWindow eConnectOpen eConnectClose "" $ mdo
         eCross <- divClass "connect-title-div" $ do
             divClass "app-text-semibold" $ text "Connect Wallet"
             domEvent Click . fst <$> elAttr' "div" ("class" =: "cross-div inverted") blank

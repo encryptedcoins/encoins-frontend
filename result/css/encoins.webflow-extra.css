@@ -12,10 +12,55 @@
               linear-gradient(to top left, rgba(245, 251, 242, 0.44), rgba(245, 251, 242, 0)) border-box;
 }
 
-.key-div:hover .div-tooltip {
-  display: inline-block;
+.bottom-notification {
+  background-color: rgb(50,50,50);
+  border-radius: 5px;
+  border-style: hidden;
+  bottom: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 7%;
+  left: 0;
+  line-height: 24px;
+  margin: auto;
+  min-height: fit-content;
+  min-width: fit-content;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  width: 15%;
+  z-index: 9999;
+  animation: animate .5s ease-in;
+  opacity: 0.9;
+  font-size: 20px;
+  margin-bottom: 10px;
 }
 
-.div-tooltip-wrapper:hover .div-tooltip {
+.notification-content {
   display: inline-block;
+  line-height: normal;
+  margin: auto;
+  color: white;
+ }
+
+@keyframes animate {
+  from {
+    transform: translateZ(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateZ(1px);
+    opacity: 1;
+  }
 }
+
+input::file-selector-button {
+    font-weight: bold;
+    color: white;
+    padding: 0.5em;
+    border: hidden;
+    border-radius: 5px;
+    background: rgb(50,50,50)
+}
+
