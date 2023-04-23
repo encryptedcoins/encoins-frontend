@@ -7,7 +7,7 @@ import           ENCOINS.App.Widgets
 import           ENCOINS.App.Widgets.Basic         (waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow (connectWindow)
 import           ENCOINS.App.Widgets.MainWindow    (mainWindow)
-import           ENCOINS.App.Widgets.WelcomeWindow (welcomeWindow)
+import           ENCOINS.App.Widgets.WelcomeWindow (welcomeWindow, welcomeWallet, welcomeWindowWalletStorageKey)
 import           ENCOINS.Common.Widgets.Advanced   (copiedNotification)
 
 bodyContentWidget :: MonadWidget t m => m ()
@@ -15,7 +15,7 @@ bodyContentWidget = waitForScripts blank $ mdo
   eConnectOpen   <- navbarWidget dWallet
   dWallet        <- connectWindow eConnectOpen
 
-  welcomeWindow
+  welcomeWindow welcomeWindowWalletStorageKey welcomeWallet
 
   divClass "section-app section-app-empty wf-section" blank
 

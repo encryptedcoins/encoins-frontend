@@ -64,3 +64,6 @@ image dFile dCls w =
 
 br :: MonadWidget t m => m ()
 br = el "br" blank
+
+divClassId :: MonadWidget t m => Text -> Text -> m a -> m a
+divClassId cls elId = elAttr "div" ("class" =: cls <> "id" =: elId)
