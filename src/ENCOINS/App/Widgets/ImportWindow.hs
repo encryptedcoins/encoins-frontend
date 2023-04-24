@@ -22,7 +22,7 @@ import           Widgets.Utils                   (toText)
 
 importWindow :: MonadWidget t m => Event t () -> m (Event t (Maybe Secret))
 importWindow eImportOpen = mdo
-    eImportClose <- dialogWindow eImportOpen (void eImportClose) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
+    eImportClose <- dialogWindow True eImportOpen (void eImportClose) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
       divClass "connect-title-div" $ divClass "app-text-semibold" $ text "Import a New Coin"
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
           text "All known coins are saved on the device. Enter the minting key to import a new coin:"
@@ -36,7 +36,7 @@ importWindow eImportOpen = mdo
 
 importFileWindow :: MonadWidget t m => Event t () -> m (Event t [Secret])
 importFileWindow eImportOpen = mdo
-    eImportClose <- dialogWindow eImportOpen (void eImportClose) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
+    eImportClose <- dialogWindow True eImportOpen (void eImportClose) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
       divClass "connect-title-div" $ divClass "app-text-semibold" $ text "Import New Coins"
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
           text "Choose a file to import coins:"
@@ -65,7 +65,7 @@ readFileContent file = do
 
 exportWindow :: MonadWidget t m => Event t () -> Dynamic t [Secret] -> m ()
 exportWindow eOpen dSecrets = mdo
-    eClose <- dialogWindow eOpen eClose "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
+    eClose <- dialogWindow True eOpen eClose "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
       divClass "connect-title-div" $ divClass "app-text-semibold" $ text "Export Coins"
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
           text "Enter file name:"

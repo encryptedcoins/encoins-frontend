@@ -240,7 +240,7 @@ transferTab dWallet dSecretsWithNamesInTheWallet = sectionApp "" "" $ mdo
 
 sendToWalletDialog :: MonadWidget t m => Event t () -> Dynamic t Secrets -> m (Event t ())
 sendToWalletDialog eOpen dSecrets = mdo
-  (eOk, eCancel) <- dialogWindow eOpen (leftmost [eOk,eCancel]) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ do
+  (eOk, eCancel) <- dialogWindow True eOpen (leftmost [eOk,eCancel]) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ do
       divClass "connect-title-div" $ divClass "app-text-semibold" $
           text "Copy and send these keys to your recepient off-chain:"
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between;text-align:left;") $
