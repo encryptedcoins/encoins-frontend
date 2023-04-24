@@ -1,19 +1,21 @@
 module ENCOINS.App.Body (bodyWidget) where
 
-import           Data.Functor                      (($>))
+import           Data.Functor                       (($>))
 import           Reflex.Dom
 
 import           ENCOINS.App.Widgets
-import           ENCOINS.App.Widgets.Basic         (waitForScripts)
-import           ENCOINS.App.Widgets.ConnectWindow (connectWindow)
-import           ENCOINS.App.Widgets.MainWindow    (mainWindow)
-import           ENCOINS.App.Widgets.WelcomeWindow (welcomeWindow, welcomeWallet, welcomeWindowWalletStorageKey)
-import           ENCOINS.Common.Widgets.Advanced   (copiedNotification)
+import           ENCOINS.App.Widgets.Basic          (waitForScripts)
+import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
+import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
+import           ENCOINS.App.Widgets.PasswordWindow (passwordWindow)
+import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWindow, welcomeWallet, welcomeWindowWalletStorageKey)
+import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = waitForScripts blank $ mdo
-  eConnectOpen   <- navbarWidget dWallet
-  dWallet        <- connectWindow eConnectOpen
+  (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet
+  dWallet <- connectWindow eConnectOpen
+  passwordWindow eSettingsOpen
 
   welcomeWindow welcomeWindowWalletStorageKey welcomeWallet
 

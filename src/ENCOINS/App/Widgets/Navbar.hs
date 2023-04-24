@@ -13,7 +13,7 @@ connectText w = case w of
   Wallet None _ _    _ _ -> "CONNECT"
   Wallet _    _ addr _ _ -> take 6 addr <> "..." <> takeEnd 6 addr
 
-navbarWidget :: MonadWidget t m => Dynamic t Wallet -> m (Event t ())
+navbarWidget :: MonadWidget t m => Dynamic t Wallet -> m (Event t (), Event t ())
 navbarWidget w = do
   elAttr "div" ("data-animation" =: "default" <> "data-collapse" =: "none" <> "data-duration" =: "400" <> "id" =: "Navbar"
     <> "data-easing" =: "ease" <> "data-easing2" =: "ease" <> "role" =: "banner" <> "class" =: "navbar w-nav") $
@@ -23,12 +23,14 @@ navbarWidget w = do
               divClass "h3" $ text "ENCOINS"
             divClass "h4" $ elAttr "div" ("style" =: "font-size: 20px; margin-left: 10px;") $ text "Testnet Preprod"
             divClass "menu-div-empty" blank
-            -- elAttr "a" ("href" =: "#" <> "class" =: "menu-item menu-item-settings w-inline-block") blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do
+                (elSettings,_) <- elClass' "div"
+                    "menu-item menu-item-button-left menu-item-settings w-inline-block" blank
                 -- divClass "menu-item-button-left" $ do
                 --     _ <- btnApp "button-switching" $ dynText "RELAYER"
                 --     blank
-                divClass "menu-item-button-left" $
+                eConnect <- divClass "menu-item-button-left" $
                     btn "button-switching flex-center" "" $ do
                         dyn_ $ fmap (walletIcon . walletName) w
                         dynText $ fmap connectText w
+                return (domEvent Click elSettings, eConnect)
