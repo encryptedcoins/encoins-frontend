@@ -14,6 +14,8 @@ headWidget = do
   stylesheet "css/webflow.css"
   stylesheet "css/encoins.webflow.css"
   stylesheet "css/encoins.webflow-extra.css"
+  stylesheet "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css"
+
   elAttr "link" ("href" =: "images/favicon.png" <> "rel" =: "shortcut icon" <> "type" =: "image/x-icon") blank
   elAttr "link" ("href" =: "images/webclip.png" <> "rel" =: "apple-touch-icon") blank
 

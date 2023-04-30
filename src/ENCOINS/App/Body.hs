@@ -7,15 +7,16 @@ import           ENCOINS.App.Widgets
 import           ENCOINS.App.Widgets.Basic          (waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
-import           ENCOINS.App.Widgets.PasswordWindow (passwordWindow)
+import           ENCOINS.App.Widgets.PasswordWindow (passwordSettingsWindow, checkPasswordHash)
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWindow, welcomeWallet, welcomeWindowWalletStorageKey)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = waitForScripts blank $ mdo
+  dmPass <- loadAppData "password-hash" checkPasswordHash Nothing
   (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet
   dWallet <- connectWindow eConnectOpen
-  passwordWindow eSettingsOpen
+  eResetPass <- passwordSettingsWindow eSettingsOpen
 
   welcomeWindow welcomeWindowWalletStorageKey welcomeWallet
 

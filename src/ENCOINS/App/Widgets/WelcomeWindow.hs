@@ -1,16 +1,10 @@
 module ENCOINS.App.Widgets.WelcomeWindow where
 
 import           Control.Monad                   (when)
-import           Data.Aeson                      (ToJSON, FromJSON, encode, decode)
-import           Data.ByteString.Lazy            (fromStrict, toStrict)
 import           Data.Text                       (Text)
-import           Data.Text.Encoding              (encodeUtf8, decodeUtf8)
-import           GHCJS.DOM.Types                 (MonadDOM)
-import           GHCJS.DOM                       (currentWindowUnchecked)
-import           GHCJS.DOM.Storage               (getItem, setItem)
-import           GHCJS.DOM.Window                (getLocalStorage)
 import           Reflex.Dom
 
+import           ENCOINS.App.Widgets.Basic       (loadJsonFromStorage, saveJsonToStorage)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn)
 import           JS.Website                      (setElementStyle)
@@ -85,16 +79,6 @@ welcomeWindowWalletStorageKey = "encoins-welcome-window-seen-wallet"
 
 welcomeWindowTransferStorageKey :: Text
 welcomeWindowTransferStorageKey = "encoins-welcome-window-seen-transfer"
-
-loadJsonFromStorage :: (MonadDOM m, FromJSON a) => Text -> m (Maybe a)
-loadJsonFromStorage elId = do
-  lc <- currentWindowUnchecked >>= getLocalStorage
-  (>>= decode . fromStrict . encodeUtf8) <$> getItem lc elId
-
-saveJsonToStorage :: (MonadDOM m, ToJSON a) => Text -> a -> m ()
-saveJsonToStorage elId val = do
-  lc <- currentWindowUnchecked >>= getLocalStorage
-  setItem lc elId . decodeUtf8 . toStrict . encode $ val
 
 welcomeWindow :: MonadWidget t m => Text -> [WelcomeItem] -> m ()
 welcomeWindow key items = do

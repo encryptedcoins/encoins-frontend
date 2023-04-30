@@ -1,10 +1,15 @@
 module ENCOINS.App.Widgets.Basic where
 
-import           Data.Aeson               (FromJSON, decodeStrict)
+import           Data.Aeson                      (ToJSON, FromJSON, encode, decode, decodeStrict)
 import           Data.ByteString          (ByteString)
+import           Data.ByteString.Lazy            (fromStrict, toStrict)
 import           Data.Text                (Text)
 import qualified Data.Text                as Text
-import           Data.Text.Encoding       (encodeUtf8)
+import           Data.Text.Encoding              (encodeUtf8, decodeUtf8)
+import           GHCJS.DOM                       (currentWindowUnchecked)
+import           GHCJS.DOM.Storage               (getItem, setItem)
+import           GHCJS.DOM.Types                 (MonadDOM)
+import           GHCJS.DOM.Window                (getLocalStorage)
 import           Reflex.Dom
 import           Reflex.ScriptDependent   (widgetHoldUntilDefined)
 
@@ -33,3 +38,13 @@ loadAppData entry f val = do
     e <- newEventWithDelay 0.1
     performEvent_ (loadJSON entry elId <$ e)
     elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
+
+loadJsonFromStorage :: (MonadDOM m, FromJSON a) => Text -> m (Maybe a)
+loadJsonFromStorage elId = do
+  lc <- currentWindowUnchecked >>= getLocalStorage
+  (>>= decode . fromStrict . encodeUtf8) <$> getItem lc elId
+
+saveJsonToStorage :: (MonadDOM m, ToJSON a) => Text -> a -> m ()
+saveJsonToStorage elId val = do
+  lc <- currentWindowUnchecked >>= getLocalStorage
+  setItem lc elId . decodeUtf8 . toStrict . encode $ val
