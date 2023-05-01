@@ -48,3 +48,13 @@ saveJsonToStorage :: (MonadDOM m, ToJSON a) => Text -> a -> m ()
 saveJsonToStorage elId val = do
   lc <- currentWindowUnchecked >>= getLocalStorage
   setItem lc elId . decodeUtf8 . toStrict . encode $ val
+
+loadTextFromStorage :: MonadDOM m => Text -> m (Maybe Text)
+loadTextFromStorage elId = do
+  lc <- currentWindowUnchecked >>= getLocalStorage
+  getItem lc elId
+
+saveTextToStorage :: MonadDOM m => Text -> Text -> m ()
+saveTextToStorage elId val = do
+  lc <- currentWindowUnchecked >>= getLocalStorage
+  setItem lc elId val

@@ -8,7 +8,7 @@ import qualified Data.Text                       as T
 import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
-import           ENCOINS.App.Widgets.Basic       (loadJsonFromStorage, saveJsonToStorage)
+import           ENCOINS.App.Widgets.Basic       (loadTextFromStorage, saveTextToStorage)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn)
 
@@ -34,15 +34,13 @@ validatePassword txt
 
 passwordSettingsWindow :: MonadWidget t m => Event t () -> m (Event t ())
 passwordSettingsWindow eOpen = mdo
-  mPass <- loadJsonFromStorage "password-hash"
+  mPass <- fmap PasswordHash <$> loadTextFromStorage "password-hash"
   eRes <- dialogWindow True eOpen eRes "width: 60%;" $ do
-    divClass "app-columns w-row" $
-      text (maybe "NONE" getPassHash mPass)
     ePassOk <- case mPass of
       Just passHash -> divClass "app-columns w-row" $ divClass "app-column w-col w-col-12" $ do
         dmCurPass <- passwordInput "Current password:" False (pure Nothing) eOpen
         let dCheckedPass = checkPass passHash <$> dmCurPass
-        dyn_ $ bool (errDiv "Incorrect password") blank <$> dCheckedPass
+        dyn_ $ mkErr <$> dCheckedPass <*> dmCurPass
         return (ffilter id $ updated dCheckedPass)
       Nothing -> pure never
     dmNewPass <- divClass "app-columns w-row" $ mdo
@@ -60,12 +58,15 @@ passwordSettingsWindow eOpen = mdo
           Nothing -> pure never
         eSave <- btn (mkSaveBtnCls mPass <$> dPassOk <*> dmNewPass)
             "width:10%;display:inline-block;margin-left:5px;" $ text "Save"
-        performEvent_ (saveJsonToStorage "password-hash" . rawToHash <$>
+        performEvent_ (saveTextToStorage "password-hash" . getPassHash . rawToHash <$>
           catMaybes (tagPromptlyDyn dmNewPass eSave))
         widgetHold_ blank (text "Password saved!" <$ eSave)
         return eReset
   return eRes
   where
+    mkErr _ Nothing = blank
+    mkErr _ (Just (PasswordRaw "")) = blank
+    mkErr c _ = bool (errDiv "Incorrect password") blank c
     checkPass hash (Just raw) = rawToHash raw == hash
     checkPass _ _ = False
     cls = "button-switching inverted flex-center"
