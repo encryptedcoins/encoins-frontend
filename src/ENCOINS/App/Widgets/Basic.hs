@@ -1,19 +1,19 @@
 module ENCOINS.App.Widgets.Basic where
 
-import           Data.Aeson                      (ToJSON, FromJSON, encode, decode, decodeStrict)
+import           Data.Aeson               (ToJSON, FromJSON, encode, decode, decodeStrict)
 import           Data.ByteString          (ByteString)
-import           Data.ByteString.Lazy            (fromStrict, toStrict)
+import           Data.ByteString.Lazy     (fromStrict, toStrict)
 import           Data.Text                (Text)
 import qualified Data.Text                as Text
-import           Data.Text.Encoding              (encodeUtf8, decodeUtf8)
-import           GHCJS.DOM                       (currentWindowUnchecked)
-import           GHCJS.DOM.Storage               (getItem, setItem)
-import           GHCJS.DOM.Types                 (MonadDOM)
-import           GHCJS.DOM.Window                (getLocalStorage)
+import           Data.Text.Encoding       (encodeUtf8, decodeUtf8)
+import           GHCJS.DOM                (currentWindowUnchecked)
+import           GHCJS.DOM.Storage        (getItem, setItem)
+import           GHCJS.DOM.Types          (MonadDOM)
+import           GHCJS.DOM.Window         (getLocalStorage)
 import           Reflex.Dom
 import           Reflex.ScriptDependent   (widgetHoldUntilDefined)
 
-import           JS.Website               (loadJSON)
+import           JS.Website               (loadJSON, saveJSON)
 import           Widgets.Events           (newEventWithDelay)
 
 sectionApp :: MonadWidget t m => Text -> Text -> m a -> m a
@@ -38,6 +38,22 @@ loadAppData entry f val = do
     e <- newEventWithDelay 0.1
     performEvent_ (loadJSON entry elId <$ e)
     elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
+
+loadAppDataHashed :: forall t m a b . (MonadWidget t m, FromJSON a) =>
+  Text -> Text -> (a -> b) -> b -> m (Dynamic t b)
+loadAppDataHashed entry hash f val = do
+    let elId = "elId-" <> entry
+    e <- newEventWithDelay 0.1
+    performEvent_ (loadJSON entry elId <$ e)
+    elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a)
+      . encodeUtf8 . decrypt)
+    where
+        decrypt = id -- FIXME
+
+saveJSONHashed :: MonadWidget t m => Text -> Text -> Text -> m ()
+saveJSONHashed elId hash val = saveJSON elId (encrypt val)
+  where
+    encrypt = id --FIXME
 
 loadJsonFromStorage :: (MonadDOM m, FromJSON a) => Text -> m (Maybe a)
 loadJsonFromStorage elId = do

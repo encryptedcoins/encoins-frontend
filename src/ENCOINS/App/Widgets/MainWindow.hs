@@ -247,6 +247,6 @@ sendToWalletDialog eOpen dSecrets = mdo
           dyn_ $ mapM ((>> br) . text . secretToHex) <$> dSecrets
       br
       btnOk <- btn "button-switching inverted flex-center" "width:30%;display:inline-block;margin-right:5px;" $ text "Ok"
-      btnCancel <- btn "button-switching inverted flex-center" "width:30%;display:inline-block;margin-left:5px;" $ text "Cancel"
+      btnCancel <- btn "button-switching flex-center" "width:30%;display:inline-block;margin-left:5px;" $ text "Cancel"
       return (btnOk, btnCancel)
   return eOk
