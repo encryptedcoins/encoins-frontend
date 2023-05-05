@@ -1,5 +1,6 @@
 module ENCOINS.App.Widgets.Basic where
 
+import           Control.Monad.IO.Class   (MonadIO(..))
 import           Data.Aeson               (ToJSON, FromJSON, encode, decode, decodeStrict)
 import           Data.ByteString          (ByteString)
 import           Data.ByteString.Lazy     (fromStrict, toStrict)
@@ -40,8 +41,8 @@ loadAppData entry f val = do
     elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
 
 loadAppDataHashed :: forall t m a b . (MonadWidget t m, FromJSON a) =>
-  Text -> Text -> (a -> b) -> b -> m (Dynamic t b)
-loadAppDataHashed entry hash f val = do
+  Text -> Maybe Text -> (a -> b) -> b -> m (Dynamic t b)
+loadAppDataHashed entry mpass f val = do
     let elId = "elId-" <> entry
     e <- newEventWithDelay 0.1
     performEvent_ (loadJSON entry elId <$ e)
@@ -50,8 +51,8 @@ loadAppDataHashed entry hash f val = do
     where
         decrypt = id -- FIXME
 
-saveJSONHashed :: MonadWidget t m => Text -> Text -> Text -> m ()
-saveJSONHashed elId hash val = saveJSON elId (encrypt val)
+saveJSONHashed :: MonadIO m => Text -> Maybe Text -> Text -> m ()
+saveJSONHashed elId mpass val = saveJSON elId (encrypt val)
   where
     encrypt = id --FIXME
 

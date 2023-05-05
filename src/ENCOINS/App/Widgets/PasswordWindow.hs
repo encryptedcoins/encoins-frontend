@@ -12,7 +12,7 @@ import           Data.Text.Encoding              (decodeUtf8)
 import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
-import           ENCOINS.App.Widgets.Basic       (loadTextFromStorage, saveTextToStorage, loadAppData)
+import           ENCOINS.App.Widgets.Basic       (loadTextFromStorage, saveTextToStorage)
 import           ENCOINS.Bulletproofs            (Secrets)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn)
@@ -41,9 +41,10 @@ validatePassword txt
   | not (T.any isSymbol txt) = Left "Password must contain at least one special character"
   | otherwise = Right (PasswordRaw txt)
 
-enterPasswordWindow :: MonadWidget t m => PasswordHash -> m (Event t (), Event t ())
-enterPasswordWindow passHash = mdo
-  dWindowIsOpen <- holdDyn True (False <$ eClose)
+enterPasswordWindow :: MonadWidget t m => PasswordHash -> Event t () ->
+  m (Event t PasswordRaw, Event t ())
+enterPasswordWindow passHash eResetOk = mdo
+  dWindowIsOpen <- holdDyn True (False <$ leftmost [void eClose,eResetOk])
   ret@(eClose,_) <- elDynAttr "div" (fmap mkClass dWindowIsOpen) $ elAttr "div"
     ("class" =: "dialog-window" <> "style" =: "width:90%") $ do
       divClass "app-columns w-row" $ divClass "connect-title-div" $
@@ -60,9 +61,9 @@ enterPasswordWindow passHash = mdo
             "display:inline-block;margin-right:5px;" $ text "Reset password"
         return (eReset', eSave')
       widgetHold_ blank $ leftmost
-        [ bool err blank <$> tagPromptlyDyn dPassOk eOk
+        [ maybe err (const blank) <$> tagPromptlyDyn dPassOk eOk
         , blank <$ updated dPassOk ]
-      return (void $ ffilter id (tagPromptlyDyn dPassOk eOk), eReset)
+      return (catMaybes $ tagPromptlyDyn dPassOk eOk, eReset)
   return ret
   where
     err = elAttr "div" ("class" =: "app-columns w-row" <>
@@ -70,8 +71,10 @@ enterPasswordWindow passHash = mdo
         errDiv "Incorrect password"
     mkClass b = "class" =: "dialog-window-wrapper" <>
       bool ("style" =: "display: none") mempty b
-    checkPass hash (Just raw) = rawToHash raw == hash
-    checkPass _ _ = False
+    checkPass hash (Just raw)
+      | rawToHash raw == hash = Just raw
+      | otherwise = Nothing
+    checkPass _ _ = Nothing
 
 passwordSettingsWindow :: MonadWidget t m => Event t () -> m (Event t ())
 passwordSettingsWindow eOpen = do
@@ -102,7 +105,7 @@ passwordSettingsWindow eOpen = do
           "display:inline-block;margin-right:5px;" $ text "Reset password"
         Nothing -> pure never
       return (eReset', eSave')
-    performEvent_ (saveJSON passwordSotrageKey . getPassHash . rawToHash <$>
+    performEvent_ (saveTextToStorage passwordSotrageKey . getPassHash . rawToHash <$>
       catMaybes (tagPromptlyDyn dmNewPass eSave))
     widgetHold_ blank $ leftmost
       [ elAttr "div" ("class" =: "app-columns w-row" <> "style" =:
