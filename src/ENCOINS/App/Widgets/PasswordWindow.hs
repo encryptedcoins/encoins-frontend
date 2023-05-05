@@ -1,17 +1,18 @@
 module ENCOINS.App.Widgets.PasswordWindow where
 
-import           Control.Monad                   (void)
+import           Control.Monad                   (void, (<=<))
 import           Data.Aeson                      (encode)
 import           Data.Bool                       (bool)
 import           Data.ByteString.Lazy            (toStrict)
 import           Data.Char                       (isLower, isSymbol, isUpper)
+import           Data.Functor                    ((<&>))
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import           Data.Text.Encoding              (decodeUtf8)
 import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
-import           ENCOINS.App.Widgets.Basic       (loadTextFromStorage, saveTextToStorage)
+import           ENCOINS.App.Widgets.Basic       (loadTextFromStorage, saveTextToStorage, loadAppData)
 import           ENCOINS.Bulletproofs            (Secrets)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn)
@@ -74,10 +75,12 @@ enterPasswordWindow passHash = mdo
 
 passwordSettingsWindow :: MonadWidget t m => Event t () -> m (Event t ())
 passwordSettingsWindow eOpen = do
-  mPass <- (>>= checkPasswordHash) <$> loadTextFromStorage passwordSotrageKey
-  text $ maybe "NONE" getPassHash mPass
+  emPass <- fmap (>>= checkPasswordHash) <$> performEvent
+    (loadTextFromStorage passwordSotrageKey <$ eOpen)
+  dmPass <- holdDyn Nothing emPass
+  dynText $ maybe "NONE" getPassHash <$> dmPass
   eRes <- dialogWindow True eOpen never "width: 90%;" $ do
-    ePassOk <- case mPass of
+    ePassOk <- switchHold never <=< dyn $ dmPass <&> \case
       Just passHash -> divClass "app-columns w-row" $ divClass "app-column w-col w-col-12" $ do
         dmCurPass <- passwordInput "Current password:" False (pure Nothing) eOpen
         let dCheckedPass = checkPass passHash <$> dmCurPass
@@ -92,14 +95,14 @@ passwordSettingsWindow eOpen = do
       return dmPass2
     dPassOk <- holdDyn False ePassOk
     (eReset, eSave) <- elAttr "div" ("class" =: "app-columns w-row" <> "style" =: "display:flex;justify-content:center;") $ do
-      eSave' <- btn (mkSaveBtnCls mPass <$> dPassOk <*> dmNewPass)
+      eSave' <- btn (mkSaveBtnCls <$> dmPass <*> dPassOk <*> dmNewPass)
         "display:inline-block;margin-left:5px;" $ text "Save"
-      eReset' <- case mPass of
+      eReset' <- switchHold never <=< dyn $ dmPass <&> \case
         Just _ -> btn "button-switching flex-center"
           "display:inline-block;margin-right:5px;" $ text "Reset password"
         Nothing -> pure never
       return (eReset', eSave')
-    performEvent_ (saveTextToStorage passwordSotrageKey . getPassHash . rawToHash <$>
+    performEvent_ (saveJSON passwordSotrageKey . getPassHash . rawToHash <$>
       catMaybes (tagPromptlyDyn dmNewPass eSave))
     widgetHold_ blank $ leftmost
       [ elAttr "div" ("class" =: "app-columns w-row" <> "style" =:
