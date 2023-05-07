@@ -67,11 +67,6 @@ saveJsonToStorage elId val = do
   setItem lc elId . decodeUtf8 . toStrict . encode $ val
 
 loadTextFromStorage :: MonadDOM m => Text -> m (Maybe Text)
-loadTextFromStorage elId = do
+loadTextFromStorage key = do
   lc <- currentWindowUnchecked >>= getLocalStorage
-  getItem lc elId
-
-saveTextToStorage :: MonadDOM m => Text -> Text -> m ()
-saveTextToStorage elId val = do
-  lc <- currentWindowUnchecked >>= getLocalStorage
-  setItem lc elId val
+  getItem lc key

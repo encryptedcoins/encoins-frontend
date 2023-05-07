@@ -323,3 +323,20 @@ function pingServer(baseUrl) {
   console.log('ping ' + baseUrl + ' ====> ' + request.status);
   return (request.status === 200);
 };
+
+function saveHashedTextToStorage(key, val) {
+  localStorage.setItem(key, CryptoJS.SHA3(val));
+}
+
+function loadHashedPassword(key) {
+  const pass = localStorage.getItem(key);
+  if (pass == null || pass == CryptoJS.SHA3("")) {
+    return "";
+  } else {
+    return pass;
+  }
+}
+
+function checkPassword(hash, raw) {
+  return (hash == CryptoJS.SHA3(raw));
+}

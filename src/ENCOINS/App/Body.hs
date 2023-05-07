@@ -11,6 +11,7 @@ import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
 import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWindow, welcomeWallet, welcomeWindowWalletStorageKey)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
+import           JS.App                             (loadHashedPassword)
 
 bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m ()
 bodyContentWidget mpass = mdo
@@ -31,7 +32,7 @@ bodyContentWidget mpass = mdo
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo
-  mPass <- (>>= checkPasswordHash) <$> loadTextFromStorage passwordSotrageKey
+  mPass <- fmap PasswordHash <$> loadHashedPassword passwordSotrageKey
   (ePassOk, eReset) <- case mPass of
     Just pass -> first (Nothing <$) <$> enterPasswordWindow pass eResetOk
     _ -> do

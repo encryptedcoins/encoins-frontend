@@ -12,10 +12,10 @@ import           Data.Text.Encoding              (decodeUtf8)
 import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
-import           ENCOINS.App.Widgets.Basic       (loadTextFromStorage, saveTextToStorage)
 import           ENCOINS.Bulletproofs            (Secrets)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn)
+import           JS.App                          (saveHashedTextToStorage, loadHashedPassword, checkPassword)
 import           JS.Website                      (saveJSON)
 
 passwordSotrageKey :: Text
@@ -24,14 +24,6 @@ passwordSotrageKey = "password-hash"
 newtype PasswordRaw = PasswordRaw { getPassRaw :: Text } deriving (Eq, Show)
 
 newtype PasswordHash = PasswordHash { getPassHash :: Text } deriving (Eq, Show)
-
-checkPasswordHash :: Text -> Maybe PasswordHash
-checkPasswordHash txt
-  | rawToHash (PasswordRaw "") == (PasswordHash txt) = Nothing
-  | otherwise = Just (PasswordHash txt)
-
-rawToHash :: PasswordRaw -> PasswordHash
-rawToHash = PasswordHash . getPassRaw -- FIXME
 
 validatePassword :: Text -> Either Text PasswordRaw
 validatePassword txt
@@ -53,7 +45,8 @@ enterPasswordWindow passHash eResetOk = mdo
         divClass "app-column w-col w-col-12" $ do
           ePb <- getPostBuild
           dmCurPass <- passwordInput "Enter your password:" False (pure Nothing) ePb
-          return $ checkPass passHash <$> dmCurPass
+          emCurPass <- performEvent $ checkPass passHash <$> updated dmCurPass
+          holdDyn Nothing emCurPass
       (eReset, eOk) <- elAttr "div" ("class" =: "app-columns w-row" <> "style" =: "display:flex;justify-content:center;") $ do
         eSave' <- btn "button-switching inverted flex-center"
           "display:inline-block;margin-left:5px;" $ text "Ok"
@@ -71,22 +64,22 @@ enterPasswordWindow passHash eResetOk = mdo
         errDiv "Incorrect password"
     mkClass b = "class" =: "dialog-window-wrapper" <>
       bool ("style" =: "display: none") mempty b
-    checkPass hash (Just raw)
-      | rawToHash raw == hash = Just raw
-      | otherwise = Nothing
-    checkPass _ _ = Nothing
+    checkPass hash (Just raw) = do
+      res <- checkPassword (getPassHash hash) (getPassRaw raw)
+      return $ bool Nothing (Just raw) res
+    checkPass _ _ = return Nothing
 
 passwordSettingsWindow :: MonadWidget t m => Event t () -> m (Event t ())
 passwordSettingsWindow eOpen = do
-  emPass <- fmap (>>= checkPasswordHash) <$> performEvent
-    (loadTextFromStorage passwordSotrageKey <$ eOpen)
+  emPass <- fmap (fmap PasswordHash) <$> performEvent (loadHashedPassword passwordSotrageKey <$ eOpen)
   dmPass <- holdDyn Nothing emPass
   dynText $ maybe "NONE" getPassHash <$> dmPass
   eRes <- dialogWindow True eOpen never "width: 90%;" $ do
     ePassOk <- switchHold never <=< dyn $ dmPass <&> \case
       Just passHash -> divClass "app-columns w-row" $ divClass "app-column w-col w-col-12" $ do
         dmCurPass <- passwordInput "Current password:" False (pure Nothing) eOpen
-        let dCheckedPass = checkPass passHash <$> dmCurPass
+        eCheckedPass <- performEvent $ checkPass passHash <$> updated dmCurPass
+        dCheckedPass <- holdDyn False eCheckedPass
         dyn_ $ mkErr <$> dCheckedPass <*> dmCurPass
         return (ffilter id $ updated dCheckedPass)
       Nothing -> pure never
@@ -105,7 +98,7 @@ passwordSettingsWindow eOpen = do
           "display:inline-block;margin-right:5px;" $ text "Reset password"
         Nothing -> pure never
       return (eReset', eSave')
-    performEvent_ (saveTextToStorage passwordSotrageKey . getPassHash . rawToHash <$>
+    performEvent_ (saveHashedTextToStorage passwordSotrageKey . getPassRaw <$>
       catMaybes (tagPromptlyDyn dmNewPass eSave))
     widgetHold_ blank $ leftmost
       [ elAttr "div" ("class" =: "app-columns w-row" <> "style" =:
@@ -117,8 +110,8 @@ passwordSettingsWindow eOpen = do
     mkErr _ Nothing = blank
     mkErr _ (Just (PasswordRaw "")) = blank
     mkErr c _ = bool (errDiv "Incorrect password") blank c
-    checkPass hash (Just raw) = rawToHash raw == hash
-    checkPass _ _ = False
+    checkPass hash (Just raw) = checkPassword (getPassHash hash) (getPassRaw raw)
+    checkPass _ _ = return False
     cls = "button-switching inverted flex-center"
     mkSaveBtnCls Nothing _ (Just _) = cls
     mkSaveBtnCls (Just _) True (Just _) = cls
@@ -181,7 +174,6 @@ resetPasswordDialog eOpen = mdo
       btnCancel <- btn "button-switching flex-center"
         "width:30%;display:inline-block;margin-left:5px;" $ text "Cancel"
       return (btnOk, btnCancel)
-  performEvent_ (saveTextToStorage passwordSotrageKey
-    (getPassHash . rawToHash $ PasswordRaw "") <$ eOk)
+  performEvent_ (saveHashedTextToStorage passwordSotrageKey "" <$ eOk)
   performEvent_ ((saveJSON "encoins" . decodeUtf8 . toStrict $ encode @Secrets []) <$ eOk)
   return eOk
