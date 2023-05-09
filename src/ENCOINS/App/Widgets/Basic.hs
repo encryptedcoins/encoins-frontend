@@ -1,6 +1,5 @@
 module ENCOINS.App.Widgets.Basic where
 
-import           Control.Monad.IO.Class   (MonadIO(..))
 import           Data.Aeson               (ToJSON, FromJSON, encode, decode, decodeStrict)
 import           Data.ByteString          (ByteString)
 import           Data.ByteString.Lazy     (fromStrict, toStrict)
@@ -14,7 +13,7 @@ import           GHCJS.DOM.Window         (getLocalStorage)
 import           Reflex.Dom
 import           Reflex.ScriptDependent   (widgetHoldUntilDefined)
 
-import           JS.Website               (loadJSON, saveJSON)
+import           JS.Website               (loadJSON)
 import           Widgets.Events           (newEventWithDelay)
 
 sectionApp :: MonadWidget t m => Text -> Text -> m a -> m a
@@ -33,28 +32,13 @@ waitForScripts placeholderWidget actualWidget = do
   _ <- widgetHoldUntilDefined "walletAPI" ("js/ENCOINS.js" <$ ePB) placeholderWidget actualWidget
   blank
 
-loadAppData :: forall t m a b . (MonadWidget t m, FromJSON a) => Text -> (a -> b) -> b -> m (Dynamic t b)
-loadAppData entry f val = do
+loadAppData :: forall t m a b . (MonadWidget t m, FromJSON a) =>
+  Maybe Text -> Text -> (a -> b) -> b -> m (Dynamic t b)
+loadAppData mpass entry f val = do
     let elId = "elId-" <> entry
     e <- newEventWithDelay 0.1
-    performEvent_ (loadJSON entry elId <$ e)
+    performEvent_ (loadJSON mpass entry elId <$ e)
     elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
-
-loadAppDataHashed :: forall t m a b . (MonadWidget t m, FromJSON a) =>
-  Text -> Maybe Text -> (a -> b) -> b -> m (Dynamic t b)
-loadAppDataHashed entry mpass f val = do
-    let elId = "elId-" <> entry
-    e <- newEventWithDelay 0.1
-    performEvent_ (loadJSON entry elId <$ e)
-    elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a)
-      . encodeUtf8 . decrypt)
-    where
-        decrypt = id -- FIXME
-
-saveJSONHashed :: MonadIO m => Text -> Maybe Text -> Text -> m ()
-saveJSONHashed elId mpass val = saveJSON elId (encrypt val)
-  where
-    encrypt = id --FIXME
 
 loadJsonFromStorage :: (MonadDOM m, FromJSON a) => Text -> m (Maybe a)
 loadJsonFromStorage elId = do

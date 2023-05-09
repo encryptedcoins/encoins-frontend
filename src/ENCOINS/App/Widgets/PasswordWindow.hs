@@ -12,7 +12,6 @@ import           Data.Text.Encoding              (decodeUtf8)
 import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
-import           ENCOINS.Bulletproofs            (Secrets)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn)
 import           JS.App                          (saveHashedTextToStorage, loadHashedPassword, checkPassword)
@@ -73,7 +72,6 @@ passwordSettingsWindow :: MonadWidget t m => Event t () -> m (Event t ())
 passwordSettingsWindow eOpen = do
   emPass <- fmap (fmap PasswordHash) <$> performEvent (loadHashedPassword passwordSotrageKey <$ eOpen)
   dmPass <- holdDyn Nothing emPass
-  dynText $ maybe "NONE" getPassHash <$> dmPass
   eRes <- dialogWindow True eOpen never "width: 90%;" $ do
     ePassOk <- switchHold never <=< dyn $ dmPass <&> \case
       Just passHash -> divClass "app-columns w-row" $ divClass "app-column w-col w-col-12" $ do
@@ -175,5 +173,5 @@ resetPasswordDialog eOpen = mdo
         "width:30%;display:inline-block;margin-left:5px;" $ text "Cancel"
       return (btnOk, btnCancel)
   performEvent_ (saveHashedTextToStorage passwordSotrageKey "" <$ eOk)
-  performEvent_ ((saveJSON "encoins" . decodeUtf8 . toStrict $ encode @Secrets []) <$ eOk)
+  performEvent_ ((saveJSON Nothing "encoins" . decodeUtf8 . toStrict $ encode @Text "") <$ eOk)
   return eOk

@@ -19,7 +19,7 @@ import           Backend.EncoinsTx                (encoinsTx, encoinsTxWallet, e
 import           Backend.Status                   (Status(..), walletError)
 import           Backend.Wallet                   (Wallet (..), WalletName (..))
 import           CSL                              (TransactionUnspentOutput(..), amount, coin)
-import           ENCOINS.App.Widgets.Basic        (containerApp, sectionApp, loadAppDataHashed, saveJSONHashed)
+import           ENCOINS.App.Widgets.Basic        (containerApp, sectionApp, loadAppData)
 import           ENCOINS.App.Widgets.Coin         (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
                                                     coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget, secretToHex)
 import           ENCOINS.App.Widgets.ImportWindow (importWindow, importFileWindow, exportWindow)
@@ -29,7 +29,7 @@ import           ENCOINS.Bulletproofs             (Secrets, Secret (..))
 import           ENCOINS.Common.Widgets.Basic     (btn, br, divClassId)
 import           ENCOINS.Common.Widgets.Advanced  (dialogWindow)
 import           ENCOINS.Crypto.Field             (fromFieldElement)
-import           JS.Website                       (logInfo)
+import           JS.Website                       (logInfo, saveJSON)
 import           Widgets.Utils                    (toText)
 
 transactionBalanceWidget :: MonadWidget t m => Dynamic t Secrets -> Dynamic t Secrets -> m ()
@@ -150,11 +150,11 @@ walletTab mpass dWallet = sectionApp "" "" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
             performEvent_ $ logInfo . ("dImportedSecrets: "<>) . toText <$>
               updated dImportedSecrets
-            dOldSecrets <- loadAppDataHashed "encoins" (getPassRaw <$> mpass) id []
+            dOldSecrets <- loadAppData (getPassRaw <$> mpass) "encoins" id []
             dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
             let dSecrets = fmap nub $ zipDynWith (++) dImportedSecrets $ zipDynWith (++) dOldSecrets dNewSecrets
             dSecretsWithNames <- coinCollectionWithNames dSecrets
-            performEvent_ (saveJSONHashed "encoins" (getPassRaw <$> mpass). decodeUtf8 .
+            performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins" . decodeUtf8 .
               toStrict . encode <$> updated dSecrets)
 
             (dCoinsToBurn, eImportSecret) <- divClass "app-column w-col w-col-6" $ do
@@ -204,9 +204,9 @@ transferTab mpass dWallet dSecretsWithNamesInTheWallet = sectionApp "" "" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         performEvent_ $ logInfo . ("dImportedSecrets: "<>) . toText <$>
           updated dImportedSecrets
-        dOldSecrets <- loadAppDataHashed "encoins" (getPassRaw <$> mpass) id []
+        dOldSecrets <- loadAppData (getPassRaw <$> mpass) "encoins" id []
         let dSecrets = fmap nub $ zipDynWith (++) dImportedSecrets dOldSecrets
-        performEvent_ (saveJSONHashed "encoins" (getPassRaw <$> mpass) . decodeUtf8 .
+        performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins" . decodeUtf8 .
           toStrict . encode <$> updated dSecrets)
 
         (dCoinsToBurn, eImportSecret) <- divClass "app-column w-col w-col-6" $ do

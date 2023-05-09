@@ -30,8 +30,8 @@ connectWindow eConnectOpen = mdo
         let bWalletName = current $ fmap walletName dW
 
         -- save/load wallet
-        performEvent_ (saveJSON "current-wallet" . decodeUtf8 . toStrict . encode . toJS <$> eWalletName)
-        eLastWalletName <- updated <$> loadAppData "current-wallet" fromJS None
+        performEvent_ (saveJSON Nothing "current-wallet" . decodeUtf8 . toStrict . encode . toJS <$> eWalletName)
+        eLastWalletName <- updated <$> loadAppData Nothing "current-wallet" fromJS None
 
         return (void eWalletName, dW)
     return dWallet
