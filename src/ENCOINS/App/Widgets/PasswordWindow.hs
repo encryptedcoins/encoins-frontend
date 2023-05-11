@@ -4,7 +4,7 @@ import           Control.Monad                   (void, (<=<))
 import           Data.Aeson                      (encode)
 import           Data.Bool                       (bool)
 import           Data.ByteString.Lazy            (toStrict)
-import           Data.Char                       (isLower, isSymbol, isUpper)
+import           Data.Char                       (isLower, isUpper, ord, isAsciiLower, isAsciiUpper, isDigit)
 import           Data.Functor                    ((<&>))
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
@@ -26,11 +26,22 @@ newtype PasswordHash = PasswordHash { getPassHash :: Text } deriving (Eq, Show)
 
 validatePassword :: Text -> Either Text PasswordRaw
 validatePassword txt
+  | not $ T.all validPasswordChar txt = Left "Password must consist of \
+    \uppercase and lowercase letters, numbers, and special characters"
   | T.length txt < 10 = Left "Password must be at least 10 characters long"
   | not (T.any isUpper txt) = Left "Password must contain at least one upper-case letter"
   | not (T.any isLower txt) = Left "Password must contain at least one lower-case letter"
-  | not (T.any isSymbol txt) = Left "Password must contain at least one special character"
+  | not (T.any isSpecial txt) = Left "Password must contain at least one special character"
   | otherwise = Right (PasswordRaw txt)
+
+-- Uppercase and lowercase letters, numbers, and special characters from the
+-- ASCII character set. (i.e. everything from the ASCII set except the control characters)
+validPasswordChar :: Char -> Bool
+validPasswordChar c = ord c >= 32 && ord c <= 126
+
+isSpecial :: Char -> Bool
+isSpecial c = validPasswordChar c &&
+  not (isAsciiUpper c || isAsciiLower c || isDigit c)
 
 enterPasswordWindow :: MonadWidget t m => PasswordHash -> Event t () ->
   m (Event t PasswordRaw, Event t ())
