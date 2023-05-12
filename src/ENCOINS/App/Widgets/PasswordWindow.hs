@@ -79,12 +79,13 @@ enterPasswordWindow passHash eResetOk = mdo
       return $ bool Nothing (Just raw) res
     checkPass _ _ = return Nothing
 
-passwordSettingsWindow :: MonadWidget t m => Event t () -> m (Event t ())
+passwordSettingsWindow :: MonadWidget t m => Event t ()
+  -> m (Event t PasswordRaw, Event t ())
 passwordSettingsWindow eOpen = do
-  emPass <- fmap (fmap PasswordHash) <$> performEvent (loadHashedPassword passwordSotrageKey <$ eOpen)
-  dmPass <- holdDyn Nothing emPass
-  eRes <- dialogWindow True eOpen never "width: 90%;" $ do
-    ePassOk <- switchHold never <=< dyn $ dmPass <&> \case
+  emPassHash <- fmap (fmap PasswordHash) <$> performEvent (loadHashedPassword passwordSotrageKey <$ eOpen)
+  dmPassHash <- holdDyn Nothing emPassHash
+  dialogWindow True eOpen never "width: 90%;" $ do
+    ePassOk <- switchHold never <=< dyn $ dmPassHash <&> \case
       Just passHash -> divClass "app-columns w-row" $ divClass "app-column w-col w-col-12" $ do
         dmCurPass <- passwordInput "Current password:" False (pure Nothing) eOpen
         eCheckedPass <- performEvent $ checkPass passHash <$> updated dmCurPass
@@ -100,21 +101,21 @@ passwordSettingsWindow eOpen = do
       return dmPass2
     dPassOk <- holdDyn False ePassOk
     (eReset, eSave) <- elAttr "div" ("class" =: "app-columns w-row" <> "style" =: "display:flex;justify-content:center;") $ do
-      eSave' <- btn (mkSaveBtnCls <$> dmPass <*> dPassOk <*> dmNewPass)
+      eSave' <- btn (mkSaveBtnCls <$> dmPassHash <*> dPassOk <*> dmNewPass)
         "display:inline-block;margin-left:5px;" $ text "Save"
-      eReset' <- switchHold never <=< dyn $ dmPass <&> \case
+      eReset' <- switchHold never <=< dyn $ dmPassHash <&> \case
         Just _ -> btn "button-switching flex-center"
           "display:inline-block;margin-right:5px;" $ text "Reset password"
         Nothing -> pure never
       return (eReset', eSave')
+    let eNewPass = catMaybes (tagPromptlyDyn dmNewPass eSave)
     performEvent_ (saveHashedTextToStorage passwordSotrageKey . getPassRaw <$>
-      catMaybes (tagPromptlyDyn dmNewPass eSave))
+      eNewPass)
     widgetHold_ blank $ leftmost
       [ elAttr "div" ("class" =: "app-columns w-row" <> "style" =:
         "display:flex;justify-content:center;") (text "Password saved!") <$ eSave
       , blank <$ eOpen ]
-    return eReset
-  return eRes
+    return (eNewPass, eReset)
   where
     mkErr _ Nothing = blank
     mkErr _ (Just (PasswordRaw "")) = blank

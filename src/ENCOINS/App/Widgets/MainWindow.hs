@@ -19,7 +19,7 @@ import           Backend.EncoinsTx                (encoinsTx, encoinsTxWallet, e
 import           Backend.Status                   (Status(..), walletError)
 import           Backend.Wallet                   (Wallet (..), WalletName (..))
 import           CSL                              (TransactionUnspentOutput(..), amount, coin)
-import           ENCOINS.App.Widgets.Basic        (containerApp, sectionApp, loadAppData)
+import           ENCOINS.App.Widgets.Basic        (containerApp, sectionApp)
 import           ENCOINS.App.Widgets.Coin         (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
                                                     coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget, secretToHex)
 import           ENCOINS.App.Widgets.ImportWindow (importWindow, importFileWindow, exportWindow)
@@ -129,28 +129,30 @@ tabsSection dTab = sectionApp "" "" $ containerApp "" $
     where
         mkBtnCls val cur = bool "button-not-selected" "" (val == cur)
 
-mainWindow :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet -> m ()
-mainWindow mpass dWallet = mdo
+mainWindow :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet ->
+  Dynamic t Secrets -> m ()
+mainWindow mpass dWallet dOldSecrets = mdo
     eTab <- tabsSection dTab
     dTab <- holdDyn WalletTab eTab
 
     eSecretsWithNamesInTheWallet <- switchHold never <=< dyn $ dTab <&> \case
-      WalletTab -> walletTab mpass dWallet
+      WalletTab -> walletTab mpass dWallet dOldSecrets
       TransferTab -> transferTab mpass dWallet dSecretsWithNamesInTheWallet
+        dOldSecrets
       LedgerTab -> pure never
     dSecretsWithNamesInTheWallet <- holdDyn [] eSecretsWithNamesInTheWallet
 
     blank
 
-walletTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet -> m (Event t [(Secret, Text)])
-walletTab mpass dWallet = sectionApp "" "" $ mdo
+walletTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet ->
+  Dynamic t Secrets -> m (Event t [(Secret, Text)])
+walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     containerApp "" $ transactionBalanceWidget dToBurn dToMint
     (dToBurn, dToMint, eStatusUpdate, _, ret) <- containerApp "" $
         divClass "app-columns w-row" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
             performEvent_ $ logInfo . ("dImportedSecrets: "<>) . toText <$>
               updated dImportedSecrets
-            dOldSecrets <- loadAppData (getPassRaw <$> mpass) "encoins" id []
             dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
             let dSecrets = fmap nub $ zipDynWith (++) dImportedSecrets $ zipDynWith (++) dOldSecrets dNewSecrets
             dSecretsWithNames <- coinCollectionWithNames dSecrets
@@ -196,15 +198,15 @@ walletTab mpass dWallet = sectionApp "" "" $ mdo
       btn "button-switching flex-center" "margin-top: 20px" . text
 
 transferTab :: MonadWidget t m =>
-    Maybe PasswordRaw -> Dynamic t Wallet -> Dynamic t [(Secret, Text)] -> m (Event t [(Secret, Text)])
-transferTab mpass dWallet dSecretsWithNamesInTheWallet = sectionApp "" "" $ mdo
+    Maybe PasswordRaw -> Dynamic t Wallet -> Dynamic t [(Secret, Text)] ->
+    Dynamic t Secrets -> m (Event t [(Secret, Text)])
+transferTab mpass dWallet dSecretsWithNamesInTheWallet dOldSecrets = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
     containerApp "" $ transactionBalanceWidget (pure []) dCoins
     (dCoins, eSendToWallet, eSendToLedger) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         performEvent_ $ logInfo . ("dImportedSecrets: "<>) . toText <$>
           updated dImportedSecrets
-        dOldSecrets <- loadAppData (getPassRaw <$> mpass) "encoins" id []
         let dSecrets = fmap nub $ zipDynWith (++) dImportedSecrets dOldSecrets
         performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins" . decodeUtf8 .
           toStrict . encode <$> updated dSecrets)

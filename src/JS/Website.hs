@@ -147,7 +147,7 @@ saveJSON _ _ _ = error "GHCJS is required!"
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
-  "loadJSON($1, $2);" loadJSON_js
+  "loadJSON($1, $2, $3, $4);" loadJSON_js
     :: JSString -> JSString -> JSVal -> JSString -> IO ()
 
 loadJSON :: MonadIO m => Maybe Text -> Text -> Text -> m ()

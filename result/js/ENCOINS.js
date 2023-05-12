@@ -46,18 +46,18 @@ function setInputValue(elId, val) {
 function saveJSON(key, val, encr, pass) {
   var val1 = val;
   if (encr) {
-    val1 = CryptoJS.AES.encrypt(val, pass);
+    val1 = CryptoJS.AES.encrypt(val, pass).toString();
   }
   localStorage.setItem(key, val1);
 }
 
-function loadJSON(key, resId, decrypt, pass) {
+function loadJSON(key, resId, decr, pass) {
   const val = localStorage.getItem(key);
   var res = val;
-  if (decrypt) {
-    res = CryptoJS.AES.decrypt(val, pass);
+  if (decr) {
+    res = CryptoJS.AES.decrypt(val, pass).toString(CryptoJS.enc.Utf8);
   }
-  setInputValue(resId, val);
+  setInputValue(resId, res);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
