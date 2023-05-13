@@ -26,7 +26,7 @@ bodyContentWidget mpass = mdo
   (eNewPass, eResetPass) <- passwordSettingsWindow eSettingsOpen
   eResetOk <- resetPasswordDialog eResetPass
   performEvent_ (reencryptEncoins <$> attachPromptlyDyn dData (leftmost
-    [Just <$> eNewPass, Nothing <$ eResetOk]))
+    [eNewPass, Nothing <$ eResetOk]))
 
   welcomeWindow welcomeWindowWalletStorageKey welcomeWallet
 
@@ -34,7 +34,7 @@ bodyContentWidget mpass = mdo
 
   mainWindow mpass dWallet dData
 
-  return $ leftmost [Nothing <$ eResetOk, Just <$> eNewPass]
+  return $ leftmost [Nothing <$ eResetOk, eNewPass]
 
   -- divClass "section-app section-app-empty wf-section" blank
 
