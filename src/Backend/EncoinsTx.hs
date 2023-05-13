@@ -115,7 +115,9 @@ encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
     let eFinalRedeemer = () <$ catMaybes (updated dFinalRedeemer)
 
     -- Constructing a new transaction
-    (eNewTxSuccess, eRelayDown) <- newTxRequestWrapper baseUrl (zipDyn (fmap fromJust dFinalRedeemer) dUTXOs) eFinalRedeemer
+    (eNewTxSuccess, eRelayDown) <- newTxRequestWrapper baseUrl (zipDyn
+      (fmap (Right . (,WalletMode) . fromJust) dFinalRedeemer)
+      dUTXOs) eFinalRedeemer
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
     dTx <- holdDyn "" eTx

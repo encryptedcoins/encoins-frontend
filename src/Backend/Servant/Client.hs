@@ -10,13 +10,12 @@ import           Data.Proxy                   (Proxy(..))
 import           Data.Text                    (Text)
 import           Reflex.Dom                   hiding (Value)
 import           Servant.API
-import           Servant.Checked.Exceptions   (Envelope)
 import           Servant.Reflex
 import           System.Random                (randomRIO)
 import           Witherable                   (catMaybes)
 
 import           Backend.Types
-import           CSL                          (TransactionUnspentOutputs)
+import           CSL                          (TransactionUnspentOutputs, Value)
 import           JS.App                       (pingServer)
 
 urls :: [Text]
@@ -33,9 +32,14 @@ pabIP = go urls
         then return $ BasePath url
         else go (delete url l)
 
-type API =   "newTx"        :> ReqBody '[JSON] (EncoinsRedeemer, TransactionUnspentOutputs) :> Post '[JSON] (Envelope '[] (Text, Text))
+type API =   "newTx" :> ReqBody '[JSON] (Either (Address, Value) (EncoinsRedeemer, EncoinsMode), TransactionUnspentOutputs) :> Post '[JSON] (Text, Text)
         :<|> "submitTx"     :> ReqBody '[JSON] SubmitTxReqBody :> Post '[JSON] NoContent
-        :<|> "ping"         :> Get '[JSON] ()
+        :<|> "ping"         :> Get '[JSON] NoContent
+        :<|> "utxos"        :> ReqBody '[JSON] Address :> Get '[JSON] TransactionUnspentOutputs
+        :<|> "serverTx"     :> ReqBody '[JSON] (Either (Address, Value) (EncoinsRedeemer, EncoinsMode), TransactionUnspentOutputs) :> Post '[JSON] NoContent
+        :<|> "status"       :> ReqBody '[JSON] EncoinsStatusReqBody :> Get '[JSON] EncoinsStatusResult
+
+
 
 type RespEvent t a      = Event t (ReqResult () a)
 type Res t m res        = Event t () -> m (RespEvent t res)
@@ -44,15 +48,25 @@ type ReqRes t m req res = DynReqBody t req -> Res t m res
 
 data ApiClient t m = ApiClient
   {
-    newTxRequest        :: ReqRes t m (EncoinsRedeemer, TransactionUnspentOutputs) (Envelope '[] (Text, Text)),
+    newTxRequest        :: ReqRes t m
+      ( Either (Address, Value) (EncoinsRedeemer, EncoinsMode)
+      , TransactionUnspentOutputs)
+      (Text, Text),
     submitTxRequest     :: ReqRes t m SubmitTxReqBody NoContent,
-    pingRequest         :: Res t m ()
+    pingRequest         :: Res t m NoContent,
+    utxosRequest        :: ReqRes t m Address TransactionUnspentOutputs,
+    serverTxRequest     :: ReqRes t m
+      ( Either (Address, Value) (EncoinsRedeemer, EncoinsMode)
+      , TransactionUnspentOutputs)
+      NoContent,
+    statusRequest       :: ReqRes t m EncoinsStatusReqBody EncoinsStatusResult
   }
 
 mkApiClient :: forall t m . MonadWidget t m => BaseUrl -> ApiClient t m
 mkApiClient host = ApiClient{..}
   where
-    (newTxRequest :<|> submitTxRequest :<|> pingRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
+    (newTxRequest :<|> submitTxRequest :<|> pingRequest :<|> utxosRequest
+      :<|> serverTxRequest :<|> statusRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
 
 ---------------------------------------------- Utilities ----------------------------------------
 

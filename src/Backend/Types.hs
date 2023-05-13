@@ -12,6 +12,7 @@ import           PlutusTx.Builtins
 import           Reflex.Dom                  (decodeText)
 import           Text.Hex                    (decodeHex)
 
+import           CSL                         (TransactionUnspentOutputs)
 import           ENCOINS.BaseTypes           (MintingPolarity)
 import           ENCOINS.Bulletproofs        (Proof (..))
 
@@ -65,3 +66,12 @@ data SubmitTxReqBody = SubmitTxReqBody
         submitReqWitnesses  :: [(Text, Text)]
     }
     deriving (Show, Generic, ToJSON, FromJSON)
+
+data EncoinsMode = WalletMode | LedgerMode
+    deriving (Show, Read, Eq, Generic, FromJSON, ToJSON)
+
+data EncoinsStatusReqBody = MaxAdaWithdrawRequest | LedgerUtxoRequest
+    deriving (Show, Eq, Enum, Generic, FromJSON, ToJSON)
+
+data EncoinsStatusResult = MaxAdaWithdrawResult Integer | LedgerUtxoResult TransactionUnspentOutputs
+    deriving (Show, Eq, Generic, FromJSON, ToJSON)
