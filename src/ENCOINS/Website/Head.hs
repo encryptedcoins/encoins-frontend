@@ -14,6 +14,8 @@ headWidget = do
   stylesheet "css/webflow.css"
   stylesheet "css/encoins.webflow.css"
   stylesheet "css/encoins.webflow-extra.css"
+  stylesheet "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css"
+
   elAttr "link" ("href" =: "images/favicon.png" <> "rel" =: "shortcut icon" <> "type" =: "image/x-icon") blank
   elAttr "link" ("href" =: "images/webclip.png" <> "rel" =: "apple-touch-icon") blank
 
@@ -23,14 +25,16 @@ headWidget = do
   eWebpageLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/Webpage.js" <> "type" =: "text/javascript") blank
   eEd25519Loaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/noble-ed25519.js" <> "type" =: "text/javascript") blank
   eCIP14Loaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/cip14.js" <> "type" =: "text/javascript") blank
+  eCrypoJSLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/crypto-js.min.js" <> "type" =: "text/javascript") blank
 
   dWebFontLoaded <- holdDyn False (True <$ eWebFontLoaded)
   dCSLLoaded <- holdDyn False (True <$ eCSLLoaded)
   dWebpageLoaded <- holdDyn False (True <$ eWebpageLoaded)
   dEd25519Loaded <- holdDyn False (True <$ eEd25519Loaded)
   dCIP14Loaded <- holdDyn False (True <$ eCIP14Loaded)
+  dCrypoJSLoaded <- holdDyn False (True <$ eCrypoJSLoaded)
   let eScriptsLoaded = ffilter (== True) $ updated $ foldl (zipDynWith (&&)) (pure True)
-        [dWebFontLoaded, dWebpageLoaded, dCSLLoaded, dEd25519Loaded, dCIP14Loaded]
+        [dWebFontLoaded, dWebpageLoaded, dCSLLoaded, dEd25519Loaded, dCIP14Loaded, dCrypoJSLoaded]
 
   performEvent_ (JS.runHeadScripts <$ eScriptsLoaded)
  where

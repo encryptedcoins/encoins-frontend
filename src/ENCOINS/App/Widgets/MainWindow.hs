@@ -19,15 +19,17 @@ import           Backend.EncoinsTx                (encoinsTx, encoinsTxWallet, e
 import           Backend.Status                   (Status(..), walletError)
 import           Backend.Wallet                   (Wallet (..), WalletName (..))
 import           CSL                              (TransactionUnspentOutput(..), amount, coin)
-import           ENCOINS.App.Widgets.Basic        (containerApp, sectionApp, loadAppData)
+import           ENCOINS.App.Widgets.Basic        (containerApp, sectionApp)
 import           ENCOINS.App.Widgets.Coin         (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
                                                     coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget, secretToHex)
 import           ENCOINS.App.Widgets.ImportWindow (importWindow, importFileWindow, exportWindow)
+import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw(..))
+import           ENCOINS.App.Widgets.WelcomeWindow (welcomeWindow, welcomeTransfer, welcomeWindowTransferStorageKey)
 import           ENCOINS.Bulletproofs             (Secrets, Secret (..))
-import           ENCOINS.Common.Widgets.Basic     (btn, br)
+import           ENCOINS.Common.Widgets.Basic     (btn, br, divClassId)
 import           ENCOINS.Common.Widgets.Advanced  (dialogWindow)
 import           ENCOINS.Crypto.Field             (fromFieldElement)
-import           JS.Website                       (saveJSON, logInfo)
+import           JS.Website                       (logInfo, saveJSON)
 import           Widgets.Utils                    (toText)
 
 transactionBalanceWidget :: MonadWidget t m => Dynamic t Secrets -> Dynamic t Secrets -> m ()
@@ -37,7 +39,7 @@ transactionBalanceWidget dCoinsToBurn dCoinsToMint =
         balanceSign n = bool "-" "+" (n >= 0)
         balanceADA n = "Transaction balance: " <> balanceSign n <> toText (abs n) <> " ADA"
         feeADA n = bool blank (divClass "app-text-semibold" $ text $ "Fee: " <> toText (max 3 $ n `divide` 100) <> " ADA") (n > 0)
-    in divClass "transaction-balance-div" $ do
+    in divClassId "transaction-balance-div" "welcome-tx-balance" $ do
         divClass "app-text-semibold" $ dynText $ fmap balanceADA balance
         dyn_ $ fmap feeADA balance
 
@@ -99,7 +101,8 @@ sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint = do
         h v = case v of
             TxValid     -> ""
             TxInvalid _ -> "border-bottom-left-radius: 0px; border-bottom-right-radius: 0px"
-    e <- btn (fmap f dTxValidity) (fmap h dTxValidity) $ dynText "SEND REQUEST"
+    e <- divClassId "" "welcome-send-req" $ btn (f <$> dTxValidity)
+        (h <$> dTxValidity) $ dynText "SEND REQUEST"
     dyn_ $ fmap g dTxValidity
     return $ () <$ ffilter (== TxValid) (current dTxValidity `tag` e)
 
@@ -107,7 +110,7 @@ data AppTab = WalletTab | TransferTab | LedgerTab deriving (Eq, Show)
 
 tabsSection :: MonadWidget t m => Dynamic t AppTab -> m (Event t AppTab)
 tabsSection dTab = sectionApp "" "" $ containerApp "" $
-    divClass "app-top-menu-div" $ do
+    divClassId "app-top-menu-div" "welcome-tabs"$ do
         eWallet <- divClass "menu-item-button-right" $
             btn (mkBtnCls WalletTab <$> dTab) "" $ text "Wallet"
         eTransfer <- divClass "menu-item-button-right" $
@@ -126,52 +129,60 @@ tabsSection dTab = sectionApp "" "" $ containerApp "" $
     where
         mkBtnCls val cur = bool "button-not-selected" "" (val == cur)
 
-mainWindow :: MonadWidget t m => Dynamic t Wallet -> m ()
-mainWindow dWallet = mdo
+mainWindow :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet ->
+  Dynamic t Secrets -> m ()
+mainWindow mpass dWallet dOldSecrets = mdo
     eTab <- tabsSection dTab
     dTab <- holdDyn WalletTab eTab
 
     eSecretsWithNamesInTheWallet <- switchHold never <=< dyn $ dTab <&> \case
-      WalletTab -> walletTab dWallet
-      TransferTab -> transferTab dWallet dSecretsWithNamesInTheWallet
+      WalletTab -> walletTab mpass dWallet dOldSecrets
+      TransferTab -> transferTab mpass dWallet dSecretsWithNamesInTheWallet
+        dOldSecrets
       LedgerTab -> pure never
     dSecretsWithNamesInTheWallet <- holdDyn [] eSecretsWithNamesInTheWallet
 
     blank
 
-walletTab :: MonadWidget t m => Dynamic t Wallet -> m (Event t [(Secret, Text)])
-walletTab dWallet = sectionApp "" "" $ mdo
+walletTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet ->
+  Dynamic t Secrets -> m (Event t [(Secret, Text)])
+walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     containerApp "" $ transactionBalanceWidget dToBurn dToMint
     (dToBurn, dToMint, eStatusUpdate, _, ret) <- containerApp "" $
         divClass "app-columns w-row" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
             performEvent_ $ logInfo . ("dImportedSecrets: "<>) . toText <$>
               updated dImportedSecrets
-            dOldSecrets <- loadAppData "encoins" id []
             dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
             let dSecrets = fmap nub $ zipDynWith (++) dImportedSecrets $ zipDynWith (++) dOldSecrets dNewSecrets
             dSecretsWithNames <- coinCollectionWithNames dSecrets
-            performEvent_ (saveJSON "encoins" . decodeUtf8 . toStrict . encode <$> updated dSecrets)
+            performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins" . decodeUtf8 .
+              toStrict . encode <$> updated dSecrets)
 
             (dCoinsToBurn, eImportSecret) <- divClass "app-column w-col w-col-6" $ do
-                mainWindowColumnHeader "Coins in the Wallet"
-                dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesInTheWallet
-                dCTB <- coinBurnCollectionWidget dSecretsWithNamesInTheWallet
-                eImport <- menuButton " Import"
-                eImportAll <- menuButton " Import All"
-                eExport <- menuButton " Export"
-                exportWindow eExport dCTB
-                eExportAll <- menuButton " Export All"
-                exportWindow eExportAll dSecrets
-                eIS <- fmap pure . catMaybes <$> importWindow eImport
-                eISAll <- importFileWindow eImportAll
-                return (dCTB, leftmost [eIS, eISAll])
+                dCTB <- divClassId "" "welcome-wallet-coins" $ do
+                  mainWindowColumnHeader "Coins in the Wallet"
+                  dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesInTheWallet
+                  coinBurnCollectionWidget dSecretsWithNamesInTheWallet
+                eImp <- divClassId "" "welcome-import-export" $ do
+                    eImport <- menuButton " Import"
+                    eImportAll <- menuButton " Import All"
+                    eExport <- menuButton " Export"
+                    exportWindow eExport dCTB
+                    eExportAll <- menuButton " Export All"
+                    exportWindow eExportAll dSecrets
+                    eIS <- fmap pure . catMaybes <$> importWindow eImport
+                    eISAll <- importFileWindow eImportAll
+                    return $ leftmost [eIS, eISAll]
+                return (dCTB, eImp)
             (dCoinsToMint, eSend) <- divClass "app-column w-col w-col-6" $ mdo
-                mainWindowColumnHeader "Coins to Mint"
-                dCoinsToMint <- coinMintCollectionWidget $ leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Balancing) eStatusUpdate]
-                eNewSecret   <- coinNewWidget
-                eSend        <- sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint
-                return (dCoinsToMint, eSend)
+                (dCoinsToMint', eNewSecret) <- divClassId "" "welcome-coins-mint" $ mdo
+                    mainWindowColumnHeader "Coins to Mint"
+                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Balancing) eStatusUpdate]
+                    eNewSecret' <- coinNewWidget
+                    return (dCoinsToMint'', eNewSecret')
+                eSend' <- sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint
+                return (dCoinsToMint', eSend')
             (dAssetNamesInTheWallet, eStatusUpdate, dTxId) <- encoinsTx dWallet dCoinsToBurn dCoinsToMint eSend
             let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
             return (dCoinsToBurn, dCoinsToMint, eStatusUpdate, dTxId, dSecretsWithNamesInTheWallet)
@@ -187,21 +198,24 @@ walletTab dWallet = sectionApp "" "" $ mdo
       btn "button-switching flex-center" "margin-top: 20px" . text
 
 transferTab :: MonadWidget t m =>
-    Dynamic t Wallet -> Dynamic t [(Secret, Text)] -> m (Event t [(Secret, Text)])
-transferTab dWallet dSecretsWithNamesInTheWallet = sectionApp "" "" $ mdo
+    Maybe PasswordRaw -> Dynamic t Wallet -> Dynamic t [(Secret, Text)] ->
+    Dynamic t Secrets -> m (Event t [(Secret, Text)])
+transferTab mpass dWallet dSecretsWithNamesInTheWallet dOldSecrets = sectionApp "" "" $ mdo
+    welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
     containerApp "" $ transactionBalanceWidget (pure []) dCoins
     (dCoins, eSendToWallet, eSendToLedger) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         performEvent_ $ logInfo . ("dImportedSecrets: "<>) . toText <$>
           updated dImportedSecrets
-        dOldSecrets <- loadAppData "encoins" id []
         let dSecrets = fmap nub $ zipDynWith (++) dImportedSecrets dOldSecrets
-        performEvent_ (saveJSON "encoins" . decodeUtf8 . toStrict . encode <$> updated dSecrets)
+        performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins" . decodeUtf8 .
+          toStrict . encode <$> updated dSecrets)
 
         (dCoinsToBurn, eImportSecret) <- divClass "app-column w-col w-col-6" $ do
-            mainWindowColumnHeader "Coins in the Wallet"
-            dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesInTheWallet
-            dCTB <- coinBurnCollectionWidget dSecretsWithNamesInTheWallet
+            dCTB <- divClassId "" "welcome-coins-transfer" $ do
+                mainWindowColumnHeader "Coins in the Wallet"
+                dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesInTheWallet
+                coinBurnCollectionWidget dSecretsWithNamesInTheWallet
             eImport <- menuButton " Import"
             eImportAll <- menuButton " Import All"
             eExport <- menuButton " Export"
@@ -211,7 +225,7 @@ transferTab dWallet dSecretsWithNamesInTheWallet = sectionApp "" "" $ mdo
             eIS <- fmap pure . catMaybes <$> importWindow eImport
             eISAll <- importFileWindow eImportAll
             return (dCTB, leftmost [eIS, eISAll])
-        divClass "app-column w-col w-col-6" $ do
+        divClassId "app-column w-col w-col-6" "welcome-transfer-btns" $ do
           eWallet <- sendButton (not . null <$> dCoinsToBurn) "" " Send to Wallet"
           eLedger <- sendButton (not . null <$> dCoinsToBurn) "margin-top: 20px" " Send to Ledger"
           eWalletOk <- sendToWalletDialog eWallet dCoinsToBurn
@@ -231,13 +245,13 @@ transferTab dWallet dSecretsWithNamesInTheWallet = sectionApp "" "" $ mdo
 
 sendToWalletDialog :: MonadWidget t m => Event t () -> Dynamic t Secrets -> m (Event t ())
 sendToWalletDialog eOpen dSecrets = mdo
-  (eOk, eCancel) <- dialogWindow eOpen (leftmost [eOk,eCancel]) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ do
+  (eOk, eCancel) <- dialogWindow True eOpen (leftmost [eOk,eCancel]) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ do
       divClass "connect-title-div" $ divClass "app-text-semibold" $
           text "Copy and send these keys to your recepient off-chain:"
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between;text-align:left;") $
           dyn_ $ mapM ((>> br) . text . secretToHex) <$> dSecrets
       br
       btnOk <- btn "button-switching inverted flex-center" "width:30%;display:inline-block;margin-right:5px;" $ text "Ok"
-      btnCancel <- btn "button-switching inverted flex-center" "width:30%;display:inline-block;margin-left:5px;" $ text "Cancel"
+      btnCancel <- btn "button-switching flex-center" "width:30%;display:inline-block;margin-left:5px;" $ text "Cancel"
       return (btnOk, btnCancel)
   return eOk

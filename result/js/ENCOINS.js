@@ -43,13 +43,21 @@ function setInputValue(elId, val) {
   };
 };
 
-function saveJSON(key, val) {
-  localStorage.setItem(key, val);
+function saveJSON(key, val, encr, pass) {
+  var val1 = val;
+  if (encr) {
+    val1 = CryptoJS.AES.encrypt(val, pass).toString();
+  }
+  localStorage.setItem(key, val1);
 }
 
-function loadJSON(key, resId) {
+function loadJSON(key, resId, decr, pass) {
   const val = localStorage.getItem(key);
-  setInputValue(resId, val);
+  var res = val;
+  if (decr) {
+    res = CryptoJS.AES.decrypt(val, pass).toString(CryptoJS.enc.Utf8);
+  }
+  setInputValue(resId, res);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -323,3 +331,20 @@ function pingServer(baseUrl) {
   console.log('ping ' + baseUrl + ' ====> ' + request.status);
   return (request.status === 200);
 };
+
+function saveHashedTextToStorage(key, val) {
+  localStorage.setItem(key, CryptoJS.SHA3(val));
+}
+
+function loadHashedPassword(key) {
+  const pass = localStorage.getItem(key);
+  if (pass == null || pass == CryptoJS.SHA3("")) {
+    return "";
+  } else {
+    return pass;
+  }
+}
+
+function checkPassword(hash, raw) {
+  return (hash == CryptoJS.SHA3(raw));
+}

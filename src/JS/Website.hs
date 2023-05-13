@@ -6,10 +6,11 @@
 module JS.Website where
 
 import           Control.Monad.IO.Class      (MonadIO(..))
+import           Data.Maybe                  (isJust)
 import           Data.Text                   (Text)
 
 #ifdef __GHCJS__
-import           Language.Javascript.JSaddle (ToJSVal(..), JSVal)
+import           Language.Javascript.JSaddle (ToJSVal(..), JSVal, JSString, textToStr)
 #endif
 
 -- This script is executed on page load
@@ -130,32 +131,32 @@ logInfo = const $ error "GHCJS is required!"
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
-  "saveJSON($1, $2);" saveJSON_js :: JSVal -> JSVal -> IO ()
+  "saveJSON($1, $2, $3, $4);" saveJSON_js
+    :: JSString -> JSString -> JSVal -> JSString -> IO ()
 
-saveJSON :: MonadIO m => Text -> Text -> m ()
-saveJSON key val = liftIO $ do
-  key_js <- toJSVal key
-  val_js <- toJSVal val
-  saveJSON_js key_js val_js
+saveJSON :: MonadIO m => Maybe Text -> Text -> Text -> m ()
+saveJSON mpass key val = liftIO $ do
+  bool_js <- toJSVal $ isJust mpass
+  saveJSON_js (textToStr key) (textToStr val) bool_js (maybe "" textToStr mpass)
 #else
-saveJSON :: MonadIO m => Text -> Text -> m ()
-saveJSON = const $ error "GHCJS is required!"
+saveJSON :: MonadIO m => Text -> Text -> Maybe Text -> m ()
+saveJSON _ _ _ = error "GHCJS is required!"
 #endif
 
 -----------------------------------------------------------------
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
-  "loadJSON($1, $2);" loadJSON_js :: JSVal -> JSVal -> IO ()
+  "loadJSON($1, $2, $3, $4);" loadJSON_js
+    :: JSString -> JSString -> JSVal -> JSString -> IO ()
 
-loadJSON :: MonadIO m => Text -> Text -> m ()
-loadJSON key resId = liftIO $ do
-  key_js   <- toJSVal key
-  resId_js <- toJSVal resId
-  loadJSON_js key_js resId_js
+loadJSON :: MonadIO m => Maybe Text -> Text -> Text -> m ()
+loadJSON mpass key resId = liftIO $ do
+  bool_js <- toJSVal $ isJust mpass
+  loadJSON_js (textToStr key) (textToStr resId) bool_js (maybe "" textToStr mpass)
 #else
 loadJSON :: MonadIO m => Text -> Text -> m ()
-loadJSON = const $ error "GHCJS is required!"
+loadJSON _ _ _ = error "GHCJS is required!"
 #endif
 
 -----------------------------------------------------------------

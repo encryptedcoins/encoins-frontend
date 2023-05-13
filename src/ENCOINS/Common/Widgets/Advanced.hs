@@ -44,9 +44,11 @@ checkboxButton = mdo
   d <- toggle False $ domEvent Click e
   return d
 
-dialogWindow :: MonadWidget t m => Event t () -> Event t () -> Text -> m a -> m a
-dialogWindow eOpen eClose style tags = mdo
-  eClickOuside <- clickOutside (_element_raw e)
+dialogWindow :: MonadWidget t m => Bool -> Event t () -> Event t () -> Text -> m a -> m a
+dialogWindow close eOpen eClose style tags = mdo
+  eClickOuside <- if close
+      then clickOutside (_element_raw e)
+      else pure never
   -- Delay prevents from closing because eClickOuside fires
   eOpenDelayed <- delay 0.1 eOpen
   let
@@ -55,8 +57,11 @@ dialogWindow eOpen eClose style tags = mdo
   dWindowIsOpen <- holdDyn False $ leftmost [True <$ eOpenDelayed, False <$ eClose']
   (e, (ret, eCross)) <- elDynAttr "div" (fmap mkClass dWindowIsOpen) $
       elAttr' "div" ("class" =: "dialog-window" <> "style" =: style) $ do
-          (cross,_) <- elClass' "div" "cross-div dialog-window-close inverted" blank
-          (,domEvent Click cross) <$> tags
+          crossClick <- if close
+            then domEvent Click . fst <$> elClass' "div"
+                "cross-div dialog-window-close inverted" blank
+            else pure never
+          (,crossClick) <$> tags
   return ret
 
 clickOutside :: MonadWidget t m => DOM.Element -> m (Event t ())

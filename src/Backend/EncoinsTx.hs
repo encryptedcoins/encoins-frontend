@@ -35,6 +35,7 @@ bulletproofSetup = fromJust $ decode $ fromStrict $(embedFile "config/bulletproo
 encoinsCurrencySymbol :: Text
 encoinsCurrencySymbol = "7ed5a24ee4932199aee74b148229b3dc1bcb7f5bd1db30c4763a768c"
 
+
 getEncoinsInUtxos :: CSL.TransactionUnspentOutputs -> [Text]
 getEncoinsInUtxos utxos = Map.keys assets
   where getMultiAsset (CSL.MultiAsset a) = a

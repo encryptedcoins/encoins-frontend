@@ -1,10 +1,15 @@
 module ENCOINS.App.Widgets.Basic where
 
-import           Data.Aeson               (FromJSON, decodeStrict)
+import           Data.Aeson               (ToJSON, FromJSON, encode, decode, decodeStrict)
 import           Data.ByteString          (ByteString)
+import           Data.ByteString.Lazy     (fromStrict, toStrict)
 import           Data.Text                (Text)
 import qualified Data.Text                as Text
-import           Data.Text.Encoding       (encodeUtf8)
+import           Data.Text.Encoding       (encodeUtf8, decodeUtf8)
+import           GHCJS.DOM                (currentWindowUnchecked)
+import           GHCJS.DOM.Storage        (getItem, setItem)
+import           GHCJS.DOM.Types          (MonadDOM)
+import           GHCJS.DOM.Window         (getLocalStorage)
 import           Reflex.Dom
 import           Reflex.ScriptDependent   (widgetHoldUntilDefined)
 
@@ -27,9 +32,25 @@ waitForScripts placeholderWidget actualWidget = do
   _ <- widgetHoldUntilDefined "walletAPI" ("js/ENCOINS.js" <$ ePB) placeholderWidget actualWidget
   blank
 
-loadAppData :: forall t m a b . (MonadWidget t m, FromJSON a) => Text -> (a -> b) -> b -> m (Dynamic t b)
-loadAppData entry f val = do
+loadAppData :: forall t m a b . (MonadWidget t m, FromJSON a) =>
+  Maybe Text -> Text -> (a -> b) -> b -> m (Dynamic t b)
+loadAppData mpass entry f val = do
     let elId = "elId-" <> entry
     e <- newEventWithDelay 0.1
-    performEvent_ (loadJSON entry elId <$ e)
+    performEvent_ (loadJSON mpass entry elId <$ e)
     elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
+
+loadJsonFromStorage :: (MonadDOM m, FromJSON a) => Text -> m (Maybe a)
+loadJsonFromStorage elId = do
+  lc <- currentWindowUnchecked >>= getLocalStorage
+  (>>= decode . fromStrict . encodeUtf8) <$> getItem lc elId
+
+saveJsonToStorage :: (MonadDOM m, ToJSON a) => Text -> a -> m ()
+saveJsonToStorage elId val = do
+  lc <- currentWindowUnchecked >>= getLocalStorage
+  setItem lc elId . decodeUtf8 . toStrict . encode $ val
+
+loadTextFromStorage :: MonadDOM m => Text -> m (Maybe Text)
+loadTextFromStorage key = do
+  lc <- currentWindowUnchecked >>= getLocalStorage
+  getItem lc key
