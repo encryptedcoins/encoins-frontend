@@ -15,7 +15,7 @@ import           PlutusTx.Prelude                 (divide)
 import           Reflex.Dom
 import           Witherable                       (catMaybes)
 
-import           Backend.EncoinsTx                (encoinsTxWalletMode, encoinsTxTransferMode, secretToHex)
+import           Backend.EncoinsTx                (encoinsTxWalletMode, encoinsTxTransferMode, encoinsTxLedgerMode, secretToHex)
 import           Backend.Status                   (Status(..), walletError)
 import           Backend.Types
 import           Backend.Wallet                   (Wallet (..), WalletName (..))
@@ -118,7 +118,7 @@ tabsSection dTab = sectionApp "" "" $ containerApp "" $
         eTransfer <- divClass "menu-item-button-right" $
             btn (mkBtnCls TransferTab <$> dTab) "" $ text "Transfer"
         eLedger <- divClass "menu-item-button-right" $
-            btn "button-not-selected button-disabled" "" $ text "Ledger"
+            btn (mkBtnCls LedgerTab <$> dTab) "" $ text "Ledger"
         return $ leftmost
             [ WalletTab <$ eWallet
             , TransferTab <$ eTransfer
@@ -141,7 +141,7 @@ mainWindow mpass dWallet dOldSecrets = mdo
       WalletTab -> walletTab mpass dWallet dOldSecrets
       TransferTab -> transferTab mpass dWallet dSecretsWithNamesInTheWallet
         dOldSecrets
-      LedgerTab -> pure never
+      LedgerTab -> ledgerTab mpass dWallet
     dSecretsWithNamesInTheWallet <- holdDyn [] eSecretsWithNamesInTheWallet
 
     blank
@@ -287,3 +287,55 @@ inputAddrDialog eOpen = mdo
     err = elAttr "div" ("class" =: "app-columns w-row" <>
       "style" =: "display:flex;justify-content:center;") $
         errDiv "Incorrect address"
+
+ledgerTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet ->
+  m (Event t [(Secret, Text)])
+ledgerTab mpass dWallet = sectionApp "" "" $ mdo
+    containerApp "" $ transactionBalanceWidget dToBurn dToMint
+    (dToBurn, dToMint, eStatusUpdate) <- containerApp "" $
+        divClass "app-columns w-row" $ mdo
+            dImportedSecrets <- foldDyn (++) [] eImportSecret
+            performEvent_ $ logInfo . ("dImportedSecrets: "<>) . toText <$>
+              updated dImportedSecrets
+            dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
+            let dSecrets = fmap nub $ zipDynWith (++) dImportedSecrets $ zipDynWith (++) dOldSecrets dNewSecrets
+            dSecretsWithNames <- coinCollectionWithNames dSecrets
+            performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins" . decodeUtf8 .
+              toStrict . encode <$> updated dSecrets)
+
+            (dCoinsToBurn, eImportSecret) <- divClass "app-column w-col w-col-6" $ do
+                dCTB <- divClassId "" "welcome-wallet-coins" $ do
+                  mainWindowColumnHeader "Coins in the Wallet"
+                  dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesInTheWallet
+                  coinBurnCollectionWidget dSecretsWithNamesInTheWallet
+                eImp <- divClassId "" "welcome-import-export" $ do
+                    eImport <- menuButton " Import"
+                    eImportAll <- menuButton " Import All"
+                    eExport <- menuButton " Export"
+                    exportWindow eExport dCTB
+                    eExportAll <- menuButton " Export All"
+                    exportWindow eExportAll dSecrets
+                    eIS <- fmap pure . catMaybes <$> importWindow eImport
+                    eISAll <- importFileWindow eImportAll
+                    return $ leftmost [eIS, eISAll]
+                return (dCTB, eImp)
+            (dCoinsToMint, eSend) <- divClass "app-column w-col w-col-6" $ mdo
+                (dCoinsToMint', eNewSecret) <- divClassId "" "welcome-coins-mint" $ mdo
+                    mainWindowColumnHeader "Coins to Mint"
+                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Balancing) eStatusUpdate]
+                    eNewSecret' <- coinNewWidget
+                    return (dCoinsToMint'', eNewSecret')
+                eSend' <- sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint
+                return (dCoinsToMint', eSend')
+            (dAssetNamesInTheWallet, eStatusUpdate) <- encoinsTxLedgerMode dWallet dCoinsToBurn dCoinsToMint eSend
+            let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
+            return (dCoinsToBurn, dCoinsToMint, eStatusUpdate)
+    eWalletError <- walletError
+    dStatus <- holdDyn Ready $ leftmost [eStatusUpdate, eWalletError]
+    containerApp "" $ divClass "app-text-small" $ do
+        dynText $ fmap toText dStatus
+    return never
+  where
+    menuButton = divClass "menu-item-button-right" .
+      btn "button-switching flex-center" "margin-top: 20px" . text
+    dOldSecrets = pure []

@@ -1,5 +1,6 @@
 module Backend.EncoinsTx where
 
+import           Control.Monad                   (void)
 import           Control.Monad.IO.Class          (MonadIO(..))
 import           Data.Aeson                      (decode)
 import           Data.Bool                       (bool)
@@ -16,7 +17,7 @@ import           Text.Hex                        (encodeHex, decodeHex)
 import           Witherable                      (catMaybes)
 
 import           Backend.Servant.Client          (pabIP)
-import           Backend.Servant.Requests        (submitTxRequestWrapper, newTxRequestWrapper)
+import           Backend.Servant.Requests
 import           Backend.Status                  (Status (..))
 import           Backend.Types
 import           Backend.Wallet                  (Wallet(..), toJS)
@@ -209,3 +210,67 @@ hexToSecret txt = do
     let n = byteStringToInteger $ toBuiltin bs
         (gamma, v) = n `divMod` (2^(20 :: Integer))
     return $ Secret (toFieldElement gamma) (toFieldElement v)
+
+encoinsTxLedgerMode :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () ->
+  m (Dynamic t [Text], Event t Status)
+encoinsTxLedgerMode dWallet dCoinsBurn dCoinsMint eSend = mdo
+    baseUrl <- pabIP -- this chooses random server with successful ping
+    ePb <- getPostBuild
+    eTick <- tickLossyFromPostBuildTime 10
+    (eStatusResp, eRelayDown') <- statusRequestWrapper baseUrl
+      (pure LedgerUtxoRequest) $ leftmost [ePb, void eTick]
+    let
+      toLedgerUtxoResult (LedgerUtxoResult xs) = Just xs
+      toLedgerUtxoResult _ = Nothing
+      eLedgerUtxoResult = mapMaybe toLedgerUtxoResult eStatusResp
+    dUTXOs <- holdDyn [] eLedgerUtxoResult
+    let
+      dAddrWallet = fmap walletChangeAddress dWallet
+      dInputs = map CSL.input <$> dUTXOs
+
+    -- Obtaining Secrets and [MintingPolarity]
+    performEvent_ (logInfo "dCoinsBurn updated" <$ updated dCoinsBurn)
+    performEvent_ (logInfo "dCoinsMint updated" <$ updated dCoinsMint)
+    let dLst = unzip <$> zipDynWith (++) (fmap (map (, Burn)) dCoinsBurn) (fmap (map (, Mint)) dCoinsMint)
+        dSecrets = fmap fst dLst
+        dMPs     = fmap snd dLst
+        -- dV       = zipDynWith calculateV  dSecrets dMPs
+        -- dAddr    = zipDynWith mkAddress dAddrWallet dV
+        ledgerAddr = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
+            decodeHex "0ba32595663c0e52b37373be03b0ba66725e3299b87aa5dc447ce982")
+            (Just $ StakingHash $ ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
+            decodeHex "737b4d465e879255fb030e1c1cdeef124dbc5f8a5683d9c52a1a5d74")
+
+    -- Obtaining BulletproofParams
+    dBulletproofParams <- elementResultJS "bulletproofParamsElement" (parseBulletproofParams . toBuiltin . fromJust . decodeHex)
+    performEvent_ (flip sha2_256 "bulletproofParamsElement" . Text.append (addressToBytes ledgerAddr) . addressToBytes <$> updated dAddrWallet)
+
+    -- Obtaining Randomness
+    eRandomness <- performEvent $ liftIO randomIO <$ updated dBulletproofParams
+    bRandomness <- hold (Randomness (F 3417) (map F [1..20]) (map F [21..40]) (F 8532) (F 16512) (F 1235)) eRandomness
+
+    -- Obtaining EncoinsRedeemer
+    let bRed = mkRedeemer ledgerAddr <$> current dAddrWallet <*>
+          current dBulletproofParams <*> current dSecrets <*> current dMPs <*> bRandomness
+
+    -- Constructing the final redeemer
+    -- let bRedWithData = ffor2 bRed (current dAddrWallet) (\red a -> (a, red))
+    dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eSend
+    let eFinalRedeemer = () <$ catMaybes (updated dFinalRedeemer)
+
+    -- Constructing a new transaction
+    eRelayDown <- serverTxRequestWrapper baseUrl (zipDyn
+      (fmap (Right . (,LedgerMode) . fromJust) dFinalRedeemer)
+      dInputs) eFinalRedeemer
+    performEvent_ $ liftIO . logInfo . pack . show <$> eRelayDown
+
+    -- Tracking the pending transaction
+    eConfirmed <- updated <$> holdUniqDyn dUTXOs
+
+    let eStatus = leftmost [
+          Ready      <$ eConfirmed,
+          Balancing  <$ eFinalRedeemer,
+          eRelayDown,
+          eRelayDown' ]
+    return (fmap getEncoinsInUtxos dUTXOs, eStatus)
+
