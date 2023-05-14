@@ -163,7 +163,7 @@ async function walletLoad(walletName)
     const api = await walletAPI(walletName);
     console.log("api:");
     console.log(api);
-    
+
     setInputValue("walletNameElement", walletName);
 
     const networkId           = await api.getNetworkId();
@@ -181,7 +181,10 @@ async function walletLoad(walletName)
     const stakeKeyHashCred = baseAddress.stake_cred();
     baseAddress.free();
     const pubKeyHash = pubKeyHashCred.to_keyhash();
-    const stakeKeyHash = stakeKeyHashCred.to_keyhash();
+    var stakeKeyHash = stakeKeyHashCred.to_keyhash();
+    if (stakeKeyHash === undefined) {
+      stakeKeyHash = "";
+    }
     pubKeyHashCred.free();
     stakeKeyHashCred.free();
     const pubKeyHashHex          = toHexString(pubKeyHash.to_bytes());
@@ -191,7 +194,7 @@ async function walletLoad(walletName)
     setInputValue("changeAddressBech32Element", changeAddressBech32);
     setInputValue("pubKeyHashElement", pubKeyHashHex);
     setInputValue("stakeKeyHashElement", stakeKeyHashHex);
-    
+
     // const collateral          = await api.experimental.getCollateral();
     // setInputValue(collateralElement, collateral);
 
@@ -245,9 +248,9 @@ async function walletSignTx(walletName, partialTxHex)
       const vkey = walletSignature.vkey();
       const public_key = vkey.public_key();
       const signature = walletSignature.signature();
-      resultJSON.push('{ \"vkey\": \"' + public_key.to_hex() + 
+      resultJSON.push('{ \"vkey\": \"' + public_key.to_hex() +
         '\", \"signature\": \"' + signature.to_hex() + '\" }');
-      walletSignature.free(); 
+      walletSignature.free();
       vkey.free();
       public_key.free();
       signature.free();
@@ -347,4 +350,40 @@ function loadHashedPassword(key) {
 
 function checkPassword(hash, raw) {
   return (hash == CryptoJS.SHA3(raw));
+}
+
+async function addrLoad(addrBech32)
+{
+  await loader.load();
+  const CardanoWasm = loader.Cardano;
+  try {
+    const changeAddress = CardanoWasm.Address.from_bytes(fromHexString(addrBech32));
+    const changeAddressBech32 = changeAddress.to_bech32();
+    const baseAddress = CardanoWasm.BaseAddress.from_address(changeAddress);
+    changeAddress.free();
+    const pubKeyHashCred = baseAddress.payment_cred();
+    const stakeKeyHashCred = baseAddress.stake_cred();
+    baseAddress.free();
+    var pubKeyHash = pubKeyHashCred.to_keyhash();
+    if (pubKeyHash === undefined) {
+      pubKeyHash = "";
+    }
+    var stakeKeyHash = stakeKeyHashCred.to_keyhash();
+    if (stakeKeyHash === undefined) {
+      stakeKeyHash = "";
+    }
+    pubKeyHashCred.free();
+    stakeKeyHashCred.free();
+    const pubKeyHashHex = toHexString(pubKeyHash.to_bytes());
+    const stakeKeyHashHex = toHexString(stakeKeyHash.to_bytes());
+    pubKeyHash.free();
+    stakeKeyHash.free();
+    setInputValue("addrPubKeyHashElement", pubKeyHashHex);
+    setInputValue("addrStakeKeyHashElement", stakeKeyHashHex);
+  } catch (e) {
+    console.log(e.message);
+    setInputValue("addrPubKeyHashElement", "");
+    setInputValue("addrStakeKeyHashElement", "");
+    return;
+  }
 }

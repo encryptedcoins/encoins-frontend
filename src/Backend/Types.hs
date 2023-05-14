@@ -35,10 +35,15 @@ newtype ValidatorHash = ValidatorHash BuiltinByteString
     deriving stock (Generic, Show, Eq, Ord)
     deriving (ToJSON, FromJSON)
 
-mkAddressFromPubKeys :: Text -> Text -> Address
-mkAddressFromPubKeys pkhHex skhHex = Address (PubKeyCredential $ PubKeyHash pkh) (Just $ StakingHash $ PubKeyCredential $ PubKeyHash skh)
+mkAddressFromPubKeys :: Text -> Maybe Text -> Address
+mkAddressFromPubKeys pkhHex mskhHex = Address (PubKeyCredential $ PubKeyHash pkh)
+    (StakingHash . PubKeyCredential . PubKeyHash <$> mskh)
     where pkh = toBuiltin $ fromJust $ decodeHex pkhHex
-          skh = toBuiltin $ fromJust $ decodeHex skhHex
+          mskh = toBuiltin <$> (mskhHex >>= decodeHex)
+
+checkEmptyText :: Text -> Maybe Text
+checkEmptyText "" = Nothing
+checkEmptyText txt = Just txt
 
 type EncoinsInput = (Integer, [(BuiltinByteString, MintingPolarity)])
 type ProofSignature = BuiltinByteString

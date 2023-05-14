@@ -11,10 +11,8 @@ import           Data.List                        (nub)
 import           Data.Maybe                       (fromJust)
 import           Data.Text                        (Text)
 import           Data.Text.Encoding               (decodeUtf8)
-import           PlutusTx.Builtins                (toBuiltin)
 import           PlutusTx.Prelude                 (divide)
 import           Reflex.Dom
-import           Text.Hex                         (decodeHex)
 import           Witherable                       (catMaybes)
 
 import           Backend.EncoinsTx                (encoinsTxWalletMode, encoinsTxTransferMode, secretToHex)
@@ -22,7 +20,7 @@ import           Backend.Status                   (Status(..), walletError)
 import           Backend.Types
 import           Backend.Wallet                   (Wallet (..), WalletName (..))
 import           CSL                              (TransactionUnspentOutput(..), amount, coin)
-import           ENCOINS.App.Widgets.Basic        (containerApp, sectionApp)
+import           ENCOINS.App.Widgets.Basic        (containerApp, sectionApp, elementResultJS)
 import           ENCOINS.App.Widgets.Coin         (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
                                                     coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget)
 import           ENCOINS.App.Widgets.ImportWindow (importWindow, importFileWindow, exportWindow)
@@ -32,6 +30,7 @@ import           ENCOINS.Bulletproofs             (Secrets, Secret (..))
 import           ENCOINS.Common.Widgets.Basic     (btn, br, divClassId, errDiv)
 import           ENCOINS.Common.Widgets.Advanced  (dialogWindow)
 import           ENCOINS.Crypto.Field             (fromFieldElement)
+import           JS.App                           (addrLoad)
 import           JS.Website                       (logInfo, saveJSON)
 import           Widgets.Utils                    (toText)
 
@@ -265,20 +264,26 @@ inputAddrDialog :: MonadWidget t m => Event t () -> m (Event t Address)
 inputAddrDialog eOpen = mdo
   eOk <- dialogWindow True eOpen (void eOk) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ do
       divClass "connect-title-div" $ divClass "app-text-semibold" $
-          text "Enter wallet address:"
-      dmAddr <- divClass "app-columns w-row" $ do
+          text "Enter wallet address in bech32:"
+      dAddrInp <- divClass "app-columns w-row" $ do
         inp <- inputElement $ def
           & initialAttributes .~ ("class" =: "w-input" <> "style" =: "display: inline-block;")
           & inputElementConfig_initialValue .~ ""
           & inputElementConfig_setValue .~ ("" <$ eOpen)
-        return (fmap mkAddr . decodeHex <$> value inp)
+        return (value inp)
       btnOk <- btn "button-switching inverted flex-center" "width:30%;display:inline-block;margin-right:5px;" $ text "Ok"
-      let emRes = tagPromptlyDyn dmAddr btnOk
+      performEvent_ (addrLoad <$> tagPromptlyDyn dAddrInp btnOk)
+      dPubKeyHash <- elementResultJS "addrPubKeyHashElement" id
+      dStakeKeyHash <- elementResultJS "addrStakeKeyHashElement" id
+      let
+        dmAddr = zipDynWith mkAddr (checkEmptyText <$> dPubKeyHash) (checkEmptyText <$> dStakeKeyHash)
+        emRes = tagPromptlyDyn dmAddr btnOk
       widgetHold_ blank $ leftmost [maybe err (const blank) <$> emRes, blank <$ eOpen]
       return (catMaybes emRes)
   return eOk
   where
-    mkAddr txt = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ txt) Nothing
+    mkAddr Nothing _ = Nothing
+    mkAddr (Just pkh) mskh = Just $ mkAddressFromPubKeys pkh mskh
     err = elAttr "div" ("class" =: "app-columns w-row" <>
       "style" =: "display:flex;justify-content:center;") $
         errDiv "Incorrect address"

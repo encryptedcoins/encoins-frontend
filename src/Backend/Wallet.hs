@@ -68,7 +68,7 @@ loadWallet eWalletName = mdo
   dPubKeyHash <- elementResultJS "pubKeyHashElement" id
   dStakeKeyHash <- elementResultJS "stakeKeyHashElement" id
   dUTXOs <- elementResultJS "utxosElement" (fromMaybe [] . decodeText :: Text -> CSL.TransactionUnspentOutputs)
-  let dAddrWallet = zipDynWith mkAddressFromPubKeys dPubKeyHash dStakeKeyHash
+  let dAddrWallet = zipDynWith mkAddressFromPubKeys dPubKeyHash (checkEmptyText <$> dStakeKeyHash)
   return $ Wallet <$> dWalletName <*> dWalletNetworkId <*> dWalletAddressBech32 <*> dAddrWallet <*> dUTXOs
 
 walletIcon :: MonadWidget t m => WalletName -> m ()
