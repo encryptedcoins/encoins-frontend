@@ -13,7 +13,7 @@ import           GHCJS.DOM.Types                 (File, toJSVal, fromJSVal, lift
 import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
-import           ENCOINS.App.Widgets.Coin        (hexToSecret)
+import           Backend.EncoinsTx               (hexToSecret)
 import           ENCOINS.Bulletproofs            (Secret)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn)

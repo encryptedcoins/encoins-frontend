@@ -2,7 +2,7 @@
 
 module ENCOINS.App.Widgets.MainWindow where
 
-import           Control.Monad                    ((<=<))
+import           Control.Monad                    ((<=<), void)
 import           Data.Aeson                       (encode)
 import           Data.Bool                        (bool)
 import           Data.ByteString.Lazy             (toStrict)
@@ -11,22 +11,25 @@ import           Data.List                        (nub)
 import           Data.Maybe                       (fromJust)
 import           Data.Text                        (Text)
 import           Data.Text.Encoding               (decodeUtf8)
+import           PlutusTx.Builtins                (toBuiltin)
 import           PlutusTx.Prelude                 (divide)
 import           Reflex.Dom
+import           Text.Hex                         (decodeHex)
 import           Witherable                       (catMaybes)
 
-import           Backend.EncoinsTx                (encoinsTx, encoinsTxWallet, encoinsTxLedger)
+import           Backend.EncoinsTx                (encoinsTxWalletMode, encoinsTxTransferMode, secretToHex)
 import           Backend.Status                   (Status(..), walletError)
+import           Backend.Types
 import           Backend.Wallet                   (Wallet (..), WalletName (..))
 import           CSL                              (TransactionUnspentOutput(..), amount, coin)
 import           ENCOINS.App.Widgets.Basic        (containerApp, sectionApp)
 import           ENCOINS.App.Widgets.Coin         (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
-                                                    coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget, secretToHex)
+                                                    coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget)
 import           ENCOINS.App.Widgets.ImportWindow (importWindow, importFileWindow, exportWindow)
 import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw(..))
 import           ENCOINS.App.Widgets.WelcomeWindow (welcomeWindow, welcomeTransfer, welcomeWindowTransferStorageKey)
 import           ENCOINS.Bulletproofs             (Secrets, Secret (..))
-import           ENCOINS.Common.Widgets.Basic     (btn, br, divClassId)
+import           ENCOINS.Common.Widgets.Basic     (btn, br, divClassId, errDiv)
 import           ENCOINS.Common.Widgets.Advanced  (dialogWindow)
 import           ENCOINS.Crypto.Field             (fromFieldElement)
 import           JS.Website                       (logInfo, saveJSON)
@@ -183,7 +186,7 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                     return (dCoinsToMint'', eNewSecret')
                 eSend' <- sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint
                 return (dCoinsToMint', eSend')
-            (dAssetNamesInTheWallet, eStatusUpdate, dTxId) <- encoinsTx dWallet dCoinsToBurn dCoinsToMint eSend
+            (dAssetNamesInTheWallet, eStatusUpdate, dTxId) <- encoinsTxWalletMode dWallet dCoinsToBurn dCoinsToMint eSend
             let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
             return (dCoinsToBurn, dCoinsToMint, eStatusUpdate, dTxId, dSecretsWithNamesInTheWallet)
     eWalletError <- walletError
@@ -203,7 +206,7 @@ transferTab :: MonadWidget t m =>
 transferTab mpass dWallet dSecretsWithNamesInTheWallet dOldSecrets = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
     containerApp "" $ transactionBalanceWidget (pure []) dCoins
-    (dCoins, eSendToWallet, eSendToLedger) <- containerApp "" $ divClass "app-columns w-row" $ mdo
+    (dCoins, eSendToLedger, eAddr) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         performEvent_ $ logInfo . ("dImportedSecrets: "<>) . toText <$>
           updated dImportedSecrets
@@ -229,9 +232,11 @@ transferTab mpass dWallet dSecretsWithNamesInTheWallet dOldSecrets = sectionApp 
           eWallet <- sendButton (not . null <$> dCoinsToBurn) "" " Send to Wallet"
           eLedger <- sendButton (not . null <$> dCoinsToBurn) "margin-top: 20px" " Send to Ledger"
           eWalletOk <- sendToWalletDialog eWallet dCoinsToBurn
-          return (dCoinsToBurn, eWalletOk, eLedger)
-    (_, eStatusUpdate1, _) <- encoinsTxWallet dWallet dCoins eSendToWallet
-    (_, eStatusUpdate2, _) <- encoinsTxLedger dWallet dCoins eSendToLedger
+          eAddrOk <- inputAddrDialog eWalletOk
+          return (dCoinsToBurn, eLedger, eAddrOk)
+    dAddr <- holdDyn Nothing (Just <$> eAddr)
+    (_, eStatusUpdate1, _) <- encoinsTxTransferMode dWallet dCoins dAddr (void eAddr)
+    (_, eStatusUpdate2, _) <- encoinsTxTransferMode dWallet dCoins (pure Nothing) eSendToLedger
     eWalletError <- walletError
     dStatus <- holdDyn Ready $ leftmost [eWalletError, eStatusUpdate1, eStatusUpdate2]
     containerApp "" $ divClass "app-text-small" $ do
@@ -255,3 +260,25 @@ sendToWalletDialog eOpen dSecrets = mdo
       btnCancel <- btn "button-switching flex-center" "width:30%;display:inline-block;margin-left:5px;" $ text "Cancel"
       return (btnOk, btnCancel)
   return eOk
+
+inputAddrDialog :: MonadWidget t m => Event t () -> m (Event t Address)
+inputAddrDialog eOpen = mdo
+  eOk <- dialogWindow True eOpen (void eOk) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ do
+      divClass "connect-title-div" $ divClass "app-text-semibold" $
+          text "Enter wallet address:"
+      dmAddr <- divClass "app-columns w-row" $ do
+        inp <- inputElement $ def
+          & initialAttributes .~ ("class" =: "w-input" <> "style" =: "display: inline-block;")
+          & inputElementConfig_initialValue .~ ""
+          & inputElementConfig_setValue .~ ("" <$ eOpen)
+        return (fmap mkAddr . decodeHex <$> value inp)
+      btnOk <- btn "button-switching inverted flex-center" "width:30%;display:inline-block;margin-right:5px;" $ text "Ok"
+      let emRes = tagPromptlyDyn dmAddr btnOk
+      widgetHold_ blank $ leftmost [maybe err (const blank) <$> emRes, blank <$ eOpen]
+      return (catMaybes emRes)
+  return eOk
+  where
+    mkAddr txt = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ txt) Nothing
+    err = elAttr "div" ("class" =: "app-columns w-row" <>
+      "style" =: "display:flex;justify-content:center;") $
+        errDiv "Incorrect address"

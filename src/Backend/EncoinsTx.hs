@@ -6,7 +6,7 @@ import           Data.Bool                       (bool)
 import           Data.ByteString.Lazy            (fromStrict)
 import           Data.FileEmbed                  (embedFile)
 import qualified Data.Map                        as Map
-import           Data.Maybe                      (fromJust)
+import           Data.Maybe                      (fromJust, fromMaybe)
 import           Data.Text                       (Text, pack)
 import qualified Data.Text                       as Text
 import           PlutusTx.Builtins
@@ -22,12 +22,12 @@ import           Backend.Types
 import           Backend.Wallet                  (Wallet(..), toJS)
 import qualified CSL
 import           ENCOINS.App.Widgets.Basic       (elementResultJS)
-import           ENCOINS.Crypto.Field            (Field(..), fromFieldElement)
+import           ENCOINS.Crypto.Field            (Field(..), fromFieldElement, toFieldElement)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           JS.App                          (sha2_256, walletSignTx)
 import           JS.Website                      (logInfo)
-import           PlutusTx.Extra.ByteString       (ToBuiltinByteString(..))
+import           PlutusTx.Extra.ByteString       (ToBuiltinByteString(..), byteStringToInteger)
 
 bulletproofSetup :: BulletproofSetup
 bulletproofSetup = fromJust $ decode $ fromStrict $(embedFile "config/bulletproof_setup.json")
@@ -76,12 +76,13 @@ redeemerToBytes :: EncoinsRedeemer -> Text
 redeemerToBytes ((aL, aC), i, p, _) = addressToBytes aL `Text.append` addressToBytes aC `Text.append`
   encodeHex (fromBuiltin $ toBytes i) `Text.append` encodeHex (fromBuiltin $ toBytes p)
 
-encoinsTx :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () ->
+encoinsTxWalletMode :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () ->
   m (Dynamic t [Text], Event t Status, Dynamic t Text)
-encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
+encoinsTxWalletMode dWallet dCoinsBurn dCoinsMint eSend = mdo
     baseUrl <- pabIP -- this chooses random server with successful ping
     let dAddrWallet = fmap walletChangeAddress dWallet
         dUTXOs      = fmap walletUTXOs dWallet
+        dInputs     = map CSL.input <$> dUTXOs
         bWalletName = toJS . walletName <$> current dWallet
 
     -- Obtaining Secrets and [MintingPolarity]
@@ -117,7 +118,7 @@ encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
     -- Constructing a new transaction
     (eNewTxSuccess, eRelayDown) <- newTxRequestWrapper baseUrl (zipDyn
       (fmap (Right . (,WalletMode) . fromJust) dFinalRedeemer)
-      dUTXOs) eFinalRedeemer
+      dInputs) eFinalRedeemer
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
     dTx <- holdDyn "" eTx
@@ -149,16 +150,63 @@ encoinsTx dWallet dCoinsBurn dCoinsMint eSend = mdo
           ]
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
 
-encoinsTxWallet :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets
-  -> Event t () -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
-encoinsTxWallet _dWallet _dCoins eSend = do
-    _baseUrl <- pabIP -- this chooses random server with successful ping
-    performEvent_ (logInfo "encoinsTxWallet" <$ eSend)
-    return (pure [], Submitting <$ eSend, pure "")
+encoinsTxTransferMode :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets
+  -> Dynamic t (Maybe Address) -> Event t () -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
+encoinsTxTransferMode dWallet dCoins dmAddr eSend = do
+    baseUrl <- pabIP -- this chooses random server with successful ping
+    let dUTXOs      = fmap walletUTXOs dWallet
+        dInputs     = map CSL.input <$> dUTXOs
+        bWalletName = toJS . walletName <$> current dWallet
+        ledgerAddr  = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
+            decodeHex "7677307197342cb313c7b8417643516dd6ebd419b34d4543ba70f708")
+            (Just $ StakingHash $ ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
+            decodeHex "662cf4fedcd340134a8a7c0a38411a4b8bc9e6b76a6ef706f00756bc")
+        dAddr       = fromMaybe ledgerAddr <$> dmAddr
 
-encoinsTxLedger :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets
-  -> Event t () -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
-encoinsTxLedger _dWallet _dCoins eSend = do
-    _baseUrl <- pabIP -- this chooses random server with successful ping
-    performEvent_ (logInfo "encoinsTxLedger" <$ eSend)
-    return (pure [], Submitting <$ eSend, pure "")
+    -- Constructing a new transaction
+    (eNewTxSuccess, eRelayDown) <- newTxRequestWrapper baseUrl (zipDyn
+      (Left <$> zipDyn dAddr (mkValue <$> dCoins)) dInputs) eSend
+    let eTxId = fmap fst eNewTxSuccess
+        eTx   = fmap snd eNewTxSuccess
+    dTx <- holdDyn "" eTx
+    dTxId <- holdDyn "" eTxId
+
+    performEvent_ $ liftIO . logInfo . pack . show <$> eTx
+    performEvent_ $ liftIO . logInfo . pack . show <$> eRelayDown
+
+    -- Signing the transaction
+    dWalletSignature <- elementResultJS "walletSignatureElement" decodeWitness
+    performEvent_ $ liftIO . walletSignTx <$> bWalletName `attach` eTx
+    let eWalletSignature = () <$ updated dWalletSignature
+
+    -- Submitting the transaction
+    let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
+    (eSubmitted, eRelayDown') <- submitTxRequestWrapper baseUrl dSubmitReqBody eWalletSignature
+
+    -- Tracking the pending transaction
+    eConfirmed <- updated <$> holdUniqDyn dUTXOs
+
+    let eStatus = leftmost [
+          Ready      <$ eConfirmed,
+          eRelayDown,
+          Signing    <$ eNewTxSuccess,
+          Submitting <$ eWalletSignature,
+          eRelayDown',
+          Submitted  <$ eSubmitted
+          ]
+    return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
+  where
+    mkValue = CSL.Value "0" . Just . CSL.MultiAsset . Map.singleton
+      encoinsCurrencySymbol . Map.fromList . map ((,"1") . secretToHex)
+
+secretToHex :: Secret -> Text
+secretToHex s = encodeHex . fromBuiltin $ toBytes $ gamma * 2^(20 :: Integer) + v
+    where gamma = fromFieldElement $ secretGamma s
+          v     = fromFieldElement $ secretV s
+
+hexToSecret :: Text -> Maybe Secret
+hexToSecret txt = do
+    bs <- decodeHex txt
+    let n = byteStringToInteger $ toBuiltin bs
+        (gamma, v) = n `divMod` (2^(20 :: Integer))
+    return $ Secret (toFieldElement gamma) (toFieldElement v)

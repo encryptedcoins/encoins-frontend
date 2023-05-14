@@ -13,7 +13,7 @@ import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
-import           ENCOINS.Common.Widgets.Basic    (btn)
+import           ENCOINS.Common.Widgets.Basic    (btn, errDiv)
 import           JS.App                          (saveHashedTextToStorage, loadHashedPassword, checkPassword)
 import           JS.Website                      (saveJSON)
 
@@ -176,10 +176,6 @@ passwordInput txt rep dmPass eOpen = mdo
       & inputElementConfig_elementConfig . elementConfig_modifyAttributes .~
         (("type" =:) . Just <$> eType)
       & inputElementConfig_setValue .~ ("" <$ eOpen)
-
-errDiv :: MonadWidget t m => Text -> m ()
-errDiv = elAttr "div" ("class" =: "w-file-upload-error w-file-upload-error-msg"
-  <> "style" =: "margin-top: 0px;margin-bottom: 10px;") . text
 
 resetPasswordDialog :: MonadWidget t m => Event t () -> m (Event t ())
 resetPasswordDialog eOpen = mdo

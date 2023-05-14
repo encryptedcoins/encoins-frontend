@@ -7,21 +7,20 @@ import           Data.List                       (delete)
 import           Data.Maybe                      (catMaybes, fromMaybe)
 import           Data.Text                       (Text, unpack)
 import qualified Data.Text                       as Text
-import           PlutusTx.Builtins               (fromBuiltin, toBuiltin)
+import           PlutusTx.Builtins               (fromBuiltin)
 import           Reflex.Dom
 import           System.Random                   (randomIO)
-import           Text.Hex                        (encodeHex, decodeHex)
+import           Text.Hex                        (encodeHex)
 import           Text.Read                       (readMaybe)
 
-import           Backend.EncoinsTx               (bulletproofSetup, encoinsCurrencySymbol)
+import           Backend.EncoinsTx               (bulletproofSetup, encoinsCurrencySymbol, secretToHex)
 import           ENCOINS.Common.Widgets.Advanced (checkboxButton, copyButton, withTooltip)
 import           ENCOINS.Common.Widgets.Basic    (image)
 import           ENCOINS.BaseTypes               (FieldElement)
 import           ENCOINS.Bulletproofs            (Secret (..), fromSecret, Secrets)
-import           ENCOINS.Crypto.Field            (toFieldElement, fromFieldElement)
+import           ENCOINS.Crypto.Field            (toFieldElement)
 import           JS.App                          (fingerprintFromAssetName)
 import           JS.Website                      (logInfo, copyText)
-import           PlutusTx.Extra.ByteString       (toBytes, byteStringToInteger)
 import           Widgets.Utils                   (toText)
 
 data CoinUpdate = AddCoin Secret | RemoveCoin Secret | ClearCoins
@@ -151,17 +150,3 @@ coinNewWidget = divClass "coin-new-div" $ mdo
       (fromMaybe (-1 :: Integer) . readMaybe . unpack) eNewSecret
     divClass "app-text-semibold" $ text "ADA"
     return eNewSecret
-
------------------------------------------------ Helper functions --------------------------------------------
-
-secretToHex :: Secret -> Text
-secretToHex s = encodeHex . fromBuiltin $ toBytes $ gamma * 2^(20 :: Integer) + v
-    where gamma = fromFieldElement $ secretGamma s
-          v     = fromFieldElement $ secretV s
-
-hexToSecret :: Text -> Maybe Secret
-hexToSecret txt = do
-    bs <- decodeHex txt
-    let n = byteStringToInteger $ toBuiltin bs
-        (gamma, v) = n `divMod` (2^(20 :: Integer))
-    return $ Secret (toFieldElement gamma) (toFieldElement v)

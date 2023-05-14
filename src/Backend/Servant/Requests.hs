@@ -10,11 +10,11 @@ import           Witherable                   (catMaybes)
 import           Backend.Servant.Client
 import           Backend.Status               (Status(..))
 import           Backend.Types
-import           CSL                          (TransactionUnspentOutputs, Value)
+import           CSL                          (TransactionInputs, Value)
 import           JS.Website                   (logInfo)
 
 newTxRequestWrapper :: MonadWidget t m => BaseUrl ->
-  Dynamic t (Either (Address, Value) (EncoinsRedeemer, EncoinsMode), TransactionUnspentOutputs) ->
+  Dynamic t (Either (Address, Value) (EncoinsRedeemer, EncoinsMode), TransactionInputs) ->
   Event t () -> m (Event t (Text, Text), Event t Status)
 newTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
@@ -35,3 +35,22 @@ pingRequestWrapper baseUrl e = do
   let ApiClient{..} = mkApiClient baseUrl
   e' <- fmap makeResponse <$> pingRequest e
   return $ void $ catMaybes e'
+
+serverTxRequestWrapper :: MonadWidget t m => BaseUrl ->
+  Dynamic t (Either (Address, Value) (EncoinsRedeemer, EncoinsMode), TransactionInputs) ->
+  Event t () -> m (Event t Status)
+serverTxRequestWrapper baseUrl dReqBody e = do
+  let ApiClient{..} = mkApiClient baseUrl
+  eResp <- serverTxRequest (Right <$> dReqBody) e
+  let eRespUnwrapped = makeResponse <$> eResp
+  performEvent_ $ liftIO . logInfo . pack . show <$> eRespUnwrapped
+  return $ snd $ eventMaybe (BackendError "The current relay is down. Please, select another one.") eRespUnwrapped
+
+statusRequestWrapper :: MonadWidget t m => BaseUrl -> Dynamic t EncoinsStatusReqBody ->
+  Event t () -> m (Event t EncoinsStatusResult, Event t Status)
+statusRequestWrapper baseUrl dReqBody e = do
+  let ApiClient{..} = mkApiClient baseUrl
+  eResp <- statusRequest (Right <$> dReqBody) e
+  let eRespUnwrapped = makeResponse <$> eResp
+  performEvent_ $ liftIO . logInfo . pack . show <$> eRespUnwrapped
+  return $ eventMaybe (BackendError "The current relay is down. Please, select another one.") eRespUnwrapped

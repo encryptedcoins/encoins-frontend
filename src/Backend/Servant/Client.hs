@@ -15,7 +15,7 @@ import           System.Random                (randomRIO)
 import           Witherable                   (catMaybes)
 
 import           Backend.Types
-import           CSL                          (TransactionUnspentOutputs, Value)
+import           CSL                          (TransactionUnspentOutputs, TransactionInputs, Value)
 import           JS.App                       (pingServer)
 
 urls :: [Text]
@@ -32,11 +32,11 @@ pabIP = go urls
         then return $ BasePath url
         else go (delete url l)
 
-type API =   "newTx" :> ReqBody '[JSON] (Either (Address, Value) (EncoinsRedeemer, EncoinsMode), TransactionUnspentOutputs) :> Post '[JSON] (Text, Text)
+type API =   "newTx" :> ReqBody '[JSON] (Either (Address, Value) (EncoinsRedeemer, EncoinsMode), TransactionInputs) :> Post '[JSON] (Text, Text)
         :<|> "submitTx"     :> ReqBody '[JSON] SubmitTxReqBody :> Post '[JSON] NoContent
         :<|> "ping"         :> Get '[JSON] NoContent
         :<|> "utxos"        :> ReqBody '[JSON] Address :> Get '[JSON] TransactionUnspentOutputs
-        :<|> "serverTx"     :> ReqBody '[JSON] (Either (Address, Value) (EncoinsRedeemer, EncoinsMode), TransactionUnspentOutputs) :> Post '[JSON] NoContent
+        :<|> "serverTx"     :> ReqBody '[JSON] (Either (Address, Value) (EncoinsRedeemer, EncoinsMode), TransactionInputs) :> Post '[JSON] NoContent
         :<|> "status"       :> ReqBody '[JSON] EncoinsStatusReqBody :> Get '[JSON] EncoinsStatusResult
 
 
@@ -50,14 +50,14 @@ data ApiClient t m = ApiClient
   {
     newTxRequest        :: ReqRes t m
       ( Either (Address, Value) (EncoinsRedeemer, EncoinsMode)
-      , TransactionUnspentOutputs)
+      , TransactionInputs)
       (Text, Text),
     submitTxRequest     :: ReqRes t m SubmitTxReqBody NoContent,
     pingRequest         :: Res t m NoContent,
     utxosRequest        :: ReqRes t m Address TransactionUnspentOutputs,
     serverTxRequest     :: ReqRes t m
       ( Either (Address, Value) (EncoinsRedeemer, EncoinsMode)
-      , TransactionUnspentOutputs)
+      , TransactionInputs)
       NoContent,
     statusRequest       :: ReqRes t m EncoinsStatusReqBody EncoinsStatusResult
   }
