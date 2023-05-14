@@ -33,8 +33,7 @@ bulletproofSetup :: BulletproofSetup
 bulletproofSetup = fromJust $ decode $ fromStrict $(embedFile "config/bulletproof_setup.json")
 
 encoinsCurrencySymbol :: Text
-encoinsCurrencySymbol = "7ed5a24ee4932199aee74b148229b3dc1bcb7f5bd1db30c4763a768c"
-
+encoinsCurrencySymbol = "1508e0e7c19c64a57c5156ad75f7d3d807c9cf6facd2367ec3050638"
 
 getEncoinsInUtxos :: CSL.TransactionUnspentOutputs -> [Text]
 getEncoinsInUtxos utxos = Map.keys assets
@@ -57,9 +56,9 @@ calculateV secrets mps = sum $ zipWith (\s mp -> fromFieldElement (secretV s) * 
 mkAddress :: Address -> Integer -> Address
 mkAddress addrWallet v = bool addrWallet addrVal (v > 0)
     where addrVal = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "7677307197342cb313c7b8417643516dd6ebd419b34d4543ba70f708")
+            decodeHex "0ba32595663c0e52b37373be03b0ba66725e3299b87aa5dc447ce982")
             (Just $ StakingHash $ ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "662cf4fedcd340134a8a7c0a38411a4b8bc9e6b76a6ef706f00756bc")
+            decodeHex "737b4d465e879255fb030e1c1cdeef124dbc5f8a5683d9c52a1a5d74")
 
 addressToBytes :: Address -> Text
 addressToBytes (Address cr scr) = bs1 `Text.append` bs2
@@ -94,9 +93,9 @@ encoinsTxWalletMode dWallet dCoinsBurn dCoinsMint eSend = mdo
         -- dV       = zipDynWith calculateV  dSecrets dMPs
         -- dAddr    = zipDynWith mkAddress dAddrWallet dV
         ledgerAddr = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "7677307197342cb313c7b8417643516dd6ebd419b34d4543ba70f708")
+            decodeHex "0ba32595663c0e52b37373be03b0ba66725e3299b87aa5dc447ce982")
             (Just $ StakingHash $ ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "662cf4fedcd340134a8a7c0a38411a4b8bc9e6b76a6ef706f00756bc")
+            decodeHex "737b4d465e879255fb030e1c1cdeef124dbc5f8a5683d9c52a1a5d74")
 
     -- Obtaining BulletproofParams
     dBulletproofParams <- elementResultJS "bulletproofParamsElement" (parseBulletproofParams . toBuiltin . fromJust . decodeHex)
@@ -158,9 +157,9 @@ encoinsTxTransferMode dWallet dCoins dmAddr eSend = do
         dInputs     = map CSL.input <$> dUTXOs
         bWalletName = toJS . walletName <$> current dWallet
         ledgerAddr  = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "7677307197342cb313c7b8417643516dd6ebd419b34d4543ba70f708")
+            decodeHex "0ba32595663c0e52b37373be03b0ba66725e3299b87aa5dc447ce982")
             (Just $ StakingHash $ ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "662cf4fedcd340134a8a7c0a38411a4b8bc9e6b76a6ef706f00756bc")
+            decodeHex "737b4d465e879255fb030e1c1cdeef124dbc5f8a5683d9c52a1a5d74")
         dAddr       = fromMaybe ledgerAddr <$> dmAddr
 
     -- Constructing a new transaction
