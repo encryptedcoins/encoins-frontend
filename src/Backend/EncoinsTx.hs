@@ -34,7 +34,7 @@ bulletproofSetup :: BulletproofSetup
 bulletproofSetup = fromJust $ decode $ fromStrict $(embedFile "config/bulletproof_setup.json")
 
 encoinsCurrencySymbol :: Text
-encoinsCurrencySymbol = "1508e0e7c19c64a57c5156ad75f7d3d807c9cf6facd2367ec3050638"
+encoinsCurrencySymbol = "525c8a4bc4dc92461ef609f2cac7fd0bab5956cf8ce2162dbaac2f25"
 
 getEncoinsInUtxos :: CSL.TransactionUnspentOutputs -> [Text]
 getEncoinsInUtxos utxos = Map.keys assets
@@ -57,9 +57,15 @@ calculateV secrets mps = sum $ zipWith (\s mp -> fromFieldElement (secretV s) * 
 mkAddress :: Address -> Integer -> Address
 mkAddress addrWallet v = bool addrWallet addrVal (v > 0)
     where addrVal = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "0ba32595663c0e52b37373be03b0ba66725e3299b87aa5dc447ce982")
+            decodeHex "58a04846566cd531318ee2e98e3044647f6c75e8224396515cc8aee9")
             (Just $ StakingHash $ ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "737b4d465e879255fb030e1c1cdeef124dbc5f8a5683d9c52a1a5d74")
+            decodeHex "3c2c08be107291be8d71bbb32da11f3b9761b0991f2a6f6940f4f390")
+
+ledgerAddress :: Address
+ledgerAddress = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
+    decodeHex "58a04846566cd531318ee2e98e3044647f6c75e8224396515cc8aee9")
+    (Just $ StakingHash $ ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
+    decodeHex "3c2c08be107291be8d71bbb32da11f3b9761b0991f2a6f6940f4f390")
 
 addressToBytes :: Address -> Text
 addressToBytes (Address cr scr) = bs1 `Text.append` bs2
@@ -93,21 +99,17 @@ encoinsTxWalletMode dWallet dCoinsBurn dCoinsMint eSend = mdo
         dMPs     = fmap snd dLst
         -- dV       = zipDynWith calculateV  dSecrets dMPs
         -- dAddr    = zipDynWith mkAddress dAddrWallet dV
-        ledgerAddr = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "0ba32595663c0e52b37373be03b0ba66725e3299b87aa5dc447ce982")
-            (Just $ StakingHash $ ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "737b4d465e879255fb030e1c1cdeef124dbc5f8a5683d9c52a1a5d74")
 
     -- Obtaining BulletproofParams
     dBulletproofParams <- elementResultJS "bulletproofParamsElement" (parseBulletproofParams . toBuiltin . fromJust . decodeHex)
-    performEvent_ (flip sha2_256 "bulletproofParamsElement" . Text.append (addressToBytes ledgerAddr) . addressToBytes <$> updated dAddrWallet)
+    performEvent_ (flip sha2_256 "bulletproofParamsElement" . Text.append (addressToBytes ledgerAddress) . addressToBytes <$> updated dAddrWallet)
 
     -- Obtaining Randomness
     eRandomness <- performEvent $ liftIO randomIO <$ updated dBulletproofParams
     bRandomness <- hold (Randomness (F 3417) (map F [1..20]) (map F [21..40]) (F 8532) (F 16512) (F 1235)) eRandomness
 
     -- Obtaining EncoinsRedeemer
-    let bRed = mkRedeemer ledgerAddr <$> current dAddrWallet <*>
+    let bRed = mkRedeemer ledgerAddress <$> current dAddrWallet <*>
           current dBulletproofParams <*> current dSecrets <*> current dMPs <*> bRandomness
 
     -- Constructing the final redeemer
@@ -157,11 +159,7 @@ encoinsTxTransferMode dWallet dCoins dmAddr eSend = do
     let dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
         bWalletName = toJS . walletName <$> current dWallet
-        ledgerAddr  = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "0ba32595663c0e52b37373be03b0ba66725e3299b87aa5dc447ce982")
-            (Just $ StakingHash $ ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "737b4d465e879255fb030e1c1cdeef124dbc5f8a5683d9c52a1a5d74")
-        dAddr       = fromMaybe ledgerAddr <$> dmAddr
+        dAddr       = fromMaybe ledgerAddress <$> dmAddr
 
     -- Constructing a new transaction
     (eNewTxSuccess, eRelayDown) <- newTxRequestWrapper baseUrl (zipDyn
@@ -234,23 +232,17 @@ encoinsTxLedgerMode dWallet dCoinsBurn dCoinsMint eSend = mdo
     let dLst = unzip <$> zipDynWith (++) (fmap (map (, Burn)) dCoinsBurn) (fmap (map (, Mint)) dCoinsMint)
         dSecrets = fmap fst dLst
         dMPs     = fmap snd dLst
-        -- dV       = zipDynWith calculateV  dSecrets dMPs
-        -- dAddr    = zipDynWith mkAddress dAddrWallet dV
-        ledgerAddr = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "0ba32595663c0e52b37373be03b0ba66725e3299b87aa5dc447ce982")
-            (Just $ StakingHash $ ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "737b4d465e879255fb030e1c1cdeef124dbc5f8a5683d9c52a1a5d74")
 
     -- Obtaining BulletproofParams
     dBulletproofParams <- elementResultJS "bulletproofParamsElement" (parseBulletproofParams . toBuiltin . fromJust . decodeHex)
-    performEvent_ (flip sha2_256 "bulletproofParamsElement" . Text.append (addressToBytes ledgerAddr) . addressToBytes <$> updated dAddrWallet)
+    performEvent_ (flip sha2_256 "bulletproofParamsElement" . Text.append (addressToBytes ledgerAddress) . addressToBytes <$> updated dAddrWallet)
 
     -- Obtaining Randomness
     eRandomness <- performEvent $ liftIO randomIO <$ updated dBulletproofParams
     bRandomness <- hold (Randomness (F 3417) (map F [1..20]) (map F [21..40]) (F 8532) (F 16512) (F 1235)) eRandomness
 
     -- Obtaining EncoinsRedeemer
-    let bRed = mkRedeemer ledgerAddr <$> current dAddrWallet <*>
+    let bRed = mkRedeemer ledgerAddress <$> current dAddrWallet <*>
           current dBulletproofParams <*> current dSecrets <*> current dMPs <*> bRandomness
 
     -- Constructing the final redeemer
@@ -259,7 +251,7 @@ encoinsTxLedgerMode dWallet dCoinsBurn dCoinsMint eSend = mdo
     let eFinalRedeemer = () <$ catMaybes (updated dFinalRedeemer)
 
     -- Constructing a new transaction
-    eRelayDown <- serverTxRequestWrapper baseUrl (zipDyn
+    (eServerOk, eRelayDown) <- serverTxRequestWrapper baseUrl (zipDyn
       (fmap (Right . (,LedgerMode) . fromJust) dFinalRedeemer)
       dInputs) eFinalRedeemer
     performEvent_ $ liftIO . logInfo . pack . show <$> eRelayDown
@@ -271,6 +263,6 @@ encoinsTxLedgerMode dWallet dCoinsBurn dCoinsMint eSend = mdo
           Ready      <$ eConfirmed,
           Balancing  <$ eFinalRedeemer,
           eRelayDown,
+          Submitted  <$ eServerOk,
           eRelayDown' ]
     return (fmap getEncoinsInUtxos dUTXOs, eStatus)
-

@@ -38,13 +38,13 @@ pingRequestWrapper baseUrl e = do
 
 serverTxRequestWrapper :: MonadWidget t m => BaseUrl ->
   Dynamic t (Either (Address, Value) (EncoinsRedeemer, EncoinsMode), TransactionInputs) ->
-  Event t () -> m (Event t Status)
+  Event t () -> m (Event t (), Event t Status)
 serverTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- serverTxRequest (Right <$> dReqBody) e
-  let eRespUnwrapped = makeResponse <$> eResp
+  let eRespUnwrapped = (() <$) . makeResponse <$> eResp
   performEvent_ $ liftIO . logInfo . pack . show <$> eRespUnwrapped
-  return $ snd $ eventMaybe (BackendError "The current relay is down. Please, select another one.") eRespUnwrapped
+  return $ eventMaybe (BackendError "The current relay is down. Please, select another one.") eRespUnwrapped
 
 statusRequestWrapper :: MonadWidget t m => BaseUrl -> Dynamic t EncoinsStatusReqBody ->
   Event t () -> m (Event t EncoinsStatusResult, Event t Status)
