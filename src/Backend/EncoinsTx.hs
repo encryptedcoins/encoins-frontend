@@ -55,11 +55,7 @@ calculateV :: Secrets -> [MintingPolarity] -> Integer
 calculateV secrets mps = sum $ zipWith (\s mp -> fromFieldElement (secretV s) * polarityToInteger mp) secrets mps
 
 mkAddress :: Address -> Integer -> Address
-mkAddress addrWallet v = bool addrWallet addrVal (v > 0)
-    where addrVal = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "58a04846566cd531318ee2e98e3044647f6c75e8224396515cc8aee9")
-            (Just $ StakingHash $ ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "3c2c08be107291be8d71bbb32da11f3b9761b0991f2a6f6940f4f390")
+mkAddress addrWallet v = bool addrWallet ledgerAddress (v > 0)
 
 ledgerAddress :: Address
 ledgerAddress = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
@@ -153,17 +149,20 @@ encoinsTxWalletMode dWallet dCoinsBurn dCoinsMint eSend = mdo
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
 
 encoinsTxTransferMode :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets
-  -> Dynamic t (Maybe Address) -> Event t () -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
-encoinsTxTransferMode dWallet dCoins dmAddr eSend = do
+  -> Dynamic t [(Secret, Text)] -> Dynamic t (Maybe Address) -> Event t ()
+  -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
+encoinsTxTransferMode dWallet dCoins dNames dmAddr eSend = do
     baseUrl <- pabIP -- this chooses random server with successful ping
     let dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
+        dAddrWallet = fmap walletChangeAddress dWallet
         bWalletName = toJS . walletName <$> current dWallet
         dAddr       = fromMaybe ledgerAddress <$> dmAddr
 
     -- Constructing a new transaction
     (eNewTxSuccess, eRelayDown) <- newTxRequestWrapper baseUrl (zipDyn
-      (Left <$> zipDyn dAddr (mkValue <$> dCoins)) dInputs) eSend
+      (fmap Left $ (,,) <$> dAddr <*> (zipDynWith mkValue dCoins dNames) <*>
+        dAddrWallet) dInputs) eSend
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
     dTx <- holdDyn "" eTx
@@ -194,8 +193,9 @@ encoinsTxTransferMode dWallet dCoins dmAddr eSend = do
           ]
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
   where
-    mkValue = CSL.Value "0" . Just . CSL.MultiAsset . Map.singleton
-      encoinsCurrencySymbol . Map.fromList . map ((,"1") . secretToHex)
+    mkValue coins names = CSL.Value "0" . Just . CSL.MultiAsset . Map.singleton
+      encoinsCurrencySymbol . Map.fromList . mapMaybe
+        (\s -> (,"1") <$> lookup s names) $ coins
 
 secretToHex :: Secret -> Text
 secretToHex s = encodeHex . fromBuiltin $ toBytes $ gamma * 2^(20 :: Integer) + v
@@ -216,7 +216,7 @@ encoinsTxLedgerMode dWallet dCoinsBurn dCoinsMint eSend = mdo
     ePb <- getPostBuild
     eTick <- tickLossyFromPostBuildTime 10
     (eStatusResp, eRelayDown') <- statusRequestWrapper baseUrl
-      (pure LedgerUtxoRequest) $ leftmost [ePb, void eTick]
+      (pure LedgerEncoins) $ leftmost [ePb, void eTick]
     let
       toLedgerUtxoResult (LedgerUtxoResult xs) = Just xs
       toLedgerUtxoResult _ = Nothing

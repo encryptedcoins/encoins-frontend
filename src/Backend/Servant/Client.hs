@@ -32,10 +32,10 @@ pabIP = go urls
         then return $ BasePath url
         else go (delete url l)
 
-type API =   "newTx" :> ReqBody '[JSON] (Either (Address, Value) (EncoinsRedeemer, EncoinsMode), TransactionInputs) :> Post '[JSON] (Text, Text)
+type API =   "newTx" :> ReqBody '[JSON] (Either (Address, Value, Address) (EncoinsRedeemer, EncoinsMode), TransactionInputs) :> Post '[JSON] (Text, Text)
         :<|> "submitTx"     :> ReqBody '[JSON] SubmitTxReqBody :> Post '[JSON] NoContent
         :<|> "ping"         :> Get '[JSON] NoContent
-        :<|> "serverTx"     :> ReqBody '[JSON] (Either (Address, Value) (EncoinsRedeemer, EncoinsMode), TransactionInputs) :> Post '[JSON] NoContent
+        :<|> "serverTx"     :> ReqBody '[JSON] (Either (Address, Value, Address) (EncoinsRedeemer, EncoinsMode), TransactionInputs) :> Post '[JSON] NoContent
         :<|> "status"       :> ReqBody '[JSON] EncoinsStatusReqBody :> Post '[JSON] EncoinsStatusResult
 
 
@@ -47,13 +47,13 @@ type ReqRes t m req res = DynReqBody t req -> Res t m res
 data ApiClient t m = ApiClient
   {
     newTxRequest        :: ReqRes t m
-      ( Either (Address, Value) (EncoinsRedeemer, EncoinsMode)
+      ( Either (Address, Value, Address) (EncoinsRedeemer, EncoinsMode)
       , TransactionInputs)
       (Text, Text),
     submitTxRequest     :: ReqRes t m SubmitTxReqBody NoContent,
     pingRequest         :: Res t m NoContent,
     serverTxRequest     :: ReqRes t m
-      ( Either (Address, Value) (EncoinsRedeemer, EncoinsMode)
+      ( Either (Address, Value, Address) (EncoinsRedeemer, EncoinsMode)
       , TransactionInputs)
       NoContent,
     statusRequest       :: ReqRes t m EncoinsStatusReqBody EncoinsStatusResult
