@@ -55,16 +55,12 @@ calculateV :: Secrets -> [MintingPolarity] -> Integer
 calculateV secrets mps = sum $ zipWith (\s mp -> fromFieldElement (secretV s) * polarityToInteger mp) secrets mps
 
 mkAddress :: Address -> Integer -> Address
-mkAddress addrWallet v = bool addrWallet addrVal (v > 0)
-    where addrVal = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "58a04846566cd531318ee2e98e3044647f6c75e8224396515cc8aee9")
-            (Just $ StakingHash $ ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-            decodeHex "3c2c08be107291be8d71bbb32da11f3b9761b0991f2a6f6940f4f390")
+mkAddress addrWallet v = bool addrWallet ledgerAddress (v > 0)
 
 ledgerAddress :: Address
 ledgerAddress = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
     decodeHex "58a04846566cd531318ee2e98e3044647f6c75e8224396515cc8aee9")
-    (Just $ StakingHash $ ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
+    (Just $ StakingHash $ PubKeyCredential $ PubKeyHash $ toBuiltin $ fromJust $
     decodeHex "3c2c08be107291be8d71bbb32da11f3b9761b0991f2a6f6940f4f390")
 
 addressToBytes :: Address -> Text
@@ -216,7 +212,7 @@ encoinsTxLedgerMode dWallet dCoinsBurn dCoinsMint eSend = mdo
     ePb <- getPostBuild
     eTick <- tickLossyFromPostBuildTime 10
     (eStatusResp, eRelayDown') <- statusRequestWrapper baseUrl
-      (pure LedgerUtxoRequest) $ leftmost [ePb, void eTick]
+      (pure LedgerEncoins) $ leftmost [ePb, void eTick]
     let
       toLedgerUtxoResult (LedgerUtxoResult xs) = Just xs
       toLedgerUtxoResult _ = Nothing

@@ -75,7 +75,7 @@ data SubmitTxReqBody = SubmitTxReqBody
 data EncoinsMode = WalletMode | LedgerMode
     deriving (Show, Read, Eq, Generic, FromJSON, ToJSON)
 
-data EncoinsStatusReqBody = MaxAdaWithdrawRequest | LedgerUtxoRequest
+data EncoinsStatusReqBody = MaxAdaWithdraw | LedgerEncoins
     deriving (Show, Eq, Enum, Generic, FromJSON, ToJSON)
 
 data EncoinsStatusResult = MaxAdaWithdrawResult Integer | LedgerUtxoResult TransactionUnspentOutputs

@@ -16,6 +16,8 @@ import           Reflex.Dom
 import           Witherable                       (catMaybes)
 
 import           Backend.EncoinsTx                (encoinsTxWalletMode, encoinsTxTransferMode, encoinsTxLedgerMode, secretToHex)
+import           Backend.Servant.Client           (pabIP)
+import           Backend.Servant.Requests         (statusRequestWrapper)
 import           Backend.Status                   (Status(..), walletError)
 import           Backend.Types
 import           Backend.Wallet                   (Wallet (..), WalletName (..))
@@ -34,11 +36,9 @@ import           JS.App                           (addrLoad)
 import           JS.Website                       (logInfo, saveJSON)
 import           Widgets.Utils                    (toText)
 
-transactionBalanceWidget :: MonadWidget t m => Dynamic t Secrets -> Dynamic t Secrets -> m ()
-transactionBalanceWidget dCoinsToBurn dCoinsToMint =
-    let getBalance = fmap (sum . map (fromFieldElement . secretV))
-        balance = zipDynWith (-) (getBalance dCoinsToBurn) (getBalance dCoinsToMint)
-        balanceSign n = bool "-" "+" (n >= 0)
+transactionBalanceWidget :: MonadWidget t m => Dynamic t Integer -> m ()
+transactionBalanceWidget balance =
+    let balanceSign n = bool "-" "+" (n >= 0)
         balanceADA n = "Transaction balance: " <> balanceSign n <> toText (abs n) <> " ADA"
         feeADA n = bool blank (divClass "app-text-semibold" $ text $ "Fee: " <> toText (max 3 $ n `divide` 100) <> " ADA") (n > 0)
     in divClassId "transaction-balance-div" "welcome-tx-balance" $ do
@@ -89,24 +89,31 @@ txValidity s Wallet{..} toBurn toMint = mconcat $ zipWith f
         e7    = "Connect ENCOINS to a wallet first."
         e8    = "Switch to the Testnet Preprod network in your wallet."
 
-sendRequestButton :: MonadWidget t m => Dynamic t Status -> Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> m (Event t ())
-sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint = do
+sendRequestButton :: MonadWidget t m => Dynamic t Status -> Dynamic t Wallet ->
+  Dynamic t Secrets -> Dynamic t Secrets -> Dynamic t (Maybe Integer) ->
+  m (Event t ())
+sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint dBalOk = do
     let dTxValidity = txValidity <$> dStatus <*> dWallet <*> dCoinsToBurn <*> dCoinsToMint
-        f v = case v of
-            TxValid     -> "button-switching flex-center"
-            TxInvalid _ -> "button-not-selected button-disabled flex-center"
-        g v = case v of
-            TxValid     -> blank
-            TxInvalid e -> elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visible" <>
+        f v b = case (v,b) of
+            (TxValid, Nothing) -> "button-switching flex-center"
+            _ -> "button-not-selected button-disabled flex-center"
+        g v b = case (v,b) of
+            (TxValid, Nothing) -> blank
+            (TxInvalid e, _) -> elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visible" <>
                 "style" =: "border-top-left-radius: 0px; border-top-right-radius: 0px") $
                 divClass "app-text-normal" $ text e
-        h v = case v of
-            TxValid     -> ""
-            TxInvalid _ -> "border-bottom-left-radius: 0px; border-bottom-right-radius: 0px"
-    e <- divClassId "" "welcome-send-req" $ btn (f <$> dTxValidity)
-        (h <$> dTxValidity) $ dynText "SEND REQUEST"
-    dyn_ $ fmap g dTxValidity
-    return $ () <$ ffilter (== TxValid) (current dTxValidity `tag` e)
+            (_, Just n) -> elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visible" <>
+                "style" =: "border-top-left-radius: 0px; border-top-right-radius: 0px") $
+                divClass "app-text-normal" $ text $ "Cannot withdraw more than "
+                  <> toText n <> " ADA in one transaction."
+        h v b = case (v,b) of
+            (TxValid, Nothing) -> ""
+            _ -> "border-bottom-left-radius: 0px; border-bottom-right-radius: 0px"
+    e <- divClassId "" "welcome-send-req" $ btn (zipDynWith f dTxValidity dBalOk)
+        (zipDynWith h dTxValidity dBalOk) $ dynText "SEND REQUEST"
+    dyn_ $ zipDynWith g dTxValidity dBalOk
+    return $ () <$ ffilter (== (TxValid, Nothing))
+      (current (zipDyn dTxValidity dBalOk) `tag` e)
 
 data AppTab = WalletTab | TransferTab | LedgerTab deriving (Eq, Show)
 
@@ -149,7 +156,17 @@ mainWindow mpass dWallet dOldSecrets = mdo
 walletTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet ->
   Dynamic t Secrets -> m (Event t [(Secret, Text)])
 walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
-    containerApp "" $ transactionBalanceWidget dToBurn dToMint
+    let getBalance = fmap (sum . map (fromFieldElement . secretV))
+        getMaxAda (MaxAdaWithdrawResult n) = Just n
+        getMaxAda _ = Nothing
+    dBalance <- holdUniqDyn $ zipDynWith (-) (getBalance dToBurn) (getBalance dToMint)
+    baseUrl <- pabIP
+    (eMaxAda, _) <- statusRequestWrapper baseUrl (pure MaxAdaWithdraw)
+      (void $ updated dBalance)
+    dMaxAda <- holdDyn 0 (mapMaybe getMaxAda eMaxAda)
+    let balanceOk bal maxAda = if bal + maxAda >= 0 then Nothing else Just maxAda
+        dBalanceOk = zipDynWith balanceOk dBalance dMaxAda
+    containerApp "" $ transactionBalanceWidget dBalance
     (dToBurn, dToMint, eStatusUpdate, _, ret) <- containerApp "" $
         divClass "app-columns w-row" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
@@ -183,7 +200,7 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                     dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Balancing) eStatusUpdate]
                     eNewSecret' <- coinNewWidget
                     return (dCoinsToMint'', eNewSecret')
-                eSend' <- sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint
+                eSend' <- sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint dBalanceOk
                 return (dCoinsToMint', eSend')
             (dAssetNamesInTheWallet, eStatusUpdate, dTxId) <- encoinsTxWalletMode dWallet dCoinsToBurn dCoinsToMint eSend
             let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
@@ -204,7 +221,9 @@ transferTab :: MonadWidget t m =>
     Dynamic t Secrets -> m (Event t [(Secret, Text)])
 transferTab mpass dWallet dSecretsWithNamesInTheWallet dOldSecrets = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
-    containerApp "" $ transactionBalanceWidget (pure []) dCoins
+    let getBalance = fmap (sum . map (fromFieldElement . secretV))
+        dBalance = zipDynWith (-) (getBalance $ pure []) (getBalance dCoins)
+    containerApp "" $ transactionBalanceWidget dBalance
     (dCoins, eSendToLedger, eAddr) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         performEvent_ $ logInfo . ("dImportedSecrets: "<>) . toText <$>
@@ -291,7 +310,17 @@ inputAddrDialog eOpen = mdo
 ledgerTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet ->
   m (Event t [(Secret, Text)])
 ledgerTab mpass dWallet = sectionApp "" "" $ mdo
-    containerApp "" $ transactionBalanceWidget dToBurn dToMint
+    let getBalance = fmap (sum . map (fromFieldElement . secretV))
+        getMaxAda (MaxAdaWithdrawResult n) = Just n
+        getMaxAda _ = Nothing
+    dBalance <- holdUniqDyn $ zipDynWith (-) (getBalance dToBurn) (getBalance dToMint)
+    baseUrl <- pabIP
+    (eMaxAda, _) <- statusRequestWrapper baseUrl (pure MaxAdaWithdraw)
+      (void $ updated dBalance)
+    dMaxAda <- holdDyn 0 (mapMaybe getMaxAda eMaxAda)
+    let balanceOk bal maxAda = if bal + maxAda >= 0 then Nothing else Just maxAda
+        dBalanceOk = zipDynWith balanceOk dBalance dMaxAda
+    containerApp "" $ transactionBalanceWidget dBalance
     (dToBurn, dToMint, eStatusUpdate) <- containerApp "" $
         divClass "app-columns w-row" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
@@ -325,7 +354,7 @@ ledgerTab mpass dWallet = sectionApp "" "" $ mdo
                     dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Balancing) eStatusUpdate]
                     eNewSecret' <- coinNewWidget
                     return (dCoinsToMint'', eNewSecret')
-                eSend' <- sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint
+                eSend' <- sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint dBalanceOk
                 return (dCoinsToMint', eSend')
             (dAssetNamesInTheWallet, eStatusUpdate) <- encoinsTxLedgerMode dWallet dCoinsToBurn dCoinsToMint eSend
             let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
