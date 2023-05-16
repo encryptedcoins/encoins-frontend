@@ -64,7 +64,7 @@ mkAddress addrWallet v = bool addrWallet addrVal (v > 0)
 ledgerAddress :: Address
 ledgerAddress = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
     decodeHex "58a04846566cd531318ee2e98e3044647f6c75e8224396515cc8aee9")
-    (Just $ StakingHash $ ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
+    (Just $ StakingHash $ PubKeyCredential $ PubKeyHash $ toBuiltin $ fromJust $
     decodeHex "3c2c08be107291be8d71bbb32da11f3b9761b0991f2a6f6940f4f390")
 
 addressToBytes :: Address -> Text
