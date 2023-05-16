@@ -253,8 +253,8 @@ transferTab mpass dWallet dSecretsWithNamesInTheWallet dOldSecrets = sectionApp 
           eAddrOk <- inputAddrDialog eWalletOk
           return (dCoinsToBurn, eLedger, eAddrOk)
     dAddr <- holdDyn Nothing (Just <$> eAddr)
-    (_, eStatusUpdate1, _) <- encoinsTxTransferMode dWallet dCoins dAddr (void eAddr)
-    (_, eStatusUpdate2, _) <- encoinsTxTransferMode dWallet dCoins (pure Nothing) eSendToLedger
+    (_, eStatusUpdate1, _) <- encoinsTxTransferMode dWallet dCoins dSecretsWithNamesInTheWallet dAddr (void eAddr)
+    (_, eStatusUpdate2, _) <- encoinsTxTransferMode dWallet dCoins dSecretsWithNamesInTheWallet (pure Nothing) eSendToLedger
     eWalletError <- walletError
     dStatus <- holdDyn Ready $ leftmost [eWalletError, eStatusUpdate1, eStatusUpdate2]
     containerApp "" $ divClass "app-text-small" $ do

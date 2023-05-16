@@ -149,8 +149,9 @@ encoinsTxWalletMode dWallet dCoinsBurn dCoinsMint eSend = mdo
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
 
 encoinsTxTransferMode :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets
-  -> Dynamic t (Maybe Address) -> Event t () -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
-encoinsTxTransferMode dWallet dCoins dmAddr eSend = do
+  -> Dynamic t [(Secret, Text)] -> Dynamic t (Maybe Address) -> Event t ()
+  -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
+encoinsTxTransferMode dWallet dCoins dNames dmAddr eSend = do
     baseUrl <- pabIP -- this chooses random server with successful ping
     let dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
@@ -159,7 +160,7 @@ encoinsTxTransferMode dWallet dCoins dmAddr eSend = do
 
     -- Constructing a new transaction
     (eNewTxSuccess, eRelayDown) <- newTxRequestWrapper baseUrl (zipDyn
-      (Left <$> zipDyn dAddr (mkValue <$> dCoins)) dInputs) eSend
+      (Left <$> zipDyn dAddr (zipDynWith mkValue dCoins dNames)) dInputs) eSend
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
     dTx <- holdDyn "" eTx
@@ -190,8 +191,9 @@ encoinsTxTransferMode dWallet dCoins dmAddr eSend = do
           ]
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
   where
-    mkValue = CSL.Value "0" . Just . CSL.MultiAsset . Map.singleton
-      encoinsCurrencySymbol . Map.fromList . map ((,"1") . secretToHex)
+    mkValue coins names = CSL.Value "0" . Just . CSL.MultiAsset . Map.singleton
+      encoinsCurrencySymbol . Map.fromList . mapMaybe
+        (\s -> (,"1") <$> lookup s names) $ coins
 
 secretToHex :: Secret -> Text
 secretToHex s = encodeHex . fromBuiltin $ toBytes $ gamma * 2^(20 :: Integer) + v
