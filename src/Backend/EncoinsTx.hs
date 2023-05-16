@@ -155,12 +155,14 @@ encoinsTxTransferMode dWallet dCoins dNames dmAddr eSend = do
     baseUrl <- pabIP -- this chooses random server with successful ping
     let dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
+        dAddrWallet = fmap walletChangeAddress dWallet
         bWalletName = toJS . walletName <$> current dWallet
         dAddr       = fromMaybe ledgerAddress <$> dmAddr
 
     -- Constructing a new transaction
     (eNewTxSuccess, eRelayDown) <- newTxRequestWrapper baseUrl (zipDyn
-      (Left <$> zipDyn dAddr (zipDynWith mkValue dCoins dNames)) dInputs) eSend
+      (fmap Left $ (,,) <$> dAddr <*> (zipDynWith mkValue dCoins dNames) <*>
+        dAddrWallet) dInputs) eSend
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
     dTx <- holdDyn "" eTx

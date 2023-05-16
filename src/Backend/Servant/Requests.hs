@@ -14,7 +14,7 @@ import           CSL                          (TransactionInputs, Value)
 import           JS.Website                   (logInfo)
 
 newTxRequestWrapper :: MonadWidget t m => BaseUrl ->
-  Dynamic t (Either (Address, Value) (EncoinsRedeemer, EncoinsMode), TransactionInputs) ->
+  Dynamic t (Either (Address, Value, Address) (EncoinsRedeemer, EncoinsMode), TransactionInputs) ->
   Event t () -> m (Event t (Text, Text), Event t Status)
 newTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
@@ -37,7 +37,7 @@ pingRequestWrapper baseUrl e = do
   return $ void $ catMaybes e'
 
 serverTxRequestWrapper :: MonadWidget t m => BaseUrl ->
-  Dynamic t (Either (Address, Value) (EncoinsRedeemer, EncoinsMode), TransactionInputs) ->
+  Dynamic t (Either (Address, Value, Address) (EncoinsRedeemer, EncoinsMode), TransactionInputs) ->
   Event t () -> m (Event t (), Event t Status)
 serverTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
