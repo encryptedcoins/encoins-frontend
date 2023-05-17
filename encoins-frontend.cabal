@@ -4,8 +4,9 @@ name:                encoins-frontend
 version:             0.1.0.0
 build-type:          Simple
 
-author:             Vladimir Sinyakov
-maintainer:         team@encoins.io
+author:              Vladimir Sinyakov
+                     Catherine Galkina
+maintainer:          team@encoins.io
 
 library
   default-language:   Haskell2010

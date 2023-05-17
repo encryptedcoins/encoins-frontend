@@ -50,6 +50,14 @@ mainWindowColumnHeader title =
     divClass "app-column-head-div" $
         divClass "app-text-semibold" $ text title
 
+protocolFee :: Integer -> EncoinsMode -> Integer
+protocolFee n mode
+    | n < 0 || mode == LedgerMode = max f $ (negate n * 1_000_000) `div` 200
+    | otherwise                   = 0
+    where f = case mode of
+            WalletMode -> 1_500_000
+            LedgerMode -> 2_000_000
+
 data TxValidity = TxValid | TxInvalid Text
     deriving (Show, Eq)
 
@@ -89,10 +97,10 @@ txValidity s Wallet{..} toBurn toMint = mconcat $ zipWith f
         e7    = "Connect ENCOINS to a wallet first."
         e8    = "Switch to the Testnet Preprod network in your wallet."
 
-sendRequestButton :: MonadWidget t m => Dynamic t Status -> Dynamic t Wallet ->
+sendRequestButton :: MonadWidget t m => EncoinsMode -> Dynamic t Status -> Dynamic t Wallet ->
   Dynamic t Secrets -> Dynamic t Secrets -> Dynamic t (Maybe Integer) ->
   m (Event t ())
-sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint dBalOk = do
+sendRequestButton _ dStatus dWallet dCoinsToBurn dCoinsToMint dBalOk = do
     let dTxValidity = txValidity <$> dStatus <*> dWallet <*> dCoinsToBurn <*> dCoinsToMint
         f v b = case (v,b) of
             (TxValid, Nothing) -> "button-switching flex-center"
@@ -148,7 +156,7 @@ mainWindow mpass dWallet dOldSecrets = mdo
       WalletTab -> walletTab mpass dWallet dOldSecrets
       TransferTab -> transferTab mpass dWallet dSecretsWithNamesInTheWallet
         dOldSecrets
-      LedgerTab -> ledgerTab mpass dWallet
+      LedgerTab -> ledgerTab mpass dWallet dOldSecrets
     dSecretsWithNamesInTheWallet <- holdDyn [] eSecretsWithNamesInTheWallet
 
     blank
@@ -200,7 +208,7 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                     dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Balancing) eStatusUpdate]
                     eNewSecret' <- coinNewWidget
                     return (dCoinsToMint'', eNewSecret')
-                eSend' <- sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint dBalanceOk
+                eSend' <- sendRequestButton WalletMode dStatus dWallet dCoinsToBurn dCoinsToMint dBalanceOk
                 return (dCoinsToMint', eSend')
             (dAssetNamesInTheWallet, eStatusUpdate, dTxId) <- encoinsTxWalletMode dWallet dCoinsToBurn dCoinsToMint eSend
             let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
@@ -252,8 +260,10 @@ transferTab mpass dWallet dSecretsWithNamesInTheWallet dOldSecrets = sectionApp 
           eWalletOk <- sendToWalletDialog eWallet dCoinsToBurn
           eAddrOk <- inputAddrDialog eWalletOk
           return (dCoinsToBurn, eLedger, eAddrOk)
-    dAddr <- holdDyn Nothing (Just <$> eAddr)
-    (_, eStatusUpdate1, _) <- encoinsTxTransferMode dWallet dCoins dSecretsWithNamesInTheWallet dAddr (void eAddr)
+    _ <- holdDyn Nothing (Just <$> eAddr)
+    -- TODO: fix here
+    let eStatusUpdate1 = never
+    -- (_, eStatusUpdate1, _) <- encoinsTxTransferMode dWallet dCoins dSecretsWithNamesInTheWallet dAddr (void eAddr)
     (_, eStatusUpdate2, _) <- encoinsTxTransferMode dWallet dCoins dSecretsWithNamesInTheWallet (pure Nothing) eSendToLedger
     eWalletError <- walletError
     dStatus <- holdDyn Ready $ leftmost [eWalletError, eStatusUpdate1, eStatusUpdate2]
@@ -308,8 +318,8 @@ inputAddrDialog eOpen = mdo
         errDiv "Incorrect address"
 
 ledgerTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet ->
-  m (Event t [(Secret, Text)])
-ledgerTab mpass dWallet = sectionApp "" "" $ mdo
+  Dynamic t Secrets -> m (Event t [(Secret, Text)])
+ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     let getBalance = fmap (sum . map (fromFieldElement . secretV))
         getMaxAda (MaxAdaWithdrawResult n) = Just n
         getMaxAda _ = Nothing
@@ -354,7 +364,7 @@ ledgerTab mpass dWallet = sectionApp "" "" $ mdo
                     dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Balancing) eStatusUpdate]
                     eNewSecret' <- coinNewWidget
                     return (dCoinsToMint'', eNewSecret')
-                eSend' <- sendRequestButton dStatus dWallet dCoinsToBurn dCoinsToMint dBalanceOk
+                eSend' <- sendRequestButton LedgerMode dStatus dWallet dCoinsToBurn dCoinsToMint dBalanceOk
                 return (dCoinsToMint', eSend')
             (dAssetNamesInTheWallet, eStatusUpdate) <- encoinsTxLedgerMode dWallet dCoinsToBurn dCoinsToMint eSend
             let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
@@ -367,4 +377,3 @@ ledgerTab mpass dWallet = sectionApp "" "" $ mdo
   where
     menuButton = divClass "menu-item-button-right" .
       btn "button-switching flex-center" "margin-top: 20px" . text
-    dOldSecrets = pure []

@@ -193,7 +193,7 @@ encoinsTxTransferMode dWallet dCoins dNames dmAddr eSend = do
           ]
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
   where
-    mkValue coins names = CSL.Value "0" . Just . CSL.MultiAsset . Map.singleton
+    mkValue coins names = CSL.Value "1500000" . Just . CSL.MultiAsset . Map.singleton
       encoinsCurrencySymbol . Map.fromList . mapMaybe
         (\s -> (,"1") <$> lookup s names) $ coins
 
