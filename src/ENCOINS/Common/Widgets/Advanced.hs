@@ -76,17 +76,17 @@ isParentOf :: DOM.MonadJSM m => DOM.Element -> DOM.Element -> m Bool
 isParentOf parent node = DOM.liftJSM $ contains parent (Just node)
 
 withTooltip :: MonadWidget t m =>
-  m a ->
+     m a
   -- ^ Element that triggers tooltip when hovered
-  Text ->
+  -> Text
   -- ^ Additional styles for the tooltip
-  NominalDiffTime ->
+  -> NominalDiffTime
   -- ^ Emersion delay in seconds, >= 0
-  NominalDiffTime ->
+  -> NominalDiffTime
   -- ^ Vanishing delay in seconds, >= 0
-  m () ->
+  -> m ()
   -- ^ Inner content of the tooltip
-  m a
+  -> m a
 withTooltip mainW style delay1 delay2 innerW = mdo
   (e, ret) <- elClass' "div" "div-tooltip-wrapper" $ do
     ret' <- mainW

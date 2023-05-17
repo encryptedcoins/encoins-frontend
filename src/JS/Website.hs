@@ -6,10 +6,10 @@
 module JS.Website where
 
 import           Control.Monad.IO.Class      (MonadIO(..))
-import           Data.Maybe                  (isJust)
 import           Data.Text                   (Text)
 
 #ifdef __GHCJS__
+import           Data.Maybe                  (isJust)
 import           Language.Javascript.JSaddle (ToJSVal(..), JSVal, JSString, textToStr)
 #endif
 
@@ -139,7 +139,7 @@ saveJSON mpass key val = liftIO $ do
   bool_js <- toJSVal $ isJust mpass
   saveJSON_js (textToStr key) (textToStr val) bool_js (maybe "" textToStr mpass)
 #else
-saveJSON :: MonadIO m => Text -> Text -> Maybe Text -> m ()
+saveJSON :: MonadIO m => Maybe Text -> Text -> Text -> m ()
 saveJSON _ _ _ = error "GHCJS is required!"
 #endif
 
@@ -155,7 +155,7 @@ loadJSON mpass key resId = liftIO $ do
   bool_js <- toJSVal $ isJust mpass
   loadJSON_js (textToStr key) (textToStr resId) bool_js (maybe "" textToStr mpass)
 #else
-loadJSON :: MonadIO m => Text -> Text -> m ()
+loadJSON :: MonadIO m => Maybe Text -> Text -> Text -> m ()
 loadJSON _ _ _ = error "GHCJS is required!"
 #endif
 
@@ -172,6 +172,6 @@ setElementStyle elId prop val = liftIO $ do
   val_js <- toJSVal val
   setElementStyle_js elId_js prop_js val_js
 #else
-setElementStyle :: MonadIO m => Text -> Text -> m ()
-setElementStyle _ _ = error "GHCJS is required!"
+setElementStyle :: MonadIO m => Text -> Text -> Text -> m ()
+setElementStyle _ _ _ = error "GHCJS is required!"
 #endif
