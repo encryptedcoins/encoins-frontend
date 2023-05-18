@@ -30,10 +30,10 @@ data StakingCredential = StakingHash Credential | StakingPtr Integer Integer Int
     deriving (ToJSON, FromJSON)
 newtype PubKeyHash = PubKeyHash { getPubKeyHash :: BuiltinByteString }
     deriving stock (Show, Eq, Ord, Generic)
-    deriving (ToJSON, FromJSON)
+    deriving anyclass (ToJSON, FromJSON)
 newtype ValidatorHash = ValidatorHash BuiltinByteString
     deriving stock (Generic, Show, Eq, Ord)
-    deriving (ToJSON, FromJSON)
+    deriving anyclass (ToJSON, FromJSON)
 
 mkAddressFromPubKeys :: Text -> Maybe Text -> Address
 mkAddressFromPubKeys pkhHex mskhHex = Address (PubKeyCredential $ PubKeyHash pkh)
@@ -59,11 +59,11 @@ decodeWitness = maybe [] (map (\(Witness k s) -> (k, s))) . decodeText
 
 newtype PubKey = PubKey { getPubKey :: Text }
     deriving stock (Eq, Ord, Show, Generic)
-    deriving (ToJSON, FromJSON)
+    deriving anyclass (ToJSON, FromJSON)
 
 newtype Signature = Signature { getSignature :: Text }
     deriving stock (Eq, Ord, Show, Generic)
-    deriving (ToJSON, FromJSON)
+    deriving anyclass (ToJSON, FromJSON)
 
 data SubmitTxReqBody = SubmitTxReqBody
     {
@@ -72,7 +72,7 @@ data SubmitTxReqBody = SubmitTxReqBody
     }
     deriving (Show, Generic, ToJSON, FromJSON)
 
-data EncoinsMode = WalletMode | LedgerMode
+data EncoinsMode = WalletMode | LedgerMode | TransferMode
     deriving (Show, Read, Eq, Generic, FromJSON, ToJSON)
 
 data EncoinsStatusReqBody = MaxAdaWithdraw | LedgerEncoins

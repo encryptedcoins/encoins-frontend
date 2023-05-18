@@ -11,8 +11,7 @@ import           Data.Text                   (Text)
 #ifdef __GHCJS__
 import           Control.Monad               (guard)
 import qualified Data.Text                   as T
-import           Language.Javascript.JSaddle (ToJSVal(..), FromJSVal(..), JSVal,
-                    JSM, JSString, textToStr, strToText)
+import           Language.Javascript.JSaddle (ToJSVal(..), FromJSVal(..), JSVal, JSM, JSString, textToStr, strToText)
 #endif
 
 -----------------------------------------------------------------

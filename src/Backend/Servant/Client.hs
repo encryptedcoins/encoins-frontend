@@ -21,8 +21,8 @@ import           JS.App                       (pingServer)
 urls :: [Text]
 urls = fromJust $ decode $ fromStrict $(embedFile "config/backend_url.json")
 
-pabIP :: MonadIO m => m BaseUrl
-pabIP = go urls
+getRelayUrl :: MonadIO m => m BaseUrl
+getRelayUrl = go urls
   where
     go l = do
       idx <- randomRIO (0, length l - 1)
@@ -30,7 +30,7 @@ pabIP = go urls
       pingOk <- pingServer url
       if pingOk
         then return $ BasePath url
-        else go (delete url l)
+        else go (delete url l) -- TODO: this stops page from loading if all relays are down
 
 type API =   "newTx" :> ReqBody '[JSON] (Either (Address, Value, Address) (EncoinsRedeemer, EncoinsMode), TransactionInputs) :> Post '[JSON] (Text, Text)
         :<|> "submitTx"     :> ReqBody '[JSON] SubmitTxReqBody :> Post '[JSON] NoContent
@@ -73,4 +73,3 @@ makeResponse _ = Nothing
 
 eventMaybe :: Reflex t => b -> Event t (Maybe a) -> (Event t a, Event t b)
 eventMaybe errValue e = (catMaybes e, errValue <$ ffilter isNothing e)
-
