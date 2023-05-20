@@ -16,7 +16,7 @@ import           System.Random.Stateful          (randomIO)
 import           Text.Hex                        (encodeHex, decodeHex)
 import           Witherable                      (catMaybes)
 
-import           Backend.Servant.Client          (pabIP)
+import           Backend.Servant.Client          (getRelayUrl)
 import           Backend.Servant.Requests
 import           Backend.Status                  (Status (..))
 import           Backend.Types
@@ -36,6 +36,12 @@ bulletproofSetup = fromJust $ decode $ fromStrict $(embedFile "config/bulletproo
 encoinsCurrencySymbol :: Text
 encoinsCurrencySymbol = "525c8a4bc4dc92461ef609f2cac7fd0bab5956cf8ce2162dbaac2f25"
 
+ledgerAddress :: Address
+ledgerAddress = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
+    decodeHex "58a04846566cd531318ee2e98e3044647f6c75e8224396515cc8aee9")
+    (Just $ StakingHash $ PubKeyCredential $ PubKeyHash $ toBuiltin $ fromJust $
+    decodeHex "3c2c08be107291be8d71bbb32da11f3b9761b0991f2a6f6940f4f390")
+
 getEncoinsInUtxos :: CSL.TransactionUnspentOutputs -> [Text]
 getEncoinsInUtxos utxos = Map.keys assets
   where getMultiAsset (CSL.MultiAsset a) = a
@@ -50,6 +56,11 @@ mkRedeemer ledgerAddr changeAddr bp secrets mps rs = red
           sig = toBuiltin $ fromJust $
             decodeHex ""
           red = ((ledgerAddr, changeAddr), (v, inputs'), proof, sig)
+
+verifyRedeemer :: BulletproofParams -> Maybe EncoinsRedeemer -> Bool
+verifyRedeemer bp (Just (_, (v, inputs), proof, _)) = verify bulletproofSetup bp v inputs' proof
+  where inputs' = map (\(bs, p) -> Input (fromJust $ toGroupElement bs) p) inputs
+verifyRedeemer _ _ = False
 
 calculateV :: Secrets -> [MintingPolarity] -> Integer
 calculateV secrets mps = sum $ zipWith (\s mp -> fromFieldElement (secretV s) * polarityToInteger mp) secrets mps
@@ -81,7 +92,7 @@ redeemerToBytes ((aL, aC), i, p, _) = addressToBytes aL `Text.append` addressToB
 encoinsTxWalletMode :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () ->
   m (Dynamic t [Text], Event t Status, Dynamic t Text)
 encoinsTxWalletMode dWallet dCoinsBurn dCoinsMint eSend = mdo
-    baseUrl <- pabIP -- this chooses random server with successful ping
+    baseUrl <- getRelayUrl -- this chooses random server with successful ping
     let dAddrWallet = fmap walletChangeAddress dWallet
         dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
@@ -112,6 +123,9 @@ encoinsTxWalletMode dWallet dCoinsBurn dCoinsMint eSend = mdo
     -- let bRedWithData = ffor2 bRed (current dAddrWallet) (\red a -> (a, red))
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eSend
     let eFinalRedeemer = () <$ catMaybes (updated dFinalRedeemer)
+
+    -- performEvent_ $ liftIO . logInfo . pack . ("Verification: " ++) . show
+    performEvent_ $ liftIO . logInfo . pack . ("Verification: " ++) . show <$> updated (zipDynWith verifyRedeemer dBulletproofParams dFinalRedeemer)
 
     -- Constructing a new transaction
     (eNewTxSuccess, eRelayDown) <- newTxRequestWrapper baseUrl (zipDyn
@@ -152,7 +166,7 @@ encoinsTxTransferMode :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secret
   -> Dynamic t [(Secret, Text)] -> Dynamic t (Maybe Address) -> Event t ()
   -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
 encoinsTxTransferMode dWallet dCoins dNames dmAddr eSend = do
-    baseUrl <- pabIP -- this chooses random server with successful ping
+    baseUrl <- getRelayUrl -- this chooses random server with successful ping
     let dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
         dAddrWallet = fmap walletChangeAddress dWallet
@@ -193,7 +207,7 @@ encoinsTxTransferMode dWallet dCoins dNames dmAddr eSend = do
           ]
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
   where
-    mkValue coins names = CSL.Value "0" . Just . CSL.MultiAsset . Map.singleton
+    mkValue coins names = CSL.Value "1500000" . Just . CSL.MultiAsset . Map.singleton
       encoinsCurrencySymbol . Map.fromList . mapMaybe
         (\s -> (,"1") <$> lookup s names) $ coins
 
@@ -212,7 +226,7 @@ hexToSecret txt = do
 encoinsTxLedgerMode :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () ->
   m (Dynamic t [Text], Event t Status)
 encoinsTxLedgerMode dWallet dCoinsBurn dCoinsMint eSend = mdo
-    baseUrl <- pabIP -- this chooses random server with successful ping
+    baseUrl <- getRelayUrl -- this chooses random server with successful ping
     ePb <- getPostBuild
     eTick <- tickLossyFromPostBuildTime 10
     (eStatusResp, eRelayDown') <- statusRequestWrapper baseUrl
