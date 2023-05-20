@@ -36,12 +36,12 @@ mainWindowColumnHeader title =
         divClass "app-text-semibold" $ text title
 
 walletTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet ->
-  Dynamic t Secrets -> m (Event t [(Secret, Text)])
+  Dynamic t Secrets -> m ()
 walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     let getBalance = fmap (sum . map (fromFieldElement . secretV))
     dBalance <- holdUniqDyn $ zipDynWith (-) (getBalance dToBurn) (getBalance dToMint)
     containerApp "" $ transactionBalanceWidget WalletMode dBalance
-    (dToBurn, dToMint, eStatusUpdate, _, ret) <- containerApp "" $
+    (dToBurn, dToMint, eStatusUpdate) <- containerApp "" $
         divClass "app-columns w-row" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
             performEvent_ $ logInfo . ("dImportedSecrets: "<>) . toText <$>
@@ -76,34 +76,32 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                     return (dCoinsToMint'', eNewSecret')
                 eSend' <- sendRequestButton WalletMode dBalance dStatus dWallet dCoinsToBurn dCoinsToMint
                 return (dCoinsToMint', eSend')
-            (dAssetNamesInTheWallet, eStatusUpdate, dTxId) <- encoinsTxWalletMode dWallet dCoinsToBurn dCoinsToMint eSend
+            (dAssetNamesInTheWallet, eStatusUpdate, _) <- encoinsTxWalletMode dWallet dCoinsToBurn dCoinsToMint eSend
             let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
-            return (dCoinsToBurn, dCoinsToMint, eStatusUpdate, dTxId, dSecretsWithNamesInTheWallet)
+            return (dCoinsToBurn, dCoinsToMint, eStatusUpdate)
     eWalletError <- walletError
     dStatus <- holdDyn Ready $ leftmost [eStatusUpdate, eWalletError]
     containerApp "" $ divClass "app-text-small" $ do
         dynText $ fmap toText dStatus
-    return (updated ret)
-        -- let f txId s = bool blank (void $ lnk ("https://preprod.cexplorer.io/tx/" <> txId) "" $ divClass "text-footer" $ text txId) (s == Submitted)
-        -- dyn_ $ f <$> dTxId <*> dStatus
   where
     menuButton = divClass "app-column w-col w-col-6" .
       divClass "menu-item-button-right" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
 
 transferTab :: MonadWidget t m =>
-    Maybe PasswordRaw -> Dynamic t Wallet -> Dynamic t [(Secret, Text)] ->
-    Dynamic t Secrets -> m (Event t [(Secret, Text)])
-transferTab mpass dWallet dSecretsWithNamesInTheWallet dOldSecrets = sectionApp "" "" $ mdo
+    Maybe PasswordRaw -> Dynamic t Wallet ->
+    Dynamic t Secrets -> m ()
+transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
     let getBalance = fmap (sum . map (fromFieldElement . secretV))
         dBalance = zipDynWith (-) (getBalance $ pure []) (getBalance dCoins)
     containerApp "" $ transactionBalanceWidget TransferMode dBalance
-    (dCoins, eSendToLedger, eAddr) <- containerApp "" $ divClass "app-columns w-row" $ mdo
+    (dCoins, eSendToLedger, eAddr, dSecretsWithNames) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         performEvent_ $ logInfo . ("dImportedSecrets: "<>) . toText <$>
           updated dImportedSecrets
         let dSecrets = fmap nub $ zipDynWith (++) dImportedSecrets dOldSecrets
+        dSecretsWithNames <- coinCollectionWithNames dSecrets
         performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins" . decodeUtf8 .
           toStrict . encode <$> updated dSecrets)
 
@@ -126,15 +124,15 @@ transferTab mpass dWallet dSecretsWithNamesInTheWallet dOldSecrets = sectionApp 
           eLedger <- sendButton (not . null <$> dCoinsToBurn) "margin-top: 20px" " Send to Ledger"
           eWalletOk <- sendToWalletWindow eWallet dCoinsToBurn
           eAddrOk <- inputAddressWindow eWalletOk
-          return (dCoinsToBurn, eLedger, eAddrOk)
+          return (dCoinsToBurn, eLedger, eAddrOk, dSecretsWithNames)
     dAddr <- holdDyn Nothing (Just <$> eAddr)
-    (_, eStatusUpdate1, _) <- encoinsTxTransferMode "0" dWallet dCoins dSecretsWithNamesInTheWallet dAddr (void eAddr)
+    (dAssetNamesInTheWallet, eStatusUpdate1, _) <- encoinsTxTransferMode "0" dWallet dCoins dSecretsWithNamesInTheWallet dAddr (void eAddr)
+    let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
     (_, eStatusUpdate2, _) <- encoinsTxTransferMode "1" dWallet dCoins dSecretsWithNamesInTheWallet (pure Nothing) eSendToLedger
     eWalletError <- walletError
     dStatus <- holdDyn Ready $ leftmost [eWalletError, eStatusUpdate1, eStatusUpdate2]
     containerApp "" $ divClass "app-text-small" $ do
         dynText $ fmap toText dStatus
-    return never
   where
     menuButton = divClass "app-column w-col w-col-6" .
       divClass "menu-item-button-right" . btn "button-switching flex-center"
@@ -143,7 +141,7 @@ transferTab mpass dWallet dSecretsWithNamesInTheWallet dOldSecrets = sectionApp 
       btn (("button-switching flex-center " <>) . bool "button-disabled" "" <$> dActive) stl . text
 
 ledgerTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet ->
-  Dynamic t Secrets -> m (Event t [(Secret, Text)])
+  Dynamic t Secrets -> m ()
 ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     let getBalance = fmap (sum . map (fromFieldElement . secretV))
     dBalance <- holdUniqDyn $ zipDynWith (-) (getBalance dToBurn) (getBalance dToMint)
@@ -190,7 +188,6 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     dStatus <- holdDyn Ready $ leftmost [eStatusUpdate, eWalletError]
     containerApp "" $ divClass "app-text-small" $ do
         dynText $ fmap toText dStatus
-    return never
   where
     menuButton = divClass "app-column w-col w-col-6" .
       divClass "menu-item-button-right" . btn "button-switching flex-center"

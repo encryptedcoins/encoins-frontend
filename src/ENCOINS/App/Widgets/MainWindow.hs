@@ -1,6 +1,5 @@
 module ENCOINS.App.Widgets.MainWindow where
 
-import           Control.Monad                          ((<=<))
 import           Data.Functor                           ((<&>))
 import           Reflex.Dom
 
@@ -16,9 +15,7 @@ mainWindow mpass dWallet dOldSecrets = mdo
     eTab <- tabsSection dTab
     dTab <- holdDyn WalletTab eTab
 
-    eSecretsWithNamesInTheWallet <- switchHold never <=< dyn $ dTab <&> \case
+    dyn_ $ dTab <&> \case
       WalletTab   -> walletTab mpass dWallet dOldSecrets
-      TransferTab -> transferTab mpass dWallet dSecretsWithNamesInTheWallet dOldSecrets
+      TransferTab -> transferTab mpass dWallet dOldSecrets
       LedgerTab   -> ledgerTab mpass dWallet dOldSecrets
-    dSecretsWithNamesInTheWallet <- holdDyn [] eSecretsWithNamesInTheWallet
-    blank
