@@ -162,10 +162,11 @@ encoinsTxWalletMode dWallet dCoinsBurn dCoinsMint eSend = mdo
           ]
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
 
-encoinsTxTransferMode :: MonadWidget t m => Text -> Dynamic t Wallet
+encoinsTxTransferMode :: MonadWidget t m => Dynamic t Wallet
   -> Dynamic t Secrets -> Dynamic t [(Secret, Text)] -> Dynamic t (Maybe Address)
-  -> Event t () -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
-encoinsTxTransferMode idx dWallet dCoins dNames dmAddr eSend = do
+  -> Event t () -> Dynamic t [(Text, Text)]
+  -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
+encoinsTxTransferMode dWallet dCoins dNames dmAddr eSend dWalletSignature = do
     mbaseUrl <- getRelayUrl -- this chooses random server with successful ping
     when (isNothing mbaseUrl) $
       setElementStyle "bottom-notification-relay" "display" "flex"
@@ -190,8 +191,6 @@ encoinsTxTransferMode idx dWallet dCoins dNames dmAddr eSend = do
     performEvent_ $ liftIO . logInfo . pack . show <$> eRelayDown
 
     -- Signing the transaction
-    dWalletSignature <- elementResultJS ("walletSignatureElement" <> idx)
-      decodeWitness
     performEvent_ $ liftIO . walletSignTx <$> bWalletName `attach` eTx
     let eWalletSignature = () <$ updated dWalletSignature
 

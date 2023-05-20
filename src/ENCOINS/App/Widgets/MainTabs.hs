@@ -14,7 +14,7 @@ import           Backend.EncoinsTx                      (encoinsTxWalletMode, en
 import           Backend.Status                         (Status(..), walletError)
 import           Backend.Types
 import           Backend.Wallet                         (Wallet (..))
-import           ENCOINS.App.Widgets.Basic              (containerApp, sectionApp)
+import           ENCOINS.App.Widgets.Basic              (containerApp, sectionApp, elementResultJS)
 import           ENCOINS.App.Widgets.Coin               (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
                                                           coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget)
 import           ENCOINS.App.Widgets.InputAddressWindow (inputAddressWindow)
@@ -126,9 +126,10 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
           eAddrOk <- inputAddressWindow eWalletOk
           return (dCoinsToBurn, eLedger, eAddrOk, dSecretsWithNames)
     dAddr <- holdDyn Nothing (Just <$> eAddr)
-    (dAssetNamesInTheWallet, eStatusUpdate1, _) <- encoinsTxTransferMode "0" dWallet dCoins dSecretsWithNamesInTheWallet dAddr (void eAddr)
+    dWalletSignature <- elementResultJS "walletSignatureElement" decodeWitness
+    (dAssetNamesInTheWallet, eStatusUpdate1, _) <- encoinsTxTransferMode dWallet dCoins dSecretsWithNamesInTheWallet dAddr (void eAddr) dWalletSignature
     let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
-    (_, eStatusUpdate2, _) <- encoinsTxTransferMode "1" dWallet dCoins dSecretsWithNamesInTheWallet (pure Nothing) eSendToLedger
+    (_, eStatusUpdate2, _) <- encoinsTxTransferMode dWallet dCoins dSecretsWithNamesInTheWallet (pure Nothing) eSendToLedger dWalletSignature
     eWalletError <- walletError
     dStatus <- holdDyn Ready $ leftmost [eWalletError, eStatusUpdate1, eStatusUpdate2]
     containerApp "" $ divClass "app-text-small" $ do
