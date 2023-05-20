@@ -14,7 +14,7 @@ import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
 import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWindow, welcomeWallet, welcomeWindowWalletStorageKey)
-import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
+import           ENCOINS.Common.Widgets.Advanced    (copiedNotification, noRelayNotification)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
 
@@ -63,3 +63,4 @@ bodyWidget = waitForScripts blank $ mdo
   let e = eJQueryLoaded $> elAttr "script" ("src" =: "js/webflow.js" <> "type" =: "text/javascript") blank
   widgetHold_ blank e
   copiedNotification
+  noRelayNotification

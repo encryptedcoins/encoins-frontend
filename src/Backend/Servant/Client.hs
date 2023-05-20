@@ -21,16 +21,17 @@ import           JS.App                       (pingServer)
 urls :: [Text]
 urls = fromJust $ decode $ fromStrict $(embedFile "config/backend_url.json")
 
-getRelayUrl :: MonadIO m => m BaseUrl
+getRelayUrl :: MonadIO m => m (Maybe BaseUrl)
 getRelayUrl = go urls
   where
+    go [] = pure Nothing
     go l = do
       idx <- randomRIO (0, length l - 1)
       let url = l !! idx
       pingOk <- pingServer url
       if pingOk
-        then return $ BasePath url
-        else go (delete url l) -- TODO: this stops page from loading if all relays are down
+        then return $ Just $ BasePath url
+        else go (delete url l)
 
 type API =   "newTx" :> ReqBody '[JSON] (Either (Address, Value, Address) (EncoinsRedeemer, EncoinsMode), TransactionInputs) :> Post '[JSON] (Text, Text)
         :<|> "submitTx"     :> ReqBody '[JSON] SubmitTxReqBody :> Post '[JSON] NoContent

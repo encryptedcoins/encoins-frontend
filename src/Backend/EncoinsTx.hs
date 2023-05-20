@@ -1,13 +1,13 @@
 module Backend.EncoinsTx where
 
-import           Control.Monad                   (void)
+import           Control.Monad                   (void, when)
 import           Control.Monad.IO.Class          (MonadIO(..))
 import           Data.Aeson                      (decode)
 import           Data.Bool                       (bool)
 import           Data.ByteString.Lazy            (fromStrict)
 import           Data.FileEmbed                  (embedFile)
 import qualified Data.Map                        as Map
-import           Data.Maybe                      (fromJust, fromMaybe)
+import           Data.Maybe                      (fromJust, fromMaybe, isNothing)
 import           Data.Text                       (Text, pack)
 import qualified Data.Text                       as Text
 import           PlutusTx.Builtins
@@ -27,7 +27,7 @@ import           ENCOINS.Crypto.Field            (Field(..), fromFieldElement, t
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           JS.App                          (sha2_256, walletSignTx)
-import           JS.Website                      (logInfo)
+import           JS.Website                      (logInfo, setElementStyle)
 import           PlutusTx.Extra.ByteString       (ToBuiltinByteString(..), byteStringToInteger)
 
 bulletproofSetup :: BulletproofSetup
@@ -86,7 +86,9 @@ redeemerToBytes ((aL, aC), i, p, _) = addressToBytes aL `Text.append` addressToB
 encoinsTxWalletMode :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () ->
   m (Dynamic t [Text], Event t Status, Dynamic t Text)
 encoinsTxWalletMode dWallet dCoinsBurn dCoinsMint eSend = mdo
-    baseUrl <- getRelayUrl -- this chooses random server with successful ping
+    mbaseUrl <- getRelayUrl -- this chooses random server with successful ping
+    when (isNothing mbaseUrl) $
+      setElementStyle "bottom-notification-relay" "display" "flex"
     let dAddrWallet = fmap walletChangeAddress dWallet
         dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
@@ -122,9 +124,11 @@ encoinsTxWalletMode dWallet dCoinsBurn dCoinsMint eSend = mdo
     performEvent_ $ liftIO . logInfo . pack . ("Verification: " ++) . show <$> updated (zipDynWith verifyRedeemer dBulletproofParams dFinalRedeemer)
 
     -- Constructing a new transaction
-    (eNewTxSuccess, eRelayDown) <- newTxRequestWrapper baseUrl (zipDyn
-      (fmap (Right . (,WalletMode) . fromJust) dFinalRedeemer)
-      dInputs) eFinalRedeemer
+    (eNewTxSuccess, eRelayDown) <- case mbaseUrl of
+      Just baseUrl -> newTxRequestWrapper baseUrl (zipDyn
+        (fmap (Right . (,WalletMode) . fromJust) dFinalRedeemer)
+        dInputs) eFinalRedeemer
+      _ -> pure (never, never)
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
     dTx <- holdDyn "" eTx
@@ -140,7 +144,9 @@ encoinsTxWalletMode dWallet dCoinsBurn dCoinsMint eSend = mdo
 
     -- Submitting the transaction
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
-    (eSubmitted, eRelayDown') <- submitTxRequestWrapper baseUrl dSubmitReqBody eWalletSignature
+    (eSubmitted, eRelayDown') <- case mbaseUrl of
+      Just baseUrl -> submitTxRequestWrapper baseUrl dSubmitReqBody eWalletSignature
+      _ -> pure (never, never)
 
     -- Tracking the pending transaction
     eConfirmed <- updated <$> holdUniqDyn dUTXOs
@@ -156,11 +162,13 @@ encoinsTxWalletMode dWallet dCoinsBurn dCoinsMint eSend = mdo
           ]
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
 
-encoinsTxTransferMode :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets
-  -> Dynamic t [(Secret, Text)] -> Dynamic t (Maybe Address) -> Event t ()
-  -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
-encoinsTxTransferMode dWallet dCoins dNames dmAddr eSend = do
-    baseUrl <- getRelayUrl -- this chooses random server with successful ping
+encoinsTxTransferMode :: MonadWidget t m => Text -> Dynamic t Wallet
+  -> Dynamic t Secrets -> Dynamic t [(Secret, Text)] -> Dynamic t (Maybe Address)
+  -> Event t () -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
+encoinsTxTransferMode idx dWallet dCoins dNames dmAddr eSend = do
+    mbaseUrl <- getRelayUrl -- this chooses random server with successful ping
+    when (isNothing mbaseUrl) $
+      setElementStyle "bottom-notification-relay" "display" "flex"
     let dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
         dAddrWallet = fmap walletChangeAddress dWallet
@@ -168,9 +176,11 @@ encoinsTxTransferMode dWallet dCoins dNames dmAddr eSend = do
         dAddr       = fromMaybe ledgerAddress <$> dmAddr
 
     -- Constructing a new transaction
-    (eNewTxSuccess, eRelayDown) <- newTxRequestWrapper baseUrl (zipDyn
-      (fmap Left $ (,,) <$> dAddr <*> (zipDynWith mkValue dCoins dNames) <*>
-        dAddrWallet) dInputs) eSend
+    (eNewTxSuccess, eRelayDown) <- case mbaseUrl of
+      Just baseUrl -> newTxRequestWrapper baseUrl (zipDyn
+        (fmap Left $ (,,) <$> dAddr <*> (zipDynWith mkValue dCoins dNames) <*>
+          dAddrWallet) dInputs) eSend
+      _ -> pure (never, never)
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
     dTx <- holdDyn "" eTx
@@ -180,13 +190,16 @@ encoinsTxTransferMode dWallet dCoins dNames dmAddr eSend = do
     performEvent_ $ liftIO . logInfo . pack . show <$> eRelayDown
 
     -- Signing the transaction
-    dWalletSignature <- elementResultJS "walletSignatureElement" decodeWitness
+    dWalletSignature <- elementResultJS ("walletSignatureElement" <> idx)
+      decodeWitness
     performEvent_ $ liftIO . walletSignTx <$> bWalletName `attach` eTx
     let eWalletSignature = () <$ updated dWalletSignature
 
     -- Submitting the transaction
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
-    (eSubmitted, eRelayDown') <- submitTxRequestWrapper baseUrl dSubmitReqBody eWalletSignature
+    (eSubmitted, eRelayDown') <- case mbaseUrl of
+      Just baseUrl -> submitTxRequestWrapper baseUrl dSubmitReqBody eWalletSignature
+      _ -> pure (never, never)
 
     -- Tracking the pending transaction
     eConfirmed <- updated <$> holdUniqDyn dUTXOs
@@ -220,11 +233,15 @@ hexToSecret txt = do
 encoinsTxLedgerMode :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () ->
   m (Dynamic t [Text], Event t Status)
 encoinsTxLedgerMode dWallet dCoinsBurn dCoinsMint eSend = mdo
-    baseUrl <- getRelayUrl -- this chooses random server with successful ping
+    mbaseUrl <- getRelayUrl -- this chooses random server with successful ping
+    when (isNothing mbaseUrl) $
+      setElementStyle "bottom-notification-relay" "display" "flex"
     ePb <- getPostBuild
     eTick <- tickLossyFromPostBuildTime 10
-    (eStatusResp, eRelayDown') <- statusRequestWrapper baseUrl
-      (pure LedgerEncoins) $ leftmost [ePb, void eTick]
+    (eStatusResp, eRelayDown') <- case mbaseUrl of
+      Just baseUrl -> statusRequestWrapper baseUrl
+        (pure LedgerEncoins) $ leftmost [ePb, void eTick]
+      _ -> pure (never, never)
     let
       toLedgerUtxoResult (LedgerUtxoResult xs) = Just xs
       toLedgerUtxoResult _ = Nothing
@@ -259,9 +276,11 @@ encoinsTxLedgerMode dWallet dCoinsBurn dCoinsMint eSend = mdo
     let eFinalRedeemer = () <$ catMaybes (updated dFinalRedeemer)
 
     -- Constructing a new transaction
-    (eServerOk, eRelayDown) <- serverTxRequestWrapper baseUrl (zipDyn
-      (fmap (Right . (,LedgerMode) . fromJust) dFinalRedeemer)
-      dInputs) eFinalRedeemer
+    (eServerOk, eRelayDown) <- case mbaseUrl of
+      Just baseUrl -> serverTxRequestWrapper baseUrl (zipDyn
+        (fmap (Right . (,LedgerMode) . fromJust) dFinalRedeemer)
+        dInputs) eFinalRedeemer
+      _ -> pure (never, never)
     performEvent_ $ liftIO . logInfo . pack . show <$> eRelayDown
 
     -- Tracking the pending transaction

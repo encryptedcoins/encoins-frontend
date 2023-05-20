@@ -4,9 +4,10 @@ module ENCOINS.App.Protocol.TxValidity where
 
 import           Data.Bool                        (bool)
 import           Data.List                        (nub)
-import           Data.Maybe                       (fromJust)
+import           Data.Maybe                       (fromJust, isJust)
 import           Data.Text                        (Text)
 import           Reflex.Dom
+import           Servant.Reflex                   (BaseUrl)
 
 import           Backend.Status                   (Status(..))
 import           Backend.Types
@@ -28,10 +29,10 @@ instance Semigroup TxValidity where
 instance Monoid TxValidity where
     mempty = TxValid
 
-txValidity :: EncoinsMode -> Integer -> Status -> Wallet -> Secrets -> Secrets -> TxValidity
-txValidity mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
-        [e7, e8, e6, e0, e1, e2, e3, e4, e5, e9]
-        [cond7, cond8, cond6, cond0, cond1, cond2, cond3, cond4, cond5, cond9]
+txValidity :: Maybe BaseUrl -> EncoinsMode -> Integer -> Status -> Wallet -> Secrets -> Secrets -> TxValidity
+txValidity mbaseUrl mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
+        [e7, e8, e6, e0, e1, e2, e3, e4, e5, e9, e10]
+        [cond7, cond8, cond6, cond0, cond1, cond2, cond3, cond4, cond5, cond9, cond10]
     where
         getBalance = sum . map (fromFieldElement . secretV)
         balance = getBalance toMint - getBalance toBurn
@@ -47,6 +48,7 @@ txValidity mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
         cond7 = walletName /= None
         cond8 = walletNetworkId == "0"
         cond9 = maxAda + balance >= 0
+        cond10 = isJust mbaseUrl
         e0    = "The transaction is being processed."
         e1    = "Connect ENCOINS DApp to a wallet first."
         e2    = "Minting at least one coin is required to preserve privacy."
@@ -57,3 +59,4 @@ txValidity mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
         e7    = "Connect ENCOINS to a wallet first."
         e8    = "Switch to the Testnet Preprod network in your wallet."
         e9    = "Cannot withdraw more than " <> toText maxAda <> " ADA in one transaction."
+        e10   = "All available relays are down."

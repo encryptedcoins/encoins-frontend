@@ -1,5 +1,6 @@
 module ENCOINS.App.Widgets.MainTabs where
 
+import           Control.Monad                          (void)
 import           Data.Aeson                             (encode)
 import           Data.Bool                              (bool)
 import           Data.ByteString.Lazy                   (toStrict)
@@ -111,11 +112,11 @@ transferTab mpass dWallet dSecretsWithNamesInTheWallet dOldSecrets = sectionApp 
                 mainWindowColumnHeader "Coins in the Wallet"
                 dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesInTheWallet
                 coinBurnCollectionWidget dSecretsWithNamesInTheWallet
-            eImport <- menuButton " Import"
-            eImportAll <- menuButton " Import All"
-            eExport <- menuButton " Export"
+            (eImport, eImportAll) <- divClass "app-columns w-row" $
+              (,) <$> menuButton " Import" <*> menuButton " Import All"
+            (eExport, eExportAll) <- divClass "app-columns w-row" $
+              (,) <$> menuButton " Export" <*> menuButton " Export All"
             exportWindow eExport dCTB
-            eExportAll <- menuButton " Export All"
             exportWindow eExportAll dSecrets
             eIS <- fmap pure . catMaybes <$> importWindow eImport
             eISAll <- importFileWindow eImportAll
@@ -126,19 +127,18 @@ transferTab mpass dWallet dSecretsWithNamesInTheWallet dOldSecrets = sectionApp 
           eWalletOk <- sendToWalletWindow eWallet dCoinsToBurn
           eAddrOk <- inputAddressWindow eWalletOk
           return (dCoinsToBurn, eLedger, eAddrOk)
-    _ <- holdDyn Nothing (Just <$> eAddr)
-    -- TODO: fix here
-    let eStatusUpdate1 = never
-    -- (_, eStatusUpdate1, _) <- encoinsTxTransferMode dWallet dCoins dSecretsWithNamesInTheWallet dAddr (void eAddr)
-    (_, eStatusUpdate2, _) <- encoinsTxTransferMode dWallet dCoins dSecretsWithNamesInTheWallet (pure Nothing) eSendToLedger
+    dAddr <- holdDyn Nothing (Just <$> eAddr)
+    (_, eStatusUpdate1, _) <- encoinsTxTransferMode "0" dWallet dCoins dSecretsWithNamesInTheWallet dAddr (void eAddr)
+    (_, eStatusUpdate2, _) <- encoinsTxTransferMode "1" dWallet dCoins dSecretsWithNamesInTheWallet (pure Nothing) eSendToLedger
     eWalletError <- walletError
     dStatus <- holdDyn Ready $ leftmost [eWalletError, eStatusUpdate1, eStatusUpdate2]
     containerApp "" $ divClass "app-text-small" $ do
         dynText $ fmap toText dStatus
     return never
   where
-    menuButton = divClass "menu-item-button-right" .
-      btn "button-switching flex-center" "margin-top: 20px" . text
+    menuButton = divClass "app-column w-col w-col-6" .
+      divClass "menu-item-button-right" . btn "button-switching flex-center"
+        "margin-top:20px;min-width:unset" . text
     sendButton dActive stl = divClass "menu-item-button-right" .
       btn (("button-switching flex-center " <>) . bool "button-disabled" "" <$> dActive) stl . text
 
@@ -165,15 +165,15 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                   dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesInTheWallet
                   coinBurnCollectionWidget dSecretsWithNamesInTheWallet
                 eImp <- divClassId "" "welcome-import-export" $ do
-                    eImport <- menuButton " Import"
-                    eImportAll <- menuButton " Import All"
-                    eExport <- menuButton " Export"
-                    exportWindow eExport dCTB
-                    eExportAll <- menuButton " Export All"
-                    exportWindow eExportAll dSecrets
-                    eIS <- fmap pure . catMaybes <$> importWindow eImport
-                    eISAll <- importFileWindow eImportAll
-                    return $ leftmost [eIS, eISAll]
+                  (eImport, eImportAll) <- divClass "app-columns w-row" $
+                    (,) <$> menuButton " Import" <*> menuButton " Import All"
+                  (eExport, eExportAll) <- divClass "app-columns w-row" $
+                    (,) <$> menuButton " Export" <*> menuButton " Export All"
+                  exportWindow eExport dCTB
+                  exportWindow eExportAll dSecrets
+                  eIS <- fmap pure . catMaybes <$> importWindow eImport
+                  eISAll <- importFileWindow eImportAll
+                  return $ leftmost [eIS, eISAll]
                 return (dCTB, eImp)
             (dCoinsToMint, eSend) <- divClass "app-column w-col w-col-6" $ mdo
                 (dCoinsToMint', eNewSecret) <- divClassId "" "welcome-coins-mint" $ mdo
@@ -192,5 +192,6 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
         dynText $ fmap toText dStatus
     return never
   where
-    menuButton = divClass "menu-item-button-right" .
-      btn "button-switching flex-center" "margin-top: 20px" . text
+    menuButton = divClass "app-column w-col w-col-6" .
+      divClass "menu-item-button-right" . btn "button-switching flex-center"
+        "margin-top:20px;min-width:unset" . text

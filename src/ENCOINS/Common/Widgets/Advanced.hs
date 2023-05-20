@@ -28,14 +28,20 @@ copyButton = mdo
   e  <- domEvent Click . fst <$> elDynClass' "div" (fmap mkClass d) blank
   e' <- delay 5 e
   d <- holdDyn False $ leftmost [True <$ e, False <$ e']
-  performEvent_ (setElementStyle "bottom-notification" "display" "flex" <$ e)
-  performEvent_ (setElementStyle "bottom-notification" "display" "none" <$ e')
+  performEvent_ (setElementStyle "bottom-notification-copy" "display" "flex" <$ e)
+  performEvent_ (setElementStyle "bottom-notification-copy" "display" "none" <$ e')
   return e
 
 copiedNotification :: MonadWidget t m => m ()
 copiedNotification = elAttr "div" ("class" =: "bottom-notification" <>
-  "id" =: "bottom-notification" <> "style" =: "display:none;") .
+  "id" =: "bottom-notification-copy" <> "style" =: "display:none;") .
   divClass "notification-content" $ text "Copied!"
+
+noRelayNotification :: MonadWidget t m => m ()
+noRelayNotification = elAttr "div" ("class" =: "bottom-notification" <>
+  "id" =: "bottom-notification-relay" <> "style" =: "display:none;") .
+  divClass "notification-content" $ text
+    "All available relays are down! Try reloading the page or come back later."
 
 checkboxButton :: MonadWidget t m => m (Dynamic t Bool)
 checkboxButton = mdo
