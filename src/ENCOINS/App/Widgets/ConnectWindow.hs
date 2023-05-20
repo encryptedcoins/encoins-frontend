@@ -17,8 +17,8 @@ walletEntry :: MonadWidget t m => WalletName -> m (Event t WalletName)
 walletEntry w = do
     (e, _) <- elAttr' "div" ("class" =: "connect-wallet-div") $ do
         divClass "app-text-normal" $ text $ bool "Disconnect" (toText w) $ w /= None
-        elAttr "a" ("href" =: "#" <> "class" =: "w-inline-block") $
-            bool blank (walletIcon w) $ w /= None
+        elAttr "a" ("href" =: "#" <> "class" =: "w-inline-block" <>
+            "style" =: "margin-left:30px;") $ bool blank (walletIcon w) $ w /= None
     return (w <$ domEvent Click e)
 
 connectWindow :: MonadWidget t m => Event t () -> m (Dynamic t Wallet)

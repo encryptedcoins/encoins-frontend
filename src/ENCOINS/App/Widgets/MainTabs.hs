@@ -57,11 +57,11 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                   dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesInTheWallet
                   coinBurnCollectionWidget dSecretsWithNamesInTheWallet
                 eImp <- divClassId "" "welcome-import-export" $ do
-                    eImport <- menuButton " Import"
-                    eImportAll <- menuButton " Import All"
-                    eExport <- menuButton " Export"
+                    (eImport, eImportAll) <- divClass "app-columns w-row" $
+                      (,) <$> menuButton " Import" <*> menuButton " Import All"
+                    (eExport, eExportAll) <- divClass "app-columns w-row" $
+                      (,) <$> menuButton " Export" <*> menuButton " Export All"
                     exportWindow eExport dCTB
-                    eExportAll <- menuButton " Export All"
                     exportWindow eExportAll dSecrets
                     eIS <- fmap pure . catMaybes <$> importWindow eImport
                     eISAll <- importFileWindow eImportAll
@@ -86,8 +86,9 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
         -- let f txId s = bool blank (void $ lnk ("https://preprod.cexplorer.io/tx/" <> txId) "" $ divClass "text-footer" $ text txId) (s == Submitted)
         -- dyn_ $ f <$> dTxId <*> dStatus
   where
-    menuButton = divClass "menu-item-button-right" .
-      btn "button-switching flex-center" "margin-top: 20px" . text
+    menuButton = divClass "app-column w-col w-col-6" .
+      divClass "menu-item-button-right" . btn "button-switching flex-center"
+        "margin-top:20px;min-width:unset" . text
 
 transferTab :: MonadWidget t m =>
     Maybe PasswordRaw -> Dynamic t Wallet -> Dynamic t [(Secret, Text)] ->
