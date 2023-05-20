@@ -31,8 +31,8 @@ instance Monoid TxValidity where
 
 txValidity :: Maybe BaseUrl -> EncoinsMode -> Integer -> Status -> Wallet -> Secrets -> Secrets -> TxValidity
 txValidity mbaseUrl mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
-        [e7, e8, e6, e0, e1, e2, e3, e4, e5, e9, e10]
-        [cond7, cond8, cond6, cond0, cond1, cond2, cond3, cond4, cond5, cond9, cond10]
+        [e7, e8, e6, e0, e1, e2, e3, e4, e5, e9, e10, e11]
+        [cond7, cond8, cond6, cond0, cond1, cond2, cond3, cond4, cond5, cond9, cond10, cond11]
     where
         getBalance = sum . map (fromFieldElement . secretV)
         balance = getBalance toMint - getBalance toBurn
@@ -49,6 +49,7 @@ txValidity mbaseUrl mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
         cond8 = walletNetworkId == "0"
         cond9 = maxAda + balance >= 0
         cond10 = isJust mbaseUrl
+        cond11 = mode /= LedgerMode || balance >= 0
         e0    = "The transaction is being processed."
         e1    = "Connect ENCOINS DApp to a wallet first."
         e2    = "Minting at least one coin is required to preserve privacy."
@@ -60,3 +61,4 @@ txValidity mbaseUrl mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
         e8    = "Switch to the Testnet Preprod network in your wallet."
         e9    = "Cannot withdraw more than " <> toText maxAda <> " ADA in one transaction."
         e10   = "All available relays are down."
+        e11   = "Transaction balance must be nonnegative in the Ledger Mode."
