@@ -49,7 +49,7 @@ txValidity mbaseUrl mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
         cond8 = walletNetworkId == "0"
         cond9 = maxAda + balance >= 0
         cond10 = isJust mbaseUrl
-        cond11 = mode /= LedgerMode || balance >= 0
+        cond11 = mode /= LedgerMode || balance <= 0
         e0    = "The transaction is being processed."
         e1    = "Connect ENCOINS DApp to a wallet first."
         e2    = "Minting at least one coin is required to preserve privacy."

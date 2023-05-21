@@ -229,9 +229,10 @@ hexToSecret txt = do
         (gamma, v) = n `divMod` (2^(20 :: Integer))
     return $ Secret (toFieldElement gamma) (toFieldElement v)
 
-encoinsTxLedgerMode :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () ->
-  m (Dynamic t [Text], Event t Status)
-encoinsTxLedgerMode dWallet dCoinsBurn dCoinsMint eSend = mdo
+encoinsTxLedgerMode :: MonadWidget t m =>
+  Dynamic t Wallet -> Dynamic t (Maybe Address) -> Dynamic t Secrets ->
+  Dynamic t Secrets -> Event t () -> m (Dynamic t [Text], Event t Status)
+encoinsTxLedgerMode dWallet dmChangeAddr dCoinsBurn dCoinsMint eSend = mdo
     mbaseUrl <- getRelayUrl -- this chooses random server with successful ping
     when (isNothing mbaseUrl) $
       setElementStyle "bottom-notification-relay" "display" "flex"
@@ -249,6 +250,7 @@ encoinsTxLedgerMode dWallet dCoinsBurn dCoinsMint eSend = mdo
     let
       dAddrWallet = fmap walletChangeAddress dWallet
       dInputs = map CSL.input <$> dUTXOs
+      dChangeAddr = zipDynWith fromMaybe dAddrWallet dmChangeAddr
 
     -- Obtaining Secrets and [MintingPolarity]
     performEvent_ (logInfo "dCoinsBurn updated" <$ updated dCoinsBurn)
@@ -266,7 +268,7 @@ encoinsTxLedgerMode dWallet dCoinsBurn dCoinsMint eSend = mdo
     bRandomness <- hold (Randomness (F 3417) (map F [1..20]) (map F [21..40]) (F 8532) (F 16512) (F 1235)) eRandomness
 
     -- Obtaining EncoinsRedeemer
-    let bRed = mkRedeemer ledgerAddress <$> current dAddrWallet <*>
+    let bRed = mkRedeemer ledgerAddress <$> current dChangeAddr <*>
           current dBulletproofParams <*> current dSecrets <*> current dMPs <*> bRandomness
 
     -- Constructing the final redeemer
