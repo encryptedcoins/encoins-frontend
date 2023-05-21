@@ -131,22 +131,27 @@ coinNewInputWidget placeholder convert eReset = do
   t <- inputElement conf
   return (t, convert <$> value t)
 
-coinNewButtonWidget :: MonadWidget t m => Dynamic t Integer -> Event t () -> m (Event t Secret)
-coinNewButtonWidget dV eEnter = do
+coinNewButtonWidget :: MonadWidget t m => Dynamic t Integer -> Event t () ->
+  m (Event t ()) -> m (Event t Secret)
+coinNewButtonWidget dV eEnter widgetNew = do
   gamma0 <- liftIO (randomIO :: IO FieldElement)
   eGamma <- performEvent $ liftIO (randomIO :: IO FieldElement) <$ updated dV
   dGamma <- holdDyn gamma0 eGamma
-  (e, _) <- elClass' "div" "plus-div" blank
+  eNewClick <- widgetNew
   let bSecret = current $ zipDynWith Secret dGamma (fmap toFieldElement dV)
       maxV    = 2 ^ (20 :: Integer) - 1 :: Integer
       cond v  = 0 <= v && v <= maxV
-      eNew    = leftmost [domEvent Click e, eEnter]
+      eNew    = leftmost [eNewClick, eEnter]
   return $ tag bSecret $ ffilter cond (tagPromptlyDyn dV eNew)
 
 coinNewWidget :: MonadWidget t m => m (Event t Secret)
 coinNewWidget = divClass "coin-new-div" $ mdo
-    eNewSecret <- coinNewButtonWidget dV (keypress Enter inp)
+    eNewSecret <- coinNewButtonWidget dV (keypress Enter inp) plusButton 
     (inp, dV) <- coinNewInputWidget "Enter ADA amount..."
       (fromMaybe (-1 :: Integer) . readMaybe . unpack) eNewSecret
     divClass "app-text-semibold" $ text "ADA"
     return eNewSecret
+  where
+    plusButton = do
+      (e, _) <- elClass' "div" "plus-div" blank
+      return $ domEvent Click e

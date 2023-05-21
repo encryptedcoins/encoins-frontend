@@ -16,7 +16,7 @@ import           Backend.Types
 import           Backend.Wallet                         (Wallet (..))
 import           ENCOINS.App.Widgets.Basic              (containerApp, sectionApp, elementResultJS)
 import           ENCOINS.App.Widgets.Coin               (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
-                                                          coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget)
+                                                          coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget, coinNewButtonWidget)
 import           ENCOINS.App.Widgets.InputAddressWindow (inputAddressWindow)
 import           ENCOINS.App.Widgets.ImportWindow       (importWindow, importFileWindow, exportWindow)
 import           ENCOINS.App.Widgets.PasswordWindow     (PasswordRaw(..))
@@ -69,11 +69,13 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                     return $ leftmost [eIS, eISAll]
                 return (dCTB, eImp)
             (dCoinsToMint, eSend) <- divClass "app-column w-col w-col-6" $ mdo
-                (dCoinsToMint', eNewSecret) <- divClassId "" "welcome-coins-mint" $ mdo
+                dCoinsToMint' <- divClassId "" "welcome-coins-mint" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
-                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Balancing) eStatusUpdate]
-                    eNewSecret' <- coinNewWidget
-                    return (dCoinsToMint'', eNewSecret')
+                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost
+                      [ fmap AddCoin eNewSecret
+                      , ClearCoins <$ ffilter (== Balancing) eStatusUpdate]
+                    eNewSecret <- coinNewWidget
+                    return dCoinsToMint''
                 eSend' <- sendRequestButton WalletMode dBalance dStatus dWallet dCoinsToBurn dCoinsToMint
                 return (dCoinsToMint', eSend')
             (dAssetNamesInTheWallet, eStatusUpdate, _) <- encoinsTxWalletMode dWallet dCoinsToBurn dCoinsToMint eSend
@@ -175,12 +177,17 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                   return $ leftmost [eIS, eISAll]
                 return (dCTB, eImp)
             (dCoinsToMint, eSend) <- divClass "app-column w-col w-col-6" $ mdo
-                (dCoinsToMint', eNewSecret) <- divClassId "" "welcome-coins-mint" $ mdo
+                dCoinsToMint' <- divClassId "" "welcome-coins-mint" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
-                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Balancing) eStatusUpdate]
-                    eNewSecret' <- coinNewWidget
-                    return (dCoinsToMint'', eNewSecret')
+                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost
+                      [ AddCoin <$> eNewSecret
+                      , ClearCoins <$ ffilter (== Balancing) eStatusUpdate
+                      , AddCoin <$> eAddChange ]
+                    eNewSecret <- coinNewWidget
+                    return dCoinsToMint''
                 eSend' <- sendRequestButton LedgerMode dBalance dStatus dWallet dCoinsToBurn dCoinsToMint
+                eAddChange <- coinNewButtonWidget dBalance never
+                  (addChangeButton dBalance)
                 return (dCoinsToMint', eSend')
             (dAssetNamesInTheWallet, eStatusUpdate) <- encoinsTxLedgerMode dWallet dCoinsToBurn dCoinsToMint eSend
             let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
@@ -193,3 +200,8 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     menuButton = divClass "app-column w-col w-col-6" .
       divClass "menu-item-button-right" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
+    addChangeButton dBal = btn (f <$> dBal) "margin-top: 10px;"
+      $ text "ADD CHANGE"
+    f v = if (v > 0)
+      then "button-switching flex-center"
+      else "button-not-selected button-disabled flex-center"
