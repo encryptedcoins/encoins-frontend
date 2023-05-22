@@ -163,8 +163,9 @@ ledgerTab mpass dWallet dOldSecrets bRandomness = sectionApp "" "" $ mdo
             (dCoinsToBurn, eImportSecret) <- divClass "app-column w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do
                   mainWindowColumnHeader "Coins in the Wallet"
-                  dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesInTheWallet
-                  coinBurnCollectionWidget dSecretsWithNamesInTheWallet
+                  dSecretsWithNamesUniq <- holdUniqDyn dSecretsWithNamesInTheWallet
+                  dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesUniq
+                  coinBurnCollectionWidget dSecretsWithNamesUniq
                 eImp <- divClassId "" "welcome-import-export" $ do
                   (eImport, eImportAll) <- divClass "app-columns w-row" $
                     (,) <$> menuButton " Import" <*> menuButton " Import All"
