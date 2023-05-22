@@ -65,9 +65,9 @@ redeemerToBytes :: EncoinsRedeemer -> Text
 redeemerToBytes ((aL, aC), i, p, _) = addressToBytes aL `Text.append` addressToBytes aC `Text.append`
   encodeHex (fromBuiltin $ toBytes i) `Text.append` encodeHex (fromBuiltin $ toBytes p)
 
-encoinsTxWalletMode :: MonadWidget t m => Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () ->
+encoinsTxWalletMode :: MonadWidget t m => Dynamic t Wallet -> Behavior t Randomness -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () ->
   m (Dynamic t [Text], Event t Status, Dynamic t Text)
-encoinsTxWalletMode dWallet dCoinsBurn dCoinsMint eSend = mdo
+encoinsTxWalletMode dWallet bRandomness dCoinsBurn dCoinsMint eSend = mdo
     mbaseUrl <- getRelayUrl -- this chooses random server with successful ping
     when (isNothing mbaseUrl) $
       setElementStyle "bottom-notification-relay" "display" "flex"
@@ -76,7 +76,6 @@ encoinsTxWalletMode dWallet dCoinsBurn dCoinsMint eSend = mdo
         dInputs     = map CSL.input <$> dUTXOs
         bWalletName = toJS . walletName <$> current dWallet
         dBulletproofParams = walletBulletproofParams <$> dWallet
-        bRandomness = current $ walletRandomness <$> dWallet
 
     -- Obtaining Secrets and [MintingPolarity]
     performEvent_ (logInfo "dCoinsBurn updated" <$ updated dCoinsBurn)
@@ -168,7 +167,7 @@ encoinsTxTransferMode dWallet dCoins dNames dmAddr eSend dWalletSignature = do
 
     -- Signing the transaction
     performEvent_ $ liftIO . walletSignTx <$> bWalletName `attach` eTx
-    let eWalletSignature = () <$ updated dWalletSignature
+    let eWalletSignature = () <$ gate ((/="") <$> current dTx) (updated dWalletSignature)
 
     -- Submitting the transaction
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
@@ -206,14 +205,14 @@ hexToSecret txt = do
     return $ Secret (toFieldElement gamma) (toFieldElement v)
 
 encoinsTxLedgerMode :: MonadWidget t m =>
-  Dynamic t Wallet -> Dynamic t (Maybe Address) -> Dynamic t Secrets ->
+  Dynamic t Wallet -> Behavior t Randomness -> Dynamic t (Maybe Address) -> Dynamic t Secrets ->
   Dynamic t Secrets -> Event t () -> m (Dynamic t [Text], Event t Status)
-encoinsTxLedgerMode dWallet dmChangeAddr dCoinsBurn dCoinsMint eSend = mdo
+encoinsTxLedgerMode dWallet bRandomness dmChangeAddr dCoinsBurn dCoinsMint eSend = mdo
     mbaseUrl <- getRelayUrl -- this chooses random server with successful ping
     when (isNothing mbaseUrl) $
       setElementStyle "bottom-notification-relay" "display" "flex"
     ePb <- getPostBuild
-    eTick <- tickLossyFromPostBuildTime 10
+    eTick <- tickLossyFromPostBuildTime 60
     (eStatusResp, eRelayDown') <- case mbaseUrl of
       Just baseUrl -> statusRequestWrapper baseUrl
         (pure LedgerEncoins) $ leftmost [ePb, void eTick]
@@ -228,7 +227,6 @@ encoinsTxLedgerMode dWallet dmChangeAddr dCoinsBurn dCoinsMint eSend = mdo
       dInputs = map CSL.input <$> dUTXOs
       dChangeAddr = zipDynWith fromMaybe dAddrWallet dmChangeAddr
       dBulletproofParams = walletBulletproofParams <$> dWallet
-      bRandomness = current $ walletRandomness <$> dWallet
 
     -- Obtaining Secrets and [MintingPolarity]
     performEvent_ (logInfo "dCoinsBurn updated" <$ updated dCoinsBurn)

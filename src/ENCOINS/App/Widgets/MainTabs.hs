@@ -24,7 +24,7 @@ import           ENCOINS.App.Widgets.SendRequestButton  (sendRequestButton)
 import           ENCOINS.App.Widgets.SendToWalletWindow (sendToWalletWindow)
 import           ENCOINS.App.Widgets.TransactionBalance (transactionBalanceWidget)
 import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeWindow, welcomeTransfer, welcomeWindowTransferStorageKey)
-import           ENCOINS.Bulletproofs                   (Secrets, Secret (..))
+import           ENCOINS.Bulletproofs                   (Secrets, Secret (..), Randomness)
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
 import           ENCOINS.Crypto.Field                   (fromFieldElement)
 import           JS.Website                             (logInfo, saveJSON)
@@ -36,8 +36,8 @@ mainWindowColumnHeader title =
         divClass "app-text-semibold" $ text title
 
 walletTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet ->
-  Dynamic t Secrets -> m ()
-walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
+  Dynamic t Secrets -> Behavior t Randomness -> m ()
+walletTab mpass dWallet dOldSecrets bRandomness = sectionApp "" "" $ mdo
     let getBalance = fmap (sum . map (fromFieldElement . secretV))
     dBalance <- holdUniqDyn $ zipDynWith (-) (getBalance dToBurn) (getBalance dToMint)
     containerApp "" $ transactionBalanceWidget WalletMode dBalance
@@ -78,7 +78,7 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                     return dCoinsToMint''
                 eSend' <- sendRequestButton WalletMode dBalance dStatus dWallet dCoinsToBurn dCoinsToMint
                 return (dCoinsToMint', eSend')
-            (dAssetNamesInTheWallet, eStatusUpdate, _) <- encoinsTxWalletMode dWallet dCoinsToBurn dCoinsToMint eSend
+            (dAssetNamesInTheWallet, eStatusUpdate, _) <- encoinsTxWalletMode dWallet bRandomness dCoinsToBurn dCoinsToMint eSend
             let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
             return (dCoinsToBurn, dCoinsToMint, eStatusUpdate)
     eWalletError <- walletError
@@ -144,8 +144,8 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
       btn (("button-switching flex-center " <>) . bool "button-disabled" "" <$> dActive) stl . text
 
 ledgerTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet ->
-  Dynamic t Secrets -> m ()
-ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
+  Dynamic t Secrets -> Behavior t Randomness -> m ()
+ledgerTab mpass dWallet dOldSecrets bRandomness = sectionApp "" "" $ mdo
     let getBalance = fmap (sum . map (fromFieldElement . secretV))
     dBalance <- holdUniqDyn $ zipDynWith (-) (getBalance dToBurn) (getBalance dToMint)
     containerApp "" $ transactionBalanceWidget LedgerMode dBalance
@@ -194,7 +194,7 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                 eAddr <- inputAddressWindow eSendNonZeroBalance
                 dAddr' <- holdDyn Nothing (Just <$> eAddr)
                 return (dCoinsToMint', leftmost [eSendZeroBalance, void eAddr], dAddr')
-            (dAssetNamesInTheWallet, eStatusUpdate) <- encoinsTxLedgerMode dWallet dChangeAddr dCoinsToBurn dCoinsToMint eSend
+            (dAssetNamesInTheWallet, eStatusUpdate) <- encoinsTxLedgerMode dWallet bRandomness dChangeAddr dCoinsToBurn dCoinsToMint eSend
             let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
             return (dCoinsToBurn, dCoinsToMint, eStatusUpdate)
     eWalletError <- walletError

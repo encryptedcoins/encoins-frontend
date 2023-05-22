@@ -22,17 +22,16 @@ bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe P
 bodyContentWidget mpass = mdo
   (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet
   dWallet <- connectWindow eConnectOpen
-  dData <- loadAppData (getPassRaw <$> mpass) "encoins" id []
   (eNewPass, eResetPass) <- passwordSettingsWindow eSettingsOpen
   eResetOk <- resetPasswordDialog eResetPass
-  performEvent_ (reencryptEncoins <$> attachPromptlyDyn dData (leftmost
-    [eNewPass, Nothing <$ eResetOk]))
 
   welcomeWindow welcomeWindowWalletStorageKey welcomeWallet
 
   divClass "section-app section-app-empty wf-section" blank
 
-  mainWindow mpass dWallet dData
+  dSecrets <- mainWindow mpass dWallet
+  performEvent_ (reencryptEncoins <$> attachPromptlyDyn dSecrets (leftmost
+    [eNewPass, Nothing <$ eResetOk]))
 
   return $ leftmost [Nothing <$ eResetOk, eNewPass]
 

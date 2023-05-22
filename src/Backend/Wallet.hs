@@ -1,13 +1,11 @@
 module Backend.Wallet where
 
 import           Control.Monad                 (void)
-import           Control.Monad.IO.Class        (MonadIO(..))
 import           Data.Maybe                    (fromMaybe, fromJust)
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
 import           PlutusTx.Builtins
 import           Reflex.Dom                    hiding (Input)
-import           System.Random.Stateful        (randomIO)
 import           Text.Hex                      (decodeHex, encodeHex)
 
 import           Backend.Types
@@ -16,7 +14,6 @@ import           ENCOINS.App.Widgets.Basic     (elementResultJS)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           ENCOINS.Common.Widgets.Basic  (image)
-import           ENCOINS.Crypto.Field          (Field(..))
 import           JS.App                        (sha2_256, walletLoad)
 
 data WalletName =
@@ -64,8 +61,7 @@ data Wallet = Wallet
     walletAddressBech32     :: Text,
     walletChangeAddress     :: Address,
     walletUTXOs             :: TransactionUnspentOutputs,
-    walletBulletproofParams :: GroupElement,
-    walletRandomness        :: Randomness
+    walletBulletproofParams :: GroupElement
   }
   deriving (Show, Eq)
 
@@ -99,12 +95,8 @@ loadWallet eWalletName = mdo
   -- Obtaining BulletproofParams
   dBulletproofParams <- elementResultJS "bulletproofParamsElement" (parseBulletproofParams . toBuiltin . fromJust . decodeHex)
   performEvent_ (flip sha2_256 "bulletproofParamsElement" . Text.append (addressToBytes ledgerAddress) . addressToBytes <$> updated dAddrWallet)
-  -- Obtaining Randomness
-  eRandomness <- performEvent $ liftIO randomIO <$ updated dBulletproofParams
-  dRandomness <- holdDyn (Randomness (F 3417) (map F [1..20]) (map F [21..40]) (F 8532) (F 16512) (F 1235)) eRandomness
-
   return $ Wallet <$> dWalletName <*> dWalletNetworkId <*> dWalletAddressBech32
-    <*> dAddrWallet <*> dUTXOs <*> dBulletproofParams <*> dRandomness
+    <*> dAddrWallet <*> dUTXOs <*> dBulletproofParams
 
 walletIcon :: MonadWidget t m => WalletName -> m ()
 walletIcon w = case w of
