@@ -12,7 +12,6 @@ import           Data.Text                       (Text, pack)
 import qualified Data.Text                       as Text
 import           PlutusTx.Builtins
 import           Reflex.Dom                      hiding (Input)
-import           System.Random.Stateful          (randomIO)
 import           Text.Hex                        (encodeHex, decodeHex)
 import           Witherable                      (catMaybes)
 
@@ -20,13 +19,13 @@ import           Backend.Servant.Client          (getRelayUrl)
 import           Backend.Servant.Requests
 import           Backend.Status                  (Status (..))
 import           Backend.Types
-import           Backend.Wallet                  (Wallet(..), toJS)
+import           Backend.Wallet                  (Wallet(..), toJS, ledgerAddress, addressToBytes)
 import qualified CSL
 import           ENCOINS.App.Widgets.Basic       (elementResultJS)
-import           ENCOINS.Crypto.Field            (Field(..), fromFieldElement, toFieldElement)
+import           ENCOINS.Crypto.Field            (fromFieldElement, toFieldElement)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
-import           JS.App                          (sha2_256, walletSignTx)
+import           JS.App                          (walletSignTx)
 import           JS.Website                      (logInfo, setElementStyle)
 import           PlutusTx.Extra.ByteString       (ToBuiltinByteString(..), byteStringToInteger)
 
@@ -35,12 +34,6 @@ bulletproofSetup = fromJust $ decode $ fromStrict $(embedFile "config/bulletproo
 
 encoinsCurrencySymbol :: Text
 encoinsCurrencySymbol = "525c8a4bc4dc92461ef609f2cac7fd0bab5956cf8ce2162dbaac2f25"
-
-ledgerAddress :: Address
-ledgerAddress = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-    decodeHex "58a04846566cd531318ee2e98e3044647f6c75e8224396515cc8aee9")
-    (Just $ StakingHash $ PubKeyCredential $ PubKeyHash $ toBuiltin $ fromJust $
-    decodeHex "3c2c08be107291be8d71bbb32da11f3b9761b0991f2a6f6940f4f390")
 
 getEncoinsInUtxos :: CSL.TransactionUnspentOutputs -> [Text]
 getEncoinsInUtxos utxos = Map.keys assets
@@ -68,17 +61,6 @@ calculateV secrets mps = sum $ zipWith (\s mp -> fromFieldElement (secretV s) * 
 mkAddress :: Address -> Integer -> Address
 mkAddress addrWallet v = bool addrWallet ledgerAddress (v > 0)
 
-addressToBytes :: Address -> Text
-addressToBytes (Address cr scr) = bs1 `Text.append` bs2
-    where
-        bs1 = encodeHex $ fromBuiltin $ case cr of
-          PubKeyCredential (PubKeyHash pkh) -> pkh
-          ScriptCredential (ValidatorHash vh) -> vh
-        bs2 = encodeHex $ fromBuiltin $ case scr of
-          Just (StakingHash (PubKeyCredential (PubKeyHash pkh))) -> pkh
-          Just (StakingHash (ScriptCredential (ValidatorHash vh))) -> vh
-          _       -> emptyByteString
-
 redeemerToBytes :: EncoinsRedeemer -> Text
 redeemerToBytes ((aL, aC), i, p, _) = addressToBytes aL `Text.append` addressToBytes aC `Text.append`
   encodeHex (fromBuiltin $ toBytes i) `Text.append` encodeHex (fromBuiltin $ toBytes p)
@@ -93,6 +75,8 @@ encoinsTxWalletMode dWallet dCoinsBurn dCoinsMint eSend = mdo
         dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
         bWalletName = toJS . walletName <$> current dWallet
+        dBulletproofParams = walletBulletproofParams <$> dWallet
+        bRandomness = current $ walletRandomness <$> dWallet
 
     -- Obtaining Secrets and [MintingPolarity]
     performEvent_ (logInfo "dCoinsBurn updated" <$ updated dCoinsBurn)
@@ -102,14 +86,6 @@ encoinsTxWalletMode dWallet dCoinsBurn dCoinsMint eSend = mdo
         dMPs     = fmap snd dLst
         -- dV       = zipDynWith calculateV  dSecrets dMPs
         -- dAddr    = zipDynWith mkAddress dAddrWallet dV
-
-    -- Obtaining BulletproofParams
-    dBulletproofParams <- elementResultJS "bulletproofParamsElement" (parseBulletproofParams . toBuiltin . fromJust . decodeHex)
-    performEvent_ (flip sha2_256 "bulletproofParamsElement" . Text.append (addressToBytes ledgerAddress) . addressToBytes <$> updated dAddrWallet)
-
-    -- Obtaining Randomness
-    eRandomness <- performEvent $ liftIO randomIO <$ updated dBulletproofParams
-    bRandomness <- hold (Randomness (F 3417) (map F [1..20]) (map F [21..40]) (F 8532) (F 16512) (F 1235)) eRandomness
 
     -- Obtaining EncoinsRedeemer
     let bRed = mkRedeemer ledgerAddress <$> current dAddrWallet <*>
@@ -251,6 +227,8 @@ encoinsTxLedgerMode dWallet dmChangeAddr dCoinsBurn dCoinsMint eSend = mdo
       dAddrWallet = fmap walletChangeAddress dWallet
       dInputs = map CSL.input <$> dUTXOs
       dChangeAddr = zipDynWith fromMaybe dAddrWallet dmChangeAddr
+      dBulletproofParams = walletBulletproofParams <$> dWallet
+      bRandomness = current $ walletRandomness <$> dWallet
 
     -- Obtaining Secrets and [MintingPolarity]
     performEvent_ (logInfo "dCoinsBurn updated" <$ updated dCoinsBurn)
@@ -258,14 +236,6 @@ encoinsTxLedgerMode dWallet dmChangeAddr dCoinsBurn dCoinsMint eSend = mdo
     let dLst = unzip <$> zipDynWith (++) (fmap (map (, Burn)) dCoinsBurn) (fmap (map (, Mint)) dCoinsMint)
         dSecrets = fmap fst dLst
         dMPs     = fmap snd dLst
-
-    -- Obtaining BulletproofParams
-    dBulletproofParams <- elementResultJS "bulletproofParamsElement" (parseBulletproofParams . toBuiltin . fromJust . decodeHex)
-    performEvent_ (flip sha2_256 "bulletproofParamsElement" . Text.append (addressToBytes ledgerAddress) . addressToBytes <$> updated dAddrWallet)
-
-    -- Obtaining Randomness
-    eRandomness <- performEvent $ liftIO randomIO <$ updated dBulletproofParams
-    bRandomness <- hold (Randomness (F 3417) (map F [1..20]) (map F [21..40]) (F 8532) (F 16512) (F 1235)) eRandomness
 
     -- Obtaining EncoinsRedeemer
     let bRed = mkRedeemer ledgerAddress <$> current dChangeAddr <*>

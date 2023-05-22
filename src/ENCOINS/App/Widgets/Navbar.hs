@@ -10,8 +10,8 @@ import           ENCOINS.Common.Widgets.Basic     (btn)
 
 connectText :: Wallet -> Text
 connectText w = case w of
-  Wallet None _ _    _ _ -> "CONNECT"
-  Wallet _    _ addr _ _ -> take 6 addr <> "..." <> takeEnd 6 addr
+  Wallet None _ _    _ _ _ _ -> "CONNECT"
+  Wallet _    _ addr _ _ _ _ -> take 6 addr <> "..." <> takeEnd 6 addr
 
 navbarWidget :: MonadWidget t m => Dynamic t Wallet -> m (Event t (), Event t ())
 navbarWidget w = do
