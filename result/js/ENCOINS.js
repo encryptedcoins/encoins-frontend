@@ -352,15 +352,14 @@ function checkPassword(hash, raw) {
   return (hash == CryptoJS.SHA3(raw));
 }
 
-async function addrLoad(addrBech32)
+async function addrLoad(addrInput)
 {
   await loader.load();
   const CardanoWasm = loader.Cardano;
   try {
-    const changeAddress = CardanoWasm.Address.from_bytes(fromHexString(addrBech32));
-    const changeAddressBech32 = changeAddress.to_bech32();
-    const baseAddress = CardanoWasm.BaseAddress.from_address(changeAddress);
-    changeAddress.free();
+    const addrBech32 = CardanoWasm.Address.from_bech32(addrInput);
+    const baseAddress = CardanoWasm.BaseAddress.from_address(addrBech32);
+    addrBech32.free();
     const pubKeyHashCred = baseAddress.payment_cred();
     const stakeKeyHashCred = baseAddress.stake_cred();
     baseAddress.free();
