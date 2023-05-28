@@ -46,8 +46,8 @@ txValidity mbaseUrl mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
         cond4 = not $ isStatusBusy s
         cond5 = not $ null toMint
         cond6 = length coins >= 2
-        cond7 = mode == WalletMode && length coins <= 5
-        cond8 = mode == LedgerMode && length toMint <= 2 && length toBurn <= 2
+        cond7 = length coins <= 5 || mode == LedgerMode
+        cond8 = mode == WalletMode || (length toMint <= 2 && length toBurn <= 2)
         cond9 = length coins == length (nub coins)
         cond10 = maxAda + balance >= 0
         cond11 = isJust mbaseUrl
