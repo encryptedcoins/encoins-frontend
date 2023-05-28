@@ -7,24 +7,33 @@ import           Data.List                       (delete)
 import           Data.Maybe                      (catMaybes, fromMaybe)
 import           Data.Text                       (Text, unpack)
 import qualified Data.Text                       as Text
-import           PlutusTx.Builtins               (fromBuiltin, toBuiltin)
+import           PlutusTx.Builtins               (fromBuiltin)
 import           Reflex.Dom
 import           System.Random                   (randomIO)
-import           Text.Hex                        (encodeHex, decodeHex)
+import           Text.Hex                        (encodeHex)
 import           Text.Read                       (readMaybe)
 
-import           Backend.EncoinsTx               (bulletproofSetup, encoinsCurrencySymbol)
-import           ENCOINS.Common.Widgets.Advanced (checkboxButton, copyButton, withTooltip)
-import           ENCOINS.Common.Widgets.Basic    (image)
+import           Backend.Protocol.Setup          (bulletproofSetup, encoinsCurrencySymbol)
+import           Backend.Protocol.Utility        (secretToHex)
 import           ENCOINS.BaseTypes               (FieldElement)
-import           ENCOINS.Bulletproofs            (Secret (..), fromSecret, Secrets)
-import           ENCOINS.Crypto.Field            (toFieldElement, fromFieldElement)
+import           ENCOINS.Bulletproofs            (Secret (..), Secrets, fromSecret)
+import           ENCOINS.Common.Utils            (toText)
+import           ENCOINS.Common.Widgets.Advanced (checkboxButton, copyButton, withTooltip, copyEvent)
+import           ENCOINS.Common.Widgets.Basic    (image)
+import           ENCOINS.Crypto.Field            (toFieldElement)
 import           JS.App                          (fingerprintFromAssetName)
-import           JS.Website                      (logInfo, copyText)
-import           PlutusTx.Extra.ByteString       (toBytes, byteStringToInteger)
-import           Widgets.Utils                   (toText)
+import           JS.Website                      (copyText)
 
 data CoinUpdate = AddCoin Secret | RemoveCoin Secret | ClearCoins
+
+-- TODO: simplify here
+
+-- coinWithName :: Secret -> (Secret, Text)
+-- coinWithName s = let bsHex = encodeHex . fromBuiltin . snd . fromSecret bulletproofSetup $ s
+--                  in (s, bsHex)
+
+-- coinsWithNames :: Secrets -> [(Secret, Text)]
+-- coinsWithNames = map coinWithName
 
 coinWithName :: MonadWidget t m => Secret -> m (Dynamic t (Secret, Text))
 coinWithName s = do
@@ -52,11 +61,16 @@ filterKnownCoinNames knownNames = filter (\(_, name) -> name `elem` knownNames)
 coinBurnWidget :: MonadWidget t m => (Secret, Text) -> m (Dynamic t (Maybe Secret))
 coinBurnWidget (s, name) = mdo
     (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
-        dChecked <- divClass "" $ withTooltip checkboxButton mempty 0 0 $
-            divClass "app-text-normal" $ text "Select to burn this coin."
-        (txt,_) <- elClass' "div" "app-text-normal" $ text $ shortenCoinName name
+        dChecked <- divClass "" checkboxButton -- withTooltip checkboxButton mempty 0 0 $
+            -- divClass "app-text-normal" $ text "Select to burn this coin."
+        (txt,_) <- withTooltip (elClass' "div" "app-text-normal" $ text $ shortenCoinName name) mempty 0 0 $ do
+            elAttr "div" ("class" =: "app-text-normal" <> "style" =: "width: 350px;") $ text "Click to see the full token name."
         divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
-        divClass "key-div" $ withTooltip (void $ image "Key.svg" "" "22px") mempty 0 0 $ do
+        let keyIcon = do
+                e <- image "Key.svg" "" "22px"
+                void $ copyEvent e
+                performEvent_ (liftIO (copyText secretText) <$ e)
+        divClass "key-div" $ withTooltip keyIcon mempty 0 0 $ do
             divClass "app-text-semibold" $ text "Minting Key"
             divClass "app-text-normal" $ do
                 e <- copyButton
@@ -67,8 +81,7 @@ coinBurnWidget (s, name) = mdo
     dyn_ $ bool blank (coinTooltip name) <$> dTooltipVis
     return $ fmap (bool Nothing (Just s)) ret
     where
-        mkAttrs = ("class" =: "coin-entry-burn-div" <>) . bool mempty
-            ("style" =: "background:rgb(50 50 50);")
+        mkAttrs = ("class" =: "coin-entry-burn-div" <>) . bool mempty ("style" =: "background:rgb(50 50 50);")
         secretText = secretToHex s
 
 noCoinsFoundWidget :: MonadWidget t m => [a] -> m ()
@@ -98,17 +111,16 @@ coinTooltip name = elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visi
 
 coinMintWidget :: MonadWidget t m => (Secret, Text) -> m (Event t Secret)
 coinMintWidget (s, name) = mdo
-    (elDiv, ret) <- elDynAttr' "div" (mkAttrs <$> dTooltipVis) $ do
+    (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
         eCross <- domEvent Click . fst <$> elClass' "div" "cross-div" blank
-        divClass "app-text-normal" $ text $ shortenCoinName name
+        (txt, _) <- elClass' "div" "app-text-normal" $ text $ shortenCoinName name
         divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
-        return eCross
-    dTooltipVis <- toggle False (domEvent Click elDiv)
+        return (txt, eCross)
+    dTooltipVis <- toggle False (domEvent Click elTxt)
     dyn_ $ bool blank (coinTooltip name) <$> dTooltipVis
     return $ s <$ ret
     where
-        mkAttrs = ("class" =: "coin-entry-mint-div" <>) . bool mempty
-            ("style" =: "background:rgb(50 50 50);")
+        mkAttrs = ("class" =: "coin-entry-mint-div" <>) . bool mempty ("style" =: "background:rgb(50 50 50);")
 
 coinMintCollectionWidget :: MonadWidget t m => Event t CoinUpdate -> m (Dynamic t Secrets)
 coinMintCollectionWidget eCoinUpdate = mdo
@@ -116,7 +128,6 @@ coinMintCollectionWidget eCoinUpdate = mdo
         f (RemoveCoin s) lst = s `delete` lst
         f ClearCoins     _   = []
     dCoinsToMintWithNames <-  foldDyn f [] (leftmost [eCoinUpdate, fmap RemoveCoin eRemoveSecret]) >>= coinCollectionWithNames
-    performEvent_ (logInfo . toText <$> updated dCoinsToMintWithNames)
     eRemoveSecret <- dyn (fmap (mapM coinMintWidget) dCoinsToMintWithNames) >>= switchHold never . fmap leftmost
     return $ fmap (map fst) dCoinsToMintWithNames
 
@@ -132,36 +143,26 @@ coinNewInputWidget placeholder convert eReset = do
   t <- inputElement conf
   return (t, convert <$> value t)
 
-coinNewButtonWidget :: MonadWidget t m => Dynamic t Integer -> Event t () -> m (Event t Secret)
-coinNewButtonWidget dV eEnter = do
+coinNewButtonWidget :: MonadWidget t m => Dynamic t Integer -> Event t () ->
+  m (Event t ()) -> m (Event t Secret)
+coinNewButtonWidget dV eEnter widgetNew = do
   gamma0 <- liftIO (randomIO :: IO FieldElement)
   eGamma <- performEvent $ liftIO (randomIO :: IO FieldElement) <$ updated dV
   dGamma <- holdDyn gamma0 eGamma
-  (e, _) <- elClass' "div" "plus-div" blank
+  eNewClick <- widgetNew
   let bSecret = current $ zipDynWith Secret dGamma (fmap toFieldElement dV)
       maxV    = 2 ^ (20 :: Integer) - 1 :: Integer
       cond v  = 0 <= v && v <= maxV
-      eNew    = leftmost [domEvent Click e, eEnter]
+      eNew    = leftmost [eNewClick, eEnter]
   return $ tag bSecret $ ffilter cond (tagPromptlyDyn dV eNew)
 
 coinNewWidget :: MonadWidget t m => m (Event t Secret)
 coinNewWidget = divClass "coin-new-div" $ mdo
-    eNewSecret <- coinNewButtonWidget dV (keypress Enter inp)
-    (inp, dV) <- coinNewInputWidget "Enter ADA amount..."
-      (fromMaybe (-1 :: Integer) . readMaybe . unpack) eNewSecret
+    eNewSecret <- coinNewButtonWidget dV (keypress Enter inp) plusButton 
+    (inp, dV) <- coinNewInputWidget "Enter ADA amount..." (fromMaybe (-1 :: Integer) . readMaybe . unpack) eNewSecret
     divClass "app-text-semibold" $ text "ADA"
     return eNewSecret
-
------------------------------------------------ Helper functions --------------------------------------------
-
-secretToHex :: Secret -> Text
-secretToHex s = encodeHex . fromBuiltin $ toBytes $ gamma * 2^(20 :: Integer) + v
-    where gamma = fromFieldElement $ secretGamma s
-          v     = fromFieldElement $ secretV s
-
-hexToSecret :: Text -> Maybe Secret
-hexToSecret txt = do
-    bs <- decodeHex txt
-    let n = byteStringToInteger $ toBuiltin bs
-        (gamma, v) = n `divMod` (2^(20 :: Integer))
-    return $ Secret (toFieldElement gamma) (toFieldElement v)
+  where
+    plusButton = do
+      (e, _) <- elClass' "div" "plus-div" blank
+      return $ domEvent Click e

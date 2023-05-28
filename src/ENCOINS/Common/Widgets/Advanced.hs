@@ -22,20 +22,31 @@ imageButton :: MonadWidget t m => Dynamic t Text -> Text -> m (Event t ())
 imageButton dFile w = do
   image dFile (pure "w-button") w
 
+copyEvent :: MonadWidget t m => Event t () -> m (Dynamic t Bool)
+copyEvent e = do
+  e' <- delay 5 e
+  d <- holdDyn False $ leftmost [True <$ e, False <$ e']
+  performEvent_ (setElementStyle "bottom-notification-copy" "display" "flex" <$ e)
+  performEvent_ (setElementStyle "bottom-notification-copy" "display" "none" <$ e')
+  return d
+
 copyButton :: MonadWidget t m => m (Event t ())
 copyButton = mdo
   let mkClass = bool "copy-div" "tick-div inverted"
-  e  <- domEvent Click . fst <$> elDynClass' "div" (fmap mkClass d) blank
-  e' <- delay 5 e
-  d <- holdDyn False $ leftmost [True <$ e, False <$ e']
-  performEvent_ (setElementStyle "bottom-notification" "display" "flex" <$ e)
-  performEvent_ (setElementStyle "bottom-notification" "display" "none" <$ e')
+  e <- domEvent Click . fst <$> elDynClass' "div" (fmap mkClass d) blank
+  d <- copyEvent e
   return e
 
 copiedNotification :: MonadWidget t m => m ()
 copiedNotification = elAttr "div" ("class" =: "bottom-notification" <>
-  "id" =: "bottom-notification" <> "style" =: "display:none;") .
+  "id" =: "bottom-notification-copy" <> "style" =: "display:none;") .
   divClass "notification-content" $ text "Copied!"
+
+noRelayNotification :: MonadWidget t m => m ()
+noRelayNotification = elAttr "div" ("class" =: "bottom-notification" <>
+  "id" =: "bottom-notification-relay" <> "style" =: "display:none;") .
+  divClass "notification-content" $ text
+    "All available relays are down! Try reloading the page or come back later."
 
 checkboxButton :: MonadWidget t m => m (Dynamic t Bool)
 checkboxButton = mdo
@@ -44,8 +55,8 @@ checkboxButton = mdo
   d <- toggle False $ domEvent Click e
   return d
 
-dialogWindow :: MonadWidget t m => Bool -> Event t () -> Event t () -> Text -> m a -> m a
-dialogWindow close eOpen eClose style tags = mdo
+dialogWindow :: MonadWidget t m => Bool -> Event t () -> Event t () -> Text -> Text -> m a -> m a
+dialogWindow close eOpen eClose style title tags = mdo
   eClickOuside <- if close
       then clickOutside (_element_raw e)
       else pure never
@@ -57,11 +68,13 @@ dialogWindow close eOpen eClose style tags = mdo
   dWindowIsOpen <- holdDyn False $ leftmost [True <$ eOpenDelayed, False <$ eClose']
   (e, (ret, eCross)) <- elDynAttr "div" (fmap mkClass dWindowIsOpen) $
       elAttr' "div" ("class" =: "dialog-window" <> "style" =: style) $ do
-          crossClick <- if close
-            then domEvent Click . fst <$> elClass' "div"
-                "cross-div dialog-window-close inverted" blank
+        crossClick <- divClass "dialog-window-title" $ do
+          elAttr "div" ("style" =: "width: 20px;") blank
+          divClass "app-text-semibold" $ text title
+          if close
+            then domEvent Click . fst <$> elClass' "div" "cross-div inverted" blank
             else pure never
-          (,crossClick) <$> tags
+        (,crossClick) <$> tags
   return ret
 
 clickOutside :: MonadWidget t m => DOM.Element -> m (Event t ())
@@ -76,17 +89,17 @@ isParentOf :: DOM.MonadJSM m => DOM.Element -> DOM.Element -> m Bool
 isParentOf parent node = DOM.liftJSM $ contains parent (Just node)
 
 withTooltip :: MonadWidget t m =>
-  m a ->
+     m a
   -- ^ Element that triggers tooltip when hovered
-  Text ->
+  -> Text
   -- ^ Additional styles for the tooltip
-  NominalDiffTime ->
+  -> NominalDiffTime
   -- ^ Emersion delay in seconds, >= 0
-  NominalDiffTime ->
+  -> NominalDiffTime
   -- ^ Vanishing delay in seconds, >= 0
-  m () ->
+  -> m ()
   -- ^ Inner content of the tooltip
-  m a
+  -> m a
 withTooltip mainW style delay1 delay2 innerW = mdo
   (e, ret) <- elClass' "div" "div-tooltip-wrapper" $ do
     ret' <- mainW

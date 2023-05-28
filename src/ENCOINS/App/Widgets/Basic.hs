@@ -1,20 +1,20 @@
 module ENCOINS.App.Widgets.Basic where
 
-import           Data.Aeson               (ToJSON, FromJSON, encode, decode, decodeStrict)
-import           Data.ByteString          (ByteString)
-import           Data.ByteString.Lazy     (fromStrict, toStrict)
-import           Data.Text                (Text)
-import qualified Data.Text                as Text
-import           Data.Text.Encoding       (encodeUtf8, decodeUtf8)
-import           GHCJS.DOM                (currentWindowUnchecked)
-import           GHCJS.DOM.Storage        (getItem, setItem)
-import           GHCJS.DOM.Types          (MonadDOM)
-import           GHCJS.DOM.Window         (getLocalStorage)
+import           Data.Aeson                    (ToJSON, FromJSON, encode, decode, decodeStrict)
+import           Data.ByteString               (ByteString)
+import           Data.ByteString.Lazy          (fromStrict, toStrict)
+import           Data.Text                     (Text)
+import qualified Data.Text                     as Text
+import           Data.Text.Encoding            (encodeUtf8, decodeUtf8)
+import           GHCJS.DOM                     (currentWindowUnchecked)
+import           GHCJS.DOM.Storage             (getItem, setItem)
+import           GHCJS.DOM.Types               (MonadDOM)
+import           GHCJS.DOM.Window              (getLocalStorage)
 import           Reflex.Dom
-import           Reflex.ScriptDependent   (widgetHoldUntilDefined)
+import           Reflex.ScriptDependent        (widgetHoldUntilDefined)
 
-import           JS.Website               (loadJSON)
-import           Widgets.Events           (newEventWithDelay)
+import           ENCOINS.Common.Events         (newEventWithDelay)
+import           JS.Website                    (loadJSON)
 
 sectionApp :: MonadWidget t m => Text -> Text -> m a -> m a
 sectionApp elemId cls = elAttr "div" ("id" =: elemId <> "class" =: "section-app wf-section " `Text.append` cls)

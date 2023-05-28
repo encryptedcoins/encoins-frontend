@@ -8,13 +8,13 @@ import           Data.Functor                       (($>), (<&>))
 import           Data.Text.Encoding                 (decodeUtf8)
 import           Reflex.Dom
 
-import           ENCOINS.App.Widgets
 import           ENCOINS.App.Widgets.Basic          (waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
+import           ENCOINS.App.Widgets.Navbar         (navbarWidget)
 import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWindow, welcomeWallet, welcomeWindowWalletStorageKey)
-import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
+import           ENCOINS.Common.Widgets.Advanced    (copiedNotification, noRelayNotification)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
 
@@ -22,23 +22,21 @@ bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe P
 bodyContentWidget mpass = mdo
   (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet
   dWallet <- connectWindow eConnectOpen
-  dData <- loadAppData (getPassRaw <$> mpass) "encoins" id []
   (eNewPass, eResetPass) <- passwordSettingsWindow eSettingsOpen
   eResetOk <- resetPasswordDialog eResetPass
-  performEvent_ (reencryptEncoins <$> attachPromptlyDyn dData (leftmost
-    [eNewPass, Nothing <$ eResetOk]))
 
   welcomeWindow welcomeWindowWalletStorageKey welcomeWallet
 
   divClass "section-app section-app-empty wf-section" blank
 
-  mainWindow mpass dWallet dData
+  dSecrets <- mainWindow mpass dWallet
+  performEvent_ (reencryptEncoins <$> attachPromptlyDyn dSecrets (leftmost
+    [eNewPass, Nothing <$ eResetOk]))
+
+  copiedNotification
+  noRelayNotification
 
   return $ leftmost [Nothing <$ eResetOk, eNewPass]
-
-  -- divClass "section-app section-app-empty wf-section" blank
-
-  -- divClass "footer wf-section" $ divClass "container-footer" $ divClass "div-our-resourses" $ ourResourses "50px"
   where
     reencryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) "encoins"
       . decodeUtf8 .  toStrict . encode $ d
@@ -52,8 +50,7 @@ bodyWidget = waitForScripts blank $ mdo
       ePb <- getPostBuild
       return (Nothing <$ ePb, never)
   eResetOk <- resetPasswordDialog eReset
-  dmmPass <- holdDyn Nothing $ fmap Just $ leftmost
-    [ePassOk, Nothing <$ eResetOk, eNewPass]
+  dmmPass <- holdDyn Nothing $ fmap Just $ leftmost [ePassOk, Nothing <$ eResetOk, eNewPass]
   eNewPass <- switchHold never <=< dyn $ dmmPass <&> \case
     Nothing -> pure never
     Just mpass -> bodyContentWidget mpass
@@ -62,4 +59,4 @@ bodyWidget = waitForScripts blank $ mdo
     <> "type" =: "text/javascript" <> "integrity" =: "sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" <> "crossorigin" =: "anonymous") blank
   let e = eJQueryLoaded $> elAttr "script" ("src" =: "js/webflow.js" <> "type" =: "text/javascript") blank
   widgetHold_ blank e
-  copiedNotification
+  

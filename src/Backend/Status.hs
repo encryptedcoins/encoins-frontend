@@ -24,6 +24,13 @@ instance Show Status where
     show (BackendError e) = "Error: " <> unpack e
     show (WalletError e)  = "Error: " <> unpack e
 
+isStatusBusy :: Status -> Bool
+isStatusBusy Balancing  = True
+isStatusBusy Signing    = True
+isStatusBusy Submitting = True
+isStatusBusy Submitted  = True
+isStatusBusy _          = False
+
 -- Wallet error element
 walletError :: MonadWidget t m => m (Event t Status)
 walletError = do

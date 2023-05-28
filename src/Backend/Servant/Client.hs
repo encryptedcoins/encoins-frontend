@@ -10,32 +10,35 @@ import           Data.Proxy                   (Proxy(..))
 import           Data.Text                    (Text)
 import           Reflex.Dom                   hiding (Value)
 import           Servant.API
-import           Servant.Checked.Exceptions   (Envelope)
 import           Servant.Reflex
 import           System.Random                (randomRIO)
 import           Witherable                   (catMaybes)
 
-import           Backend.Types
-import           CSL                          (TransactionUnspentOutputs)
+import           Backend.Protocol.Types
+import           CSL                          (TransactionInputs, Value)
 import           JS.App                       (pingServer)
 
 urls :: [Text]
 urls = fromJust $ decode $ fromStrict $(embedFile "config/backend_url.json")
 
-pabIP :: MonadIO m => m BaseUrl
-pabIP = go urls
+getRelayUrl :: MonadIO m => m (Maybe BaseUrl)
+getRelayUrl = go urls
   where
+    go [] = pure Nothing
     go l = do
       idx <- randomRIO (0, length l - 1)
       let url = l !! idx
       pingOk <- pingServer url
       if pingOk
-        then return $ BasePath url
+        then return $ Just $ BasePath url
         else go (delete url l)
 
-type API =   "newTx"        :> ReqBody '[JSON] (EncoinsRedeemer, TransactionUnspentOutputs) :> Post '[JSON] (Envelope '[] (Text, Text))
+type API =   "newTx" :> ReqBody '[JSON] (Either (Address, Value, Address) (EncoinsRedeemer, EncoinsMode), TransactionInputs) :> Post '[JSON] (Text, Text)
         :<|> "submitTx"     :> ReqBody '[JSON] SubmitTxReqBody :> Post '[JSON] NoContent
-        :<|> "ping"         :> Get '[JSON] ()
+        :<|> "ping"         :> Get '[JSON] NoContent
+        :<|> "serverTx"     :> ReqBody '[JSON] (Either (Address, Value, Address) (EncoinsRedeemer, EncoinsMode), TransactionInputs) :> Post '[JSON] NoContent
+        :<|> "status"       :> ReqBody '[JSON] EncoinsStatusReqBody :> Post '[JSON] EncoinsStatusResult
+
 
 type RespEvent t a      = Event t (ReqResult () a)
 type Res t m res        = Event t () -> m (RespEvent t res)
@@ -44,15 +47,24 @@ type ReqRes t m req res = DynReqBody t req -> Res t m res
 
 data ApiClient t m = ApiClient
   {
-    newTxRequest        :: ReqRes t m (EncoinsRedeemer, TransactionUnspentOutputs) (Envelope '[] (Text, Text)),
+    newTxRequest        :: ReqRes t m
+      ( Either (Address, Value, Address) (EncoinsRedeemer, EncoinsMode)
+      , TransactionInputs)
+      (Text, Text),
     submitTxRequest     :: ReqRes t m SubmitTxReqBody NoContent,
-    pingRequest         :: Res t m ()
+    pingRequest         :: Res t m NoContent,
+    serverTxRequest     :: ReqRes t m
+      ( Either (Address, Value, Address) (EncoinsRedeemer, EncoinsMode)
+      , TransactionInputs)
+      NoContent,
+    statusRequest       :: ReqRes t m EncoinsStatusReqBody EncoinsStatusResult
   }
 
 mkApiClient :: forall t m . MonadWidget t m => BaseUrl -> ApiClient t m
 mkApiClient host = ApiClient{..}
   where
-    (newTxRequest :<|> submitTxRequest :<|> pingRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
+    (newTxRequest :<|> submitTxRequest :<|> pingRequest :<|> serverTxRequest
+      :<|> statusRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
 
 ---------------------------------------------- Utilities ----------------------------------------
 
@@ -62,4 +74,3 @@ makeResponse _ = Nothing
 
 eventMaybe :: Reflex t => b -> Event t (Maybe a) -> (Event t a, Event t b)
 eventMaybe errValue e = (catMaybes e, errValue <$ ffilter isNothing e)
-

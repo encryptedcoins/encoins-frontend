@@ -13,17 +13,15 @@ import           GHCJS.DOM.Types                 (File, toJSVal, fromJSVal, lift
 import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
-import           ENCOINS.App.Widgets.Coin        (hexToSecret)
+import           Backend.Protocol.Utility        (hexToSecret)
 import           ENCOINS.Bulletproofs            (Secret)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn)
-import           JS.Website                      (logInfo, saveTextFile)
-import           Widgets.Utils                   (toText)
+import           JS.Website                      (saveTextFile)
 
 importWindow :: MonadWidget t m => Event t () -> m (Event t (Maybe Secret))
 importWindow eImportOpen = mdo
-    eImportClose <- dialogWindow True eImportOpen (void eImportClose) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
-      divClass "connect-title-div" $ divClass "app-text-semibold" $ text "Import a New Coin"
+    eImportClose <- dialogWindow True eImportOpen (void eImportClose) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" "Import a New Coin" $ mdo
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
           text "All known coins are saved on the device. Enter the minting key to import a new coin:"
       let conf    = def { _inputElementConfig_setValue = pure ("" <$ eImportOpen) } & (initialAttributes .~ ("class" =: "coin-new-input w-input" <> "type" =: "text"
@@ -36,8 +34,7 @@ importWindow eImportOpen = mdo
 
 importFileWindow :: MonadWidget t m => Event t () -> m (Event t [Secret])
 importFileWindow eImportOpen = mdo
-    eImportClose <- dialogWindow True eImportOpen (void eImportClose) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
-      divClass "connect-title-div" $ divClass "app-text-semibold" $ text "Import New Coins"
+    eImportClose <- dialogWindow True eImportOpen (void eImportClose) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" "Import New Coins" $ mdo
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
           text "Choose a file to import coins:"
       let conf    = def { _inputElementConfig_setValue = pure ("" <$ eImportOpen) } & (initialAttributes .~ ("class" =: "coin-new-input w-input" <> "type" =: "file"
@@ -46,7 +43,6 @@ importFileWindow eImportOpen = mdo
       emFileContent <- switchHold never <=< dyn $ dFiles <&> \case
         [file] -> readFileContent file
         _ -> pure never
-      performEvent_ $ logInfo . ("File content: " <>) . toText <$> emFileContent
       dContent <- holdDyn "" (catMaybes emFileContent)
       let dRes = parseContent <$> dContent
       eImportClose <- btn "button-switching inverted flex-center" "" $ text "Ok"
@@ -65,8 +61,7 @@ readFileContent file = do
 
 exportWindow :: MonadWidget t m => Event t () -> Dynamic t [Secret] -> m ()
 exportWindow eOpen dSecrets = mdo
-    eClose <- dialogWindow True eOpen eClose "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" $ mdo
-      divClass "connect-title-div" $ divClass "app-text-semibold" $ text "Export Coins"
+    eClose <- dialogWindow True eOpen eClose "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" "Export Coins" $ mdo
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
           text "Enter file name:"
       let conf    = def { _inputElementConfig_setValue = pure ("" <$ eOpen) } & (initialAttributes .~ ("class" =: "coin-new-input w-input" <> "type" =: "text"

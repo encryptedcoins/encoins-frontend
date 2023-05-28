@@ -1,10 +1,13 @@
 module ENCOINS.Website.Body (bodyWidget) where
 
-import           Data.Functor                (($>))
-import           Data.Text                   (Text)
+import           Data.Functor                        (($>))
+import           Data.Text                           (Text)
 import           Reflex.Dom
 
-import           ENCOINS.Website.Widgets
+import           ENCOINS.Website.Widgets.Footer      (footerWidget)
+import           ENCOINS.Website.Widgets.ISPO        (ispoPage)
+import           ENCOINS.Website.Widgets.LandingPage (landingPage)
+import           ENCOINS.Website.Widgets.Navbar      (navbarWidget)
 
 pageSelect :: MonadWidget t m => (Text, Text) -> m (Event t (Text, Text))
 pageSelect (page, idFocus) = case page of

@@ -13,7 +13,7 @@ import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
-import           ENCOINS.Common.Widgets.Basic    (btn)
+import           ENCOINS.Common.Widgets.Basic    (btn, errDiv)
 import           JS.App                          (saveHashedTextToStorage, loadHashedPassword, checkPassword)
 import           JS.Website                      (saveJSON)
 
@@ -84,7 +84,7 @@ passwordSettingsWindow :: MonadWidget t m => Event t ()
 passwordSettingsWindow eOpen = do
   emPassHash <- fmap (fmap PasswordHash) <$> performEvent (loadHashedPassword passwordSotrageKey <$ eOpen)
   dmPassHash <- holdDyn Nothing emPassHash
-  dialogWindow True eOpen never "width: 90%;" $ do
+  dialogWindow True eOpen never "width: 90%;" "Password Settings" $ do
     ePassOk <- switchHold never <=< dyn $ dmPassHash <&> \case
       Just passHash -> divClass "app-columns w-row" $ divClass "app-column w-col w-col-12" $ do
         dmCurPass <- passwordInput "Current password:" False (pure Nothing) eOpen
@@ -144,7 +144,7 @@ passwordInput txt rep dmPass eOpen = mdo
   inp <- inputElement $ conf $ bool "password" "text" <$> updated dShowPass
   (eye,_) <- elDynAttr' "i" (mkEyeAttr <$> dShowPass) blank
   let deVal = validatePassword <$> value inp
-  dyn_ $ mkError <$> (value inp) <*> deVal <*> dmPass
+  dyn_ $ mkError <$> value inp <*> deVal <*> dmPass
   return (zipDynWith mkRes deVal dmPass)
   where
     mkRes (Right p1) (Just p2) = if rep
@@ -177,13 +177,9 @@ passwordInput txt rep dmPass eOpen = mdo
         (("type" =:) . Just <$> eType)
       & inputElementConfig_setValue .~ ("" <$ eOpen)
 
-errDiv :: MonadWidget t m => Text -> m ()
-errDiv = elAttr "div" ("class" =: "w-file-upload-error w-file-upload-error-msg"
-  <> "style" =: "margin-top: 0px;margin-bottom: 10px;") . text
-
 resetPasswordDialog :: MonadWidget t m => Event t () -> m (Event t ())
 resetPasswordDialog eOpen = mdo
-  (eOk, eCancel) <- dialogWindow True eOpen (leftmost [eOk,eCancel]) "width: 60%" $ do
+  (eOk, eCancel) <- dialogWindow True eOpen (leftmost [eOk,eCancel]) "width: 60%" "" $ do
     divClass "connect-title-div" $ divClass "app-text-semibold" $
         text "This action will clean the list of known coins! Are you sure?"
     elAttr "div" ("class" =: "app-columns w-row" <> "style" =: "display:flex;justify-content:center;") $ do

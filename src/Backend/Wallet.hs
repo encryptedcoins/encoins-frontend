@@ -5,7 +5,7 @@ import           Data.Maybe                    (fromMaybe)
 import           Data.Text                     (Text)
 import           Reflex.Dom                    hiding (Input)
 
-import           Backend.Types
+import           Backend.Protocol.Types
 import           CSL                           (TransactionUnspentOutputs)
 import           ENCOINS.App.Widgets.Basic     (elementResultJS)
 import           ENCOINS.Common.Widgets.Basic  (image)
@@ -14,12 +14,12 @@ import           JS.App                        (walletLoad)
 data WalletName =
     Eternl
   | Nami
-  | Flint
+  -- | Flint
   -- | NuFi
   -- | Gero
   -- | Begin
   -- | Typhon
-  | Lace
+  -- | Lace
   | None
   deriving (Eq, Show, Enum, Bounded)
 
@@ -28,34 +28,34 @@ toJS = \case
   None   -> "none"
   Eternl -> "eternl"
   Nami   -> "nami"
-  Flint  -> "flint"
+  -- Flint  -> "flint"
   -- NuFi   -> "nufi"
   -- Gero   -> "gerowallet"
   -- Begin  -> "begin"
   -- Begin  -> "begin-nightly"
   -- Typhon -> "typhon"
-  Lace   -> "lace"
+  -- Lace   -> "lace"
 
 fromJS :: Text -> WalletName
 fromJS = \case
   "eternl"     -> Eternl
   "nami"       -> Nami
-  "flint"      -> Flint
+  -- "flint"      -> Flint
   -- "nufi"       -> NuFi
   -- "gerowallet" -> Gero
   -- "begin"      -> Begin
   -- "begin-nightly" -> Begin
   -- "typhon"     -> Typhon
-  "lace"       -> Lace
+  -- "lace"       -> Lace
   _            -> None
 
 data Wallet = Wallet
   {
-    walletName          :: WalletName,
-    walletNetworkId     :: Text,
-    walletAddressBech32 :: Text,
-    walletChangeAddress :: Address,
-    walletUTXOs         :: TransactionUnspentOutputs
+    walletName              :: WalletName,
+    walletNetworkId         :: Text,
+    walletAddressBech32     :: Text,
+    walletChangeAddress     :: Address,
+    walletUTXOs             :: TransactionUnspentOutputs
   }
   deriving (Show, Eq)
 
@@ -68,7 +68,7 @@ loadWallet eWalletName = mdo
   dPubKeyHash <- elementResultJS "pubKeyHashElement" id
   dStakeKeyHash <- elementResultJS "stakeKeyHashElement" id
   dUTXOs <- elementResultJS "utxosElement" (fromMaybe [] . decodeText :: Text -> CSL.TransactionUnspentOutputs)
-  let dAddrWallet = zipDynWith mkAddressFromPubKeys dPubKeyHash dStakeKeyHash
+  let dAddrWallet = zipDynWith mkAddressFromPubKeys dPubKeyHash (checkEmptyText <$> dStakeKeyHash)
   return $ Wallet <$> dWalletName <*> dWalletNetworkId <*> dWalletAddressBech32 <*> dAddrWallet <*> dUTXOs
 
 walletIcon :: MonadWidget t m => WalletName -> m ()

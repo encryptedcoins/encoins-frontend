@@ -22,8 +22,9 @@ welcomeWallet =
     False
   , WelcomeItem "welcome-wallet-coins"
     "In this column, you will see the coins in your wallet. \
-     \Clicking on a particular coin will reveal its asset fingerprint. \
-     \To select coins to burn in the current transaction, check the boxes on the left."
+     \Clicking on a particular coin will reveal its full name and asset fingerprint. \
+     \To select coins to burn in the current transaction, check the boxes on the left. \
+     \To copy the minting key, hover over the key icon."
     True
   , WelcomeItem "welcome-coins-mint"
     "Here, you can mint new coins by entering their ADA value and hitting \
@@ -31,13 +32,13 @@ welcomeWallet =
     \hitting the \"x\" button."
     True
   , WelcomeItem "welcome-tx-balance"
-    "Here you can see the net ADA balance of the current transaction and protocol fees."
+    "Here, you can see the net ADA balance of the current transaction and protocol fees."
     False
   , WelcomeItem "welcome-send-req"
     "Once you finished building the transaction, press this button to execute it."
     True
   , WelcomeItem "welcome-import-export"
-    "All known coins are stored locally on your device. Here you can import \
+    "All known coins are stored locally on your device. Here, you can import \
     \the coins that are new to this device. You can also export your coins \
     \for backup or to use on another device."
     False ]
@@ -52,6 +53,20 @@ welcomeTransfer =
     "You can send coins to another user or to the ENCOINS Ledger for use in the Ledger Mode."
     True ]
 
+welcomeLedger :: [WelcomeItem]
+welcomeLedger =
+  [ WelcomeItem "welcome-ledger"
+    "You are now in the Ledger mode! \
+    \The ENCOINS Ledger is the on-chain script that acts as your stealth account. \
+    \Sending coins to another user is as simple as sharing the \
+    \minting keys off-chain. To receive a coin, import the minting key \
+    \and re-mint the coin to gain the full control of it."
+    False
+  , WelcomeItem "welcome-ledger-coins"
+    "Here, you can see the known coins that are stored on the ENCOINS Ledger. \
+    \To select the coins to burn in the current transaction, check the boxes on the left."
+    True]
+
 welcomeTutorial :: MonadWidget t m => [WelcomeItem] -> Event t () -> m (Event t ())
 welcomeTutorial [] eOpen = pure eOpen
 welcomeTutorial (wi:wis) eOpen = do
@@ -65,7 +80,7 @@ welcomeItemWidget WelcomeItem{..} eOpen = mdo
   performEvent_ (setElementStyle elemId "position" "relative" <$ eOpen)
   performEvent_ (setElementStyle elemId "pointer-events" "none" <$ eOpen)
   when border $ performEvent_ (setElementStyle elemId "border-style" "solid" <$ eOpen)
-  eClose <- dialogWindow False eOpen eClose "max-width: 700px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px; top: 0px; position: absolute;" $ do
+  eClose <- dialogWindow False eOpen eClose "max-width: 700px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px; top: 0px; position: absolute;" "" $ do
     divClass "app-text-semibold" $ text message
     btn "button-switching inverted flex-center" "" $ text "Ok"
   performEvent_ (setElementStyle elemId "z-index" "" <$ eClose)
@@ -79,6 +94,9 @@ welcomeWindowWalletStorageKey = "encoins-welcome-window-seen-wallet"
 
 welcomeWindowTransferStorageKey :: Text
 welcomeWindowTransferStorageKey = "encoins-welcome-window-seen-transfer"
+
+welcomeWindowLedgerStorageKey :: Text
+welcomeWindowLedgerStorageKey = "encoins-welcome-window-seen-ledger"
 
 welcomeWindow :: MonadWidget t m => Text -> [WelcomeItem] -> m ()
 welcomeWindow key items = do

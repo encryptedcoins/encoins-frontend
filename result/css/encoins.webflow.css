@@ -973,8 +973,19 @@ body {
   color: #000;
 }
 
-.dialog-window-close.cross-div {
-  margin-left: 100%;
+.dialog-window-title {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+  -webkit-justify-content: space-between;
+  justify-content: space-between;
 }
 
 .dialog-window-wrapper {
