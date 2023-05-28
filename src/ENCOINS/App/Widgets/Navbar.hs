@@ -18,7 +18,7 @@ navbarWidget w = do
   elAttr "div" ("data-animation" =: "default" <> "data-collapse" =: "none" <> "data-duration" =: "400" <> "id" =: "Navbar"
     <> "data-easing" =: "ease" <> "data-easing2" =: "ease" <> "role" =: "banner" <> "class" =: "navbar w-nav") $
     divClass "navbar-container w-container" $ do
-            elAttr "a" ("href" =: "index.html" <> "class" =: "brand w-nav-brand") do
+            elAttr "a" ("href" =: "https://encoins.io" <> "class" =: "brand w-nav-brand") do
               logo
               divClass "h3" $ text "ENCOINS"
             divClass "h4" $ elAttr "div" ("style" =: "font-size: 20px; margin-left: 10px;") $ text "Testnet Preprod"
