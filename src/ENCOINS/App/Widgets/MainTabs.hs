@@ -76,7 +76,7 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
             return (dCoinsToBurn, dCoinsToMint, eStatusUpdate)
     eWalletError <- walletError
     dStatus <- holdDyn Ready $ leftmost [eStatusUpdate, eWalletError]
-    containerApp "" $ divClass "app-text-small" $ dynText $ fmap toText dStatus
+    containerApp "" $ divClassId "app-text-small" "welcome-read-docs" $ dynText $ fmap toText dStatus
   where
     menuButton = divClass "app-column w-col w-col-6" .
       divClass "menu-item-button-right" . btn "button-switching flex-center"

@@ -56,6 +56,9 @@ lnk ref cls tags = do
 lnkInline :: MonadWidget t m => Text -> Text -> m ()
 lnkInline ref = elAttr "a" ("href" =: ref <> "class" =: "link-inline" <> "target" =: "_blank") . el "strong" . text
 
+lnkInlineInverted :: MonadWidget t m => Text -> Text -> m ()
+lnkInlineInverted ref = elAttr "a" ("href" =: ref <> "class" =: "link-inline inverted" <> "target" =: "_blank") . el "strong" . text
+
 image :: MonadWidget t m => Dynamic t Text -> Dynamic t Text -> Text -> m (Event t ())
 image dFile dCls w =
   let f file cls = "src" =: "images/" `Text.append` file <> "loading" =: "lazy" <> "alt" =: ""
