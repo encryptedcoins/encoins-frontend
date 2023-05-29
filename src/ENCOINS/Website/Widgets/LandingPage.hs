@@ -32,7 +32,7 @@ titleSection = section "" "" $ do
     container "" $ h4 "Protect your privacy with"
     container "" $ h1 "ENCOINS"
     container "" $ h2 "Cardano Native Tokens with Encrypted Redeeming Values"
-    _ <- container "container-extra-margin-small" $ btnExternal "app.encoins.io" "button button-disabled" "" $ text "Upgrade in progress..."
+    _ <- container "container-extra-margin-small" $ btnExternal "https://app.encoins.io" "button" "" $ text "Launch App"
     blank
 
 communitySection :: MonadWidget t m => m ()
@@ -47,7 +47,7 @@ featuresSection = section "Features" "" $ do
     explainer "How to mint?" "Send ADA into the protocol to mint a bundle of NFTs (aka ENCOINS). Each token contains an encrypted redeeming value known only to you. The total redeeming value is equal to the ADA provided."
     explainer "How to use?" "ENCOINS can be used as any other native asset on Cardano: they can be traded, gifted, or used in other DeFi protocols that support them. They can also be used in ENCOINS Ledger, our upcoming shielded accounts system."
     explainer "How to redeem?" "ENCOINS can be burned to receive their redeeming ADA value back. Only the user who knows its minting key can redeem an ENCOINS token."
-    _ <- container "container-extra-margin-small" $ btnExternal "app.encoins.io" "button button-disabled" "" $ text "Upgrade in progress..."
+    _ <- container "container-extra-margin-small" $ btnExternal "https://app.encoins.io" "button" "" $ text "Launch App"
     blank
     where
         explainer txtTitle txtExplainer = container "" $ divClass "div-explainer" $ do
