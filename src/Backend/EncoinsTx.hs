@@ -144,7 +144,7 @@ encoinsTxLedgerMode dWallet dBulletproofParams bRandomness dmChangeAddr dCoinsBu
     when (isNothing mbaseUrl) $ setElementStyle "bottom-notification-relay" "display" "flex"
 
     ePb   <- getPostBuild
-    eTick <- tickLossyFromPostBuildTime 10
+    eTick <- tickLossyFromPostBuildTime 12
     (eStatusResp, eRelayDown') <- case mbaseUrl of
       Just baseUrl -> statusRequestWrapper baseUrl (pure LedgerEncoins) $ leftmost [ePb, void eTick]
       _            -> pure (never, never)
