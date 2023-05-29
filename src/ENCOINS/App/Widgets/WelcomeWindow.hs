@@ -21,26 +21,26 @@ welcomeWallet =
     "Welcome to ENCOINS! You can select the mode of operation from this menu."
     False
   , WelcomeItem "welcome-wallet-coins"
-    "In this column, you will see the coins in your wallet. \
+    "In this column, you will see the coins from your wallet. \
      \Clicking on a particular coin will reveal its full name and asset fingerprint. \
      \To select coins to burn in the current transaction, check the boxes on the left. \
-     \To copy the minting key, hover over the key icon."
+     \To copy the minting key, click on the key icon."
     True
   , WelcomeItem "welcome-coins-mint"
-    "Here, you can mint new coins by entering their ADA value and hitting \
-    \the \"+\" button. You can remove a coin from the current transaction by \
-    \hitting the \"x\" button."
+    "Here, you can add new coins to mint by entering their ADA value and clicking \
+    \the \"+\" button (or by pressing \"Enter\" on the keyboard). You can remove a coin from the current transaction by \
+    \clicking the \"x\" button."
     True
   , WelcomeItem "welcome-tx-balance"
-    "Here, you can see the net ADA balance of the current transaction and protocol fees."
+    "Here, you can see the net ADA balance of the current transaction and protocol fees. A positive balance means you are withdrawing ADA from the protocol."
     False
   , WelcomeItem "welcome-send-req"
-    "Once you finished building the transaction, press this button to execute it."
+    "Once you finished building the transaction, you can press this button to execute it."
     True
   , WelcomeItem "welcome-import-export"
     "All known coins are stored locally on your device. Here, you can import \
-    \the coins that are new to this device. You can also export your coins \
-    \for backup or to use on another device."
+    \ the coins that are new to this device. You can also export your \
+    \ coins for backup or use on another device."
     False ]
 
 welcomeTransfer :: [WelcomeItem]
@@ -50,7 +50,7 @@ welcomeTransfer =
     \check the boxes on the left."
     True
   , WelcomeItem "welcome-transfer-btns"
-    "You can send coins to another user or to the ENCOINS Ledger for use in the Ledger Mode."
+    "You can send coins to another user or to the ENCOINS Ledger script for use in the Ledger Mode."
     True ]
 
 welcomeLedger :: [WelcomeItem]
@@ -65,6 +65,12 @@ welcomeLedger =
   , WelcomeItem "welcome-ledger-coins"
     "Here, you can see the known coins that are stored on the ENCOINS Ledger. \
     \To select the coins to burn in the current transaction, check the boxes on the left."
+    True
+  , WelcomeItem "welcome-ledger-mint"
+    "Here, you can add new coins to mint as in the Wallet Mode. Use the \"Add Change\" \
+    \ button to auto-balance the transaction. This creates a pure transfer on \
+    \ the ENCOINS Ledger without withdrawal. You can choose any wallet address as the destination \
+    \ when withdrawing from the ENCOINS Ledger."
     True]
 
 welcomeTutorial :: MonadWidget t m => [WelcomeItem] -> Event t () -> m (Event t ())

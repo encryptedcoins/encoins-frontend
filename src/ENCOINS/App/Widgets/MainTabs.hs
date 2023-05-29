@@ -147,7 +147,7 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                   dSecretsWithNamesUniq <- holdUniqDyn dSecretsWithNamesInTheWallet
                   dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesUniq
                   coinBurnCollectionWidget dSecretsWithNamesUniq
-                eImp <- divClassId "" "welcome-import-export" $ do
+                eImp <- divClass "" $ do
                   (eImport, eImportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Import" <*> menuButton " Import All"
                   (eExport, eExportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Export" <*> menuButton " Export All"
                   exportWindow eExport dCTB
@@ -156,8 +156,8 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                   eISAll <- importFileWindow eImportAll
                   return $ leftmost [eIS, eISAll]
                 return (dCTB, eImp)
-            (dCoinsToMint, eSend, dChangeAddr) <- divClass "app-column w-col w-col-6" $ mdo
-                dCoinsToMint' <- divClassId "" "welcome-coins-mint" $ mdo
+            (dCoinsToMint, eSend, dChangeAddr) <- divClassId "app-column w-col w-col-6" "welcome-ledger-mint" $ mdo
+                dCoinsToMint' <- divClass "" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
                     dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [AddCoin <$> eNewSecret, ClearCoins <$ ffilter (== Balancing) eStatusUpdate, AddCoin <$> eAddChange]
                     eNewSecret     <- coinNewWidget
