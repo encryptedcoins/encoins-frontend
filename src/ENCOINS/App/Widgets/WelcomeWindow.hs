@@ -22,8 +22,8 @@ welcomeWallet =
     $ text "Welcome to ENCOINS! You can select the mode of operation from this menu."
   , WelcomeItem "welcome-wallet-coins"
     True
-    $ text "In this column, you will see the coins from your wallet. \
-     \Clicking on a particular coin will reveal its full name and asset fingerprint. \
+    $ text "In the left column, you see the coins from your wallet. \
+     \Clicking on a particular coin reveals its full name and asset fingerprint. \
      \To select coins to burn in the current transaction, check the boxes on the left. \
      \To copy the minting key, click on the key icon."
   , WelcomeItem "welcome-coins-mint"
@@ -36,7 +36,7 @@ welcomeWallet =
     $ text "Here, you can see the net ADA balance of the current transaction and protocol fees. A positive balance means you are withdrawing ADA from the protocol."
   , WelcomeItem "welcome-send-req"
     True
-    $ text "Once you finished building the transaction, you can press this button to execute it."
+    $ text "Once you finished building the transaction, you can press \"SEND REQUEST\" button to execute it."
   , WelcomeItem "welcome-import-export"
     False
     $ text "All known coins are stored locally on your device. Here, you can import \
