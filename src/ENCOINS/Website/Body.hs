@@ -5,7 +5,7 @@ import           Data.Text                           (Text)
 import           Reflex.Dom
 
 import           ENCOINS.Website.Widgets.Footer      (footerWidget)
-import           ENCOINS.Website.Widgets.ISPO        (ispoPage)
+import           ENCOINS.Website.Widgets.ISPOPage    (ispoPage)
 import           ENCOINS.Website.Widgets.LandingPage (landingPage)
 import           ENCOINS.Website.Widgets.Navbar      (navbarWidget)
 

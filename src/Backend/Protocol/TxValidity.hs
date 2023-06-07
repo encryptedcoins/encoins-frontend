@@ -40,8 +40,8 @@ txValidity mbaseUrl mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
         fees    = protocolFees mode balance
         f e = bool (TxInvalid e) TxValid
         coins = toBurn ++ toMint
-        cond1 = walletName /= None
-        cond2 = walletNetworkId == "0"
+        cond1 = walletName /= None || mode == LedgerMode
+        cond2 = walletNetworkId == "0" || mode == LedgerMode
         cond3 = mode == LedgerMode || (balance + fees + 5) * 1_000_000 < sum (map (fromJust . decodeText . coin . amount . output) walletUTXOs)
         cond4 = not $ isStatusBusy s
         cond5 = not $ null toMint

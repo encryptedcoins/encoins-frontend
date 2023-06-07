@@ -6,3 +6,5 @@ cradle:
       component: "encoins-frontend:exe:encoins-website"
     - path: "apps"
       component: "encoins-frontend:exe:encoins-app"
+    - path: "apps"
+      component: "encoins-frontend:exe:encoins-dao"

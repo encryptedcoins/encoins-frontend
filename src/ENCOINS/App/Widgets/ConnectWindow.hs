@@ -21,10 +21,10 @@ walletEntry w = do
             "style" =: "margin-left:150px;") $ bool blank (walletIcon w) $ w /= None
     return (w <$ domEvent Click e)
 
-connectWindow :: MonadWidget t m => Event t () -> m (Dynamic t Wallet)
-connectWindow eConnectOpen = mdo
+connectWindow :: MonadWidget t m => [WalletName] -> Event t () -> m (Dynamic t Wallet)
+connectWindow supportedWallets eConnectOpen = mdo
     (eConnectClose, dWallet) <- dialogWindow True eConnectOpen eConnectClose "" "Connect Wallet" $ mdo
-        eWalletName <- leftmost . ([eLastWalletName] ++) <$> mapM walletEntry [minBound..maxBound]
+        eWalletName <- leftmost . ([eLastWalletName] ++) <$> mapM walletEntry supportedWallets
         eUpdate <- tag bWalletName <$> tickLossyFromPostBuildTime 10
         dW <- loadWallet (leftmost [eWalletName, eUpdate]) >>= holdUniqDyn
         let bWalletName = current $ fmap walletName dW

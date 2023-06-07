@@ -8,6 +8,7 @@ import           Data.Functor                       (($>), (<&>))
 import           Data.Text.Encoding                 (decodeUtf8)
 import           Reflex.Dom
 
+import           Backend.Wallet                     (walletsSupportedInApp)
 import           ENCOINS.App.Widgets.Basic          (waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
@@ -21,7 +22,7 @@ import           JS.Website                         (saveJSON)
 bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mpass = mdo
   (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet
-  dWallet <- connectWindow eConnectOpen
+  dWallet <- connectWindow walletsSupportedInApp eConnectOpen
   (eNewPass, eResetPass) <- passwordSettingsWindow eSettingsOpen
   eResetOk <- resetPasswordDialog eResetPass
 

@@ -2,3 +2,4 @@ dist-newstyle/
 config/backend_url.json
 result/app.js
 result/index.js
+result/dao.js

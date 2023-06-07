@@ -1,4 +1,4 @@
-module ENCOINS.Website.Widgets.ISPO (ispoPage) where
+module ENCOINS.Website.Widgets.ISPOPage (ispoPage) where
 
 import           Control.Monad                     (void)
 import           Reflex.Dom
