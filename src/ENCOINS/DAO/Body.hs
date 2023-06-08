@@ -15,8 +15,6 @@ bodyContentWidget = mdo
   eConnectOpen <- navbarWidget dWallet
   dWallet <- connectWindow walletsSupportedInDAO eConnectOpen
 
-  divClass "section-app section-app-empty wf-section" blank
-
   pollWidget poll1 dWallet
 
   blank

@@ -22,6 +22,7 @@ headWidget = do
   eWebFontLoaded <- domEvent Load . fst <$>
     elAttr' "script" ("src" =: "https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" <> "type" =: "text/javascript") blank
   eCSLLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/CSL.js" <> "type" =: "text/javascript") blank
+  eLucidLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/Lucid.js" <> "type" =: "text/javascript") blank
   eWebpageLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/Webpage.js" <> "type" =: "text/javascript") blank
   eEd25519Loaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/noble-ed25519.js" <> "type" =: "text/javascript") blank
   eCIP14Loaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/cip14.js" <> "type" =: "text/javascript") blank
@@ -29,12 +30,13 @@ headWidget = do
 
   dWebFontLoaded <- holdDyn False (True <$ eWebFontLoaded)
   dCSLLoaded <- holdDyn False (True <$ eCSLLoaded)
+  dLucidLoaded <- holdDyn False (True <$ eLucidLoaded)
   dWebpageLoaded <- holdDyn False (True <$ eWebpageLoaded)
   dEd25519Loaded <- holdDyn False (True <$ eEd25519Loaded)
   dCIP14Loaded <- holdDyn False (True <$ eCIP14Loaded)
   dCrypoJSLoaded <- holdDyn False (True <$ eCrypoJSLoaded)
   let eScriptsLoaded = ffilter (== True) $ updated $ foldl (zipDynWith (&&)) (pure True)
-        [dWebFontLoaded, dWebpageLoaded, dCSLLoaded, dEd25519Loaded, dCIP14Loaded, dCrypoJSLoaded]
+        [dWebFontLoaded, dWebpageLoaded, dCSLLoaded, dLucidLoaded, dEd25519Loaded, dCIP14Loaded, dCrypoJSLoaded]
 
   performEvent_ (JS.runHeadScripts <$ eScriptsLoaded)
  where

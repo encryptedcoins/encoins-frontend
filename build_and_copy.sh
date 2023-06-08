@@ -16,8 +16,8 @@ export WEBAPP_DIR=../Webapp
 cp -r -T result $WEBAPP_DIR
 rm -f $WEBAPP_DIR/index.html
 rm -f $WEBAPP_DIR/index.js
-rm -f $WEBSITE_DIR/dao.html
-rm -f $WEBSITE_DIR/dao.js
+rm -f $WEBAPP_DIR/dao.html
+rm -f $WEBAPP_DIR/dao.js
 mv $WEBAPP_DIR/app.html $WEBAPP_DIR/index.html
 rm -r $WEBAPP_DIR/ispo
 rm -r $WEBAPP_DIR/docs

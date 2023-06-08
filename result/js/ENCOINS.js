@@ -400,49 +400,22 @@ async function daoPollVoteTx(n, walletName, answer)
   await loader.load();
   const CardanoWasm = loader.Cardano;
 
+  await lucidLoader.load();
+  const lucid = await lucidLoader.Lucid.new(
+    new lucidLoader.Blockfrost("https://cardano-mainnet.blockfrost.io/api/v0", "mainnetK4sRBCTDwqzK1KRuFxnpuxPbKF4ZQrnl"),
+    "Mainnet",
+  )
+
   try {
     //loading wallet
     const api = await walletAPI(walletName);
-    
+    lucid.selectWallet(api);
+
     const changeAddress    = CardanoWasm.Address.from_bytes(fromHexString(await api.getChangeAddress()));
     const baseAddress      = CardanoWasm.BaseAddress.from_address(changeAddress);
     const stakeKeyHashCred = baseAddress.stake_cred();
     const stakeKeyHash     = stakeKeyHashCred.to_keyhash();
-
-    const utxosHex = await api.getUtxos();
-    const utxos = CardanoWasm.TransactionUnspentOutputs.new();
     
-    for (i = 0; i<utxosHex.length; i++)
-    {
-      const utxo    = CardanoWasm.TransactionUnspentOutput.from_bytes(fromHexString(utxosHex[i]));
-      utxos.add(utxo);
-      utxo.free();
-    }
-
-    const coins_per_utxo_byte = CardanoWasm.BigNum.from_str("4310");
-    const memory_nominator = CardanoWasm.BigNum.from_str("577");
-    const memory_denominator = CardanoWasm.BigNum.from_str("10000");
-    const memory_budget = CardanoWasm.UnitInterval.new(memory_nominator, memory_denominator);
-    const cpu_nominator = CardanoWasm.BigNum.from_str("721");
-    const cpu_denominator = CardanoWasm.BigNum.from_str("10000000");
-    const cpu_budget = CardanoWasm.UnitInterval.new(cpu_nominator, cpu_denominator);
-    const ex_units = CardanoWasm.ExUnitPrices.new(memory_budget, cpu_budget);
-    const fee_coef = CardanoWasm.BigNum.from_str("44");
-    const fee_const = CardanoWasm.BigNum.from_str("155381");
-    const fee_model = CardanoWasm.LinearFee.new(fee_coef, fee_const);
-    const key_deposit = CardanoWasm.BigNum.from_str("2000000");
-    const pool_deposit = CardanoWasm.BigNum.from_str("500000000");
-    const configBuilder = CardanoWasm.TransactionBuilderConfigBuilder.new()
-      .coins_per_utxo_byte(coins_per_utxo_byte)
-      .ex_unit_prices(ex_units)
-      .fee_algo(fee_model)
-      .max_tx_size(16384)
-      .max_value_size(5000)
-      .key_deposit(key_deposit)
-      .pool_deposit(pool_deposit)
-      .prefer_pure_change(true);
-    const config = configBuilder.build();
-
     const plc_lst = CardanoWasm.PlutusList.new();
     const tag1 = CardanoWasm.PlutusData.new_bytes(toUTF8Array("ENCOINS"));
     const tag2 = CardanoWasm.PlutusData.new_bytes(toUTF8Array("Poll #" + n));
@@ -454,68 +427,29 @@ async function daoPollVoteTx(n, walletName, answer)
     plc_lst.add(tag4);
     const plc_msg = CardanoWasm.PlutusData.new_list(plc_lst);
 
-    const txOutputBuilder = CardanoWasm.TransactionOutputBuilder.new()
-      .with_address(changeAddress)
-      .with_plutus_data(plc_msg);
+    const tx = await lucid.newTx()
+      .addSignerKey(toHexString(stakeKeyHash.to_bytes()))
+      .payToAddressWithData(changeAddress.to_bech32(), { inline: toHexString(plc_msg.to_bytes()) }, { lovelace: 1500000n })
+      .complete();
 
-    const adaOut = CardanoWasm.BigNum.from_str("1500000");
-    const txAmountBuilder = txOutputBuilder.next()
-      .with_coin(adaOut);
-    const voteOut = txAmountBuilder.build();
+    const signedTx = await tx.sign().complete();
 
-    const txBuilder = CardanoWasm.TransactionBuilder.new(config);
-    txBuilder.add_required_signer(stakeKeyHash);
-    txBuilder.add_output(voteOut);
-    txBuilder.add_inputs_from(utxos);
-    txBuilder.add_change_if_needed(changeAddress);
-
-    const tx = txBuilder.build_tx();
-    const txBody = txBuilder.build();
-    const txHex = toHexString(tx.to_bytes());
-
-    const walletSignatureWitnessSetBytes = await api.signTx(txHex);
-
-    const txWitnessSet = CardanoWasm.TransactionWitnessSet.from_bytes(fromHexString(walletSignatureWitnessSetBytes));
-    const txFinal = CardanoWasm.Transaction.new(txBody, txWitnessSet);
-    const txFinalHex = toHexString(txFinal.to_bytes());
-
-    await api.submitTx(txFinalHex);
+    const txHash = await signedTx.submit();
+    console.log(txHash);
 
     setInputValue("elementPoll" + n, "Thank you for voting! Come back later to see the results.");
 
-    txFinal.free();
-    txBody.free();
-    tx.free();
-    txBuilder.free();
-    voteOut.free();
-    txAmountBuilder.free();
-    adaOut.free();
-    txOutputBuilder.free();
-    plc_msg.free();
-    tag3.free();
-    tag2.free();
-    tag1.free();
-    plc_lst.free();
-    config.free();
-    configBuilder.free();
-    pool_deposit.free();
-    key_deposit.free();
-    fee_model.free();
-    fee_const.free();
-    fee_coef.free();
-    ex_units.free();
-    cpu_budget.free();
-    cpu_denominator.free();
-    cpu_nominator.free();
-    memory_budget.free();
-    memory_denominator.free();
-    memory_nominator.free();
-    coins_per_utxo_byte.free();
-    utxos.free();
-    stakeKeyHash.free();
-    stakeKeyHashCred.free();
-    baseAddress.free();
     changeAddress.free();
+    baseAddress.free();
+    stakeKeyHashCred.free();
+    stakeKeyHash.free();
+
+    plc_lst.free();
+    tag1.free();
+    tag2.free();
+    tag3.free();
+    tag4.free();
+    plc_msg.free();
   } catch (e) {
     console.log("Error: " + e.message);
     return;

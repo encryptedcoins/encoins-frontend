@@ -13,7 +13,10 @@ data Poll = Poll {
 
 poll1 :: Poll
 poll1 = Poll 1
-    "Provide 50k ENCS from the treasury to the ENCS/ADA pool on MinSwap?"
-    "Currently, the ENCS/ADA liquidity pool on MinSwap has about 120k ENCS in it. Adding additional 50k ENCS from the treasury should improve the price stability of ENCS."
+    "Poll #1: Do you support the proposal to use 50k ENCS from the treasury to provide liquidity to the ENCS/ADA pool on MinSwap?"
+    "The ENCS/ADA liquidity pool on MinSwap has about 120k ENCS in it (as of June 7, 2023). \
+    \ Adding additional 50k ENCS from the treasury should improve the price stability of ENCS. \
+    \ The total treasury holdings are currently at 3m ENCS. In case the decision is later reversed, \
+    \ the corresponding combination of ADA and ENCS will be returned to the treasury."
     ["Yes", "No"]
     "11 June 2023, 22:00 UTC"
