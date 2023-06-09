@@ -5,7 +5,7 @@ import           Reflex.Dom
 import           Backend.Wallet                (Wallet (..), toJS)
 import           ENCOINS.App.Widgets.Basic     (elementResultJS)
 import           ENCOINS.Common.Utils          (toText)
-import           ENCOINS.Common.Widgets.Basic  (h4, pClass, btn)
+import           ENCOINS.Common.Widgets.Basic  (pClass, btn)
 import           ENCOINS.DAO.Polls             (Poll (..))
 import           ENCOINS.Website.Widgets.Basic (container, section)
 import           JS.DAO                        (daoPollVoteTx)
@@ -25,7 +25,8 @@ pollWidget (Poll n question summary answers endTime) dWallet = section "" "" $ d
 
     blank
   where
+    -- TODO: make this a widget
     explainer txtTitle txtExplainer = container "" $ divClass "div-explainer" $ do
-      h4 txtTitle
+      elAttr "h4" ("class" =: "h4" <> "style" =: "margin-bottom: 30px;") $ text txtTitle
       pClass "p-explainer" $ text txtExplainer
       divClass "app-text-small" $ text $ "Voting ends on " <> endTime <> "."
