@@ -48,6 +48,11 @@ noRelayNotification = elAttr "div" ("class" =: "bottom-notification" <>
   divClass "notification-content" $ text
     "All available relays are down! Try reloading the page or come back later."
 
+wrongNetworkNotification :: MonadWidget t m => Text -> m ()
+wrongNetworkNotification network = elAttr "div" ("class" =: "bottom-notification" <>
+  "id" =: "bottom-notification-network" <> "style" =: "display:none;") .
+  divClass "notification-content" $ text $ "Wrong network! Please switch to the " <> network <> "."
+
 checkboxButton :: MonadWidget t m => m (Dynamic t Bool)
 checkboxButton = mdo
   let mkClass = bool "checkbox-div" "checkbox-div checkbox-selected"
