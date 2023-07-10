@@ -14,7 +14,11 @@ footerWidget = divClass "footer wf-section" $ divClass "container-footer" $
             divClass "div-horizontal-margin" $ divClass "div-horizontal-items" $ do
                 logo
                 h3 "ENCOINS"
-            divClass "div-horizontal-margin div-vertical-margin" $ pClass "p-footer" $ text "ENCOINS is a decentralized private accounts and payments protocol on the Cardano blockchain."
+            divClass "div-horizontal-margin div-vertical-margin" $ pClass "p-footer" $ do
+                text "ENCOINS is a decentralized private accounts and payments protocol on the Cardano blockchain. "
+                text "ENCS utility token policyID: "
+                lnkInline "https://coinmarketcap.com/currencies/encoins/" "9abf0afd2f236a19f2842d502d0450cbcd9c79f123a9708f96fd9b96"
+                text "."
             divClass "div-horizontal-margin" $ do
                 h5 "Our Resourses"
                 divClass "div-our-resourses div-justify-left" $ ourResourses "50px"
@@ -37,6 +41,6 @@ footerWidget = divClass "footer wf-section" $ divClass "container-footer" $
                     h5Bold "Links"
                     eHome <- lnk "#Navbar" "" $ divClass "text-footer" $ text "Home"
                     eISPO <- lnk "#Navbar" "" $ divClass "text-footer" $ text "ISPO"
-                    _     <- lnk "#Navbar" "" $ divClass "text-footer text-disabled" $ text "Governance"
+                    _     <- lnk "https://dao.encoins.io" "" $ divClass "text-footer" $ text "DAO"
                     _     <- lnk "docs/whitepaper.pdf" "" $ divClass "text-footer" $ text "White Paper"
                     return $ leftmost [("Home", "Navbar") <$ eHome, ("ISPO", "Navbar") <$ eISPO, e]

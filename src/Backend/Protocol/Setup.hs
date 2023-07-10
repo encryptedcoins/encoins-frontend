@@ -20,10 +20,10 @@ minAdaTxOutInLedger :: Integer
 minAdaTxOutInLedger = 2_000_000
 
 encoinsCurrencySymbol :: Text
-encoinsCurrencySymbol = "fdf247ce6920c585859cc20b69f90bed8a398da527906e53944e3d71"
+encoinsCurrencySymbol = "f521b2598cd04125d3762078685d50b48d680bd31455e6711671595e"
 
 ledgerAddress :: Address
 ledgerAddress = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-    decodeHex "ea31cfb813df4e90c6fd70fc58833ea7676fc1f4e4407c37e19fafdc")
+    decodeHex "cd50deb19731537b7cd5dc3b99e54a8561bc898e5ad5135e35fc6414")
     (Just $ StakingHash $ PubKeyCredential $ PubKeyHash $ toBuiltin $ fromJust $
     decodeHex "3c2c08be107291be8d71bbb32da11f3b9761b0991f2a6f6940f4f390")

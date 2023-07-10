@@ -8,9 +8,10 @@ import           Backend.Wallet                     (Wallet (..), WalletName (..
 import           ENCOINS.App.Widgets.Basic          (waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.Common.Widgets.Advanced    (wrongNetworkNotification)
-import           ENCOINS.DAO.Polls                  (poll1)
+import           ENCOINS.DAO.Polls                  
 import           ENCOINS.DAO.Widgets.Navbar         (navbarWidget)
-import           ENCOINS.DAO.Widgets.PollWidget     (pollWidget)
+import           ENCOINS.DAO.Widgets.PollWidget     
+import           ENCOINS.Website.Widgets.Basic      (section, container)
 import           JS.Website                         (setElementStyle)
 
 bodyContentWidget :: MonadWidget t m => m ()
@@ -18,8 +19,17 @@ bodyContentWidget = mdo
   eConnectOpen <- navbarWidget dWallet
   dWallet <- connectWindow walletsSupportedInDAO eConnectOpen
 
-  pollWidget poll1 dWallet
+  section "" "" $ do
+    container "" $ elAttr "div" ("class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);") $ text "Active poll"
+    -- pollWidget poll3 dWallet
+    blank
 
+  section "" "" $ do
+    container "" $ elAttr "div" ("class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);") $ text "Concluded polls"
+    pollCompletedWidget poll3
+    pollCompletedWidget poll2
+    pollCompletedWidget poll1
+  
   wrongNetworkNotification "Mainnet"
   let eNotificationStyleChange = bool "flex" "none" . (\w -> walletNetworkId w == "1" || walletName w == None) <$> updated dWallet
   performEvent_ $ setElementStyle "bottom-notification-network" "display" <$> eNotificationStyleChange
@@ -32,4 +42,3 @@ bodyWidget = waitForScripts blank $ mdo
     <> "type" =: "text/javascript" <> "integrity" =: "sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" <> "crossorigin" =: "anonymous") blank
   let e = eJQueryLoaded $> elAttr "script" ("src" =: "js/webflow.js" <> "type" =: "text/javascript") blank
   widgetHold_ blank e
-  
