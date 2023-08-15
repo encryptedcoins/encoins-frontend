@@ -52,8 +52,8 @@ poll4 = Poll 4
         lnkInline "https://discord.com/channels/930855339501445151/1136310556026994748" "Discord server"
         text "."
     )
-    [("Yes", "")
-    , ("No", "")]
+    [("Yes", "91.55%")
+    , ("No", "8.45%")]
     "13 August 2023, 22:00 UTC"
 
 poll3 :: MonadWidget t m => Poll m
