@@ -1,8 +1,11 @@
 # ENCOINS Frontend
 
-## Building with Reflex FRP
+## Install GHCJS locally
 
-This project is built with cabal 3.2.0.0 and GHCJS 8.6.5.
+See [GHCJS.md](GHCJS.md)
+## Building
+
+This project is built with cabal 3.2.0.0, GHC 8.6.5 and GHCJS 8.6
 
 In the shell, run
 ```
