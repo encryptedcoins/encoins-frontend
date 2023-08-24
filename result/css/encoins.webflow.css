@@ -61,6 +61,18 @@ body {
   cursor: pointer;
 }
 
+.menu-item.menu-item-settings-text {
+  display: none;
+}
+
+.menu-item.menu-item-settings:hover .menu-item-settings-text {
+  display: block;
+  font-weight: 400;
+  position: relative;
+  top: 50px;
+  white-space: nowrap;
+}
+
 .nav-menu {
   display: -webkit-box;
   display: -webkit-flex;
@@ -1521,4 +1533,3 @@ body {
     width: 200px;
   }
 }
-

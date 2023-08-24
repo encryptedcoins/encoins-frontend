@@ -186,4 +186,3 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
       then "button-switching flex-center"
       else "button-not-selected button-disabled flex-center"
     addChangeButton dBal = btn (f <$> dBal) "margin-top: 10px;" $ text "ADD CHANGE"
-    

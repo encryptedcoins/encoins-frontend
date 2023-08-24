@@ -25,7 +25,9 @@ navbarWidget w = do
             divClass "menu-div-empty" blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do
                 (elSettings,_) <- elClass' "div"
-                    "menu-item menu-item-button-left menu-item-settings w-inline-block" blank
+                    "menu-item menu-item-button-left menu-item-settings w-inline-block" $
+                      divClass "menu-item menu-item-button-left menu-item-settings-text" $
+                        el "p" $ text "Protect cache"
                 eConnect <- divClass "menu-item-button-left" $
                     btn "button-switching flex-center" "" $ do
                         dyn_ $ fmap (walletIcon . walletName) w
