@@ -24,7 +24,7 @@ landingPage elemId = do
     featuresSection
     roadmapSection
     partnersSection
-    
+
     return never
 
 titleSection :: MonadWidget t m => m ()
@@ -67,7 +67,7 @@ roadmapSection = section "Roadmap" "" $ do
     roadmapItemLeft "05" False "Ecosystem Integrations" $ text "We plan to integrate ENCOINS with selected Cardano Ecosystem projects, including wallets, DeFi, and NFT dApps. All potential partners are welcome!"
     roadmapItemRight  "06" False "Native Assets Support" $ text "Currently, ENCOINS protocol only supports wrapping of ADA. This support will eventually be extended to all native assets on Cardano, including Cardano NFTs."
     where
-        roadmapItemComplete = bool "text-roadmap-numbers" "text-roadmap-numbers text-roadmap-numbers-complete" 
+        roadmapItemComplete = bool "text-roadmap-numbers" "text-roadmap-numbers text-roadmap-numbers-complete"
         roadmapItemRight num b txtTitle tags = divClass "div-roadmap-item div-roadmap-item-right" $ do
             divClass (roadmapItemComplete b) $ text num
             divClass "div-roadmap-item-description" $ do
