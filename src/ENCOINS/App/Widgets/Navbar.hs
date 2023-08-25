@@ -6,7 +6,7 @@ import           Reflex.Dom
 
 import           Backend.Wallet                   (Wallet (..), WalletName (..), walletIcon)
 import           ENCOINS.Common.Widgets.Advanced  (logo)
-import           ENCOINS.Common.Widgets.Basic     (btn)
+import           ENCOINS.Common.Widgets.Basic     (btn, space)
 import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw )
 
 connectText :: Wallet -> Text
@@ -50,5 +50,7 @@ lockerDiv :: MonadWidget t m
   -> Text
   -> m (Element EventResult (DomBuilderSpace m) t)
 lockerDiv iconClass popupClass popupText
-  = fst <$> elClass' "div" ("menu-item menu-item-button-left" <> iconClass <> "w-inline-block") (divClass ("menu-item menu-item-button-left" <> popupClass)
-  $ el "p" $ text $ "Cache" <> popupText)
+  = fst <$> elClass' "div"
+    ("menu-item menu-item-button-left" <> space <> iconClass <> space <> "w-inline-block")
+    (divClass ("menu-item menu-item-button-left" <> space <> popupClass)
+      $ el "p" $ text $ "Cache" <> space <> popupText)

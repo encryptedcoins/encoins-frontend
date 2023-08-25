@@ -74,3 +74,6 @@ divClassId cls elId = elAttr "div" ("class" =: cls <> "id" =: elId)
 errDiv :: MonadWidget t m => Text -> m ()
 errDiv = elAttr "div" ("class" =: "w-file-upload-error w-file-upload-error-msg"
   <> "style" =: "margin-top: 0px;margin-bottom: 10px;") . text
+
+space :: Text
+space = " "
