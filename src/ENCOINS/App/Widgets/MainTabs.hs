@@ -89,7 +89,7 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     containerApp "" $ transactionBalanceWidget (pure 0) (pure 0)
     (dCoins, eSendToLedger, eAddr, dSecretsWithNames) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
-        let dSecrets = fmap nub $ zipDynWith (++) dImportedSecrets dOldSecrets
+        let dSecrets = nub <$> zipDynWith (++) dImportedSecrets dOldSecrets
         dSecretsWithNames <- coinCollectionWithNames dSecrets
         performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins" . decodeUtf8 . toStrict . encode <$> updated dSecrets)
 

@@ -24,7 +24,7 @@ library
     Backend.Status,
     Backend.Wallet,
     ENCOINS.App,
-    ENCOINS.App.Body,    
+    ENCOINS.App.Body,
     ENCOINS.App.Widgets.Basic,
     ENCOINS.App.Widgets.Coin,
     ENCOINS.App.Widgets.ConnectWindow,

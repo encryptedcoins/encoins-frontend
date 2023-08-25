@@ -21,7 +21,7 @@ import           JS.Website                         (saveJSON)
 
 bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mpass = mdo
-  (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet
+  (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet mpass
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen
   (eNewPass, eResetPass) <- passwordSettingsWindow eSettingsOpen
   eResetOk <- resetPasswordDialog eResetPass
@@ -37,7 +37,8 @@ bodyContentWidget mpass = mdo
   copiedNotification
   noRelayNotification
 
-  return $ leftmost [Nothing <$ eResetOk, eNewPass]
+  pure $ leftmost [Nothing <$ eResetOk, eNewPass]
+
   where
     reencryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) "encoins"
       . decodeUtf8 .  toStrict . encode $ d
@@ -47,11 +48,11 @@ bodyWidget = waitForScripts blank $ mdo
   mPass <- fmap PasswordHash <$> loadHashedPassword passwordSotrageKey
   (ePassOk, eReset) <- case mPass of
     Just pass -> first (Just <$>) <$> enterPasswordWindow pass eResetOk
-    _ -> do
+    Nothing -> do
       ePb <- getPostBuild
-      return (Nothing <$ ePb, never)
+      pure (Nothing <$ ePb, never)
   eResetOk <- resetPasswordDialog eReset
-  dmmPass <- holdDyn Nothing $ fmap Just $ leftmost [ePassOk, Nothing <$ eResetOk, eNewPass]
+  dmmPass <- holdDyn Nothing $ Just <$> leftmost [ePassOk, Nothing <$ eResetOk, eNewPass]
   eNewPass <- switchHold never <=< dyn $ dmmPass <&> \case
     Nothing -> pure never
     Just mpass -> bodyContentWidget mpass
