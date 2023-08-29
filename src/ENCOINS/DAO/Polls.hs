@@ -13,6 +13,22 @@ data Poll m = Poll {
         pollEnds :: Text
     }
 
+poll5 :: MonadWidget t m => Poll m
+poll5 = Poll 5
+    (text "Poll #5: Do you approve the Treasury Allocation and Sustainable Development Plan proposed by the ENCOINS team?")
+    (do
+    text
+        "The complete Treasury Allocation Plan was proposed recently by the ENCOINS team on "
+    lnkInline "https://discord.com/channels/930855339501445151/1144309678352900134/1144309678352900134" "Discord"
+    text ". The plan sets specific amounts for spending on audits, bug bounty program, liquidity provision, and team incentives. \
+        \ It also contains updates to the protocol economics which we call the Sustained Development Plan. Check out the full proposal text "
+    lnkInline "https://discord.com/channels/930855339501445151/1144309678352900134/1144309678352900134" "here"
+    text "."
+    )
+    [("Yes", "")
+    , ("No", "")]
+    "4 Septempber 2023, 22:00 UTC"
+
 poll4 :: MonadWidget t m => Poll m
 poll4 = Poll 4
     (text "Poll #4: Spend up to 100k ENCS from the treasury on the VyFi partnership?")
