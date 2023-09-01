@@ -66,7 +66,7 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
             (dCoinsToMint, eSend) <- divClass "app-column w-col w-col-6" $ mdo
                 dCoinsToMint' <- divClassId "" "welcome-coins-mint" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
-                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Balancing) eStatusUpdate]
+                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Constructing) eStatusUpdate]
                     eNewSecret <- coinNewWidget
                     return dCoinsToMint''
                 eSend' <- sendRequestButton WalletMode dStatus dWallet dCoinsToBurn dCoinsToMint (void $ updated dBalance)
@@ -113,9 +113,25 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
           return (dCoinsToBurn, eLedger, eAddrOk, dSecretsWithNames)
     dAddr <- holdDyn Nothing (Just <$> eAddr)
     dWalletSignature <- elementResultJS "walletSignatureElement" decodeWitness
-    (dAssetNamesInTheWallet, eStatusUpdate1, _) <- encoinsTxTransferMode dWallet dCoins dSecretsWithNamesInTheWallet dAddr (void eAddr) dWalletSignature
+    (dAssetNamesInTheWallet, eStatusUpdate1, _) <-
+      encoinsTxTransferMode
+        dWallet
+        dCoins
+        dSecretsWithNamesInTheWallet
+        dAddr
+        (void eAddr)
+        dWalletSignature
+
     let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
-    (_, eStatusUpdate2, _) <- encoinsTxTransferMode dWallet dCoins dSecretsWithNamesInTheWallet (pure Nothing) eSendToLedger dWalletSignature
+    (_, eStatusUpdate2, _) <-
+      encoinsTxTransferMode
+        dWallet
+        dCoins
+        dSecretsWithNamesInTheWallet
+        (pure Nothing)
+        eSendToLedger
+        dWalletSignature
+
     eWalletError <- walletError
     dStatus <- holdDyn Ready $ leftmost [eWalletError, eStatusUpdate1, eStatusUpdate2]
     containerApp "" $ divClass "app-text-small" $ dynText $ fmap toText dStatus
@@ -159,7 +175,7 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
             (dCoinsToMint, eSend, dChangeAddr) <- divClassId "app-column w-col w-col-6" "welcome-ledger-mint" $ mdo
                 dCoinsToMint' <- divClass "" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
-                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [AddCoin <$> eNewSecret, ClearCoins <$ ffilter (== Balancing) eStatusUpdate, AddCoin <$> eAddChange]
+                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [AddCoin <$> eNewSecret, ClearCoins <$ ffilter (== Constructing) eStatusUpdate, AddCoin <$> eAddChange]
                     eNewSecret     <- coinNewWidget
                     return dCoinsToMint''
                 eSend' <- sendRequestButton LedgerMode dStatus dWallet dCoinsToBurn dCoinsToMint (void $ updated dBalance)

@@ -24,6 +24,7 @@ import           ENCOINS.Bulletproofs
 import           ENCOINS.Common.Utils            (toText)
 import           JS.App                          (walletSignTx)
 import           JS.Website                      (setElementStyle)
+import ENCOINS.Common.Events (logEvent)
 
 encoinsTxWalletMode :: MonadWidget t m =>
   Dynamic t Wallet -> Dynamic t BulletproofParams -> Behavior t Randomness -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () ->
@@ -31,7 +32,7 @@ encoinsTxWalletMode :: MonadWidget t m =>
 encoinsTxWalletMode dWallet dBulletproofParams bRandomness dCoinsBurn dCoinsMint eSend = mdo
     mbaseUrl <- getRelayUrl -- this chooses random server with successful ping
     when (isNothing mbaseUrl) $ setElementStyle "bottom-notification-relay" "display" "flex"
-    
+
     let dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
 
@@ -76,18 +77,23 @@ encoinsTxWalletMode dWallet dBulletproofParams bRandomness dCoinsBurn dCoinsMint
     eConfirmed <- updated <$> holdUniqDyn dUTXOs
 
     let eStatus = leftmost [
-          Ready      <$ eConfirmed,
-          Balancing  <$ eFinalRedeemer,
+          Ready        <$ eConfirmed,
+          Constructing <$ eFinalRedeemer,
           eRelayDown,
-          Signing    <$ eNewTxSuccess,
-          Submitting <$ eWalletSignature,
+          Signing      <$ eNewTxSuccess,
+          Submitting   <$ eWalletSignature,
           eRelayDown',
-          Submitted  <$ eSubmitted
+          Submitted    <$ eSubmitted
           ]
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
 
-encoinsTxTransferMode :: MonadWidget t m =>
-  Dynamic t Wallet -> Dynamic t Secrets -> Dynamic t [(Secret, Text)] -> Dynamic t (Maybe Address) -> Event t () -> Dynamic t [(Text, Text)]
+encoinsTxTransferMode :: MonadWidget t m
+  => Dynamic t Wallet
+  -> Dynamic t Secrets
+  -> Dynamic t [(Secret, Text)]
+  -> Dynamic t (Maybe Address)
+  -> Event t ()
+  -> Dynamic t [(Text, Text)]
   -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
 encoinsTxTransferMode dWallet dCoins dNames dmAddr eSend dWalletSignature = do
     mbaseUrl <- getRelayUrl -- this chooses random server with successful ping
@@ -95,14 +101,19 @@ encoinsTxTransferMode dWallet dCoins dNames dmAddr eSend dWalletSignature = do
 
     let dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
-    
+
     let dAddrWallet = fmap walletChangeAddress dWallet
         bWalletName = toJS . walletName <$> current dWallet
         dAddr       = fromMaybe ledgerAddress <$> dmAddr
 
     -- Constructing a new transaction
+    -- logEvent "encoinsTxTransferMode: eSend" eSend
     (eNewTxSuccess, eRelayDown) <- case mbaseUrl of
-      Just baseUrl -> newTxRequestWrapper baseUrl (zipDyn (fmap Left $ (,,) <$> dAddr <*> (zipDynWith mkValue dCoins dNames) <*> dAddrWallet) dInputs) eSend
+      Just baseUrl ->
+        newTxRequestWrapper
+          baseUrl
+          (zipDyn (fmap Left $ (,,) <$> dAddr <*> zipDynWith mkValue dCoins dNames <*> dAddrWallet) dInputs)
+          eSend
       _            -> pure (never, never)
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
@@ -123,13 +134,16 @@ encoinsTxTransferMode dWallet dCoins dNames dmAddr eSend dWalletSignature = do
     eConfirmed <- updated <$> holdUniqDyn dUTXOs
 
     let eStatus = leftmost [
-          Ready      <$ eConfirmed,
+          Ready        <$ eConfirmed,
           eRelayDown,
-          Signing    <$ eNewTxSuccess,
-          Submitting <$ eWalletSignature,
+          Signing      <$ eNewTxSuccess,
+          Constructing <$ eSend,
+          Submitting   <$ eWalletSignature,
           eRelayDown',
-          Submitted  <$ eSubmitted
+          Submitted    <$ eSubmitted
           ]
+    logEvent "encoinsTxTransferMode: eStatus" eStatus
+
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
   where
     mkValue coins names = CSL.Value (toText $ minAdaTxOutInLedger * length coins) . Just . CSL.MultiAsset . Map.singleton
@@ -180,9 +194,9 @@ encoinsTxLedgerMode dWallet dBulletproofParams bRandomness dmChangeAddr dCoinsBu
     eConfirmed <- updated <$> holdUniqDyn dUTXOs
 
     let eStatus = leftmost [
-          Ready      <$ eConfirmed,
-          Balancing  <$ eFinalRedeemer,
+          Ready        <$ eConfirmed,
+          Constructing <$ eFinalRedeemer,
           eRelayDown,
-          Submitted  <$ eServerOk,
+          Submitted    <$ eServerOk,
           eRelayDown' ]
     return (fmap getEncoinsInUtxos dUTXOs, eStatus)
