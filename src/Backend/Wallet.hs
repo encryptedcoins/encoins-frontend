@@ -11,49 +11,50 @@ import           ENCOINS.App.Widgets.Basic     (elementResultJS)
 import           ENCOINS.Common.Widgets.Basic  (image)
 import           JS.App                        (walletLoad)
 
-data WalletName =
+data WalletName
+  =
+    -- Begin
     Eternl
-  | Nami
   | Flint
-  -- | NuFi
-  -- | Gero
-  -- | Begin
+  | Gero
+  -- | Lace
+  | Nami
+  | NuFi
   -- | Typhon
-  | Lace
   | None
   deriving (Eq, Show, Enum, Bounded)
 
 toJS :: WalletName -> Text
 toJS = \case
-  None   -> "none"
-  Eternl -> "eternl"
-  Nami   -> "nami"
-  Flint  -> "flint"
-  -- NuFi   -> "nufi"
-  -- Gero   -> "gerowallet"
   -- Begin  -> "begin"
   -- Begin  -> "begin-nightly"
+  Eternl -> "eternl"
+  Flint  -> "flint"
+  Gero   -> "gerowallet"
+  -- Lace   -> "lace"
+  Nami   -> "nami"
+  NuFi   -> "nufi"
   -- Typhon -> "typhon"
-  Lace   -> "lace"
+  None   -> "none"
 
 fromJS :: Text -> WalletName
 fromJS = \case
-  "eternl"     -> Eternl
-  "nami"       -> Nami
-  "flint"      -> Flint
-  -- "nufi"       -> NuFi
-  -- "gerowallet" -> Gero
   -- "begin"      -> Begin
   -- "begin-nightly" -> Begin
+  "eternl"     -> Eternl
+  "flint"      -> Flint
+  "gerowallet" -> Gero
+  -- "lace"       -> Lace
+  "nami"       -> Nami
+  "nufi"       -> NuFi
   -- "typhon"     -> Typhon
-  "lace"       -> Lace
   _            -> None
 
 walletsSupportedInApp :: [WalletName]
-walletsSupportedInApp = [Eternl, Nami, None]
+walletsSupportedInApp = [Eternl, Flint, Nami, None]
 
 walletsSupportedInDAO :: [WalletName]
-walletsSupportedInDAO = [Eternl, Nami, Flint, Lace, None]
+walletsSupportedInDAO = [Eternl, Flint, Gero, Nami, NuFi, None]
 
 data Wallet = Wallet
   {

@@ -7,7 +7,7 @@ import           ENCOINS.App.Widgets.Basic    (elementResultJS)
 
 data Status =
       Ready             -- ^ The default status
-    | Balancing         -- ^ Transaction is sent to the backend for balancing
+    | Constructing      -- ^ Transaction is sent to the backend for constructing and balancing
     | Signing           -- ^ Transaction is sent to the wallet for signing
     | Submitting        -- ^ Transaction is sent to the backend for submission
     | Submitted         -- ^ Transaction is submitted to the blockchain
@@ -17,7 +17,7 @@ data Status =
 
 instance Show Status where
     show Ready            = ""
-    show Balancing        = "Balancing..."
+    show Constructing     = "Constructing the transaction..."
     show Signing          = "Please sign the transaction."
     show Submitting       = "Submitting..."
     show Submitted        = "The transaction is now pending..."
@@ -25,11 +25,11 @@ instance Show Status where
     show (WalletError e)  = "Error: " <> unpack e
 
 isStatusBusy :: Status -> Bool
-isStatusBusy Balancing  = True
-isStatusBusy Signing    = True
-isStatusBusy Submitting = True
-isStatusBusy Submitted  = True
-isStatusBusy _          = False
+isStatusBusy Constructing = True
+isStatusBusy Signing      = True
+isStatusBusy Submitting   = True
+isStatusBusy Submitted    = True
+isStatusBusy _            = False
 
 -- Wallet error element
 walletError :: MonadWidget t m => m (Event t Status)

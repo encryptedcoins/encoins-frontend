@@ -14,8 +14,14 @@ import           ENCOINS.Bulletproofs                   (Secrets)
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
 import           JS.Website                             (setElementStyle)
 
-sendRequestButton :: MonadWidget t m => EncoinsMode -> Dynamic t Status -> Dynamic t Wallet ->
-  Dynamic t Secrets -> Dynamic t Secrets -> Event t () -> m (Event t ())
+sendRequestButton :: MonadWidget t m
+  => EncoinsMode
+  -> Dynamic t Status
+  -> Dynamic t Wallet
+  -> Dynamic t Secrets
+  -> Dynamic t Secrets
+  -> Event t ()
+  -> m (Event t ())
 sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = do
   -- Getting the current MaxAda
   mbaseUrl <- getRelayUrl
