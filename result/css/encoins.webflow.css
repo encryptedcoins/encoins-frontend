@@ -48,17 +48,54 @@ body {
   font-weight: 400;
 }
 
-.menu-item.menu-item-settings {
-  width: 30px;
+.menu-item.menu-item-locked {
+  width: 22px;
   height: 31px;
-  background-image: url('../images/Settings.svg');
+  background-image: url('../images/locked.svg');
   background-position: 0px 0px;
   background-size: auto;
 }
 
-.menu-item.menu-item-settings:hover {
-  background-image: url('../images/Settings-Active.svg');
+.menu-item.menu-item-locked:hover {
+  background-image: url('../images/locked-active.svg');
   cursor: pointer;
+}
+
+.menu-item.menu-item-locked-text {
+  display: none;
+}
+
+.menu-item.menu-item-locked:hover .menu-item-locked-text {
+  display: block;
+  font-weight: 400;
+  position: relative;
+  top: 50px;
+  white-space: nowrap;
+}
+
+.menu-item.menu-item-unlocked {
+  width: 29px;
+  height: 31px;
+  background-image: url('../images/unlocked.svg');
+  background-position: 0px 0px;
+  background-size: auto;
+}
+
+.menu-item.menu-item-unlocked:hover {
+  background-image: url('../images/unlocked-active.svg');
+  cursor: pointer;
+}
+
+.menu-item.menu-item-unlocked-text {
+  display: none;
+}
+
+.menu-item.menu-item-unlocked:hover .menu-item-unlocked-text {
+  display: block;
+  font-weight: 400;
+  position: relative;
+  top: 50px;
+  white-space: nowrap;
 }
 
 .nav-menu {
@@ -1521,4 +1558,3 @@ body {
     width: 200px;
   }
 }
-

@@ -1,6 +1,7 @@
 module ENCOINS.Website.Body (bodyWidget) where
 
 import           Data.Functor                        (($>))
+import           Data.Function (on)
 import           Data.Text                           (Text)
 import           Reflex.Dom
 
@@ -14,7 +15,7 @@ pageSelect (page, idFocus) = case page of
   "Home" -> landingPage idFocus
   "ISPO" -> never <$ ispoPage
   _      -> return never
-    
+
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = mdo
   divClass "hero" blank
@@ -24,7 +25,7 @@ bodyContentWidget = mdo
   eFooterPageSelected <- footerWidget
 
   dPageFocus <- holdDyn ("Home", "Navbar") (leftmost [eNavbarPageSelected, eBodyPageSelected, eFooterPageSelected])
-    >>= holdUniqDynBy (\a b -> fst a == fst b)
+    >>= holdUniqDynBy ((==) `on` fst)
 
   blank
 

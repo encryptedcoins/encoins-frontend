@@ -50,7 +50,7 @@ enterPasswordWindow passHash eResetOk = mdo
   ret@(eClose,_) <- elDynAttr "div" (fmap mkClass dWindowIsOpen) $ elAttr "div"
     ("class" =: "dialog-window" <> "style" =: "width:90%") $ do
       divClass "app-columns w-row" $ divClass "connect-title-div" $
-        divClass "app-text-semibold" $ text "Welcome to Encoins"
+        divClass "app-text-semibold" $ text "Password for the Encoins application cache in the browser"
       dPassOk <- divClass "app-columns w-row" $
         divClass "app-column w-col w-col-12" $ do
           ePb <- getPostBuild
@@ -84,7 +84,7 @@ passwordSettingsWindow :: MonadWidget t m => Event t ()
 passwordSettingsWindow eOpen = do
   emPassHash <- fmap (fmap PasswordHash) <$> performEvent (loadHashedPassword passwordSotrageKey <$ eOpen)
   dmPassHash <- holdDyn Nothing emPassHash
-  dialogWindow True eOpen never "width: 90%;" "Password Settings" $ do
+  dialogWindow True eOpen never "width: 90%;" "Protecting the Encoins application cache in the browser" $ do
     ePassOk <- switchHold never <=< dyn $ dmPassHash <&> \case
       Just passHash -> divClass "app-columns w-row" $ divClass "app-column w-col w-col-12" $ do
         dmCurPass <- passwordInput "Current password:" False (pure Nothing) eOpen

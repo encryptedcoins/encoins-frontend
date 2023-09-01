@@ -20,7 +20,7 @@ Alternatively, simply run
 
 ## Setup for local development
 
-Switch to cabal 3.2.0.0 and GHC 8.6.5 for HLS support.
+Switch to cabal 3.2.0.0 and GHC 8.6.5 for HLS support (HLS version for the setup is 1.8.0.0).
 
 Download [`caddy2`](https://caddyserver.com/v2).
 
