@@ -19,7 +19,7 @@ newTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- newTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = makeResponse <$> eResp
-  logEvent "" eRespUnwrapped
+  logEvent "newTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
   return $ eventMaybe (BackendError "The current relay is down. Please, select another one.") eRespUnwrapped
 
 submitTxRequestWrapper :: MonadWidget t m => BaseUrl -> Dynamic t SubmitTxReqBody ->
@@ -42,7 +42,7 @@ serverTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- serverTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = (() <$) . makeResponse <$> eResp
-  logEvent "" eRespUnwrapped
+  logEvent "serverTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
   return $ eventMaybe (BackendError "The current relay is down. Please, select another one.") eRespUnwrapped
 
 statusRequestWrapper :: MonadWidget t m => BaseUrl -> Dynamic t EncoinsStatusReqBody ->
@@ -51,5 +51,5 @@ statusRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- statusRequest (Right <$> dReqBody) e
   let eRespUnwrapped = makeResponse <$> eResp
-  logEvent "" eRespUnwrapped
+  logEvent "statusRequestWrapper: eRespUnwrapped:" eRespUnwrapped
   return $ eventMaybe (BackendError "The current relay is down. Please, select another one.") eRespUnwrapped

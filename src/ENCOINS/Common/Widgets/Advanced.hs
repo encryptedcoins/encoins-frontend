@@ -109,13 +109,15 @@ withTooltip mainW style delay1 delay2 innerW = mdo
   (e, ret) <- elClass' "div" "div-tooltip-wrapper" $ do
     ret' <- mainW
     let
-      eMouseIn = traceEvent "eMouseIn" $ domEvent Mouseenter e
-      eMouseOut = traceEvent "eMouseOut" $ domEvent Mouseleave e
+      eMouseIn = domEvent Mouseenter e
+      eMouseOut = domEvent Mouseleave e
     eShow <- delay delay1 eMouseIn
     eHide <- delay delay2 eMouseOut
-    dAttrs <- holdDyn hideAttrs $ leftmost [showAttrs <$ traceEvent "eShow" eShow,
-      hideAttrs <$ traceEvent "eHide" eHide]
-    elDynAttr "div" (traceDyn "dAttrs" dAttrs) innerW
+    dAttrs <- holdDyn hideAttrs $ leftmost
+      [ showAttrs <$ eShow
+      , hideAttrs <$ eHide
+      ]
+    elDynAttr "div" dAttrs innerW
     return ret'
   return ret
   where
