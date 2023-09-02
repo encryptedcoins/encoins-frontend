@@ -3,6 +3,11 @@
 ## Install GHCJS locally
 
 See [GHCJS.md](GHCJS.md)
+
+## Generating Html
+
+In case `apps/Html.hs` is changed run `cabal new-run encoins-html` for generating new html files.
+
 ## Building
 
 This project is built with cabal 3.2.0.0, GHC 8.6.5 and GHCJS 8.6
