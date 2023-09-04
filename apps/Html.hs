@@ -36,8 +36,8 @@ makePage pageValue file = do
         noscript_ $
           link_ [ rel_ "stylesheet", href_ "css/noscript.css"]
       body_ $ do
-        noScript
         script_ [src_ $ file <> ".js"] T.empty
+        noScript
 
 mkDataWfPage :: Text -> Attributes
 mkDataWfPage = makeAttributes "data-wf-page"
@@ -47,12 +47,11 @@ dataWfSite = makeAttributes "data-wf-site" "63b058a2f897ba2767d5ff1b"
 
 noScript :: Html ()
 noScript = noscript_ $
-  div_ [class_ "no-script"] $
-    div_ [class_ "no-script-box"] $ do
-      img_
-        [ class_ "no-script-javascript"
-        , src_ "images/javascript.svg"
-        ]
-      p_
-        [ class_ "no-script-text"
-        ] "JavaScript is disabled"
+  div_ [class_ "no-script"] $ do
+    img_
+      [ class_ "javascript javascript_inverted"
+      , src_ "images/javascript.svg"
+      ]
+    p_
+      [ class_ "text"
+      ] "JavaScript is disabled"
