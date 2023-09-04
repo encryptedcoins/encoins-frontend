@@ -20,7 +20,7 @@ data DelegatorC = DelegatorC { addressC :: Text, rewardC :: Double }
 type DelegatorsC = [DelegatorC]
 
 delegatorList :: DelegatorsC
-delegatorList = fromJust (decode $ fromStrict $(embedFile "result/ispo/calculator.json") :: Maybe DelegatorsC)
+delegatorList = fromJust (decode $ fromStrict $(embedFile "../result/ispo/calculator.json") :: Maybe DelegatorsC)
 
 calculator :: MonadWidget t m => m ()
 calculator = divClass "div-calculator w-row" $ do
