@@ -65,37 +65,37 @@ library
     JS.Website,
     Reflex.ScriptDependent
   build-depends:
-    base                      >=4.7,
-    aeson                      -any,
-    base16-bytestring          -any,
-    bytestring                 -any,
-    containers                 -any,
+    base                       ^>=4.12.0.0,
+    aeson                      ^>=1.5.6.0,
+    base16-bytestring          ^>=1.0.2.0,
+    bytestring                 ^>=0.10.8.2,
+    containers                 ^>=0.6.0.1,
     csl-types                  -any,
     encoins-bulletproofs       -any,
-    extra                      -any,
-    file-embed                 -any,
-    ghcjs-dom                  -any,
-    hex-text                   -any,
-    http-api-data              -any,
-    ilist                      -any,
-    jsaddle                    -any,
+    extra                      ^>=1.7.14,
+    file-embed                 ^>=0.0.15.0,
+    ghcjs-dom                  ^>=0.9.5.0,
+    hex-text                   ^>=0.1.0.7,
+    http-api-data              ^>=0.4.3,
+    ilist                      ^>=0.4.0.1,
+    jsaddle                    ^>=0.9.8.2,
     plutus-tx-extra            -any,
     plutus-tx-js               -any,
-    random                     -any,
-    reflex-dom                 -any,
-    reflex-dom-core            -any,
-    servant                    -any,
-    servant-checked-exceptions -any,
-    servant-reflex             -any,
-    stm                        -any,
-    text                       -any,
-    time                       -any,
-    tuple                      -any,
-    uuid                       -any,
-    witherable                 -any
+    random                     ^>=1.2.1.1,
+    reflex-dom                 ==0.6.1.1,
+    reflex-dom-core            ^>=0.7.0.3,
+    servant                    ^>=0.18.3,
+    servant-checked-exceptions ^>=2.2.0.1,
+    servant-reflex             ^>=0.4.0,
+    stm                        ^>=2.5.1.0,
+    text                       ^>=1.2.3.1,
+    time                       ^>=1.8.0.2,
+    tuple                      ^>=0.3.0.2,
+    uuid                       ^>=1.3.15,
+    witherable                 ^>=0.4.2
   if impl(ghcjs)
     build-depends:
-      ghcjs-base               -any
+      ghcjs-base               ^>=0.2.1.0
   default-extensions:
     AllowAmbiguousTypes,
     BangPatterns,
@@ -139,11 +139,11 @@ executable encoins-website
   if impl(ghcjs)
     ghc-options:      -dedupe
   build-depends:
-    base                       >=4.7,
+    base                       ^>=4.12.0.0,
     encoins-frontend            -any
   if impl(ghcjs)
     build-depends:
-      ghcjs-base                -any
+      ghcjs-base                ^>=0.2.1.0
 
 executable encoins-app
   main-is:             App.hs
@@ -155,11 +155,11 @@ executable encoins-app
   if impl(ghcjs)
     ghc-options:      -dedupe
   build-depends:
-    base                       >=4.7,
+    base                       ^>=4.12.0.0,
     encoins-frontend            -any
   if impl(ghcjs)
     build-depends:
-      ghcjs-base                -any
+      ghcjs-base                ^>=0.2.1.0
 
 executable encoins-dao
   main-is:             DAO.hs
@@ -171,20 +171,8 @@ executable encoins-dao
   if impl(ghcjs)
     ghc-options:      -dedupe
   build-depends:
-    base                       >=4.7,
+    base                       ^>=4.12.0.0,
     encoins-frontend            -any
   if impl(ghcjs)
     build-depends:
-      ghcjs-base                -any
-
-executable encoins-html
-  main-is:             Html.hs
-  hs-source-dirs:      apps
-
-  default-language:   Haskell2010
-  ghc-options:        -Wall -Wno-unrecognised-pragmas
-
-  build-depends:
-    base                       >=4.7,
-    lucid2,
-    text
+      ghcjs-base                ^>=0.2.1.0
