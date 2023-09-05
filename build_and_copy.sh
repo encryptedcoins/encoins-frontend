@@ -4,7 +4,7 @@ printf '\n==== Build Frontend html ====\n\n'
 cabal new-run --project-file=frontend-html.project frontend-html
 
 printf '\n==== Build Frontend ====\n\n'
-cabal new-build --ghcjs --project-file=frontend.project frontend
+cabal new-build --ghcjs frontend
 
 printf '\n==== Copy js files to result ====\n\n'
 
