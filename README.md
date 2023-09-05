@@ -27,7 +27,7 @@ They generate html files to `result/` folder.
 2. For building just the `frontend` part of the project use commands:
 
 ```
-cabal new-build --ghcjs --project-file=frontend.project frontend
+cabal new-build --ghcjs frontend
 ```
 to build all webpages. Copy `all.js` files to the respective files in `result/`.
 
