@@ -462,3 +462,66 @@ async function daoPollVoteTx(n, walletName, answer)
     return;
   }
 };
+
+async function daoDelegateTx(walletName, url)
+{
+  // loading CardanoWasm
+  await loader.load();
+  const CardanoWasm = loader.Cardano;
+
+  await lucidLoader.load();
+  const lucid = await lucidLoader.Lucid.new(
+    // TODO: check url below
+    new lucidLoader.Blockfrost("https://cardano-mainnet.blockfrost.io/api/v0", "mainnetK4sRBCTDwqzK1KRuFxnpuxPbKF4ZQrnl"),
+    "Mainnet",
+  )
+
+  try {
+    //loading wallet
+    const api = await walletAPI(walletName);
+    lucid.selectWallet(api);
+
+    const changeAddress    = CardanoWasm.Address.from_bytes(fromHexString(await api.getChangeAddress()));
+    const baseAddress      = CardanoWasm.BaseAddress.from_address(changeAddress);
+    const stakeKeyHashCred = baseAddress.stake_cred();
+    const stakeKeyHash     = stakeKeyHashCred.to_keyhash();
+
+    const plc_lst = CardanoWasm.PlutusList.new();
+    const tag1 = CardanoWasm.PlutusData.new_bytes(toUTF8Array("ENCOINS"));
+    const tag2 = CardanoWasm.PlutusData.new_bytes(toUTF8Array("Delegate"));
+    const tag3 = CardanoWasm.PlutusData.new_bytes(stakeKeyHash.to_bytes());
+    const tag4 = CardanoWasm.PlutusData.new_bytes(toUTF8Array(url));
+    plc_lst.add(tag1);
+    plc_lst.add(tag2);
+    plc_lst.add(tag3);
+    plc_lst.add(tag4);
+    const plc_msg = CardanoWasm.PlutusData.new_list(plc_lst);
+
+    const tx = await lucid.newTx()
+      .addSignerKey(toHexString(stakeKeyHash.to_bytes()))
+      .payToAddressWithData(changeAddress.to_bech32(), { inline: toHexString(plc_msg.to_bytes()) }, { lovelace: 1500000n })
+      .complete();
+
+    const signedTx = await tx.sign().complete();
+
+    const txHash = await signedTx.submit();
+    console.log("Delegate tx hash", txHash);
+
+    setInputValue("Delegate", "Thank you for delegating!");
+
+    changeAddress.free();
+    baseAddress.free();
+    stakeKeyHashCred.free();
+    stakeKeyHash.free();
+
+    plc_lst.free();
+    tag1.free();
+    tag2.free();
+    tag3.free();
+    tag4.free();
+    plc_msg.free();
+  } catch (e) {
+    console.log("Error: " + e.message);
+    return;
+  }
+};
