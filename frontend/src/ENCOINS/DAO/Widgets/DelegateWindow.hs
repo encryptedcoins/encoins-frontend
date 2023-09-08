@@ -38,8 +38,11 @@ delegateWindow eOpen dWallet = mdo
 
       addFocusPostBuildDelayE dUrlInp eOpen
 
-      btnOk <- btn btnAttrs
-        "width:30%;display:inline-block;margin-right:5px;" $ text "Ok"
+      btClass <- mBlocked eStatus
+      btnOk <- btn
+        btClass
+        "width:30%;display:inline-block;margin-right:5px;"
+        (text "Ok")
 
       let eUrl = traceEvent "eUrl" $ tagPromptlyDyn (value dUrlInp) btnOk
 
@@ -61,6 +64,8 @@ delegateWindow eOpen dWallet = mdo
   return (eOk, eEscape)
   where
     btnAttrs = "button-switching inverted flex-center"
+    mBlocked eStatus =
+      foldDyn (\es acc -> if es `elem` [Constructing, Signing, Submitting] then acc <> " button-disabled" else acc) btnAttrs eStatus
 
 delegateStatus :: MonadWidget t m => m (Event t Status)
 delegateStatus = do
