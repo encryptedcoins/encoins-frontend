@@ -7,13 +7,15 @@ import           Control.Monad                          (void)
 import           Reflex.Dom
 
 import           Backend.Protocol.Types
-import           ENCOINS.App.Widgets.Basic              (elementResultJS)
+import           ENCOINS.App.Widgets.Basic              (elementResultJS, containerApp)
 import           ENCOINS.Common.Widgets.Advanced        (dialogWindow)
 import           ENCOINS.Common.Events (addFocusPostBuildDelayE, logEvent)
 import           Backend.Wallet (Wallet(..), toJS)
 import           JS.DAO (daoDelegateTx)
 import           Data.Text (Text)
-import ENCOINS.Common.Widgets.Basic (btn)
+import ENCOINS.Common.Widgets.Basic (btn, divClassId)
+import ENCOINS.Common.Utils (toText)
+import Backend.Status (Status(..), otherError)
 
 
 delegateWindow :: MonadWidget t m
@@ -44,12 +46,33 @@ delegateWindow eOpen dWallet = mdo
       performEvent_
         $ daoDelegateTx <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
 
-
       isDelegate <- elementResultJS "Delegate" id
       logEvent "Delegate" $ checkEmptyText <$> updated isDelegate
 
-      widgetHold_ blank $ leftmost [blank <$ eUrl, blank <$ eOpen]
+      -- widgetHold_ blank $ leftmost [blank <$ eUrl, blank <$ eOpen]
+      eStatus <- delegateStatus
+      dStatus <- holdDyn Ready eStatus
+      containerApp ""
+        $ divClassId "app-text-small" "welcome-read-docs"
+        $ dynText
+        $ fmap toText dStatus
+
       return (eUrl, eEscape)
   return (eOk, eEscape)
   where
     btnAttrs = "button-switching inverted flex-center"
+
+delegateStatus :: MonadWidget t m => m (Event t Status)
+delegateStatus = do
+  eConstruct <- updated <$> elementResultJS "DelegateCreateNewTx" id
+  eSign <- updated <$> elementResultJS "DelegateSignTx" id
+  eSubmit <- updated <$> elementResultJS "DelegateSubmitTx" id
+  eErr <- updated <$> elementResultJS "DelegateError" id
+  eErrStatus <- otherError eErr
+  pure $ leftmost [
+        -- Ready        <$ eConfirmed,
+        eErrStatus,
+        Constructing <$ eConstruct,
+        Signing      <$ eSign,
+        Submitting   <$ eSubmit
+        ]
