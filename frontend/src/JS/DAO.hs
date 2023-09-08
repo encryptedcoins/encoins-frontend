@@ -34,8 +34,8 @@ daoPollVoteTx = const $ error "GHCJS is required!"
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
-  "daoDelegateTx($1);"
-  daoDelegateTx_js :: JSVal -> IO ()
+  "daoDelegateTx($1, $2);"
+  daoDelegateTx_js :: JSVal -> JSVal -> IO ()
 
 daoDelegateTx :: MonadIO m => (Text, Text) -> m ()
 daoDelegateTx (walletName, url) = liftIO $ do
