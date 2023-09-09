@@ -17,13 +17,13 @@ bulletproofSetup :: BulletproofSetup
 bulletproofSetup = fromJust $ decode $ fromStrict $(embedFile "config/bulletproof_setup.json")
 
 minAdaTxOutInLedger :: Integer
-minAdaTxOutInLedger = 2_000_000
+minAdaTxOutInLedger = 4_000_000
 
 encoinsCurrencySymbol :: Text
-encoinsCurrencySymbol = "1940e97fcd60b84e8ffe88c966a4b85393727edcf8b9c4d55c55398d"
+encoinsCurrencySymbol = "3365fb88a2777bb436f4d29c495f3c7ce1c7c0493f3925dd087d9704"
 
 ledgerAddress :: Address
 ledgerAddress = Address (ScriptCredential $ ValidatorHash $ toBuiltin $ fromJust $
-    decodeHex "b6c6632b5ecf39df368c9b6ac7ce201c565c7dd06a30b4a34db45d90")
+    decodeHex "2dd2954c20a20ba371cf7bc8efe878579067b2f10da142c6d27df6c2")
     (Just $ StakingHash $ PubKeyCredential $ PubKeyHash $ toBuiltin $ fromJust $
     decodeHex "3c2c08be107291be8d71bbb32da11f3b9761b0991f2a6f6940f4f390")
