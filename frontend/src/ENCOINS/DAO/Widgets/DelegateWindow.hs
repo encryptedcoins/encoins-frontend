@@ -64,7 +64,7 @@ delegateWindow eOpen dWallet = mdo
       isDelegate <- elementResultJS "Delegate" id
       logEvent "Delegate" $ checkEmptyText <$> updated isDelegate
 
-      eStatus <- delegateStatus
+      eStatus <- delegateStatus eInvalidUrl eValidUrl
       dStatus <- holdDyn Ready eStatus
       containerApp ""
         $ divClassId "app-text-small" "welcome-read-docs"
@@ -76,8 +76,11 @@ delegateWindow eOpen dWallet = mdo
       return (eUrl, eEscape)
   return (eOk, eEscape)
 
-delegateStatus :: MonadWidget t m => m (Event t Status)
-delegateStatus = do
+delegateStatus :: MonadWidget t m
+  => Event t Text
+  -> Event t Text
+  -> m (Event t Status)
+delegateStatus eInvalidUrl eValidUrl = do
   eConstruct <- updated <$> elementResultJS "DelegateCreateNewTx" id
   eSign <- updated <$> elementResultJS "DelegateSignTx" id
   eSubmit <- updated <$> elementResultJS "DelegateSubmitTx" id
@@ -86,13 +89,14 @@ delegateStatus = do
   -- eCustom <- newEventWithDelay 5
   -- eCustomErr <- newEventWithDelay 15
   pure $ leftmost [
-        -- Ready        <$ eConfirmed,
           eErrStatus
-        , Constructing <$ eConstruct
-        , Signing      <$ eSign
-        , Submitting   <$ eSubmit
+        , Constructing             <$ eConstruct
+        , Signing                  <$ eSign
+        , Submitting               <$ eSubmit
         -- , Signing <$ eCustom
         -- , OtherError "custom Error" <$ eCustomErr
+        , Ready                    <$ eValidUrl
+        , OtherError "Invalid url" <$ eInvalidUrl
         ]
 
 inputWidget :: MonadWidget t m
