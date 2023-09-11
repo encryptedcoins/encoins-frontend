@@ -81,7 +81,11 @@ delegateWindow eOpen dWallet = mdo
                 $ toText <$> dStatus
             pure btnOk
 
-          return (eUrl, eEscape, dStatus)
+          dPerfermStatus <- foldDynMaybe
+            (\s _ -> if isDisableStatus s then Just s else Nothing)
+            Ready
+            eStatus
+          return (eUrl, eEscape, dPerfermStatus)
   return dStatus
 
 delegateStatus :: MonadWidget t m

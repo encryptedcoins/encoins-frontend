@@ -19,13 +19,13 @@ import            Control.Monad (void)
 
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = mdo
-  eDao <- navbarWidget dWallet
+  eDao <- navbarWidget dWallet dStatus
   logEvent "eDao" eDao
   let eConnectOpen = void $ ffilter (==Connect) eDao
   let eDelegate = void $ ffilter (==Delegate) eDao
 
   dWallet <- connectWindow walletsSupportedInDAO eConnectOpen
-  _ <- delegateWindow eDelegate dWallet
+  dStatus <- delegateWindow eDelegate dWallet
 
   section "" "" $ do
     container "" $ elAttr "div" ("class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);") $ text "Active poll"
