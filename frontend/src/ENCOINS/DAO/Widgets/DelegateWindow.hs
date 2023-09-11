@@ -23,9 +23,9 @@ import qualified Data.Text as T
 delegateWindow :: MonadWidget t m
   => Event t ()
   -> Dynamic t Wallet
-  -> m (Event t Text, Event t ())
+  -> m (Dynamic t Status)
 delegateWindow eOpen dWallet = mdo
-  (eUrlOk, eEscape) <- dialogWindow
+  (eUrlOk, eEscape, dStatus) <- dialogWindow
     True
     eOpen
     (leftmost [void eUrlOk, eEscape])
@@ -62,7 +62,11 @@ delegateWindow eOpen dWallet = mdo
             $ JS.daoDelegateTx <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
 
           eStatus <- delegateStatus eInvalidUrl eValidUrl eEmptyUrl
-          logEvent "eStatus" $ ffilter (not . null) $ show <$> eStatus
+          eStatusAcc <- updated <$> foldDynMaybe
+              (\a b -> if a == b then Nothing else Just a)
+              Ready
+              eStatus
+          logEvent "Status changed to" eStatusAcc
           dStatus <- holdDyn Ready eStatus
 
           -- The button disable with invalid url and performant statuses.
@@ -77,8 +81,8 @@ delegateWindow eOpen dWallet = mdo
                 $ toText <$> dStatus
             pure btnOk
 
-          return (eUrl, eEscape)
-  return (eUrlOk, eEscape)
+          return (eUrl, eEscape, dStatus)
+  return dStatus
 
 delegateStatus :: MonadWidget t m
   => Event t Text
