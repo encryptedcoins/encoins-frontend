@@ -170,4 +170,3 @@ addrLoad = liftIO . addrLoad_js . textToStr
 addrLoad :: MonadIO m => Text -> m ()
 addrLoad = const $ error "GHCJS is required!"
 #endif
-

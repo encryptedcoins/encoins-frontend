@@ -80,7 +80,6 @@ library
     http-api-data              ^>=0.4.3,
     ilist                      ^>=0.4.0.1,
     jsaddle                    ^>=0.9.8.2,
-    network-uri                -any,
     plutus-tx-extra            -any,
     plutus-tx-js               -any,
     random                     ^>=1.2.1.1,
