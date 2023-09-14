@@ -137,6 +137,13 @@ async function walletAPI(walletName) {
       }
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.lace is not found"); });
+    case "yoroi":
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.yoroi !== 'undefined'))
+      {
+        return window.cardano.yoroi.enable();
+      }
+      else
+        return new Promise(() => { throw new Error("window.cardano or window.cardano.yoroi is not found"); });
     default:
       return new Promise(() => { setWalletNone(); console.log(walletName); console.log("Wallet: None"); });
   }

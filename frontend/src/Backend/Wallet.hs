@@ -21,6 +21,7 @@ data WalletName
   | Nami
   | NuFi
   -- | Typhon
+  | Yoroi
   | None
   deriving (Eq, Show, Enum, Bounded)
 
@@ -35,6 +36,7 @@ toJS = \case
   Nami   -> "nami"
   NuFi   -> "nufi"
   -- Typhon -> "typhon"
+  Yoroi  -> "yoroi"
   None   -> "none"
 
 fromJS :: Text -> WalletName
@@ -48,13 +50,14 @@ fromJS = \case
   "nami"       -> Nami
   "nufi"       -> NuFi
   -- "typhon"     -> Typhon
+  "yoroi"      -> Yoroi
   _            -> None
 
 walletsSupportedInApp :: [WalletName]
 walletsSupportedInApp = [Eternl, Flint, Nami, None]
 
 walletsSupportedInDAO :: [WalletName]
-walletsSupportedInDAO = [Eternl, Flint, Gero, Nami, NuFi, None]
+walletsSupportedInDAO = [Eternl, Flint, Gero, Nami, NuFi, Yoroi, None]
 
 data Wallet = Wallet
   {
