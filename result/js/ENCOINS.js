@@ -497,21 +497,22 @@ async function daoDelegateTx(walletName, url)
     plc_lst.add(tag4);
     const plc_msg = CardanoWasm.PlutusData.new_list(plc_lst);
 
+    setInputValue("DelegateCreateNewTx", plc_msg)
+
     const tx = await lucid.newTx()
       .addSignerKey(toHexString(stakeKeyHash.to_bytes()))
       .payToAddressWithData(changeAddress.to_bech32(), { inline: toHexString(plc_msg.to_bytes()) }, { lovelace: 1500000n })
       .complete();
 
-    setInputValue("DelegateCreateNewTx", tx)
+    setInputValue("DelegateSignTx", tx)
 
     const signedTx = await tx.sign().complete();
 
-    setInputValue("DelegateSignTx", signedTx)
+    setInputValue("DelegateSubmitTx", signedTx);
 
     const txHash = await signedTx.submit();
-    console.log("Delegate tx hash", txHash);
 
-    setInputValue("DelegateSubmitTx", txHash);
+    setInputValue("DelegateSubmittedTx", txHash);
 
     changeAddress.free();
     baseAddress.free();
@@ -524,6 +525,7 @@ async function daoDelegateTx(walletName, url)
     tag3.free();
     tag4.free();
     plc_msg.free();
+    setInputValue("DelegateReadyTx", "Thank you for delegating!");
   } catch (e) {
     console.log("Error: " + e.message);
     setInputValue("DelegateError", e.message);

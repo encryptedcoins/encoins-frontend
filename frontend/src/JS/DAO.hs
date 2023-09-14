@@ -9,7 +9,7 @@ import           Control.Monad.IO.Class      (MonadIO(..))
 import           Data.Text                   (Text)
 
 #ifdef __GHCJS__
-import           Language.Javascript.JSaddle (ToJSVal(..), FromJSVal(..), JSVal, JSString, JSM, textToStr)
+import           Language.Javascript.JSaddle (ToJSVal(..), JSVal, JSString, textToStr)
 #endif
 
 -----------------------------------------------------------------
