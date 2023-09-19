@@ -502,12 +502,16 @@ async function daoDelegateTx(walletName, url)
       .payToAddressWithData(changeAddress.to_bech32(), { inline: toHexString(plc_msg.to_bytes()) }, { lovelace: 1500000n })
       .complete();
 
+    setInputValue("DelegateCreateNewTx", tx)
+
     const signedTx = await tx.sign().complete();
+
+    setInputValue("DelegateSignTx", signedTx)
 
     const txHash = await signedTx.submit();
     console.log("Delegate tx hash", txHash);
 
-    setInputValue("Delegate", "Thank you for delegating!");
+    setInputValue("DelegateSubmitTx", "Thank you for delegating!");
 
     changeAddress.free();
     baseAddress.free();
@@ -522,6 +526,8 @@ async function daoDelegateTx(walletName, url)
     plc_msg.free();
   } catch (e) {
     console.log("Error: " + e.message);
+    setInputValue("DelegateError", e.message);
+
     return;
   }
 };
