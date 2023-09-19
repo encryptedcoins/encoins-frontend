@@ -511,7 +511,7 @@ async function daoDelegateTx(walletName, url)
     const txHash = await signedTx.submit();
     console.log("Delegate tx hash", txHash);
 
-    setInputValue("DelegateSubmitTx", "Thank you for delegating!");
+    setInputValue("DelegateSubmitTx", txHash);
 
     changeAddress.free();
     baseAddress.free();
