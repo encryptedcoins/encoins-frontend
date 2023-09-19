@@ -73,7 +73,7 @@ walletsSupportedInDAOMainnet = [Eternl, Flint, Gero, Nami, NuFi, Yoroi, None]
 
 -- TODO checkup list. Add or remove other
 walletsSupportedInDAOTestnet :: [WalletName]
-walletsSupportedInDAOTestnet = [Eternl, Flint, Gero, Nami, NuFi, Yoroi, None]
+walletsSupportedInDAOTestnet = [Eternl, Flint, Nami, None]
 
 walletsSupportedInDAO :: [WalletName]
 walletsSupportedInDAO = case dao networkConfig of
@@ -104,7 +104,6 @@ loadWallet eWalletName = mdo
     (\n _ -> if T.null n then Nothing else Just $ toNetworkId n)
     Testnet
     eWalletNetworkId
-  logEvent "dWalletNetworkId" $ updated dWalletNetworkId
   dWalletAddressBech32 <- elementResultJS "changeAddressBech32Element" id
   dPubKeyHash <- elementResultJS "pubKeyHashElement" id
   dStakeKeyHash <- elementResultJS "stakeKeyHashElement" id
