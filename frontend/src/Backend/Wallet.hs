@@ -16,8 +16,6 @@ import           Data.Aeson (FromJSON, decode)
 import           GHC.Generics (Generic)
 import           Data.FileEmbed                  (embedFile)
 import qualified Data.Text as T
-import ENCOINS.Common.Events
-import Debug.Trace
 
 data WalletName
   =
