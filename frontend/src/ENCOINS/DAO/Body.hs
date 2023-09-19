@@ -4,7 +4,7 @@ import           Data.Bool                          (bool)
 import           Data.Functor                       (($>))
 import           Reflex.Dom
 
-import           Backend.Wallet                     (Wallet (..), WalletName (..), walletsSupportedInDAO)
+import           Backend.Wallet                     (Wallet (..), WalletName (..), walletsSupportedInDAO, networkConfig, NetworkConfig(..))
 import           ENCOINS.App.Widgets.Basic          (waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.Common.Widgets.Advanced    (wrongNetworkNotification)
@@ -39,7 +39,9 @@ bodyContentWidget = mdo
     pollCompletedWidget poll1
 
   wrongNetworkNotification "Mainnet"
-  let eNotificationStyleChange = bool "flex" "none" . (\w -> walletNetworkId w == "1" || walletName w == None) <$> updated dWallet
+  let eNotificationStyleChange
+        = bool "flex" "none"
+        . (\w -> walletNetworkId w == dao networkConfig || walletName w == None) <$> updated dWallet
   performEvent_ $ setElementStyle "bottom-notification-network" "display" <$> eNotificationStyleChange
 
 bodyWidget :: MonadWidget t m => m ()
