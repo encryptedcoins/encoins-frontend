@@ -26,10 +26,21 @@ import           JS.App                          (walletSignTx)
 import           JS.Website                      (setElementStyle)
 import ENCOINS.Common.Events (logEvent)
 
-encoinsTxWalletMode :: MonadWidget t m =>
-  Dynamic t Wallet -> Dynamic t BulletproofParams -> Behavior t Randomness -> Dynamic t Secrets -> Dynamic t Secrets -> Event t () ->
-  m (Dynamic t [Text], Event t Status, Dynamic t Text)
-encoinsTxWalletMode dWallet dBulletproofParams bRandomness dCoinsBurn dCoinsMint eSend = mdo
+encoinsTxWalletMode :: MonadWidget t m
+  => Dynamic t Wallet
+  -> Dynamic t BulletproofParams
+  -> Behavior t Randomness
+  -> Dynamic t Secrets
+  -> Dynamic t Secrets
+  -> Event t ()
+  -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
+encoinsTxWalletMode
+  dWallet
+  dBulletproofParams
+  bRandomness
+  dCoinsBurn
+  dCoinsMint
+  eSend = mdo
     mbaseUrl <- getRelayUrl -- this chooses random server with successful ping
     when (isNothing mbaseUrl) $ setElementStyle "bottom-notification-relay" "display" "flex"
 
@@ -45,8 +56,12 @@ encoinsTxWalletMode dWallet dBulletproofParams bRandomness dCoinsBurn dCoinsMint
         dMPs     = fmap snd dLst
 
     -- Obtaining EncoinsRedeemer
-    let bRed = mkRedeemer WalletMode ledgerAddress <$> current dAddrWallet <*>
-          current dBulletproofParams <*> current dSecrets <*> current dMPs <*> bRandomness
+    let bRed = mkRedeemer WalletMode ledgerAddress
+          <$> current dAddrWallet
+          <*> current dBulletproofParams
+          <*> current dSecrets
+          <*> current dMPs
+          <*> bRandomness
 
     -- Constructing the final redeemer
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eSend
@@ -95,7 +110,13 @@ encoinsTxTransferMode :: MonadWidget t m
   -> Event t ()
   -> Dynamic t [(Text, Text)]
   -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
-encoinsTxTransferMode dWallet dCoins dNames dmAddr eSend dWalletSignature = do
+encoinsTxTransferMode
+  dWallet
+  dCoins
+  dNames
+  dmAddr
+  eSend
+  dWalletSignature = do
     mbaseUrl <- getRelayUrl -- this chooses random server with successful ping
     when (isNothing mbaseUrl) $ setElementStyle "bottom-notification-relay" "display" "flex"
 
@@ -150,18 +171,35 @@ encoinsTxTransferMode dWallet dCoins dNames dmAddr eSend dWalletSignature = do
       encoinsCurrencySymbol . Map.fromList . mapMaybe
         (\s -> (,"1") <$> lookup s names) $ coins
 
-encoinsTxLedgerMode :: MonadWidget t m =>
-  Dynamic t Wallet -> Dynamic t BulletproofParams -> Behavior t Randomness -> Dynamic t (Maybe Address) -> Dynamic t Secrets ->
-  Dynamic t Secrets -> Event t () -> m (Dynamic t [Text], Event t Status)
-encoinsTxLedgerMode dWallet dBulletproofParams bRandomness dmChangeAddr dCoinsBurn dCoinsMint eSend = mdo
+encoinsTxLedgerMode :: MonadWidget t m
+  => Dynamic t Wallet
+  -> Dynamic t BulletproofParams
+  -> Behavior t Randomness
+  -> Dynamic t (Maybe Address)
+  -> Dynamic t Secrets
+  -> Dynamic t Secrets
+  -> Event t ()
+  -> m (Dynamic t [Text], Event t Status)
+encoinsTxLedgerMode
+  dWallet
+  dBulletproofParams
+  bRandomness
+  dmChangeAddr
+  dCoinsBurn
+  dCoinsMint
+  eSend = mdo
     mbaseUrl <- getRelayUrl -- this chooses random server with successful ping
     when (isNothing mbaseUrl) $ setElementStyle "bottom-notification-relay" "display" "flex"
 
     ePb   <- getPostBuild
     eTick <- tickLossyFromPostBuildTime 12
     (eStatusResp, eRelayDown') <- case mbaseUrl of
-      Just baseUrl -> statusRequestWrapper baseUrl (pure LedgerEncoins) $ leftmost [ePb, void eTick]
-      _            -> pure (never, never)
+      Just baseUrl ->
+          statusRequestWrapper
+            baseUrl
+            (pure LedgerEncoins)
+            $ leftmost [ePb, void eTick]
+      Nothing      -> pure (never, never)
     let toLedgerUtxoResult (LedgerUtxoResult xs) = Just xs
         toLedgerUtxoResult _ = Nothing
         eLedgerUtxoResult = mapMaybe toLedgerUtxoResult eStatusResp

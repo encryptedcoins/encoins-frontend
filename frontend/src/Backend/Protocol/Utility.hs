@@ -24,7 +24,14 @@ getEncoinsInUtxos utxos = Map.keys assets
           (mapMaybe (Map.lookup encoinsCurrencySymbol . getMultiAsset) $
           mapMaybe (CSL.multiasset . CSL.amount . CSL.output) utxos)
 
-mkRedeemer :: EncoinsMode -> Address -> Address -> BulletproofParams -> Secrets -> [MintingPolarity] -> Randomness -> EncoinsRedeemer
+mkRedeemer :: EncoinsMode
+  -> Address
+  -> Address
+  -> BulletproofParams
+  -> Secrets
+  -> [MintingPolarity]
+  -> Randomness
+  -> EncoinsRedeemer
 mkRedeemer mode ledgerAddr changeAddr bp secrets mps rs = red
     where (_, inputs, proof) = bulletproof bulletproofSetup bp secrets mps rs
           v = calculateV secrets mps
