@@ -29,3 +29,20 @@ daoPollVoteTx n (walletName, answer) = liftIO $ do
 daoPollVoteTx :: MonadIO m => Integer -> (Text, Text) -> m ()
 daoPollVoteTx = const $ error "GHCJS is required!"
 #endif
+
+-----------------------------------------------------------------
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
+  "daoDelegateTx($1);"
+  daoDelegateTx_js :: JSVal -> IO ()
+
+daoDelegateTx :: MonadIO m => (Text, Text) -> m ()
+daoDelegateTx (walletName, url) = liftIO $ do
+  walletName_js <- toJSVal walletName
+  url_js     <- toJSVal url
+  daoDelegateTx_js walletName_js url_js
+#else
+daoDelegateTx :: MonadIO m => (Text, Text) -> m ()
+daoDelegateTx = const $ error "GHCJS is required!"
+#endif

@@ -158,7 +158,7 @@ coinNewButtonWidget dV eEnter widgetNew = do
 
 coinNewWidget :: MonadWidget t m => m (Event t Secret)
 coinNewWidget = divClass "coin-new-div" $ mdo
-    eNewSecret <- coinNewButtonWidget dV (keypress Enter inp) plusButton 
+    eNewSecret <- coinNewButtonWidget dV (keypress Enter inp) plusButton
     (inp, dV) <- coinNewInputWidget "Enter ADA amount..." (fromMaybe (-1 :: Integer) . readMaybe . unpack) eNewSecret
     divClass "app-text-semibold" $ text "ADA"
     return eNewSecret

@@ -8,16 +8,24 @@ import           Backend.Wallet                     (Wallet (..), WalletName (..
 import           ENCOINS.App.Widgets.Basic          (waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.Common.Widgets.Advanced    (wrongNetworkNotification)
-import           ENCOINS.DAO.Polls                  
-import           ENCOINS.DAO.Widgets.Navbar         (navbarWidget)
-import           ENCOINS.DAO.Widgets.PollWidget     
+import           ENCOINS.DAO.Polls
+import           ENCOINS.DAO.Widgets.Navbar         (navbarWidget, Dao (..))
+import           ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
+import           ENCOINS.DAO.Widgets.PollWidget
 import           ENCOINS.Website.Widgets.Basic      (section, container)
 import           JS.Website                         (setElementStyle)
+import            ENCOINS.Common.Events (logEvent)
+import            Control.Monad (void)
 
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = mdo
-  eConnectOpen <- navbarWidget dWallet
+  eDao <- navbarWidget dWallet
+  logEvent "eDao" eDao
+  let eConnectOpen = void $ ffilter (==Connect) eDao
+  let eDelegate = void $ ffilter (==Delegate) eDao
+
   dWallet <- connectWindow walletsSupportedInDAO eConnectOpen
+  _ <- delegateWindow eDelegate dWallet
 
   section "" "" $ do
     container "" $ elAttr "div" ("class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);") $ text "Active poll"
@@ -31,7 +39,7 @@ bodyContentWidget = mdo
     pollCompletedWidget poll3
     pollCompletedWidget poll2
     pollCompletedWidget poll1
-  
+
   wrongNetworkNotification "Mainnet"
   let eNotificationStyleChange = bool "flex" "none" . (\w -> walletNetworkId w == "1" || walletName w == None) <$> updated dWallet
   performEvent_ $ setElementStyle "bottom-notification-network" "display" <$> eNotificationStyleChange

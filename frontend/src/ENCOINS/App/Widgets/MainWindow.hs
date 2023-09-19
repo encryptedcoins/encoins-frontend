@@ -13,15 +13,15 @@ import           ENCOINS.Bulletproofs                   (Secrets)
 
 mainWindow :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet ->
   m (Dynamic t Secrets)
-mainWindow mpass dWallet = mdo
+mainWindow mPass dWallet = mdo
     eTab <- tabsSection dTab
     dTab <- holdDyn WalletTab eTab
 
     eSecrets <- switchHold never <=< dyn $ dTab <&> \tab -> do
-      dOldSecrets <- loadAppData (getPassRaw <$> mpass) "encoins" id []
+      dOldSecrets <- loadAppData (getPassRaw <$> mPass) "encoins" id []
       case tab of
-        WalletTab   -> walletTab mpass dWallet dOldSecrets
-        TransferTab -> transferTab mpass dWallet dOldSecrets
-        LedgerTab   -> ledgerTab mpass dWallet dOldSecrets
+        WalletTab   -> walletTab mPass dWallet dOldSecrets
+        TransferTab -> transferTab mPass dWallet dOldSecrets
+        LedgerTab   -> ledgerTab mPass dWallet dOldSecrets
       return (updated dOldSecrets)
     holdDyn [] eSecrets
