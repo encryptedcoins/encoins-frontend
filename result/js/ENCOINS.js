@@ -487,6 +487,7 @@ async function daoDelegateTx(apiKey, net, walletName, url)
     const baseAddress      = CardanoWasm.BaseAddress.from_address(changeAddress);
     const stakeKeyHashCred = baseAddress.stake_cred();
     const stakeKeyHash     = stakeKeyHashCred.to_keyhash();
+    const utxos            = await api.getUtxos();
 
     const plc_lst = CardanoWasm.PlutusList.new();
     const tag1 = CardanoWasm.PlutusData.new_bytes(toUTF8Array("ENCOINS"));
@@ -516,6 +517,9 @@ async function daoDelegateTx(apiKey, net, walletName, url)
 
     setInputValue("DelegateSubmittedTx", txHash);
 
+    // Check wallets's utxos are changed and then send DelegateReadyTx
+    await check_utxos_changed({ api, utxos, wait: 1000, retries: 30 })
+
     changeAddress.free();
     baseAddress.free();
     stakeKeyHashCred.free();
@@ -527,11 +531,9 @@ async function daoDelegateTx(apiKey, net, walletName, url)
     tag3.free();
     tag4.free();
     plc_msg.free();
-    setInputValue("DelegateReadyTx", "Thank you for delegating!");
   } catch (e) {
     console.log("Error: " + e.message);
     setInputValue("DelegateError", e.message);
-
     return;
   }
 };
@@ -540,8 +542,6 @@ const regex = new RegExp('^(?:(?:https?):\\\/\\\/)?(?:\\S+(?::\\S*)?@)?(?:(?!(?:
 
 async function checkUrl(str) {
   const isUrl = regex.test(str)
-  // console.log("js_str:", str);
-  // console.log("js_checkUrl:", isUrl);
   if (isUrl)
   {
     setInputValue("ValidUrl", str);
@@ -550,3 +550,18 @@ async function checkUrl(str) {
   setInputValue("InvalidUrl", str);
   return;
 };
+
+async function check_utxos_changed ({ api, utxosOld, wait, retries }) {
+  await setTimeout(wait)
+  const utxosNew = await api.getUtxos();
+
+  if (utxosOld !== utxosNew) {
+    console.log("The utxos of the wallet have been changed")
+    return setInputValue("DelegateReadyTx", "Thank you for delegating!");
+  }
+
+  if (retries)
+  return check_utxos_changed({ api, utxosOld, wait, retries: --retries })
+
+  throw new Error('Retry attempts exhausted')
+}
