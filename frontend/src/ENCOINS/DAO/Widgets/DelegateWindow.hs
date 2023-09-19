@@ -13,6 +13,7 @@ import           ENCOINS.Common.Events (addFocusPostBuildDelayE, logEvent)
 import           Backend.Wallet (Wallet(..), toJS)
 import           JS.DAO (daoDelegateTx)
 import           Data.Text (Text)
+import ENCOINS.Common.Widgets.Basic (btn)
 
 
 delegateWindow :: MonadWidget t m
