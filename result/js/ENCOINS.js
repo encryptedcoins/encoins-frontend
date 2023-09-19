@@ -82,7 +82,11 @@ async function walletAPI(walletName) {
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.nami is not found"); });
     case "eternl":
-      c
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.eternl !== 'undefined'))
+      {
+        return window.cardano.eternl.enable();
+      }
+      else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.eternl is not found"); });
     case "flint":
       if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.flint !== 'undefined'))
