@@ -205,6 +205,7 @@ async function walletLoad(walletName)
 
     // const rewardAddresses     = await api.getRewardAddresses();
     // setInputValue(rewardAddressesElement, rewardAddresses);
+    setInputValue("EndWalletLoad", "");
     console.log("end walletLoad");
   } catch (e) {
     console.log(e.message);
