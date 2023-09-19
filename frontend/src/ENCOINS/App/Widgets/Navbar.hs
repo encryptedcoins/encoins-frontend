@@ -39,18 +39,17 @@ lockerWidget :: MonadWidget  t m
   => Maybe PasswordRaw
   -> m (Element EventResult (DomBuilderSpace m) t)
 lockerWidget mPass = do
-  let (iconClass, popupClass, popupText) = case mPass of
-        Nothing -> ("menu-item-unlocked", "menu-item-unlocked-text", "isn't protected")
-        Just _ -> ("menu-item-locked", "menu-item-locked-text", "is protected")
-  lockerDiv iconClass popupClass popupText
+  let (iconClass, popupText) = case mPass of
+        Nothing -> ("menu-item-unlocked", "isn't protected")
+        Just _ -> ("menu-item-locked", "is protected")
+  lockerDiv iconClass popupText
 
 lockerDiv :: MonadWidget t m
   => Text
   -> Text
-  -> Text
   -> m (Element EventResult (DomBuilderSpace m) t)
-lockerDiv iconClass popupClass popupText
+lockerDiv iconClass popupText
   = fst <$> elClass' "div"
     ("menu-item menu-item-button-left" <> space <> iconClass <> space <> "w-inline-block")
-    (divClass ("menu-item menu-item-button-left" <> space <> popupClass)
+    (divClass "menu-item menu-item-button-left popup-text"
       $ el "p" $ text $ "Cache" <> space <> popupText)

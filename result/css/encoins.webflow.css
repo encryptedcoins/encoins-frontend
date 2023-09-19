@@ -61,11 +61,11 @@ body {
   cursor: pointer;
 }
 
-.menu-item.menu-item-locked-text {
+.menu-item.popup-text {
   display: none;
 }
 
-.menu-item.menu-item-locked:hover .menu-item-locked-text {
+.menu-item.menu-item-locked:hover .popup-text {
   display: block;
   font-weight: 400;
   position: relative;
@@ -86,15 +86,23 @@ body {
   cursor: pointer;
 }
 
-.menu-item.menu-item-unlocked-text {
+.menu-item.popup-text {
   display: none;
 }
 
-.menu-item.menu-item-unlocked:hover .menu-item-unlocked-text {
+.menu-item.menu-item-unlocked:hover .popup-text {
   display: block;
   font-weight: 400;
   position: relative;
   top: 50px;
+  white-space: nowrap;
+}
+
+.menu-item-notify-text {
+  display: block;
+  font-weight: 400;
+  position: fixed;
+  margin-top: 5px;
   white-space: nowrap;
 }
 
