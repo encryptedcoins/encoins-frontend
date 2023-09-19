@@ -61,12 +61,8 @@ delegateWindow eOpen dWallet = mdo
           performEvent_
             $ JS.daoDelegateTx <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
 
-          eStatus <- delegateStatus eInvalidUrl eValidUrl eEmptyUrl
-          eStatusAcc <- updated <$> foldDynMaybe
-              (\a b -> if a == b then Nothing else Just a)
-              Ready
-              eStatus
-          logEvent "Status changed to" eStatusAcc
+          eStatus <- delegateStatus
+          logEvent "Status" eStatus
           dStatus <- holdDyn Ready eStatus
 
           -- The button disable with invalid url and performant statuses.
@@ -81,32 +77,26 @@ delegateWindow eOpen dWallet = mdo
                 $ toText <$> dStatus
             pure btnOk
 
-          dPerfermStatus <- foldDynMaybe
-            (\s _ -> if isDisableStatus s then Just s else Nothing)
-            Ready
-            eStatus
-          return (eUrl, eEscape, dPerfermStatus)
+          return (eUrl, eEscape, dStatus)
   return dStatus
 
 delegateStatus :: MonadWidget t m
-  => Event t Text
-  -> Event t Text
-  -> Event t Text
-  -> m (Event t Status)
-delegateStatus eInvalidUrl eValidUrl eEmptyUrl = do
+  => m (Event t Status)
+delegateStatus = do
   eConstruct <- updated <$> elementResultJS "DelegateCreateNewTx" id
   eSign <- updated <$> elementResultJS "DelegateSignTx" id
   eSubmit <- updated <$> elementResultJS "DelegateSubmitTx" id
+  eSubmitted <- updated <$> elementResultJS "DelegateSubmitedTx" id
+  eReady <- updated <$> elementResultJS "DelegateReadyTx" id
   eErr <- updated <$> elementResultJS "DelegateError" id
   eErrStatus <- otherError eErr
   pure $ leftmost [
           eErrStatus
+        , Ready                            <$ eReady
         , Constructing                     <$ eConstruct
         , Signing                          <$ eSign
         , Submitting                       <$ eSubmit
-        , Ready                            <$ eValidUrl
-        , CustomStatus "Invalid reley url" <$ eInvalidUrl
-        , CustomStatus ""                  <$ eEmptyUrl
+        , Submitted                        <$ eSubmitted
         ]
 
 inputWidget :: MonadWidget t m
@@ -144,4 +134,4 @@ buttonWidget dStatus = btn
 -- Check if status is the performant one.
 -- Performant status fires when background operations are processing.
 isDisableStatus :: Status -> Bool
-isDisableStatus status = status `elem` [Constructing, Signing, Submitting]
+isDisableStatus status = status `elem` [Constructing, Signing, Submitting, Submitted]

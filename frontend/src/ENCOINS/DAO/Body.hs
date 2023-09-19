@@ -14,13 +14,11 @@ import           ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
 import           ENCOINS.DAO.Widgets.PollWidget
 import           ENCOINS.Website.Widgets.Basic      (section, container)
 import           JS.Website                         (setElementStyle)
-import            ENCOINS.Common.Events (logEvent)
 import            Control.Monad (void)
 
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = mdo
   eDao <- navbarWidget dWallet dStatus
-  logEvent "eDao" eDao
   let eConnectOpen = void $ ffilter (==Connect) eDao
   let eDelegate = void $ ffilter (==Delegate) eDao
 
