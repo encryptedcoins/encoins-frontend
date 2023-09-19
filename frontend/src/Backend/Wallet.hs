@@ -12,11 +12,12 @@ import           CSL                           (TransactionUnspentOutputs)
 import           ENCOINS.App.Widgets.Basic     (elementResultJS)
 import           ENCOINS.Common.Widgets.Basic  (image)
 import           JS.App                        (walletLoad)
-import Data.Aeson (FromJSON, decode)
-import GHC.Generics (Generic)
+import           Data.Aeson (FromJSON, decode)
+import           GHC.Generics (Generic)
 import           Data.FileEmbed                  (embedFile)
 import qualified Data.Text as T
-
+import ENCOINS.Common.Events
+import Debug.Trace
 
 data WalletName
   =
@@ -98,7 +99,12 @@ loadWallet :: MonadWidget t m => Event t WalletName -> m (Dynamic t Wallet)
 loadWallet eWalletName = mdo
   performEvent_ (walletLoad . toJS <$> eWalletName)
   dWalletName <- elementResultJS "walletNameElement" fromJS
-  dWalletNetworkId <- elementResultJS "networkIdElement" id
+  eWalletNetworkId <- updated <$> elementResultJS "networkIdElement" id
+  dWalletNetworkId <- foldDynMaybe
+    (\n _ -> if T.null n then Nothing else Just $ toNetworkId n)
+    Testnet
+    eWalletNetworkId
+  logEvent "dWalletNetworkId" $ updated dWalletNetworkId
   dWalletAddressBech32 <- elementResultJS "changeAddressBech32Element" id
   dPubKeyHash <- elementResultJS "pubKeyHashElement" id
   dStakeKeyHash <- elementResultJS "stakeKeyHashElement" id
@@ -106,7 +112,7 @@ loadWallet eWalletName = mdo
   let dAddrWallet = zipDynWith mkAddressFromPubKeys dPubKeyHash (checkEmptyText <$> dStakeKeyHash)
   return $ Wallet
     <$> dWalletName
-    <*> (toNetworkId <$> dWalletNetworkId)
+    <*> dWalletNetworkId
     <*> dWalletAddressBech32
     <*> dAddrWallet
     <*> dUTXOs
@@ -137,4 +143,9 @@ data NetworkConfig = NetworkConfig
 
 networkConfig :: NetworkConfig
 networkConfig =
-  fromJust $ decode $ fromStrict $(embedFile "config/network_config.json")
+  fromJust $ decode $ fromStrict $(embedFile "config/network_id_config.json")
+
+lucidConfig :: (Text, Text)
+lucidConfig = case dao networkConfig of
+  Mainnet -> ("mainnetK4sRBCTDwqzK1KRuFxnpuxPbKF4ZQrnl", "Mainnet")
+  Testnet -> ("preprodCMZ4wTbLIsLRncviikOkicVgYXyfYrga", "Preprod")

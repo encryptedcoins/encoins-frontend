@@ -10,7 +10,7 @@ import           Reflex.Dom
 import           ENCOINS.App.Widgets.Basic              (elementResultJS, containerApp)
 import           ENCOINS.Common.Widgets.Advanced        (dialogWindow)
 import           ENCOINS.Common.Events (addFocusPostBuildDelayE, logEvent)
-import           Backend.Wallet (Wallet(..), toJS)
+import           Backend.Wallet (Wallet(..), toJS, lucidConfig)
 import qualified JS.DAO as JS
 import           Data.Text (Text)
 import           ENCOINS.Common.Widgets.Basic (btn, divClassId)
@@ -57,9 +57,8 @@ delegateWindow eOpen dWallet = mdo
           let dIsDisableStatus = isDisableStatus <$> dStatus
 
           let eUrl = tagPromptlyDyn dInputText btnOk
-
           performEvent_
-            $ JS.daoDelegateTx <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
+            $ JS.daoDelegateTx lucidConfig <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
 
           eStatus <- delegateStatus
           logEvent "Status" eStatus

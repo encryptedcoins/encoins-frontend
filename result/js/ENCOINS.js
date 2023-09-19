@@ -401,7 +401,7 @@ function toUTF8Array(str) {
   return utf8;
 }
 
-async function daoPollVoteTx(n, walletName, answer)
+async function daoPollVoteTx(n, apiKey, net, walletName, answer)
 {
   // loading CardanoWasm
   await loader.load();
@@ -409,8 +409,8 @@ async function daoPollVoteTx(n, walletName, answer)
 
   await lucidLoader.load();
   const lucid = await lucidLoader.Lucid.new(
-    new lucidLoader.Blockfrost("https://cardano-mainnet.blockfrost.io/api/v0", "mainnetK4sRBCTDwqzK1KRuFxnpuxPbKF4ZQrnl"),
-    "Mainnet",
+    new lucidLoader.Blockfrost("https://cardano-preprod.blockfrost.io/api/v0", apiKey),
+    net,
   )
 
   try {
@@ -463,7 +463,7 @@ async function daoPollVoteTx(n, walletName, answer)
   }
 };
 
-async function daoDelegateTx(walletName, url)
+async function daoDelegateTx(apiKey, net, walletName, url)
 {
   // loading CardanoWasm
   await loader.load();
@@ -472,8 +472,8 @@ async function daoDelegateTx(walletName, url)
   await lucidLoader.load();
   const lucid = await lucidLoader.Lucid.new(
     // TODO: check url below
-    new lucidLoader.Blockfrost("https://cardano-mainnet.blockfrost.io/api/v0", "mainnetK4sRBCTDwqzK1KRuFxnpuxPbKF4ZQrnl"),
-    "Mainnet",
+    new lucidLoader.Blockfrost("https://cardano-preprod.blockfrost.io/api/v0", apiKey),
+    net,
   )
 
   try {
