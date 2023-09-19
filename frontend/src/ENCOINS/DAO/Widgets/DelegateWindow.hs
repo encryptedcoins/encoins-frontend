@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module ENCOINS.DAO.Widgets.DelegateWindow
   (
     delegateWindow
@@ -11,13 +12,14 @@ import           ENCOINS.App.Widgets.Basic              (elementResultJS, contai
 import           ENCOINS.Common.Widgets.Advanced        (dialogWindow)
 import           ENCOINS.Common.Events (addFocusPostBuildDelayE, logEvent, newEventWithDelay)
 import           Backend.Wallet (Wallet(..), toJS)
-import           JS.DAO (daoDelegateTx)
-import           Data.Text (Text)
-import ENCOINS.Common.Widgets.Basic (btn, divClassId)
-import ENCOINS.Common.Utils (toText)
-import Backend.Status (Status(..), otherError)
-import Data.Text (unpack)
-import Network.URI (parseURI)
+import qualified JS.DAO as JS
+import           Data.Text (Text, unpack)
+import           ENCOINS.Common.Widgets.Basic (btn, divClassId)
+import           ENCOINS.Common.Utils (toText)
+import           Backend.Status (Status(..), otherError)
+import Data.Bool (bool)
+import Control.Monad.IO.Class (MonadIO (liftIO))
+import Debug.Trace (trace)
 
 delegateWindow :: MonadWidget t m
   => Event t ()
@@ -27,26 +29,41 @@ delegateWindow eOpen dWallet = mdo
   (eOk, eEscape) <- dialogWindow True eOpen (leftmost [void eOk, eEscape]) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" "" $ mdo
       divClass "connect-title-div" $ divClass "app-text-semibold" $ text "Enter url:"
 
-      (dUrlInp, eEscape) <- inputWidget eOpen (checkStatus <$> dStatus)
+      (dUrl, eEscape) <- inputWidget eOpen (checkStatus <$> dStatus)
+      performEvent_
+        (JS.checkUrl <$> updated (traceDynWith (\u -> "dUrl: " <> unpack u) dUrl))
 
-      addFocusPostBuildDelayE dUrlInp eOpen
+      eValidUrl <- updated <$> elementResultJS "ValidUrl" id
+      eInvalidUrl <- updated <$> elementResultJS "InvalidUrl" id
+      logEvent "eValidUrl" eValidUrl
+      logEvent "eInvalidUrl" eInvalidUrl
 
-      let dUrl = value dUrlInp
+      let eCheckedUrl = leftmost
+            [
+              Nothing  <$ eValidUrl
+            , Just ()  <$ eInvalidUrl
+            ]
+      logEvent "eCheckedUrl" eCheckedUrl
 
-      btnOk <- buttonWidget $
-        mconcat [checkStatus <$> dStatus, checkUrl <$> dUrl]
+      dCheckedUrl <- holdDyn (Just ()) eCheckedUrl
+
+      let dCheckedStatus = checkStatus <$> dStatus
+
+      btnOk <- buttonWidget $ mconcat
+        [ traceDynWith (\cl -> "dCheckedStatus: " <> show cl) dCheckedStatus
+        , traceDynWith (\cl -> "dCheckedUrl: " <> show cl) dCheckedUrl
+        ]
 
       logEvent "btnOk" btnOk
 
       let eUrl = traceEvent "eUrl" $ tagPromptlyDyn dUrl btnOk
 
       performEvent_
-        $ daoDelegateTx <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
+        $ JS.daoDelegateTx <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
 
       isDelegate <- elementResultJS "Delegate" id
       logEvent "Delegate" $ checkEmptyText <$> updated isDelegate
 
-      -- widgetHold_ blank $ leftmost [blank <$ eUrl, blank <$ eOpen]
       eStatus <- delegateStatus
       dStatus <- holdDyn Ready eStatus
       containerApp ""
@@ -59,7 +76,6 @@ delegateWindow eOpen dWallet = mdo
       return (eUrl, eEscape)
   return (eOk, eEscape)
 
-
 delegateStatus :: MonadWidget t m => m (Event t Status)
 delegateStatus = do
   eConstruct <- updated <$> elementResultJS "DelegateCreateNewTx" id
@@ -67,22 +83,22 @@ delegateStatus = do
   eSubmit <- updated <$> elementResultJS "DelegateSubmitTx" id
   eErr <- updated <$> elementResultJS "DelegateError" id
   eErrStatus <- otherError eErr
-  eCustom <- newEventWithDelay 5
-  eCustomErr <- newEventWithDelay 15
+  -- eCustom <- newEventWithDelay 5
+  -- eCustomErr <- newEventWithDelay 15
   pure $ leftmost [
         -- Ready        <$ eConfirmed,
           eErrStatus
         , Constructing <$ eConstruct
         , Signing      <$ eSign
         , Submitting   <$ eSubmit
-        , Signing <$ eCustom
-        , OtherError "custom Error" <$ eCustomErr
+        -- , Signing <$ eCustom
+        -- , OtherError "custom Error" <$ eCustomErr
         ]
 
 inputWidget :: MonadWidget t m
   => Event t ()
   -> Dynamic t (Maybe ())
-  -> m (InputElement EventResult GhcjsDomSpace t, Event t ())
+  -> m (Dynamic t Text, Event t ())
 inputWidget eOpen dStatus = divClass "app-columns w-row" $ do
     let dAttrs = maybe mempty (const $ "disabled" =: "") <$> dStatus
     modifyAttrs <- dynamicAttributesToModifyAttributes dAttrs
@@ -94,7 +110,10 @@ inputWidget eOpen dStatus = divClass "app-columns w-row" $ do
           )
       & modifyAttributes .~ fmap mapKeysToAttributeName modifyAttrs
       & inputElementConfig_setValue .~ ("" <$ eOpen)
-    return (inp, keydown Escape inp)
+
+    addFocusPostBuildDelayE inp eOpen
+
+    return (value inp, keydown Escape inp)
 
 buttonWidget :: MonadWidget t m
   => Dynamic t (Maybe ())
@@ -113,12 +132,6 @@ buttonWidget dStatus = btn
 -- Nothing for mempty
 -- By default used mempty.
 -- Just () applied to disabled for able to use Monoid on Maybe.
-checkUrl :: Text -> Maybe ()
-checkUrl "" = Just ()
-checkUrl t = case parseURI $ unpack t of
-  Nothing -> Just ()
-  Just _ -> Nothing
-
 checkStatus :: Status -> Maybe ()
 checkStatus status =
   if status `elem` [Constructing, Signing, Submitting]
