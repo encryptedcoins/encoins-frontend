@@ -1,10 +1,13 @@
 cradle:
   cabal:
-    - path: "src"
-      component: "encoins-frontend:lib:encoins-frontend"
-    - path: "apps"
+    - path: "./frontend/src"
+      component: "lib:encoins-frontend"
+
+    - path: "./frontend/apps/Website.hs"
       component: "encoins-frontend:exe:encoins-website"
-    - path: "apps"
+
+    - path: "./frontend/apps/App.hs"
       component: "encoins-frontend:exe:encoins-app"
-    - path: "apps"
+
+    - path: "./frontend/apps/DAO.hs"
       component: "encoins-frontend:exe:encoins-dao"

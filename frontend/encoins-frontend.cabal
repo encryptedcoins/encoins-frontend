@@ -51,6 +51,7 @@ library
     ENCOINS.DAO.Polls,
     ENCOINS.DAO.Widgets.Navbar,
     ENCOINS.DAO.Widgets.PollWidget,
+    ENCOINS.DAO.Widgets.DelegateWindow,
     ENCOINS.Website,
     ENCOINS.Website.Body,
     ENCOINS.Website.Head,

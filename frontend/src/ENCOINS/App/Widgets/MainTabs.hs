@@ -66,13 +66,28 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
             (dCoinsToMint, eSend) <- divClass "app-column w-col w-col-6" $ mdo
                 dCoinsToMint' <- divClassId "" "welcome-coins-mint" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
-                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Constructing) eStatusUpdate]
+                    dCoinsToMint'' <- coinMintCollectionWidget $
+                      leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Constructing) eStatusUpdate]
                     eNewSecret <- coinNewWidget
                     return dCoinsToMint''
-                eSend' <- sendRequestButton WalletMode dStatus dWallet dCoinsToBurn dCoinsToMint (void $ updated dBalance)
+                eSend' <- sendRequestButton
+                  WalletMode
+                  dStatus
+                  dWallet
+                  dCoinsToBurn
+                  dCoinsToMint
+                  (void $ updated dBalance)
                 return (dCoinsToMint', eSend')
-            (dAssetNamesInTheWallet, eStatusUpdate, _) <- encoinsTxWalletMode dWallet dBulletproofParams bRandomness dCoinsToBurn dCoinsToMint eSend
-            let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
+            (dAssetNamesInTheWallet, eStatusUpdate, _) <-
+                encoinsTxWalletMode
+                  dWallet
+                  dBulletproofParams
+                  bRandomness
+                  dCoinsToBurn
+                  dCoinsToMint
+                  eSend
+            let dSecretsWithNamesInTheWallet =
+                  zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
             return (dCoinsToBurn, dCoinsToMint, eStatusUpdate)
     eWalletError <- walletError
     dStatus <- holdDyn Ready $ leftmost [eStatusUpdate, eWalletError]

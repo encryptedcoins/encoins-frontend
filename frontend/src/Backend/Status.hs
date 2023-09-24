@@ -13,6 +13,7 @@ data Status =
     | Submitted         -- ^ Transaction is submitted to the blockchain
     | BackendError Text
     | WalletError Text
+    | CustomStatus Text
     deriving Eq
 
 instance Show Status where
@@ -23,6 +24,7 @@ instance Show Status where
     show Submitted        = "The transaction is now pending..."
     show (BackendError e) = "Error: " <> unpack e
     show (WalletError e)  = "Error: " <> unpack e
+    show (CustomStatus t) = unpack t
 
 isStatusBusy :: Status -> Bool
 isStatusBusy Constructing = True
@@ -37,3 +39,9 @@ walletError = do
     dWalletError <- elementResultJS "walletErrorElement" id
     let eWalletError = ffilter ("" /=) $ updated dWalletError
     return $ WalletError <$> eWalletError
+
+-- Other error element
+otherError :: MonadWidget t m => Event t Text -> m (Event t Status)
+otherError eOtherError = do
+    let eOtherErrorNonEmpty = ffilter ("" /=) eOtherError
+    return $ WalletError <$> eOtherErrorNonEmpty

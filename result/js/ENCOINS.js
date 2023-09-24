@@ -462,3 +462,89 @@ async function daoPollVoteTx(n, walletName, answer)
     return;
   }
 };
+
+async function daoDelegateTx(walletName, url)
+{
+  // loading CardanoWasm
+  await loader.load();
+  const CardanoWasm = loader.Cardano;
+
+  await lucidLoader.load();
+  const lucid = await lucidLoader.Lucid.new(
+    // TODO: check url below
+    new lucidLoader.Blockfrost("https://cardano-mainnet.blockfrost.io/api/v0", "mainnetK4sRBCTDwqzK1KRuFxnpuxPbKF4ZQrnl"),
+    "Mainnet",
+  )
+
+  try {
+    //loading wallet
+    const api = await walletAPI(walletName);
+    lucid.selectWallet(api);
+
+    const changeAddress    = CardanoWasm.Address.from_bytes(fromHexString(await api.getChangeAddress()));
+    const baseAddress      = CardanoWasm.BaseAddress.from_address(changeAddress);
+    const stakeKeyHashCred = baseAddress.stake_cred();
+    const stakeKeyHash     = stakeKeyHashCred.to_keyhash();
+
+    const plc_lst = CardanoWasm.PlutusList.new();
+    const tag1 = CardanoWasm.PlutusData.new_bytes(toUTF8Array("ENCOINS"));
+    const tag2 = CardanoWasm.PlutusData.new_bytes(toUTF8Array("Delegate"));
+    const tag3 = CardanoWasm.PlutusData.new_bytes(stakeKeyHash.to_bytes());
+    const tag4 = CardanoWasm.PlutusData.new_bytes(toUTF8Array(url));
+    plc_lst.add(tag1);
+    plc_lst.add(tag2);
+    plc_lst.add(tag3);
+    plc_lst.add(tag4);
+    const plc_msg = CardanoWasm.PlutusData.new_list(plc_lst);
+
+    setInputValue("DelegateCreateNewTx", plc_msg)
+
+    const tx = await lucid.newTx()
+      .addSignerKey(toHexString(stakeKeyHash.to_bytes()))
+      .payToAddressWithData(changeAddress.to_bech32(), { inline: toHexString(plc_msg.to_bytes()) }, { lovelace: 1500000n })
+      .complete();
+
+    setInputValue("DelegateSignTx", tx)
+
+    const signedTx = await tx.sign().complete();
+
+    setInputValue("DelegateSubmitTx", signedTx);
+
+    const txHash = await signedTx.submit();
+
+    setInputValue("DelegateSubmittedTx", txHash);
+
+    changeAddress.free();
+    baseAddress.free();
+    stakeKeyHashCred.free();
+    stakeKeyHash.free();
+
+    plc_lst.free();
+    tag1.free();
+    tag2.free();
+    tag3.free();
+    tag4.free();
+    plc_msg.free();
+    setInputValue("DelegateReadyTx", "Thank you for delegating!");
+  } catch (e) {
+    console.log("Error: " + e.message);
+    setInputValue("DelegateError", e.message);
+
+    return;
+  }
+};
+
+const regex = new RegExp('^(?:(?:https?):\\\/\\\/)?(?:\\S+(?::\\S*)?@)?(?:(?!(?:10|127)(?:\\.\\d{1,3}){3})(?!(?:169\\.254|192\\.168)(?:\\.\\d{1,3}){2})(?!172\\.(?:1[6-9]|2\\d|3[0-1])(?:\\.\\d{1,3}){2})(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z0-9\\u00a1-\\uffff][a-z0-9\\u00a1-\\uffff_-]{0,62})?[a-z0-9\\u00a1-\\uffff]\\.)+(?:[a-z\\u00a1-\\uffff]{2,}\\.?))(?::\\d{2,5})?(?:[\/?#]\\S*)?$', 'i');
+
+async function checkUrl(str) {
+  const isUrl = regex.test(str)
+  // console.log("js_str:", str);
+  // console.log("js_checkUrl:", isUrl);
+  if (isUrl)
+  {
+    setInputValue("ValidUrl", str);
+    return;
+  } else
+  setInputValue("InvalidUrl", str);
+  return;
+};

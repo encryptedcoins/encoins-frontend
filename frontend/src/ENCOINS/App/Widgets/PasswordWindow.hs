@@ -135,9 +135,12 @@ passwordSettingsWindow eOpen = do
     mkSaveBtnCls _ _ _ = cls <> " button-disabled"
     mkClearBtnCls = (cls <>) . bool " button-disabled" ""
 
-passwordInput :: MonadWidget t m =>
-  Text -> Bool -> Dynamic t (Maybe PasswordRaw) ->
-  Event t () -> m (Dynamic t (Maybe PasswordRaw))
+passwordInput :: MonadWidget t m
+  => Text
+  -> Bool
+  -> Dynamic t (Maybe PasswordRaw)
+  -> Event t ()
+  -> m (Dynamic t (Maybe PasswordRaw))
 passwordInput txt rep dmPass eOpen = mdo
   dShowPass <- toggle False (domEvent Click eye)
   appTextLeft txt
