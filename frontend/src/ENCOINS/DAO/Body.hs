@@ -5,12 +5,12 @@ import           Data.Bool                          (bool)
 import           Data.Functor                       (($>))
 import           Reflex.Dom
 
-import           Backend.Status                     (isDisableStatus, Status(..), otherStatus )
+import           Backend.Status                     (isDisableStatus, Status(..))
 import           Backend.Wallet                     (Wallet (..), walletsSupportedInDAO, networkConfig, NetworkConfig(..))
 import           ENCOINS.App.Widgets.Basic          (waitForScripts, elementResultJS)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.Common.Widgets.Advanced    (foldDynamicAny)
-import           ENCOINS.Common.Widgets.Basic       (notification)
+import           ENCOINS.Common.Widgets.Basic       (notification, otherStatus)
 import           ENCOINS.DAO.Polls
 import           ENCOINS.DAO.Widgets.Navbar         (navbarWidget, Dao (..))
 import           ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)

@@ -1,9 +1,6 @@
 module Backend.Status where
 
 import           Data.Text                    (Text, unpack)
-import           Reflex.Dom hiding (Invalid)
-
-import           ENCOINS.App.Widgets.Basic    (elementResultJS)
 
 data Status =
       Ready             -- ^ The default status
@@ -32,19 +29,6 @@ isStatusBusy Signing      = True
 isStatusBusy Submitting   = True
 isStatusBusy Submitted    = True
 isStatusBusy _            = False
-
--- Wallet error element
-walletError :: MonadWidget t m => m (Event t Status)
-walletError = do
-    dWalletError <- elementResultJS "walletErrorElement" id
-    let eWalletError = ffilter ("" /=) $ updated dWalletError
-    return $ WalletError <$> eWalletError
-
--- Other error element
-otherStatus :: MonadWidget t m => Event t Text -> m (Event t Status)
-otherStatus eOtherError = do
-    let eOtherStatusNonEmpty = ffilter ("" /=) eOtherError
-    return $ CustomStatus <$> eOtherStatusNonEmpty
 
 -- Check if status is the performant one.
 -- Performant status fires when background operations are processing.

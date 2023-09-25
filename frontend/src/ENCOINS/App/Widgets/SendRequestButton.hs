@@ -11,8 +11,9 @@ import           Backend.Status                         (Status(..))
 import           Backend.Wallet                         (Wallet (..))
 import           ENCOINS.Bulletproofs                   (Secrets)
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
+import           ENCOINS.App.Widgets.Basic              (relayStatusM)
 
-sendRequestButton :: (MonadWidget t m, EventWriter t Text m)
+sendRequestButton :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => EncoinsMode
   -> Dynamic t Status
   -> Dynamic t Wallet
@@ -23,6 +24,7 @@ sendRequestButton :: (MonadWidget t m, EventWriter t Text m)
 sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = do
   -- Getting the current MaxAda
   mbaseUrl <- getRelayUrl
+  relayStatusM mbaseUrl
   (eMaxAda, _) <- case mbaseUrl of
     Just baseUrl -> statusRequestWrapper baseUrl (pure MaxAdaWithdraw) e
     _ -> pure (never, never)

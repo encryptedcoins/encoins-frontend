@@ -15,7 +15,7 @@ import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
 import           ENCOINS.App.Widgets.Navbar         (navbarWidget)
 import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWindow, welcomeWallet, welcomeWindowWalletStorageKey)
-import           ENCOINS.Common.Widgets.Basic       (notification)
+import           ENCOINS.Common.Widgets.Basic       (notificationApp)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
@@ -24,7 +24,7 @@ bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe P
 bodyContentWidget mpass = mdo
   (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet mpass
 
-  notification eStatusT
+  notificationApp $ coincidence $ leftmost <$> evEvStatusT
 
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen
   (eNewPass, eResetPass) <- passwordSettingsWindow eSettingsOpen
@@ -34,9 +34,9 @@ bodyContentWidget mpass = mdo
 
   divClass "section-app section-app-empty wf-section" blank
 
-  (dSecrets, eStatusT) <- runEventWriterT $ mainWindow mpass dWallet
+  (dSecrets, evEvStatusT) <- runEventWriterT $ mainWindow mpass dWallet
 
-  performEvent_ (reencryptEncoins <$> attachPromptlyDyn dSecrets (leftmost
+  performEvent_ (reEncryptEncoins <$> attachPromptlyDyn dSecrets (leftmost
     [eNewPass, Nothing <$ eResetOk]))
 
   copiedNotification
@@ -44,7 +44,7 @@ bodyContentWidget mpass = mdo
   pure $ leftmost [Nothing <$ eResetOk, eNewPass]
 
   where
-    reencryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) "encoins"
+    reEncryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) "encoins"
       . decodeUtf8 .  toStrict . encode $ d
 
 bodyWidget :: MonadWidget t m => m ()
