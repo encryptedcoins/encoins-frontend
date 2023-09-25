@@ -22,7 +22,7 @@ import           ENCOINS.Common.Events         (newEventWithDelay)
 import           JS.Website                    (loadJSON)
 import           ENCOINS.Common.Events         (newEvent)
 import           Backend.Servant.Client        (getRelayUrl)
-import           Backend.Status                (Status(..), allRelayError)
+import           Backend.Status                (Status(..), relayError)
 
 sectionApp :: MonadWidget t m => Text -> Text -> m a -> m a
 sectionApp elemId cls = elAttr "div" ("id" =: elemId <> "class" =: "section-app wf-section " `T.append` cls)
@@ -82,7 +82,7 @@ relayStatusM mRelayUrl = do
     ev <- newEvent
     tellRelayStatus
       "Relay status"
-      (BackendError allRelayError)
+      (BackendError relayError)
       ev
 
 tellRelayStatus :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
