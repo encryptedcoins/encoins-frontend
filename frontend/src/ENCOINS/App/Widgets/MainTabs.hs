@@ -6,7 +6,6 @@ import           Data.Bool                              (bool)
 import           Data.ByteString.Lazy                   (toStrict)
 import           Data.List                              (nub)
 import           Data.Text                              (Text)
--- import qualified Data.Text as T
 import           Data.Text.Encoding                     (decodeUtf8)
 import           Reflex.Dom
 import           Witherable                             (catMaybes)
@@ -15,7 +14,7 @@ import           Backend.EncoinsTx                      (encoinsTxWalletMode, en
 import           Backend.Environment                    (getEnvironment)
 import           Backend.Protocol.Fees                  (protocolFees)
 import           Backend.Protocol.Types
-import           Backend.Status                         (Status(..), isStatusBusy)
+import           Backend.Status                         (Status(..), isStatusBusyWithBackendError)
 import           Backend.Wallet                         (Wallet (..))
 import           ENCOINS.App.Widgets.Basic              (containerApp, sectionApp, walletError, elementResultJS, tellTxStatus)
 import           ENCOINS.App.Widgets.Coin               (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
@@ -42,7 +41,8 @@ walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   -> Dynamic t Secrets
   -> m ()
 walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
-    (dBalance, dFees, dBulletproofParams, bRandomness) <- getEnvironment WalletMode dWallet (pure Nothing) dToBurn dToMint
+    (dBalance, dFees, dBulletproofParams, bRandomness) <-
+        getEnvironment WalletMode dWallet (pure Nothing) dToBurn dToMint
     containerApp "" $ transactionBalanceWidget dBalance dFees
     (dToBurn, dToMint, eStatusUpdate) <- containerApp "" $
         divClass "app-columns w-row" $ mdo
@@ -128,8 +128,18 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
             eISAll <- importFileWindow eImportAll
             return (dCTB, leftmost [eIS, eISAll])
         divClassId "app-column w-col w-col-6" "welcome-transfer-btns" $ do
-          eWallet      <- sendButton (zipDynWith (&&) (fmap (not . null) dCoinsToBurn) (fmap (not . isStatusBusy) dStatus)) "" " Send to a Wallet"
-          eLedger      <- sendButton (zipDynWith (&&) (fmap (not . null) dCoinsToBurn) (fmap (not . isStatusBusy) dStatus)) "margin-top: 20px" " Send to the Ledger"
+          eWallet <- sendButton
+            (zipDynWith
+              (&&)
+              (fmap (not . null) dCoinsToBurn)
+              (fmap (not . isStatusBusyWithBackendError) dStatus)
+            ) "" " Send to a Wallet"
+          eLedger <- sendButton
+            (zipDynWith
+              (&&)
+              (fmap (not . null) dCoinsToBurn)
+              (fmap (not . isStatusBusyWithBackendError) dStatus)
+            ) "margin-top: 20px" " Send to the Ledger"
           eWalletOk    <- sendToWalletWindow eWallet dCoinsToBurn
           (eAddrOk, _) <- inputAddressWindow eWalletOk
           return (dCoinsToBurn, eLedger, eAddrOk, dSecretsWithNames)

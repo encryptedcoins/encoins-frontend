@@ -44,6 +44,7 @@ sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = do
       h v = case v of
         TxValid -> ""
         _       -> "border-bottom-left-radius: 0px; border-bottom-right-radius: 0px"
-  eSend <- divClassId "" "welcome-send-req" $ btn (fmap f dTxValidity) (fmap h dTxValidity) $ text "SEND REQUEST"
+  eSend <- divClassId "" "welcome-send-req" $
+    btn (fmap f dTxValidity) (fmap h dTxValidity) $ text "SEND REQUEST"
   dyn_ $ fmap g dTxValidity
   return $ () <$ ffilter (== TxValid) (current dTxValidity `tag` eSend)

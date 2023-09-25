@@ -23,20 +23,13 @@ instance Show Status where
     show (WalletError e)  = "Error: " <> unpack e
     show (CustomStatus t) = unpack t
 
-isStatusBusy :: Status -> Bool
-isStatusBusy Constructing = True
-isStatusBusy Signing      = True
-isStatusBusy Submitting   = True
-isStatusBusy Submitted    = True
-isStatusBusy _            = False
-
 -- Check if status is the performant one.
 -- Performant status fires when background operations are processing.
-isDisableStatus :: Status -> Bool
-isDisableStatus status = status `elem` [Constructing, Signing, Submitting, Submitted]
+isStatusBusy :: Status -> Bool
+isStatusBusy status = status `elem` [Constructing, Signing, Submitting, Submitted]
 
-isDisableStatusApp :: Status -> Bool
-isDisableStatusApp status = status `elem`
+isStatusBusyWithBackendError :: Status -> Bool
+isStatusBusyWithBackendError status = status `elem`
   [ Constructing
   , Signing
   , Submitting

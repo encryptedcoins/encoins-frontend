@@ -10,7 +10,7 @@ import           Data.Bool                          (bool)
 import           Reflex.Dom
 import qualified Data.Text as T
 
-import           Backend.Status                     (Status(..), isDisableStatusApp, isReady, isBackendError)
+import           Backend.Status                     (Status(..), isStatusBusyWithBackendError, isReady, isBackendError)
 import           Backend.Wallet                     (walletsSupportedInApp)
 import           ENCOINS.App.Widgets.Basic          (waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
@@ -22,22 +22,19 @@ import           ENCOINS.Common.Widgets.Basic       (notification, space, column
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
-import           ENCOINS.Common.Events
 
 bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mpass = mdo
   (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet mpass
 
   let eStatus = coincidence $ leftmost <$> evEvStatus
-  logEvent "eStatus" eStatus
   dStatus <- foldDynMaybe
     -- Hold BackendError status once it fired until page reloading.
     (\ev (_, accS) -> if isBackendError accS then Nothing else Just ev)
     (T.empty, Ready) eStatus
-  logEvent "dStatus" $ updated dStatus
   notification $ flatStatus <$> dStatus
 
-  let dIsDisableButtons = (isDisableStatusApp . snd) <$> dStatus
+  let dIsDisableButtons = (isStatusBusyWithBackendError . snd) <$> dStatus
 
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen
   (eNewPass, eResetPass) <- passwordSettingsWindow eSettingsOpen

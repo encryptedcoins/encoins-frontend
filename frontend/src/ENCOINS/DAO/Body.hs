@@ -5,7 +5,7 @@ import           Data.Functor                       (($>))
 import           Reflex.Dom
 import qualified Data.Text as T
 
-import           Backend.Status                     (isDisableStatus, Status(..))
+import           Backend.Status                     (isStatusBusy, Status(..))
 import           Backend.Wallet                     (Wallet (..), walletsSupportedInDAO, networkConfig, NetworkConfig(..))
 import           ENCOINS.App.Widgets.Basic          (waitForScripts, elementResultJS)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
@@ -42,8 +42,8 @@ bodyContentWidget = mdo
   let eLoadedWallet = tagPromptlyDyn dWallet $ updated eWalletLoad
 
   let dIsDisableButtons = foldDynamicAny
-        [ isDisableStatus <$> dDelegateStatus
-        , isDisableStatus <$> dVoteStatus
+        [ isStatusBusy <$> dDelegateStatus
+        , isStatusBusy <$> dVoteStatus
         ]
 
   let eVoteStatusT = ("Vote status: " <>) . toText <$> eVoteStatus
