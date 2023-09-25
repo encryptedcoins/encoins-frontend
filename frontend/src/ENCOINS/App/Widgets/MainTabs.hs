@@ -6,6 +6,7 @@ import           Data.Bool                              (bool)
 import           Data.ByteString.Lazy                   (toStrict)
 import           Data.List                              (nub)
 import           Data.Text                              (Text)
+import qualified Data.Text as T
 import           Data.Text.Encoding                     (decodeUtf8)
 import           Reflex.Dom
 import           Witherable                             (catMaybes)
@@ -36,7 +37,11 @@ mainWindowColumnHeader title =
     divClass "app-column-head-div" $
         divClass "app-text-semibold" $ text title
 
-walletTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet -> Dynamic t Secrets -> m ()
+walletTab :: (MonadWidget t m, EventWriter t Text m)
+  => Maybe PasswordRaw
+  -> Dynamic t Wallet
+  -> Dynamic t Secrets
+  -> m ()
 walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     (dBalance, dFees, dBulletproofParams, bRandomness) <- getEnvironment WalletMode dWallet (pure Nothing) dToBurn dToMint
 
@@ -90,14 +95,20 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                   zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
             return (dCoinsToBurn, dCoinsToMint, eStatusUpdate)
     eWalletError <- walletError
-    dStatus <- holdDyn Ready $ leftmost [eStatusUpdate, eWalletError]
-    containerApp "" $ divClassId "app-text-small" "welcome-read-docs" $ dynText $ fmap toText dStatus
+    let eStatus = leftmost [eStatusUpdate, eWalletError]
+    dStatus <- holdDyn Ready eStatus
+    tellEvent $
+      (\x -> bool ("Wallet status: " <> toText x) T.empty $ x == Ready) <$> eStatus
   where
     menuButton = divClass "app-column w-col w-col-6" .
       divClass "menu-item-button-right" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
 
-transferTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet -> Dynamic t Secrets -> m ()
+transferTab :: (MonadWidget t m, EventWriter t Text m)
+  => Maybe PasswordRaw
+  -> Dynamic t Wallet
+  -> Dynamic t Secrets
+  -> m ()
 transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
 
@@ -148,8 +159,10 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
         dWalletSignature
 
     eWalletError <- walletError
-    dStatus <- holdDyn Ready $ leftmost [eWalletError, eStatusUpdate1, eStatusUpdate2]
-    containerApp "" $ divClass "app-text-small" $ dynText $ fmap toText dStatus
+    let eStatus = leftmost [eWalletError, eStatusUpdate1, eStatusUpdate2]
+    dStatus <- holdDyn Ready eStatus
+    tellEvent $
+      (\x -> bool ("Transfer status: " <> toText x) T.empty $ x == Ready) <$> eStatus
   where
     menuButton = divClass "app-column w-col w-col-6" .
       divClass "menu-item-button-right" . btn "button-switching flex-center"
@@ -157,8 +170,11 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     sendButton dActive stl = divClass "menu-item-button-right" .
       btn (("button-switching flex-center " <>) . bool "button-disabled" "" <$> dActive) stl . text
 
-ledgerTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet ->
-  Dynamic t Secrets -> m ()
+ledgerTab :: (MonadWidget t m, EventWriter t Text m)
+  => Maybe PasswordRaw
+  -> Dynamic t Wallet
+  -> Dynamic t Secrets
+  -> m ()
 ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowLedgerStorageKey welcomeLedger
     (dBalance, dFees, dBulletproofParams, bRandomness) <- getEnvironment LedgerMode dWallet dAddr dToBurn dToMint
@@ -206,8 +222,10 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
             let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
             return (dCoinsToBurn, dCoinsToMint, dChangeAddr, eStatusUpdate)
     eWalletError <- walletError
-    dStatus <- holdDyn Ready $ leftmost [eStatusUpdate, eWalletError]
-    containerApp "" $ divClass "app-text-small" $ dynText $ fmap toText dStatus
+    let eStatus = leftmost [eStatusUpdate, eWalletError]
+    dStatus <- holdDyn Ready eStatus
+    tellEvent $
+      (\x -> bool ("Ledger status: " <> toText x) T.empty $ x == Ready) <$> eStatus
   where
     menuButton = divClass "app-column w-col w-col-6" .
       divClass "menu-item-button-right" . btn "button-switching flex-center"

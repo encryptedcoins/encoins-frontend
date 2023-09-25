@@ -93,3 +93,12 @@ errDiv = elAttr "div" ("class" =: "w-file-upload-error w-file-upload-error-msg"
 
 space :: Text
 space = " "
+
+notification :: MonadWidget  t m => Event t Text -> m ()
+notification eNotification = do
+  divClass "notification" $ do
+    dNotificationNonEmpty <- foldDynMaybe
+      (\n _ -> if Text.null n then Nothing else Just n)
+      Text.empty
+      eNotification
+    divClass "notification-text" $ dynText dNotificationNonEmpty

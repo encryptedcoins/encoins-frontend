@@ -1,9 +1,9 @@
 module Backend.EncoinsTx where
 
-import           Control.Monad                   (void, when)
+import           Control.Monad                   (void)
 import           Control.Monad.IO.Class          (MonadIO(..))
 import qualified Data.Map                        as Map
-import           Data.Maybe                      (fromJust, fromMaybe, isNothing)
+import           Data.Maybe                      (fromJust, fromMaybe)
 import           Data.Text                       (Text)
 import           PlutusTx.Prelude                (length)
 import           Prelude                         hiding (length)
@@ -23,8 +23,7 @@ import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           ENCOINS.Common.Utils            (toText)
 import           JS.App                          (walletSignTx)
-import           JS.Website                      (setElementStyle)
-import ENCOINS.Common.Events (logEvent)
+import           ENCOINS.Common.Events           (logEvent)
 
 encoinsTxWalletMode :: MonadWidget t m
   => Dynamic t Wallet
@@ -42,8 +41,6 @@ encoinsTxWalletMode
   dCoinsMint
   eSend = mdo
     mbaseUrl <- getRelayUrl -- this chooses random server with successful ping
-    when (isNothing mbaseUrl) $ setElementStyle "bottom-notification-relay" "display" "flex"
-
     let dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
 
@@ -118,8 +115,6 @@ encoinsTxTransferMode
   eSend
   dWalletSignature = do
     mbaseUrl <- getRelayUrl -- this chooses random server with successful ping
-    when (isNothing mbaseUrl) $ setElementStyle "bottom-notification-relay" "display" "flex"
-
     let dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
 
@@ -189,8 +184,6 @@ encoinsTxLedgerMode
   dCoinsMint
   eSend = mdo
     mbaseUrl <- getRelayUrl -- this chooses random server with successful ping
-    when (isNothing mbaseUrl) $ setElementStyle "bottom-notification-relay" "display" "flex"
-
     ePb   <- getPostBuild
     eTick <- tickLossyFromPostBuildTime 12
     (eStatusResp, eRelayDown') <- case mbaseUrl of

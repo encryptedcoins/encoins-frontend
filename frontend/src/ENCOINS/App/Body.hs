@@ -15,13 +15,18 @@ import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
 import           ENCOINS.App.Widgets.Navbar         (navbarWidget)
 import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWindow, welcomeWallet, welcomeWindowWalletStorageKey)
-import           ENCOINS.Common.Widgets.Advanced    (copiedNotification, noRelayNotification)
+import           ENCOINS.Common.Widgets.Basic       (notification)
+import           ENCOINS.Common.Events (logEvent)
+import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
 
 bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mpass = mdo
   (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet mpass
+
+  notification eStatusT
+
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen
   (eNewPass, eResetPass) <- passwordSettingsWindow eSettingsOpen
   eResetOk <- resetPasswordDialog eResetPass
@@ -30,12 +35,12 @@ bodyContentWidget mpass = mdo
 
   divClass "section-app section-app-empty wf-section" blank
 
-  dSecrets <- mainWindow mpass dWallet
+  (dSecrets, eStatusT) <- runEventWriterT $ mainWindow mpass dWallet
+
   performEvent_ (reencryptEncoins <$> attachPromptlyDyn dSecrets (leftmost
     [eNewPass, Nothing <$ eResetOk]))
 
   copiedNotification
-  noRelayNotification
 
   pure $ leftmost [Nothing <$ eResetOk, eNewPass]
 

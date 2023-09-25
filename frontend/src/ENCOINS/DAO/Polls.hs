@@ -63,7 +63,7 @@ poll4 = Poll 4
         text "This program aims to unite both communities, trying to attract users from VYFI to Encoins. Just as they will give us \
             \ VYFI for the aforementioned program, it is fair that we give something to their community..."
         br
-        br        
+        br
         text "For more information on the proposal, visit our "
         lnkInline "https://discord.com/channels/930855339501445151/1136310556026994748" "Discord server"
         text "."
@@ -94,7 +94,7 @@ poll2 = Poll 2
         "This proposal is to set up an incentivized farm for the ENCS/ADA liquidity pool on MinSwap. \
         \ Once all MinSwap's conditions are satisfied, the farm can be activated (read MinSwap docs "
     lnkInline "https://docs.minswap.org/faq/token-launching-and-farming/4.-farming-for-projects" "here"
-    text 
+    text
         "). \
         \ Liquidity providers of the ENCS/ADA pool will receive both ENCS and MIN as extra rewards. \
         \ The aim of this proposal is to boost ENCS liquidity by increasing incentives to the liquidity providers. "

@@ -70,12 +70,10 @@ inputWidget eOpen = divClass "w-row" $ do
       & initialAttributes .~
           ( "class" =: "w-input"
           <> "style" =: "display: inline-block;"
-          <> "placeholder" =: "url"
+          <> "placeholder" =: "relay url"
           )
       & inputElementConfig_setValue .~ ("" <$ eOpen)
-
     addFocusPostBuildDelayE inp eOpen
-
     return (value inp, keydown Escape inp)
 
 buttonWidget :: MonadWidget t m

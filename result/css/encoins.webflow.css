@@ -1566,3 +1566,20 @@ body {
     width: 200px;
   }
 }
+
+.notification {
+  position: absolute;
+  margin-top: 10px;
+  left: 50%;
+  transform: translate(-50%);
+  padding: 10px;
+  display: flex;
+}
+
+.notification-text {
+  align-items: center;
+  font-family: Poppins, sans-serif;
+  line-height: 32px;
+  color: grey;
+  white-space: nowrap;
+}

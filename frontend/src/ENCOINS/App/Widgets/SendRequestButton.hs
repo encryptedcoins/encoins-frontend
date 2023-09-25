@@ -1,8 +1,7 @@
 module ENCOINS.App.Widgets.SendRequestButton where
 
-import           Control.Monad                          (when)
-import           Data.Maybe                             (isNothing)
 import           Reflex.Dom
+import           Data.Text                              (Text)
 
 import           Backend.Protocol.TxValidity            (TxValidity(..), txValidity)
 import           Backend.Protocol.Types
@@ -12,9 +11,8 @@ import           Backend.Status                         (Status(..))
 import           Backend.Wallet                         (Wallet (..))
 import           ENCOINS.Bulletproofs                   (Secrets)
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
-import           JS.Website                             (setElementStyle)
 
-sendRequestButton :: MonadWidget t m
+sendRequestButton :: (MonadWidget t m, EventWriter t Text m)
   => EncoinsMode
   -> Dynamic t Status
   -> Dynamic t Wallet
@@ -25,8 +23,6 @@ sendRequestButton :: MonadWidget t m
 sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = do
   -- Getting the current MaxAda
   mbaseUrl <- getRelayUrl
-  when (isNothing mbaseUrl) $
-    setElementStyle "bottom-notification-relay" "display" "flex"
   (eMaxAda, _) <- case mbaseUrl of
     Just baseUrl -> statusRequestWrapper baseUrl (pure MaxAdaWithdraw) e
     _ -> pure (never, never)
