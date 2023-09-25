@@ -49,14 +49,13 @@ btnWithBlock :: MonadWidget t m
   -> Dynamic t Bool
   -> m ()
   -> m (Event t ())
-btnWithBlock dCls dStyle dIsBlock tags = btn
+btnWithBlock dCls dStyle dIsBlock = btn
     (mkBtnAttrs dIsBlock)
     dStyle
-    tags
   where
     mkBtnAttrs dSt = do
       defaultClass <- dCls
-      let classWithDisable = defaultClass <> " " <> "button-disabled"
+      let classWithDisable = defaultClass <> " " <> "button-disabled-independent"
       bool defaultClass classWithDisable <$> dSt
 
 btnExternal :: MonadWidget t m => Dynamic t Text -> Dynamic t Text -> Dynamic t Text -> m () -> m (Event t ())
