@@ -127,7 +127,6 @@ encoinsTxTransferMode
         dAddr       = fromMaybe ledgerAddress <$> dmAddr
 
     -- Constructing a new transaction
-    -- logEvent "encoinsTxTransferMode: eSend" eSend
     (eNewTxSuccess, eRelayDown) <- case mBaseUrl of
       Just baseUrl ->
         newTxRequestWrapper
