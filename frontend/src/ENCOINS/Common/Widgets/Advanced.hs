@@ -74,11 +74,12 @@ dialogWindow close eOpen eClose style title tags = mdo
   eClickOuside <- if close
       then clickOutside (_element_raw e)
       else pure never
+  let eEscape = keydown Escape e
   -- Delay prevents from closing because eClickOuside fires
   eOpenDelayed <- delay 0.1 eOpen
   let
     mkClass b = "class" =: "dialog-window-wrapper" <> bool ("style" =: "display: none") mempty b
-    eClose' = leftmost [eClose, eClickOuside, eCross]
+    eClose' = leftmost [eClose, eClickOuside, eCross, eEscape]
   dWindowIsOpen <- holdDyn False $ leftmost [True <$ eOpenDelayed, False <$ eClose']
   (e, (ret, eCross)) <- elDynAttr "div" (fmap mkClass dWindowIsOpen) $
       elAttr' "div" ("class" =: "dialog-window" <> "style" =: style) $ do
