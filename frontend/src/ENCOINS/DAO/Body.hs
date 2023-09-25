@@ -5,7 +5,7 @@ import           Data.Bool                          (bool)
 import           Data.Functor                       (($>))
 import           Reflex.Dom
 
-import           Backend.Status ( isDisableStatus, Status(..), otherStatus )
+import           Backend.Status                     (isDisableStatus, Status(..), otherStatus )
 import           Backend.Wallet                     (Wallet (..), walletsSupportedInDAO, networkConfig, NetworkConfig(..))
 import           ENCOINS.App.Widgets.Basic          (waitForScripts, elementResultJS)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)

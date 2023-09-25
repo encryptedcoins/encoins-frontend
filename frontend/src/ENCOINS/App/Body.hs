@@ -16,7 +16,6 @@ import           ENCOINS.App.Widgets.Navbar         (navbarWidget)
 import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWindow, welcomeWallet, welcomeWindowWalletStorageKey)
 import           ENCOINS.Common.Widgets.Basic       (notification)
-import           ENCOINS.Common.Events (logEvent)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
