@@ -407,10 +407,10 @@ async function daoPollVoteTx(n, apiKey, net, walletName, answer)
   // loading CardanoWasm
   await loader.load();
   const CardanoWasm = loader.Cardano;
-
+  const blockfrostAddress = ["https://cardano-", net.toLowerCase(), ".blockfrost.io/api/v0"].join('');
   await lucidLoader.load();
   const lucid = await lucidLoader.Lucid.new(
-    new lucidLoader.Blockfrost("https://cardano-preprod.blockfrost.io/api/v0", apiKey),
+    new lucidLoader.Blockfrost(blockfrostAddress, apiKey),
     net,
   )
 
@@ -470,10 +470,11 @@ async function daoDelegateTx(apiKey, net, walletName, url)
   await loader.load();
   const CardanoWasm = loader.Cardano;
 
+  const blockfrostAddress = ["https://cardano-", net.toLowerCase(), ".blockfrost.io/api/v0"].join('');
   await lucidLoader.load();
   const lucid = await lucidLoader.Lucid.new(
     // TODO: check url below
-    new lucidLoader.Blockfrost("https://cardano-preprod.blockfrost.io/api/v0", apiKey),
+    new lucidLoader.Blockfrost(blockfrostAddress, apiKey),
     net,
   )
 
