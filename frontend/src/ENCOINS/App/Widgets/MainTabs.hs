@@ -6,7 +6,7 @@ import           Data.Bool                              (bool)
 import           Data.ByteString.Lazy                   (toStrict)
 import           Data.List                              (nub)
 import           Data.Text                              (Text)
-import qualified Data.Text as T
+-- import qualified Data.Text as T
 import           Data.Text.Encoding                     (decodeUtf8)
 import           Reflex.Dom
 import           Witherable                             (catMaybes)

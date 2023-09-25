@@ -1,9 +1,9 @@
 module ENCOINS.DAO.Body (bodyWidget) where
 
 import           Control.Monad                      (void)
-import           Data.Bool                          (bool)
 import           Data.Functor                       (($>))
 import           Reflex.Dom
+import qualified Data.Text as T
 
 import           Backend.Status                     (isDisableStatus, Status(..))
 import           Backend.Wallet                     (Wallet (..), walletsSupportedInDAO, networkConfig, NetworkConfig(..))
@@ -23,7 +23,7 @@ import           Reflex.Dom                         (MonadHold(holdDyn), leftmos
 
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = mdo
-  eDao <- navbarWidget dWallet isDisableButtons
+  eDao <- navbarWidget dWallet dIsDisableButtons
   let eConnectOpen = void $ ffilter (==Connect) eDao
   let eDelegate = void $ ffilter (==Delegate) eDao
 
@@ -41,22 +41,24 @@ bodyContentWidget = mdo
   eWalletLoad <- elementResultJS "EndWalletLoad" id
   let eLoadedWallet = tagPromptlyDyn dWallet $ updated eWalletLoad
 
-  let isDisableButtons = foldDynamicAny
+  let dIsDisableButtons = foldDynamicAny
         [ isDisableStatus <$> dDelegateStatus
         , isDisableStatus <$> dVoteStatus
         ]
 
-  let eVoteStatusC = ("Vote status: " <>) . toText <$> eVoteStatus
-  let eDelegateStatusC = ("Delegate status: " <>) . toText <$> eDelegateStatus
+  let eVoteStatusT = ("Vote status: " <>) . toText <$> eVoteStatus
+  let eDelegateStatusT = ("Delegate status: " <>) . toText <$> eDelegateStatus
   let wrongNetworkText = "Wrong network! Please switch to " <> toText (dao networkConfig)
-  let eNetworkStatusC = bool "" wrongNetworkText
-        . (\w -> walletNetworkId w /= dao networkConfig)
-        <$> eLoadedWallet
-  notification $ leftmost
-    [ eVoteStatusC
-    , eDelegateStatusC
-    , eNetworkStatusC
+  let eNetworkStatus = ffilter
+        (\w -> walletNetworkId w /= dao networkConfig)
+        eLoadedWallet
+  dNotification <- holdDyn T.empty $ leftmost
+    [ eVoteStatusT
+    , eDelegateStatusT
+    , wrongNetworkText <$ eNetworkStatus
     ]
+  logEvent "dNotification" $ updated dNotification
+  notification dNotification
 
   section "" "" $ do
     container "" $ elAttr "div" ("class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);") $ text "Active poll"

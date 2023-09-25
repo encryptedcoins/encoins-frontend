@@ -85,7 +85,7 @@ buttonWidget dUrlStatus =
         "button-switching inverted flex-center"
         "width:30%;display:inline-block;margin-right:5px;"
         (isNotValidUrl <$> dUrlStatus)
-        "Ok"
+        (text "Ok")
     divClass "menu-item-button-right" $ do
       containerApp ""
         $ divClassId "app-text-small" "url-status"

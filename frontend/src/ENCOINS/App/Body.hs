@@ -6,8 +6,11 @@ import           Data.Bifunctor                     (first)
 import           Data.ByteString.Lazy               (toStrict)
 import           Data.Functor                       (($>), (<&>))
 import           Data.Text.Encoding                 (decodeUtf8)
+import           Data.Bool                          (bool)
 import           Reflex.Dom
+import qualified Data.Text as T
 
+import           Backend.Status                     (Status(..), isDisableStatusApp, isReady, isBackendError)
 import           Backend.Wallet                     (walletsSupportedInApp)
 import           ENCOINS.App.Widgets.Basic          (waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
@@ -15,16 +18,26 @@ import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
 import           ENCOINS.App.Widgets.Navbar         (navbarWidget)
 import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWindow, welcomeWallet, welcomeWindowWalletStorageKey)
-import           ENCOINS.Common.Widgets.Basic       (notificationApp)
+import           ENCOINS.Common.Widgets.Basic       (notification, space, column)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
+import           ENCOINS.Common.Events
 
 bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mpass = mdo
   (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet mpass
 
-  notificationApp $ coincidence $ leftmost <$> evEvStatusT
+  let eStatus = coincidence $ leftmost <$> evEvStatus
+  logEvent "eStatus" eStatus
+  dStatus <- foldDynMaybe
+    -- Hold BackendError status once it fired until page reloading.
+    (\ev (_, accS) -> if isBackendError accS then Nothing else Just ev)
+    (T.empty, Ready) eStatus
+  logEvent "dStatus" $ updated dStatus
+  notification $ flatStatus <$> dStatus
+
+  let dIsDisableButtons = (isDisableStatusApp . snd) <$> dStatus
 
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen
   (eNewPass, eResetPass) <- passwordSettingsWindow eSettingsOpen
@@ -34,7 +47,7 @@ bodyContentWidget mpass = mdo
 
   divClass "section-app section-app-empty wf-section" blank
 
-  (dSecrets, evEvStatusT) <- runEventWriterT $ mainWindow mpass dWallet
+  (dSecrets, evEvStatus) <- runEventWriterT $ mainWindow mpass dWallet dIsDisableButtons
 
   performEvent_ (reEncryptEncoins <$> attachPromptlyDyn dSecrets (leftmost
     [eNewPass, Nothing <$ eResetOk]))
@@ -46,6 +59,7 @@ bodyContentWidget mpass = mdo
   where
     reEncryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) "encoins"
       . decodeUtf8 .  toStrict . encode $ d
+    flatStatus (t, s) = bool (t <> column <> space <> T.pack (show s)) T.empty $ isReady s
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo

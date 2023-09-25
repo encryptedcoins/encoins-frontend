@@ -35,6 +35,30 @@ isStatusBusy _            = False
 isDisableStatus :: Status -> Bool
 isDisableStatus status = status `elem` [Constructing, Signing, Submitting, Submitted]
 
+isDisableStatusApp :: Status -> Bool
+isDisableStatusApp status = status `elem`
+  [ Constructing
+  , Signing
+  , Submitting
+  , Submitted
+  , BackendError theRelayError
+  , BackendError allRelayError
+  ]
+
+allRelayError :: Text
+allRelayError = "All available relays are down! Try reloading the page or come back later."
+
+theRelayError :: Text
+theRelayError = "The current relay is down. Please, select another one."
+
+isReady :: Status -> Bool
+isReady Ready = True
+isReady _     = False
+
+isBackendError :: Status -> Bool
+isBackendError (BackendError _) = True
+isBackendError _                = False
+
 data UrlStatus
     = UrlEmpty
     | UrlInvalid

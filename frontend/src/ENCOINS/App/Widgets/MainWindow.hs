@@ -17,9 +17,10 @@ import           Backend.Status                         (Status)
 mainWindow :: (MonadWidget t m , EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
+  -> Dynamic t Bool
   -> m (Dynamic t Secrets)
-mainWindow mPass dWallet = mdo
-    eTab <- tabsSection dTab
+mainWindow mPass dWallet dIsDisableButtons = mdo
+    eTab <- tabsSection dTab dIsDisableButtons
     dTab <- holdDyn WalletTab eTab
     eSecrets <- switchHold never <=< dyn $ dTab <&> \tab -> do
       dOldSecrets <- loadAppData (getPassRaw <$> mPass) "encoins" id []

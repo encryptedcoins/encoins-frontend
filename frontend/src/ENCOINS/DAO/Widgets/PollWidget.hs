@@ -22,10 +22,10 @@ pollWidget (Poll n question summary answers' endTime) dWallet dIsBlocked = do
   let answers = fmap fst answers'
   container "" $ do
     es <- mapM
-      (btnWithBlock
+      (\a -> btnWithBlock
         "button-switching"
         "margin-left: 30px; margin-right: 30px; margin-bottom: 20px;"
-        dIsBlocked
+        dIsBlocked $ text a
       ) answers
     let e = leftmost $ zipWith (<$) answers es
 

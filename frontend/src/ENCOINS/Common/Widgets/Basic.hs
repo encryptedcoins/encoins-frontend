@@ -47,12 +47,12 @@ btnWithBlock :: MonadWidget t m
   => Dynamic t Text
   -> Dynamic t Text
   -> Dynamic t Bool
-  -> Text
+  -> m ()
   -> m (Event t ())
-btnWithBlock dCls dStyle dIsBlock name = btn
+btnWithBlock dCls dStyle dIsBlock tags = btn
     (mkBtnAttrs dIsBlock)
     dStyle
-    (text name)
+    tags
   where
     mkBtnAttrs dSt = do
       defaultClass <- dCls
@@ -99,20 +99,10 @@ space = " "
 column :: Text
 column = ":"
 
-notification :: MonadWidget t m => Event t Text -> m ()
-notification eNotification = do
+notification :: MonadWidget t m => Dynamic t Text -> m ()
+notification dNotification = do
   divClass "notification" $ do
-    dNotificationNonEmpty <- holdDyn T.empty eNotification
-    divClass "notification-text" $ dynText dNotificationNonEmpty
-
-notificationApp :: MonadWidget t m => Event t (Text, Status) -> m ()
-notificationApp eNotification = do
-  divClass "notification" $ do
-    let flattenMessage =
-          (\(t,s) -> bool (t <> column <> space <> T.pack (show s)) T.empty (T.null t))
-          <$> eNotification
-    dNotificationNonEmpty <- holdDyn T.empty flattenMessage
-    divClass "notification-text" $ dynText dNotificationNonEmpty
+    divClass "notification-text" $ dynText dNotification
 
 -- Other error element
 otherStatus :: MonadWidget t m => Event t Text -> m (Event t Status)
