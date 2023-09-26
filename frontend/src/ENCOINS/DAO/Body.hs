@@ -51,7 +51,7 @@ bodyContentWidget = mdo
 
   section "" "" $ do
     container "" $ elAttr "div" ("class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);") $ text "Active poll"
-    pollWidget poll6 dWallet isDisableButtons
+    -- pollWidget poll6 dWallet isDisableButtons
     blank
 
   section "" "" $ do
