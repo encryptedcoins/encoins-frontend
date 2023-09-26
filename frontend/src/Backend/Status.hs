@@ -1,7 +1,7 @@
 module Backend.Status where
 
 import           Data.Text                    (Text, unpack)
-import           Reflex.Dom
+import           Reflex.Dom hiding (Invalid)
 
 import           ENCOINS.App.Widgets.Basic    (elementResultJS)
 
@@ -41,7 +41,28 @@ walletError = do
     return $ WalletError <$> eWalletError
 
 -- Other error element
-otherError :: MonadWidget t m => Event t Text -> m (Event t Status)
-otherError eOtherError = do
-    let eOtherErrorNonEmpty = ffilter ("" /=) eOtherError
-    return $ WalletError <$> eOtherErrorNonEmpty
+otherStatus :: MonadWidget t m => Event t Text -> m (Event t Status)
+otherStatus eOtherError = do
+    let eOtherStatusNonEmpty = ffilter ("" /=) eOtherError
+    return $ CustomStatus <$> eOtherStatusNonEmpty
+
+-- Check if status is the performant one.
+-- Performant status fires when background operations are processing.
+isDisableStatus :: Status -> Bool
+isDisableStatus status = status `elem` [Constructing, Signing, Submitting, Submitted]
+
+data UrlStatus
+    = UrlEmpty
+    | UrlInvalid
+    | UrlValid
+    deriving Eq
+
+instance Show UrlStatus where
+    show UrlEmpty   = "Relay URL is empty"
+    show UrlInvalid = "Relay URL is invalid"
+    show UrlValid   = "Relay URL is valid"
+
+isNotValidUrl :: UrlStatus -> Bool
+isNotValidUrl UrlEmpty   = True
+isNotValidUrl UrlInvalid = True
+isNotValidUrl UrlValid   = False

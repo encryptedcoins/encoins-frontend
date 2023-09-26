@@ -404,6 +404,7 @@ function toUTF8Array(str) {
 
 async function daoPollVoteTx(n, apiKey, net, walletName, answer)
 {
+  setInputValue("VoteCreateNewTx", "");
   // loading CardanoWasm
   await loader.load();
   const CardanoWasm = loader.Cardano;
@@ -435,17 +436,27 @@ async function daoPollVoteTx(n, apiKey, net, walletName, answer)
     plc_lst.add(tag4);
     const plc_msg = CardanoWasm.PlutusData.new_list(plc_lst);
 
+
     const tx = await lucid.newTx()
       .addSignerKey(toHexString(stakeKeyHash.to_bytes()))
       .payToAddressWithData(changeAddress.to_bech32(), { inline: toHexString(plc_msg.to_bytes()) }, { lovelace: 1500000n })
       .complete();
 
+    setInputValue("VoteSignTx", tx);
+
     const signedTx = await tx.sign().complete();
 
+    setInputValue("VoteSubmitTx", signedTx);
+
     const txHash = await signedTx.submit();
+
     console.log(txHash);
+    setInputValue("VoteSubmittedTx", signedTx);
 
     setInputValue("elementPoll" + n, "Thank you for voting! Come back later to see the results.");
+
+    // Check wallets's utxos are changed and then send VoteReadyTx
+    await check_utxos_changed( "VoteReadyTx", api, utxos, { wait: 1000, retries: 20 })
 
     changeAddress.free();
     baseAddress.free();
@@ -460,12 +471,14 @@ async function daoPollVoteTx(n, apiKey, net, walletName, answer)
     plc_msg.free();
   } catch (e) {
     console.log("Error: " + e.message);
+    setInputValue("VoteError", e.message);
     return;
   }
 };
 
 async function daoDelegateTx(apiKey, net, walletName, url)
 {
+  setInputValue("DelegateCreateNewTx", "")
   // loading CardanoWasm
   await loader.load();
   const CardanoWasm = loader.Cardano;
@@ -482,6 +495,7 @@ async function daoDelegateTx(apiKey, net, walletName, url)
     //loading wallet
     const api = await walletAPI(walletName);
     lucid.selectWallet(api);
+
 
     const changeAddress    = CardanoWasm.Address.from_bytes(fromHexString(await api.getChangeAddress()));
     const baseAddress      = CardanoWasm.BaseAddress.from_address(changeAddress);
@@ -500,7 +514,6 @@ async function daoDelegateTx(apiKey, net, walletName, url)
     plc_lst.add(tag4);
     const plc_msg = CardanoWasm.PlutusData.new_list(plc_lst);
 
-    setInputValue("DelegateCreateNewTx", plc_msg)
 
     const tx = await lucid.newTx()
       .addSignerKey(toHexString(stakeKeyHash.to_bytes()))
@@ -518,7 +531,7 @@ async function daoDelegateTx(apiKey, net, walletName, url)
     setInputValue("DelegateSubmittedTx", txHash);
 
     // Check wallets's utxos are changed and then send DelegateReadyTx
-    await check_utxos_changed({ api, utxos, wait: 1000, retries: 30 })
+    await check_utxos_changed( "DelegateReadyTx", api, utxos, { wait: 1000, retries: 20 })
 
     changeAddress.free();
     baseAddress.free();
@@ -551,17 +564,17 @@ async function checkUrl(str) {
   return;
 };
 
-async function check_utxos_changed ({ api, utxosOld, wait, retries }) {
+async function check_utxos_changed (elementId, api, utxosOld, { wait, retries }) {
   await setTimeout(wait)
   const utxosNew = await api.getUtxos();
 
   if (utxosOld !== utxosNew) {
     console.log("The utxos of the wallet have been changed")
-    return setInputValue("DelegateReadyTx", "Thank you for delegating!");
+    return setInputValue(elementId, "");
   }
 
   if (retries)
-  return check_utxos_changed({ api, utxosOld, wait, retries: --retries })
+  return check_utxos_changed(elementId, api, utxosOld, {wait, retries: --retries })
 
   throw new Error('Retry attempts exhausted')
 }
