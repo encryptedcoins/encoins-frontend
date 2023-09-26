@@ -8,7 +8,7 @@ import           Witherable                   (catMaybes)
 
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
-import           Backend.Status               (Status(..), theRelayError)
+import           Backend.Status               (Status(..), relayError)
 import           CSL                          (TransactionInputs, Value)
 import           ENCOINS.Common.Events        (logEvent)
 
@@ -22,7 +22,7 @@ newTxRequestWrapper baseUrl dReqBody e = do
   eResp <- newTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = makeResponse <$> eResp
   logEvent "newTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
-  return $ eventMaybe (BackendError theRelayError) eRespUnwrapped
+  return $ eventMaybe (BackendError relayError) eRespUnwrapped
 
 submitTxRequestWrapper :: MonadWidget t m
   => BaseUrl
@@ -32,7 +32,7 @@ submitTxRequestWrapper :: MonadWidget t m
 submitTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- fmap (void . makeResponse) <$> submitTxRequest (Right <$> dReqBody) e
-  return $ eventMaybe (BackendError theRelayError) eResp
+  return $ eventMaybe (BackendError relayError) eResp
 
 pingRequestWrapper :: MonadWidget t m => BaseUrl -> Event t () -> m (Event t ())
 pingRequestWrapper baseUrl e = do
@@ -50,7 +50,7 @@ serverTxRequestWrapper baseUrl dReqBody e = do
   eResp <- serverTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = (() <$) . makeResponse <$> eResp
   logEvent "serverTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
-  return $ eventMaybe (BackendError theRelayError) eRespUnwrapped
+  return $ eventMaybe (BackendError relayError) eRespUnwrapped
 
 statusRequestWrapper :: MonadWidget t m
   => BaseUrl
@@ -62,4 +62,4 @@ statusRequestWrapper baseUrl dReqBody e = do
   eResp <- statusRequest (Right <$> dReqBody) e
   let eRespUnwrapped = makeResponse <$> eResp
   logEvent "statusRequestWrapper: eRespUnwrapped:" eRespUnwrapped
-  return $ eventMaybe (BackendError theRelayError) eRespUnwrapped
+  return $ eventMaybe (BackendError relayError) eRespUnwrapped

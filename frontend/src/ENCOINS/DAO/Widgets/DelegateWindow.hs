@@ -23,15 +23,15 @@ delegateWindow :: MonadWidget t m
   -> Dynamic t Wallet
   -> m ()
 delegateWindow eOpen dWallet = mdo
-  (eUrlOk, eEscape) <- dialogWindow
+  eUrlOk <- dialogWindow
     True
     eOpen
-    (leftmost [void eUrlOk, eEscape])
+    (leftmost [void eUrlOk])
     "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px"
     "" $ mdo
           divClass "connect-title-div" $ divClass "app-text-semibold" $ text "Enter url:"
 
-          (dInputText, eEscape) <- inputWidget eOpen
+          dInputText <- inputWidget eOpen
           let eInputText = updated dInputText
 
           let eNonEmptyUrl = ffilter (not . T.null) eInputText
@@ -50,7 +50,7 @@ delegateWindow eOpen dWallet = mdo
                 , UrlValid   <$ eValidUrl
                 ]
           dIsInvalidUrl <- holdDyn UrlEmpty eUrlStatus
-          -- The button disable with invalid url and performant statuses.
+          -- The button disable with invalid url and performant status.
           btnOk <- buttonWidget dIsInvalidUrl
 
           let eUrl = tagPromptlyDyn dInputText btnOk
@@ -59,12 +59,12 @@ delegateWindow eOpen dWallet = mdo
             JS.daoDelegateTx lucidConfig
             <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
 
-          return (eUrl, eEscape)
+          return eUrl
   pure ()
 
 inputWidget :: MonadWidget t m
   => Event t ()
-  -> m (Dynamic t Text, Event t ())
+  -> m (Dynamic t Text)
 inputWidget eOpen = divClass "w-row" $ do
     inp <- inputElement $ def
       & initialAttributes .~
@@ -74,7 +74,7 @@ inputWidget eOpen = divClass "w-row" $ do
           )
       & inputElementConfig_setValue .~ ("" <$ eOpen)
     addFocusPostBuildDelayE inp eOpen
-    return (value inp, keydown Escape inp)
+    return $ value inp
 
 buttonWidget :: MonadWidget t m
   => Dynamic t UrlStatus

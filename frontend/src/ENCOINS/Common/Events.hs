@@ -32,8 +32,7 @@ addFocusPostBuildDelay :: MonadWidget t m
   -> m ()
 addFocusPostBuildDelay htmlEl = do
   postBuildDelay <- postDelay 0.3
-  eFocus <- performEvent $ addFocus htmlEl <$ postBuildDelay
-  logEvent "eFocus" eFocus
+  performEvent_ $ addFocus htmlEl <$ postBuildDelay
 
 -- Useful for adding focus to input element after window opened (event)
 addFocusPostBuildDelayE :: MonadWidget t m

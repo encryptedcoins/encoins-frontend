@@ -34,15 +34,11 @@ isStatusBusyWithBackendError status = status `elem`
   , Signing
   , Submitting
   , Submitted
-  , BackendError theRelayError
-  , BackendError allRelayError
+  , BackendError relayError
   ]
 
-allRelayError :: Text
-allRelayError = "All available relays are down! Try reloading the page or come back later."
-
-theRelayError :: Text
-theRelayError = "The current relay is down. Please, select another one."
+relayError :: Text
+relayError = "All available relays are down! Try reloading the page or come back later."
 
 isReady :: Status -> Bool
 isReady Ready = True

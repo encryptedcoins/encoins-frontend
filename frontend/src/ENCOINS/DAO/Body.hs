@@ -57,7 +57,6 @@ bodyContentWidget = mdo
     , eDelegateStatusT
     , wrongNetworkText <$ eNetworkStatus
     ]
-  logEvent "dNotification" $ updated dNotification
   notification dNotification
 
   section "" "" $ do
