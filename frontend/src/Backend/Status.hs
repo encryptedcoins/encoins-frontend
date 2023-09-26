@@ -1,7 +1,7 @@
 module Backend.Status where
 
 import           Data.Text                    (Text, unpack)
-import           Reflex.Dom
+import           Reflex.Dom hiding (Invalid)
 
 import           ENCOINS.App.Widgets.Basic    (elementResultJS)
 
@@ -50,3 +50,19 @@ otherStatus eOtherError = do
 -- Performant status fires when background operations are processing.
 isDisableStatus :: Status -> Bool
 isDisableStatus status = status `elem` [Constructing, Signing, Submitting, Submitted]
+
+data UrlStatus
+    = UrlEmpty
+    | UrlInvalid
+    | UrlValid
+    deriving Eq
+
+instance Show UrlStatus where
+    show UrlEmpty   = "Relay URL is empty"
+    show UrlInvalid = "Relay URL is invalid"
+    show UrlValid   = "Relay URL is valid"
+
+isNotValidUrl :: UrlStatus -> Bool
+isNotValidUrl UrlEmpty   = True
+isNotValidUrl UrlInvalid = True
+isNotValidUrl UrlValid   = False

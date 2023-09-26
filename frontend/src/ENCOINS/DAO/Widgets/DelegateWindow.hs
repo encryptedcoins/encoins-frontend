@@ -9,12 +9,14 @@ import           Data.Text                              (Text)
 import qualified Data.Text as T
 import           Reflex.Dom
 
-import           ENCOINS.App.Widgets.Basic              (elementResultJS)
+import           ENCOINS.App.Widgets.Basic              (elementResultJS, containerApp)
 import           ENCOINS.Common.Widgets.Advanced        (dialogWindow)
-import           ENCOINS.Common.Widgets.Basic           (btnWithBlock)
+import           ENCOINS.Common.Widgets.Basic           (btnWithBlock, divClassId)
 import           ENCOINS.Common.Events                  (addFocusPostBuildDelayE)
 import           Backend.Wallet                         (Wallet(..), toJS, lucidConfig)
+import           Backend.Status                         (UrlStatus(..), isNotValidUrl)
 import qualified JS.DAO as JS
+import           ENCOINS.Common.Utils (toText)
 
 delegateWindow :: MonadWidget t m
   => Event t ()
@@ -41,32 +43,21 @@ delegateWindow eOpen dWallet = mdo
           eValidUrl <- updated <$> elementResultJS "ValidUrl" id
           eInvalidUrl <- updated <$> elementResultJS "InvalidUrl" id
 
-          let eIsInvalidUrl = leftmost
+          let eUrlStatus = leftmost
                 [
-                  True  <$ eEmptyUrl
-                , True  <$ eInvalidUrl
-                , False <$ eValidUrl
+                  UrlEmpty   <$ eEmptyUrl
+                , UrlInvalid <$ eInvalidUrl
+                , UrlValid   <$ eValidUrl
                 ]
-
-          dIsInvalidUrl <- holdDyn True eIsInvalidUrl
+          dIsInvalidUrl <- holdDyn UrlEmpty eUrlStatus
+          -- The button disable with invalid url and performant statuses.
+          btnOk <- buttonWidget dIsInvalidUrl
 
           let eUrl = tagPromptlyDyn dInputText btnOk
-          performEvent_
-            $ JS.daoDelegateTx lucidConfig <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
 
-          -- The button disable with invalid url and performant statuses.
-          btnOk <- divClass "app-top-menu-div menu-item-button-right" $ mdo
-            btnWithBlock
-                "button-switching inverted flex-center"
-                "width:30%;display:inline-block;margin-right:5px;"
-                dIsInvalidUrl
-                "Ok"
-            -- divClass "menu-item-button-right" $ do
-            --   containerApp ""
-            --     $ divClassId "app-text-small" "delegation-status"
-            --     $ dynText
-            --     $ toText <$> dStatus
-            -- pure btnOk
+          performEvent_ $
+            JS.daoDelegateTx lucidConfig
+            <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
 
           return (eUrl, eEscape)
   pure ()
@@ -86,3 +77,20 @@ inputWidget eOpen = divClass "w-row" $ do
     addFocusPostBuildDelayE inp eOpen
 
     return (value inp, keydown Escape inp)
+
+buttonWidget :: MonadWidget t m
+  => Dynamic t UrlStatus
+  -> m (Event t ())
+buttonWidget dUrlStatus =
+  divClass "app-top-menu-div menu-item-button-right" $ do
+    b <- btnWithBlock
+        "button-switching inverted flex-center"
+        "width:30%;display:inline-block;margin-right:5px;"
+        (isNotValidUrl <$> dUrlStatus)
+        "Ok"
+    divClass "menu-item-button-right" $ do
+      containerApp ""
+        $ divClassId "app-text-small" "url-status"
+        $ dynText
+        $ toText <$> dUrlStatus
+    pure b
