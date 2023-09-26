@@ -1025,6 +1025,13 @@ body {
   pointer-events: none;
 }
 
+.button-disabled-independent {
+  -webkit-filter: brightness(35%);
+  filter: brightness(35%);
+  cursor: default;
+  pointer-events: none;
+}
+
 .container-app {
   margin-top: 10px;
   margin-bottom: 10px;
@@ -1565,4 +1572,21 @@ body {
   .coin-new-input {
     width: 200px;
   }
+}
+
+.notification {
+  position: absolute;
+  margin-top: 10px;
+  left: 50%;
+  transform: translate(-50%);
+  padding: 10px;
+  display: flex;
+}
+
+.notification-text {
+  align-items: center;
+  font-family: Poppins, sans-serif;
+  line-height: 32px;
+  color: grey;
+  white-space: nowrap;
 }

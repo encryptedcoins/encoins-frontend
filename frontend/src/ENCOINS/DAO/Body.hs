@@ -1,29 +1,29 @@
 module ENCOINS.DAO.Body (bodyWidget) where
 
 import           Control.Monad                      (void)
-import           Data.Bool                          (bool)
 import           Data.Functor                       (($>))
 import           Reflex.Dom
+import qualified Data.Text as T
 
-import           Backend.Status                     (isDisableStatus)
+import           Backend.Status                     (isStatusBusy, Status(..))
 import           Backend.Wallet                     (Wallet (..), walletsSupportedInDAO, networkConfig, NetworkConfig(..))
 import           ENCOINS.App.Widgets.Basic          (waitForScripts, elementResultJS)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
-import           ENCOINS.Common.Widgets.Advanced    (wrongNetworkNotification, foldDynamicAny)
+import           ENCOINS.Common.Widgets.Advanced    (foldDynamicAny)
+import           ENCOINS.Common.Widgets.Basic       (notification, otherStatus)
 import           ENCOINS.DAO.Polls
 import           ENCOINS.DAO.Widgets.Navbar         (navbarWidget, Dao (..))
 import           ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
 import           ENCOINS.DAO.Widgets.PollWidget
 import           ENCOINS.Website.Widgets.Basic      (section, container)
-import           JS.Website                         (setElementStyle)
 import           ENCOINS.Common.Utils               (toText)
-import           Backend.Status                     (Status(..), otherStatus)
 import           ENCOINS.Common.Events              (logEvent)
+import           Reflex.Dom                         (MonadHold(holdDyn), leftmost)
 
 
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = mdo
-  eDao <- navbarWidget dWallet isDisableButtons
+  eDao <- navbarWidget dWallet dIsDisableButtons
   let eConnectOpen = void $ ffilter (==Connect) eDao
   let eDelegate = void $ ffilter (==Delegate) eDao
 
@@ -38,16 +38,27 @@ bodyContentWidget = mdo
   logEvent "Delegate Status" eDelegateStatus
   dDelegateStatus <- holdDyn Ready eDelegateStatus
 
-  let isDisableButtons = foldDynamicAny
-        [ isDisableStatus <$> dDelegateStatus
-        , isDisableStatus <$> dVoteStatus
+  eWalletLoad <- elementResultJS "EndWalletLoad" id
+  let eLoadedWallet = tagPromptlyDyn dWallet $ updated eWalletLoad
+
+  let dIsDisableButtons = foldDynamicAny
+        [ isStatusBusy <$> dDelegateStatus
+        , isStatusBusy <$> dVoteStatus
         ]
 
-  -- TODO: show status by category. E.g. 'Delegate: Connecting...'
-  -- TODO: place and style better
-  dStatus <- holdDyn Ready (leftmost [eVoteStatus, eDelegateStatus])
-  divClass "menu-item-notify-text flex-center" $
-      el "p" $ dynText $ toText <$> dStatus
+  let eVoteStatusT = ("Vote status: " <>) . toText <$> eVoteStatus
+  let eDelegateStatusT = ("Delegate status: " <>) . toText <$> eDelegateStatus
+  let wrongNetworkText = "Wrong network! Please switch to " <> toText (dao networkConfig)
+  let eNetworkStatus = ffilter
+        (\w -> walletNetworkId w /= dao networkConfig)
+        eLoadedWallet
+  dNotification <- holdDyn T.empty $ leftmost
+    [ eVoteStatusT
+    , eDelegateStatusT
+    , wrongNetworkText <$ eNetworkStatus
+    ]
+  logEvent "dNotification" $ updated dNotification
+  notification dNotification
 
   section "" "" $ do
     container "" $ elAttr "div" ("class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);") $ text "Active poll"
@@ -61,18 +72,6 @@ bodyContentWidget = mdo
     pollCompletedWidget poll3
     pollCompletedWidget poll2
     pollCompletedWidget poll1
-
-  eWalletLoad <- elementResultJS "EndWalletLoad" id
-  let eLoadedWallet = tagPromptlyDyn dWallet $ updated eWalletLoad
-
-  let eNotificationStyleChange
-        = bool "none" "flex"
-        . (\w -> walletNetworkId w /= dao networkConfig)
-        <$> eLoadedWallet
-  performEvent_ $
-    setElementStyle "bottom-notification-network" "display" <$> eNotificationStyleChange
-
-  wrongNetworkNotification $ dao networkConfig
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo

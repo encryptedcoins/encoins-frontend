@@ -14,9 +14,9 @@ import           Backend.EncoinsTx                      (encoinsTxWalletMode, en
 import           Backend.Environment                    (getEnvironment)
 import           Backend.Protocol.Fees                  (protocolFees)
 import           Backend.Protocol.Types
-import           Backend.Status                         (Status(..), walletError, isStatusBusy)
+import           Backend.Status                         (Status(..), isStatusBusyWithBackendError)
 import           Backend.Wallet                         (Wallet (..))
-import           ENCOINS.App.Widgets.Basic              (containerApp, sectionApp, elementResultJS)
+import           ENCOINS.App.Widgets.Basic              (containerApp, sectionApp, walletError, elementResultJS, tellTxStatus)
 import           ENCOINS.App.Widgets.Coin               (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
                                                           coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget, coinNewButtonWidget)
 import           ENCOINS.App.Widgets.InputAddressWindow (inputAddressWindow)
@@ -27,7 +27,6 @@ import           ENCOINS.App.Widgets.SendToWalletWindow (sendToWalletWindow)
 import           ENCOINS.App.Widgets.TransactionBalance (transactionBalanceWidget)
 import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeWindow, welcomeTransfer, welcomeWindowTransferStorageKey, welcomeLedger, welcomeWindowLedgerStorageKey)
 import           ENCOINS.Bulletproofs                   (Secrets)
-import           ENCOINS.Common.Utils                   (toText)
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
 import           JS.Website                             (saveJSON)
 
@@ -36,10 +35,14 @@ mainWindowColumnHeader title =
     divClass "app-column-head-div" $
         divClass "app-text-semibold" $ text title
 
-walletTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet -> Dynamic t Secrets -> m ()
+walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+  => Maybe PasswordRaw
+  -> Dynamic t Wallet
+  -> Dynamic t Secrets
+  -> m ()
 walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
-    (dBalance, dFees, dBulletproofParams, bRandomness) <- getEnvironment WalletMode dWallet (pure Nothing) dToBurn dToMint
-
+    (dBalance, dFees, dBulletproofParams, bRandomness) <-
+        getEnvironment WalletMode dWallet (pure Nothing) dToBurn dToMint
     containerApp "" $ transactionBalanceWidget dBalance dFees
     (dToBurn, dToMint, eStatusUpdate) <- containerApp "" $
         divClass "app-columns w-row" $ mdo
@@ -90,17 +93,21 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                   zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
             return (dCoinsToBurn, dCoinsToMint, eStatusUpdate)
     eWalletError <- walletError
-    dStatus <- holdDyn Ready $ leftmost [eStatusUpdate, eWalletError]
-    containerApp "" $ divClassId "app-text-small" "welcome-read-docs" $ dynText $ fmap toText dStatus
+    let eStatus = leftmost [eStatusUpdate, eWalletError]
+    dStatus <- holdDyn Ready eStatus
+    tellTxStatus "Wallet status" Ready eStatus
   where
     menuButton = divClass "app-column w-col w-col-6" .
       divClass "menu-item-button-right" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
 
-transferTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet -> Dynamic t Secrets -> m ()
+transferTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+  => Maybe PasswordRaw
+  -> Dynamic t Wallet
+  -> Dynamic t Secrets
+  -> m ()
 transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
-
     containerApp "" $ transactionBalanceWidget (pure 0) (pure 0)
     (dCoins, eSendToLedger, eAddr, dSecretsWithNames) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
@@ -121,8 +128,18 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
             eISAll <- importFileWindow eImportAll
             return (dCTB, leftmost [eIS, eISAll])
         divClassId "app-column w-col w-col-6" "welcome-transfer-btns" $ do
-          eWallet      <- sendButton (zipDynWith (&&) (fmap (not . null) dCoinsToBurn) (fmap (not . isStatusBusy) dStatus)) "" " Send to a Wallet"
-          eLedger      <- sendButton (zipDynWith (&&) (fmap (not . null) dCoinsToBurn) (fmap (not . isStatusBusy) dStatus)) "margin-top: 20px" " Send to the Ledger"
+          eWallet <- sendButton
+            (zipDynWith
+              (&&)
+              (fmap (not . null) dCoinsToBurn)
+              (fmap (not . isStatusBusyWithBackendError) dStatus)
+            ) "" " Send to a Wallet"
+          eLedger <- sendButton
+            (zipDynWith
+              (&&)
+              (fmap (not . null) dCoinsToBurn)
+              (fmap (not . isStatusBusyWithBackendError) dStatus)
+            ) "margin-top: 20px" " Send to the Ledger"
           eWalletOk    <- sendToWalletWindow eWallet dCoinsToBurn
           (eAddrOk, _) <- inputAddressWindow eWalletOk
           return (dCoinsToBurn, eLedger, eAddrOk, dSecretsWithNames)
@@ -148,8 +165,9 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
         dWalletSignature
 
     eWalletError <- walletError
-    dStatus <- holdDyn Ready $ leftmost [eWalletError, eStatusUpdate1, eStatusUpdate2]
-    containerApp "" $ divClass "app-text-small" $ dynText $ fmap toText dStatus
+    let eStatus = leftmost [eWalletError, eStatusUpdate1, eStatusUpdate2]
+    dStatus <- holdDyn Ready eStatus
+    tellTxStatus "Transfer status" Ready eStatus
   where
     menuButton = divClass "app-column w-col w-col-6" .
       divClass "menu-item-button-right" . btn "button-switching flex-center"
@@ -157,12 +175,14 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     sendButton dActive stl = divClass "menu-item-button-right" .
       btn (("button-switching flex-center " <>) . bool "button-disabled" "" <$> dActive) stl . text
 
-ledgerTab :: MonadWidget t m => Maybe PasswordRaw -> Dynamic t Wallet ->
-  Dynamic t Secrets -> m ()
+ledgerTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+  => Maybe PasswordRaw
+  -> Dynamic t Wallet
+  -> Dynamic t Secrets
+  -> m ()
 ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowLedgerStorageKey welcomeLedger
     (dBalance, dFees, dBulletproofParams, bRandomness) <- getEnvironment LedgerMode dWallet dAddr dToBurn dToMint
-
     containerApp "" $ transactionBalanceWidget dBalance dFees
     (dToBurn, dToMint, dAddr, eStatusUpdate) <- containerApp "" $
         divClassId "app-columns w-row" "welcome-ledger" $ mdo
@@ -206,8 +226,9 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
             let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
             return (dCoinsToBurn, dCoinsToMint, dChangeAddr, eStatusUpdate)
     eWalletError <- walletError
-    dStatus <- holdDyn Ready $ leftmost [eStatusUpdate, eWalletError]
-    containerApp "" $ divClass "app-text-small" $ dynText $ fmap toText dStatus
+    let eStatus = leftmost [eStatusUpdate, eWalletError]
+    dStatus <- holdDyn Ready eStatus
+    tellTxStatus "Ledger status" Ready eStatus
   where
     menuButton = divClass "app-column w-col w-col-6" .
       divClass "menu-item-button-right" . btn "button-switching flex-center"

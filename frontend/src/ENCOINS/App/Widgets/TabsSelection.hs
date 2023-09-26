@@ -4,19 +4,22 @@ import           Data.Bool                              (bool)
 import           Reflex.Dom
 
 import           ENCOINS.App.Widgets.Basic              (containerApp, sectionApp)
-import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
+import           ENCOINS.Common.Widgets.Basic           (divClassId, btnWithBlock)
 
 data AppTab = WalletTab | TransferTab | LedgerTab deriving (Eq, Show)
 
-tabsSection :: MonadWidget t m => Dynamic t AppTab -> m (Event t AppTab)
-tabsSection dTab = sectionApp "" "" $ containerApp "" $
+tabsSection :: MonadWidget t m
+  => Dynamic t AppTab
+  -> Dynamic t Bool
+  -> m (Event t AppTab)
+tabsSection dTab dIsDisableButtons = sectionApp "" "" $ containerApp "" $
     divClassId "app-top-menu-div" "welcome-tabs" $ do
         eWallet <- divClass "menu-item-button-right" $
-            btn (mkBtnCls WalletTab <$> dTab) "" $ text "Wallet"
+            btnWithBlock (mkBtnCls WalletTab <$> dTab) "" dIsDisableButtons $ text "Wallet"
         eTransfer <- divClass "menu-item-button-right" $
-            btn (mkBtnCls TransferTab <$> dTab) "" $ text "Transfer"
+            btnWithBlock (mkBtnCls TransferTab <$> dTab) "" dIsDisableButtons $ text "Transfer"
         eLedger <- divClass "menu-item-button-right" $
-            btn (mkBtnCls LedgerTab <$> dTab) "" $ text "Ledger"
+            btnWithBlock (mkBtnCls LedgerTab <$> dTab) "" dIsDisableButtons $ text "Ledger"
         return $ leftmost
             [ WalletTab <$ eWallet
             , TransferTab <$ eTransfer

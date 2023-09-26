@@ -1,8 +1,7 @@
 module ENCOINS.App.Widgets.SendRequestButton where
 
-import           Control.Monad                          (when)
-import           Data.Maybe                             (isNothing)
 import           Reflex.Dom
+import           Data.Text                              (Text)
 
 import           Backend.Protocol.TxValidity            (TxValidity(..), txValidity)
 import           Backend.Protocol.Types
@@ -12,9 +11,9 @@ import           Backend.Status                         (Status(..))
 import           Backend.Wallet                         (Wallet (..))
 import           ENCOINS.Bulletproofs                   (Secrets)
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
-import           JS.Website                             (setElementStyle)
+import           ENCOINS.App.Widgets.Basic              (relayStatusM)
 
-sendRequestButton :: MonadWidget t m
+sendRequestButton :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => EncoinsMode
   -> Dynamic t Status
   -> Dynamic t Wallet
@@ -25,8 +24,7 @@ sendRequestButton :: MonadWidget t m
 sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = do
   -- Getting the current MaxAda
   mbaseUrl <- getRelayUrl
-  when (isNothing mbaseUrl) $
-    setElementStyle "bottom-notification-relay" "display" "flex"
+  relayStatusM mbaseUrl
   (eMaxAda, _) <- case mbaseUrl of
     Just baseUrl -> statusRequestWrapper baseUrl (pure MaxAdaWithdraw) e
     _ -> pure (never, never)
@@ -46,6 +44,7 @@ sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = do
       h v = case v of
         TxValid -> ""
         _       -> "border-bottom-left-radius: 0px; border-bottom-right-radius: 0px"
-  eSend <- divClassId "" "welcome-send-req" $ btn (fmap f dTxValidity) (fmap h dTxValidity) $ text "SEND REQUEST"
+  eSend <- divClassId "" "welcome-send-req" $
+    btn (fmap f dTxValidity) (fmap h dTxValidity) $ text "SEND REQUEST"
   dyn_ $ fmap g dTxValidity
   return $ () <$ ffilter (== TxValid) (current dTxValidity `tag` eSend)

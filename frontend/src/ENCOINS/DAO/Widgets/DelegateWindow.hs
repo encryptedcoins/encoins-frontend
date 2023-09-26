@@ -70,12 +70,10 @@ inputWidget eOpen = divClass "w-row" $ do
       & initialAttributes .~
           ( "class" =: "w-input"
           <> "style" =: "display: inline-block;"
-          <> "placeholder" =: "url"
+          <> "placeholder" =: "relay url"
           )
       & inputElementConfig_setValue .~ ("" <$ eOpen)
-
     addFocusPostBuildDelayE inp eOpen
-
     return (value inp, keydown Escape inp)
 
 buttonWidget :: MonadWidget t m
@@ -87,7 +85,7 @@ buttonWidget dUrlStatus =
         "button-switching inverted flex-center"
         "width:30%;display:inline-block;margin-right:5px;"
         (isNotValidUrl <$> dUrlStatus)
-        "Ok"
+        (text "Ok")
     divClass "menu-item-button-right" $ do
       containerApp ""
         $ divClassId "app-text-small" "url-status"
