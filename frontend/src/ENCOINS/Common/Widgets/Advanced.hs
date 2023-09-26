@@ -14,6 +14,8 @@ import           Reflex.Dom
 
 import           ENCOINS.Common.Widgets.Basic  (image)
 import           JS.Website                    (setElementStyle)
+import           Backend.Wallet (NetworkId)
+import           ENCOINS.Common.Utils (toText)
 
 logo :: MonadWidget t m => m ()
 logo = void $ image "logo.svg" "logo inverted" ""
@@ -48,10 +50,17 @@ noRelayNotification = elAttr "div" ("class" =: "bottom-notification" <>
   divClass "notification-content" $ text
     "All available relays are down! Try reloading the page or come back later."
 
-wrongNetworkNotification :: MonadWidget t m => Text -> m ()
-wrongNetworkNotification network = elAttr "div" ("class" =: "bottom-notification" <>
-  "id" =: "bottom-notification-network" <> "style" =: "display:none;") .
-  divClass "notification-content" $ text $ "Wrong network! Please switch to the " <> network <> "."
+wrongNetworkNotification :: MonadWidget t m => NetworkId -> m ()
+wrongNetworkNotification network = elAttr "div"
+  (  "class" =: "bottom-notification"
+  <> "id" =: "bottom-notification-network"
+  <> "style" =: "display:none;"
+  )
+  . divClass "notification-content"
+  $ text
+  $ "Wrong network! Please switch to the "
+  <> toText network
+  <> "."
 
 checkboxButton :: MonadWidget t m => m (Dynamic t Bool)
 checkboxButton = mdo

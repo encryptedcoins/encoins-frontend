@@ -4,8 +4,8 @@ import           Data.Bool                          (bool)
 import           Data.Functor                       (($>))
 import           Reflex.Dom
 
-import           Backend.Wallet                     (Wallet (..), WalletName (..), walletsSupportedInDAO)
-import           ENCOINS.App.Widgets.Basic          (waitForScripts)
+import           Backend.Wallet                     (Wallet (..), walletsSupportedInDAO, networkConfig, NetworkConfig(..))
+import           ENCOINS.App.Widgets.Basic          (waitForScripts, elementResultJS)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.Common.Widgets.Advanced    (wrongNetworkNotification)
 import           ENCOINS.DAO.Polls
@@ -14,7 +14,7 @@ import           ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
 import           ENCOINS.DAO.Widgets.PollWidget
 import           ENCOINS.Website.Widgets.Basic      (section, container)
 import           JS.Website                         (setElementStyle)
-import            Control.Monad (void)
+import           Control.Monad (void)
 
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = mdo
@@ -38,9 +38,17 @@ bodyContentWidget = mdo
     pollCompletedWidget poll2
     pollCompletedWidget poll1
 
-  wrongNetworkNotification "Mainnet"
-  let eNotificationStyleChange = bool "flex" "none" . (\w -> walletNetworkId w == "1" || walletName w == None) <$> updated dWallet
-  performEvent_ $ setElementStyle "bottom-notification-network" "display" <$> eNotificationStyleChange
+  eWalletLoad <- elementResultJS "EndWalletLoad" id
+  let eLoadedWallet = tagPromptlyDyn dWallet $ updated eWalletLoad
+
+  let eNotificationStyleChange
+        = bool "none" "flex"
+        . (\w -> walletNetworkId w /= dao networkConfig)
+        <$> eLoadedWallet
+  performEvent_ $
+    setElementStyle "bottom-notification-network" "display" <$> eNotificationStyleChange
+
+  wrongNetworkNotification $ dao networkConfig
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo

@@ -205,6 +205,7 @@ async function walletLoad(walletName)
 
     // const rewardAddresses     = await api.getRewardAddresses();
     // setInputValue(rewardAddressesElement, rewardAddresses);
+    setInputValue("EndWalletLoad", "");
     console.log("end walletLoad");
   } catch (e) {
     console.log(e.message);
@@ -401,16 +402,16 @@ function toUTF8Array(str) {
   return utf8;
 }
 
-async function daoPollVoteTx(n, walletName, answer)
+async function daoPollVoteTx(n, apiKey, net, walletName, answer)
 {
   // loading CardanoWasm
   await loader.load();
   const CardanoWasm = loader.Cardano;
-
+  const blockfrostAddress = ["https://cardano-", net.toLowerCase(), ".blockfrost.io/api/v0"].join('');
   await lucidLoader.load();
   const lucid = await lucidLoader.Lucid.new(
-    new lucidLoader.Blockfrost("https://cardano-mainnet.blockfrost.io/api/v0", "mainnetK4sRBCTDwqzK1KRuFxnpuxPbKF4ZQrnl"),
-    "Mainnet",
+    new lucidLoader.Blockfrost(blockfrostAddress, apiKey),
+    net,
   )
 
   try {
@@ -463,17 +464,18 @@ async function daoPollVoteTx(n, walletName, answer)
   }
 };
 
-async function daoDelegateTx(walletName, url)
+async function daoDelegateTx(apiKey, net, walletName, url)
 {
   // loading CardanoWasm
   await loader.load();
   const CardanoWasm = loader.Cardano;
 
+  const blockfrostAddress = ["https://cardano-", net.toLowerCase(), ".blockfrost.io/api/v0"].join('');
   await lucidLoader.load();
   const lucid = await lucidLoader.Lucid.new(
     // TODO: check url below
-    new lucidLoader.Blockfrost("https://cardano-mainnet.blockfrost.io/api/v0", "mainnetK4sRBCTDwqzK1KRuFxnpuxPbKF4ZQrnl"),
-    "Mainnet",
+    new lucidLoader.Blockfrost(blockfrostAddress, apiKey),
+    net,
   )
 
   try {

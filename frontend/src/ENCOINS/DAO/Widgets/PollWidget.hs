@@ -2,7 +2,7 @@ module ENCOINS.DAO.Widgets.PollWidget where
 
 import           Reflex.Dom
 
-import           Backend.Wallet                (Wallet (..), toJS)
+import           Backend.Wallet                (Wallet (..), toJS, lucidConfig)
 import           ENCOINS.App.Widgets.Basic     (elementResultJS)
 import           ENCOINS.Common.Utils          (toText)
 import           ENCOINS.Common.Widgets.Basic  (btn)
@@ -19,7 +19,7 @@ pollWidget (Poll n question summary answers' endTime) dWallet = do
     es <- mapM (btn "button-switching" "margin-left: 30px; margin-right: 30px; margin-bottom: 20px;" . text) answers
     let e = leftmost $ zipWith (<$) answers es
 
-    performEvent_ $ daoPollVoteTx n <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) e
+    performEvent_ $ daoPollVoteTx n lucidConfig <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) e
 
     dMsg <- elementResultJS ("elementPoll" <> toText n) id
     container "" $ divClass "app-text-normal" $ dynText dMsg

@@ -12,7 +12,7 @@ import           Servant.Reflex                   (BaseUrl)
 import           Backend.Protocol.Fees            (protocolFees)
 import           Backend.Protocol.Types
 import           Backend.Status                   (Status(..), isStatusBusy)
-import           Backend.Wallet                   (Wallet (..), WalletName (..))
+import           Backend.Wallet                   (Wallet (..), WalletName (..), networkConfig, NetworkConfig(..))
 import           CSL                              (TransactionUnspentOutput(..), amount, coin)
 import           ENCOINS.Bulletproofs             (Secrets, Secret (..))
 import           ENCOINS.Common.Utils             (toText)
@@ -30,7 +30,14 @@ instance Semigroup TxValidity where
 instance Monoid TxValidity where
     mempty = TxValid
 
-txValidity :: Maybe BaseUrl -> EncoinsMode -> Integer -> Status -> Wallet -> Secrets -> Secrets -> TxValidity
+txValidity :: Maybe BaseUrl
+  -> EncoinsMode
+  -> Integer
+  -> Status
+  -> Wallet
+  -> Secrets
+  -> Secrets
+  -> TxValidity
 txValidity mbaseUrl mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
         [e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12]
         [cond1, cond2, cond3, cond4, cond5, cond6, cond7, cond8, cond9, cond10, cond11, cond12]
@@ -41,7 +48,7 @@ txValidity mbaseUrl mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
         f e = bool (TxInvalid e) TxValid
         coins = toBurn ++ toMint
         cond1 = walletName /= None || mode == LedgerMode
-        cond2 = walletNetworkId == "0" || mode == LedgerMode
+        cond2 = walletNetworkId == app networkConfig || mode == LedgerMode
         cond3 = mode == LedgerMode || (balance + fees + 5) * 1_000_000 < sum (map (fromJust . decodeText . coin . amount . output) walletUTXOs)
         cond4 = not $ isStatusBusy s
         cond5 = not $ null toMint
