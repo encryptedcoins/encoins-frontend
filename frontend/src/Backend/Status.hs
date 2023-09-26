@@ -45,3 +45,8 @@ otherError :: MonadWidget t m => Event t Text -> m (Event t Status)
 otherError eOtherError = do
     let eOtherErrorNonEmpty = ffilter ("" /=) eOtherError
     return $ WalletError <$> eOtherErrorNonEmpty
+
+-- Check if status is the performant one.
+-- Performant status fires when background operations are processing.
+isDisableStatus :: Status -> Bool
+isDisableStatus status = status `elem` [Constructing, Signing, Submitting, Submitted]

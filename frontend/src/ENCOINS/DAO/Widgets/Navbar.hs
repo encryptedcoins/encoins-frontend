@@ -4,14 +4,14 @@ module ENCOINS.DAO.Widgets.Navbar
   , Dao (..)
   ) where
 
-import           Data.Text                        (Text, take, takeEnd, pack)
+import           Data.Text                        (Text, take, takeEnd)
 import           Prelude                          hiding (take)
 import           Reflex.Dom
 
 import           Backend.Wallet                   (Wallet (..), WalletName (..), walletIcon)
 import           ENCOINS.Common.Widgets.Advanced  (logo)
-import           ENCOINS.Common.Widgets.Basic     (btn)
-import           Backend.Status (Status)
+import           ENCOINS.Common.Widgets.Basic     (btn, btnWithBlock)
+
 
 data Dao = Connect | Delegate
   deriving (Eq, Show)
@@ -23,9 +23,9 @@ connectText w = case w of
 
 navbarWidget :: MonadWidget t m
   => Dynamic t Wallet
-  -> Dynamic t Status
+  -> Dynamic t Bool
   -> m (Event t Dao)
-navbarWidget w dStatus = do
+navbarWidget w dIsBlocked = do
   elAttr "div" ("data-animation" =: "default" <> "data-collapse" =: "none" <> "data-duration" =: "400" <> "id" =: "Navbar"
     <> "data-easing" =: "ease" <> "data-easing2" =: "ease" <> "role" =: "banner" <> "class" =: "navbar w-nav") $
     divClass "navbar-container w-container" $ do
@@ -40,8 +40,6 @@ navbarWidget w dStatus = do
                         dyn_ $ fmap (walletIcon . walletName) w
                         dynText $ fmap connectText w
                 eDelegate <- divClass "menu-item-button-left" $ do
-                    eClick <- btn "button-switching flex-center" "" $ text "DELEGATE"
-                    divClass "menu-item-notify-text flex-center"
-                        $ el "p" $ dynText $ pack . show <$> dStatus
-                    pure eClick
+                    -- btn "button-switching flex-center" "" $ text "DELEGATE"
+                    btnWithBlock "button-switching flex-center" "" "DELEGATE" dIsBlocked
                 pure $ leftmost [Connect <$ eConnect, Delegate <$ eDelegate]

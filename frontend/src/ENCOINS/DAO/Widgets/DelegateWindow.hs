@@ -5,20 +5,19 @@ module ENCOINS.DAO.Widgets.DelegateWindow
   ) where
 
 import           Control.Monad                          (void)
+import           Data.Monoid                            (Any(..))
+import           Data.Bool                              (bool)
+import           Data.Text                              (Text)
+import qualified Data.Text as T
 import           Reflex.Dom
 
-import           ENCOINS.App.Widgets.Basic              (elementResultJS, containerApp)
+import           Backend.Status                         (Status(..), otherError, isDisableStatus)
+import           ENCOINS.App.Widgets.Basic              (elementResultJS)
 import           ENCOINS.Common.Widgets.Advanced        (dialogWindow)
-import           ENCOINS.Common.Events (addFocusPostBuildDelayE, logEvent)
-import           Backend.Wallet (Wallet(..), toJS, lucidConfig)
+import           ENCOINS.Common.Widgets.Basic           (btnWithBlock)
+import           ENCOINS.Common.Events                  (addFocusPostBuildDelayE, logEvent)
+import           Backend.Wallet                         (Wallet(..), toJS, lucidConfig)
 import qualified JS.DAO as JS
-import           Data.Text (Text)
-import           ENCOINS.Common.Widgets.Basic (btn, divClassId)
-import           ENCOINS.Common.Utils (toText)
-import           Backend.Status (Status(..), otherError)
-import           Data.Monoid (Any(..))
-import           Data.Bool (bool)
-import qualified Data.Text as T
 
 delegateWindow :: MonadWidget t m
   => Event t ()
@@ -65,16 +64,21 @@ delegateWindow eOpen dWallet = mdo
           dStatus <- holdDyn Ready eStatus
 
           -- The button disable with invalid url and performant statuses.
-          btnOk <- divClass "app-top-menu-div" $ mdo
-            btnOk <- divClass "menu-item-button-right" $ do
-              buttonWidget $ fmap getAny $ mconcat $ fmap (fmap Any)
-                [ dIsDisableStatus, dIsInvalidUrl]
-            divClass "menu-item-button-right" $ do
-              containerApp ""
-                $ divClassId "app-text-small" "delegation-status"
-                $ dynText
-                $ toText <$> dStatus
-            pure btnOk
+          btnOk <- divClass "app-top-menu-div menu-item-button-right" $ mdo
+            let dIsDisabled = fmap getAny $ mconcat $ fmap (fmap Any)
+                  [ dIsDisableStatus, dIsInvalidUrl]
+            -- divClass "menu-item-button-right" $ do
+            btnWithBlock
+                "button-switching inverted flex-center"
+                "width:30%;display:inline-block;margin-right:5px;"
+                "Ok"
+                dIsDisabled
+            -- divClass "menu-item-button-right" $ do
+            --   containerApp ""
+            --     $ divClassId "app-text-small" "delegation-status"
+            --     $ dynText
+            --     $ toText <$> dStatus
+            -- pure btnOk
 
           return (eUrl, eEscape, dStatus)
   return dStatus
@@ -117,20 +121,3 @@ inputWidget eOpen dDisableStatus = divClass "w-row" $ do
     addFocusPostBuildDelayE inp eOpen
 
     return (value inp, keydown Escape inp)
-
-buttonWidget :: MonadWidget t m
-  => Dynamic t Bool
-  -> m (Event t ())
-buttonWidget dStatus = btn
-    (mkBtnAttrs dStatus)
-    "width:30%;display:inline-block;margin-right:5px;"
-    (text "Ok")
-  where
-    btnOnAttrs = "button-switching inverted flex-center"
-    btnOffAttrs = "button-switching inverted flex-center button-disabled"
-    mkBtnAttrs dSt = bool btnOnAttrs btnOffAttrs <$> dSt
-
--- Check if status is the performant one.
--- Performant status fires when background operations are processing.
-isDisableStatus :: Status -> Bool
-isDisableStatus status = status `elem` [Constructing, Signing, Submitting, Submitted]

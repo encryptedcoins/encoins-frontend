@@ -1,9 +1,11 @@
 module ENCOINS.DAO.Body (bodyWidget) where
 
+import           Control.Monad                      (void)
 import           Data.Bool                          (bool)
 import           Data.Functor                       (($>))
 import           Reflex.Dom
 
+import           Backend.Status                     (isDisableStatus)
 import           Backend.Wallet                     (Wallet (..), walletsSupportedInDAO, networkConfig, NetworkConfig(..))
 import           ENCOINS.App.Widgets.Basic          (waitForScripts, elementResultJS)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
@@ -14,20 +16,22 @@ import           ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
 import           ENCOINS.DAO.Widgets.PollWidget
 import           ENCOINS.Website.Widgets.Basic      (section, container)
 import           JS.Website                         (setElementStyle)
-import           Control.Monad (void)
+import           ENCOINS.Common.Utils               (toText)
 
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = mdo
-  eDao <- navbarWidget dWallet dStatus
+  eDao <- navbarWidget dWallet $ isDisableStatus <$> dStatus
   let eConnectOpen = void $ ffilter (==Connect) eDao
   let eDelegate = void $ ffilter (==Delegate) eDao
 
   dWallet <- connectWindow walletsSupportedInDAO eConnectOpen
   dStatus <- delegateWindow eDelegate dWallet
+  divClass "menu-item-notify-text flex-center" $
+      el "p" $ dynText $ toText <$> dStatus
 
   section "" "" $ do
     container "" $ elAttr "div" ("class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);") $ text "Active poll"
-    -- pollWidget poll6 dWallet
+    pollWidget poll6 dWallet
     blank
 
   section "" "" $ do
