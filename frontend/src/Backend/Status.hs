@@ -41,10 +41,10 @@ walletError = do
     return $ WalletError <$> eWalletError
 
 -- Other error element
-otherError :: MonadWidget t m => Event t Text -> m (Event t Status)
-otherError eOtherError = do
-    let eOtherErrorNonEmpty = ffilter ("" /=) eOtherError
-    return $ WalletError <$> eOtherErrorNonEmpty
+otherStatus :: MonadWidget t m => Event t Text -> m (Event t Status)
+otherStatus eOtherError = do
+    let eOtherStatusNonEmpty = ffilter ("" /=) eOtherError
+    return $ CustomStatus <$> eOtherStatusNonEmpty
 
 -- Check if status is the performant one.
 -- Performant status fires when background operations are processing.

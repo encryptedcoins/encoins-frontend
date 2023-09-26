@@ -40,6 +40,5 @@ navbarWidget w dIsBlocked = do
                         dyn_ $ fmap (walletIcon . walletName) w
                         dynText $ fmap connectText w
                 eDelegate <- divClass "menu-item-button-left" $ do
-                    -- btn "button-switching flex-center" "" $ text "DELEGATE"
-                    btnWithBlock "button-switching flex-center" "" "DELEGATE" dIsBlocked
+                    btnWithBlock "button-switching flex-center" "" dIsBlocked "DELEGATE"
                 pure $ leftmost [Connect <$ eConnect, Delegate <$ eDelegate]

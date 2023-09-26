@@ -471,6 +471,7 @@ async function daoPollVoteTx(n, apiKey, net, walletName, answer)
     plc_msg.free();
   } catch (e) {
     console.log("Error: " + e.message);
+    setInputValue("VoteError", e.message);
     return;
   }
 };

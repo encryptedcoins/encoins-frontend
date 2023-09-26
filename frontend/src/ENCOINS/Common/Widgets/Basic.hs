@@ -44,10 +44,10 @@ btn dCls dStyle tags = do
 btnWithBlock :: MonadWidget t m
   => Dynamic t Text
   -> Dynamic t Text
-  -> Text
   -> Dynamic t Bool
+  -> Text
   -> m (Event t ())
-btnWithBlock dCls dStyle name dIsBlock  = btn
+btnWithBlock dCls dStyle dIsBlock name = btn
     (mkBtnAttrs dIsBlock)
     dStyle
     (text name)

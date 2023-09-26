@@ -9,7 +9,7 @@ import           Backend.Status                     (isDisableStatus)
 import           Backend.Wallet                     (Wallet (..), walletsSupportedInDAO, networkConfig, NetworkConfig(..))
 import           ENCOINS.App.Widgets.Basic          (waitForScripts, elementResultJS)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
-import           ENCOINS.Common.Widgets.Advanced    (wrongNetworkNotification)
+import           ENCOINS.Common.Widgets.Advanced    (wrongNetworkNotification, foldDynamicAny)
 import           ENCOINS.DAO.Polls
 import           ENCOINS.DAO.Widgets.Navbar         (navbarWidget, Dao (..))
 import           ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
@@ -17,21 +17,41 @@ import           ENCOINS.DAO.Widgets.PollWidget
 import           ENCOINS.Website.Widgets.Basic      (section, container)
 import           JS.Website                         (setElementStyle)
 import           ENCOINS.Common.Utils               (toText)
+import           Backend.Status                     (Status(..), otherStatus)
+import           ENCOINS.Common.Events              (logEvent)
+
 
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = mdo
-  eDao <- navbarWidget dWallet $ isDisableStatus <$> dStatus
+  eDao <- navbarWidget dWallet isDisableButtons
   let eConnectOpen = void $ ffilter (==Connect) eDao
   let eDelegate = void $ ffilter (==Delegate) eDao
 
   dWallet <- connectWindow walletsSupportedInDAO eConnectOpen
-  dStatus <- delegateWindow eDelegate dWallet
+  delegateWindow eDelegate dWallet
+
+  eVoteStatus <- voteStatus
+  logEvent "Vote status" eVoteStatus
+  dVoteStatus <- holdDyn Ready eVoteStatus
+
+  eDelegateStatus <- delegateStatus
+  logEvent "Delegate Status" eDelegateStatus
+  dDelegateStatus <- holdDyn Ready eDelegateStatus
+
+  let isDisableButtons = foldDynamicAny
+        [ isDisableStatus <$> dDelegateStatus
+        , isDisableStatus <$> dVoteStatus
+        ]
+
+  -- TODO: show status by category. E.g. 'Delegate: Connecting...'
+  -- TODO: place and style better
+  dStatus <- holdDyn Ready (leftmost [eVoteStatus, eDelegateStatus])
   divClass "menu-item-notify-text flex-center" $
       el "p" $ dynText $ toText <$> dStatus
 
   section "" "" $ do
     container "" $ elAttr "div" ("class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);") $ text "Active poll"
-    pollWidget poll6 dWallet
+    pollWidget poll6 dWallet isDisableButtons
     blank
 
   section "" "" $ do
@@ -62,3 +82,40 @@ bodyWidget = waitForScripts blank $ mdo
     <> "type" =: "text/javascript" <> "integrity" =: "sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" <> "crossorigin" =: "anonymous") blank
   let e = eJQueryLoaded $> elAttr "script" ("src" =: "js/webflow.js" <> "type" =: "text/javascript") blank
   widgetHold_ blank e
+
+voteStatus :: MonadWidget t m => m (Event t Status)
+voteStatus = do
+  eConstruct <- updated <$> elementResultJS "VoteCreateNewTx" id
+  eSign <- updated <$> elementResultJS "VoteSignTx" id
+  eSubmit <- updated <$> elementResultJS "VoteSubmitTx" id
+  eSubmitted <- updated <$> elementResultJS "VoteSubmitedTx" id
+  eReady <- updated <$> elementResultJS "VoteReadyTx" id
+  eErr <- updated <$> elementResultJS "VoteError" id
+  eErrStatus <- otherStatus eErr
+  pure $ leftmost [
+          eErrStatus
+        , Ready                            <$ eReady
+        , Constructing                     <$ eConstruct
+        , Signing                          <$ eSign
+        , Submitting                       <$ eSubmit
+        , Submitted                        <$ eSubmitted
+        ]
+
+delegateStatus :: MonadWidget t m
+  => m (Event t Status)
+delegateStatus = do
+  eConstruct <- updated <$> elementResultJS "DelegateCreateNewTx" id
+  eSign <- updated <$> elementResultJS "DelegateSignTx" id
+  eSubmit <- updated <$> elementResultJS "DelegateSubmitTx" id
+  eSubmitted <- updated <$> elementResultJS "DelegateSubmitedTx" id
+  eReady <- updated <$> elementResultJS "DelegateReadyTx" id
+  eErr <- updated <$> elementResultJS "DelegateError" id
+  eErrStatus <- otherStatus eErr
+  pure $ leftmost [
+          eErrStatus
+        , Ready                            <$ eReady
+        , Constructing                     <$ eConstruct
+        , Signing                          <$ eSign
+        , Submitting                       <$ eSubmit
+        , Submitted                        <$ eSubmitted
+        ]

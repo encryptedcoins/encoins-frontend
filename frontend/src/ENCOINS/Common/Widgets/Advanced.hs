@@ -14,8 +14,8 @@ import           Reflex.Dom
 
 import           ENCOINS.Common.Widgets.Basic  (image)
 import           JS.Website                    (setElementStyle)
-import           Backend.Wallet (NetworkId)
-import           ENCOINS.Common.Utils (toText)
+import           Backend.Wallet                (NetworkId)
+import           ENCOINS.Common.Utils          (toText)
 
 logo :: MonadWidget t m => m ()
 logo = void $ image "logo.svg" "logo inverted" ""
@@ -133,3 +133,6 @@ withTooltip mainW style delay1 delay2 innerW = mdo
     constAttrs = "class" =: "div-tooltip top"
     showAttrs = constAttrs <> "style" =: ("display:inline-block;" <> style)
     hideAttrs = constAttrs <> "style" =: ("display:none;" <> style)
+
+foldDynamicAny :: Reflex t => [Dynamic t Bool] -> Dynamic t Bool
+foldDynamicAny = foldr (zipDynWith (||)) (constDyn False)
