@@ -1,21 +1,39 @@
 module ENCOINS.DAO.Polls where
 
-import           Data.Text                    (Text)
+import           Data.IntMap.Strict           (IntMap, fromList, mapEither)
+import           Data.Text                    (Text, pack)
+import           Data.Time                    (LocalTime (LocalTime), UTCTime,
+                                               defaultTimeLocale, formatTime,
+                                               fromGregorianValid,
+                                               localTimeToUTC,
+                                               makeTimeOfDayValid, utc)
 import           Reflex.Dom
 
-import           ENCOINS.Common.Widgets.Basic (lnkInline, br)
+import           ENCOINS.Common.Widgets.Basic (br, lnkInline, column, space)
+import ENCOINS.Common.Utils (toText)
 
 data Poll m = Poll {
-        pollNumber :: Integer,
+        pollNumber   :: Int,
         pollQuestion :: m (),
-        pollSummary :: m (),
-        pollAnswers :: [(Text, Text)],
-        pollEnds :: Text
+        pollSummary  :: m (),
+        pollAnswers  :: [(Text, Text)],
+        pollEnds     :: UTCTime
     }
 
-poll5 :: MonadWidget t m => Poll m
-poll5 = Poll 5
-    (text "Poll #5: Do you approve the Treasury Allocation and Sustainable Development Plan proposed by the ENCOINS team?")
+polls :: MonadWidget t m => IntMap (Poll m)
+polls = fromList $ zip [1..]
+  [
+    poll1 1
+  , poll2 2
+  , poll3 3
+  , poll4 4
+  , poll5 5
+  ]
+
+
+poll5 :: MonadWidget t m => Int -> Poll m
+poll5 n = Poll n
+    (text $ pollNum n <> "Do you approve the Treasury Allocation and Sustainable Development Plan proposed by the ENCOINS team?")
     (do
     text
         "The complete Treasury Allocation Plan was proposed recently by the ENCOINS team on "
@@ -27,11 +45,12 @@ poll5 = Poll 5
     )
     [("Yes", "100%")
     , ("No", "0%")]
-    "4 Septempber 2023, 22:00 UTC"
+    $ endTime22x00 2023 9 4
 
-poll4 :: MonadWidget t m => Poll m
-poll4 = Poll 4
-    (text "Poll #4: Spend up to 100k ENCS from the treasury on the VyFi partnership?")
+
+poll4 :: MonadWidget t m => Int -> Poll m
+poll4 n = Poll n
+    (text $ pollNum n <> "Spend up to 100k ENCS from the treasury on the VyFi partnership?")
     (do
         el "strong" $ text "Encoins partnership with VyFi"
         br
@@ -70,11 +89,12 @@ poll4 = Poll 4
     )
     [("Yes", "91.55%")
     , ("No", "8.45%")]
-    "13 August 2023, 22:00 UTC"
+    $ endTime22x00 2023 8 13
 
-poll3 :: MonadWidget t m => Poll m
-poll3 = Poll 3
-    (text "Poll #3: Spend 250k ENCS from the treasury on the ENCOINS v1 protocol audit?")
+
+poll3 :: MonadWidget t m => Int ->  Poll m
+poll3 n = Poll n
+    (text $ pollNum n <> "Spend 250k ENCS from the treasury on the ENCOINS v1 protocol audit?")
     (do
     text
         "The protocol audit will be performed by Anastasia Labs. The 250k ENCS will be put into the two-year linear vesting \
@@ -84,11 +104,12 @@ poll3 = Poll 3
     )
     [("Yes", "97.6%")
     , ("No", "2.4%")]
-    "7 July 2023, 22:00 UTC"
+    $ endTime22x00 2023 7 7
 
-poll2 :: MonadWidget t m => Poll m
-poll2 = Poll 2
-    (text "Poll #2: Spend 50k ENCS from the treasury as rewards for incentivized farming on MinSwap?")
+
+poll2 :: MonadWidget t m => Int -> Poll m
+poll2 n = Poll n
+    (text $ pollNum n <> "Spend 50k ENCS from the treasury as rewards for incentivized farming on MinSwap?")
     (do
     text
         "This proposal is to set up an incentivized farm for the ENCS/ADA liquidity pool on MinSwap. \
@@ -101,11 +122,12 @@ poll2 = Poll 2
     )
     [("Yes", "97.97%")
     , ("No", "2.03%")]
-    "25 June 2023, 22:00 UTC"
+    $ endTime22x00 2023 6 25
 
-poll1 :: MonadWidget t m => Poll m
-poll1 = Poll 1
-    (text "Poll #1: Do you support the proposal to use 50k ENCS from the treasury to provide liquidity to the ENCS/ADA pool on MinSwap?")
+
+poll1 :: MonadWidget t m => Int -> Poll m
+poll1 n = Poll n
+    (text $ pollNum n <> "Do you support the proposal to use 50k ENCS from the treasury to provide liquidity to the ENCS/ADA pool on MinSwap?")
     (text
         "The ENCS/ADA liquidity pool on MinSwap has about 120k ENCS in it (as of June 9, 2023). \
         \ Adding additional 50k ENCS from the treasury should improve the price stability of ENCS. \
@@ -113,4 +135,39 @@ poll1 = Poll 1
         \ the corresponding combination of ADA and ENCS will be returned to the treasury."
     )
     [("Yes", "95.9%"), ("No", "4.1%")]
-    "13 June 2023, 22:00 UTC"
+    $ endTime22x00 2023 6 13
+
+-- Help functions for polls
+
+pollNum :: Int -> Text
+pollNum n = "Poll #" <> toText n <> column <> space
+
+formatPollTime :: UTCTime -> Text
+formatPollTime = pack . formatTime defaultTimeLocale "%e %B %Y, %R %Z"
+
+endTime :: Integer -> Int -> Int -> Int -> Int -> UTCTime
+endTime year month day hour minute = localTimeToUTC utc localTime
+  where
+    localTime = LocalTime day' time
+    time = case makeTimeOfDayValid hour minute 0 of
+      Nothing -> error "Invalid parameters of makeTimeOfDayValid"
+      Just t  -> t
+    day' = case fromGregorianValid year month day of
+      Nothing -> error "Invalid parameters of fromGregorianValid"
+      Just d' -> d'
+
+endTime22x00 :: Integer -> Int -> Int -> UTCTime
+endTime22x00 year month day = endTime year month day 22 0
+
+poolsActiveAndArchived :: MonadWidget t m
+  => UTCTime
+  -> (IntMap (Poll m), IntMap (Poll m))
+poolsActiveAndArchived utcTime = mapEither (dividePolls utcTime) polls
+
+dividePolls :: MonadWidget t m
+  => UTCTime
+  -> Poll m
+  -> Either (Poll m) (Poll m)
+dividePolls nowTime poll
+  | pollEnds poll > nowTime = Right poll
+  | otherwise = Left poll

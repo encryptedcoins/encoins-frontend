@@ -6,26 +6,26 @@ import           Backend.Wallet                (Wallet (..), toJS, lucidConfig)
 import           ENCOINS.App.Widgets.Basic     (elementResultJS)
 import           ENCOINS.Common.Utils          (toText)
 import           ENCOINS.Common.Widgets.Basic  (btn, btnWithBlock)
-import           ENCOINS.DAO.Polls             (Poll (..))
+import           ENCOINS.DAO.Polls             (Poll (..), formatPollTime)
 import           ENCOINS.Website.Widgets.Basic (container)
 import           JS.DAO                        (daoPollVoteTx)
 
 
 pollWidget :: MonadWidget t m
-  => Poll m
-  -> Dynamic t Wallet
+  => Dynamic t Wallet
   -> Dynamic t Bool
+  -> Poll m
   -> m ()
-pollWidget (Poll n question summary answers' endTime) dWallet dIsBlocked = do
+pollWidget dWallet dIsBlocked (Poll n question summary answers' endTime) = do
   explainer question summary
 
   let answers = fmap fst answers'
   container "" $ do
     es <- mapM
-      (\a -> btnWithBlock
+      (btnWithBlock
         "button-switching"
         "margin-left: 30px; margin-right: 30px; margin-bottom: 20px;"
-        dIsBlocked $ text a
+        dIsBlocked . text
       ) answers
     let e = leftmost $ zipWith (<$) answers es
 
@@ -38,7 +38,7 @@ pollWidget (Poll n question summary answers' endTime) dWallet dIsBlocked = do
     explainer tagsTitle tagsExplainer = container "" $ divClass "div-explainer" $ do
       elAttr "h4" ("class" =: "h4" <> "style" =: "margin-bottom: 30px;") tagsTitle
       elAttr "p" ("class" =: "p-explainer" <> "style" =: "text-align: justify;") tagsExplainer
-      divClass "app-text-small" $ text $ "The vote ends on " <> endTime <> "."
+      divClass "app-text-small" $ text $ "The vote ends on " <> formatPollTime endTime <> "."
 
 pollCompletedWidget :: MonadWidget t m => Poll m -> m ()
 pollCompletedWidget (Poll _ question summary answers' endTime) = do
@@ -55,4 +55,4 @@ pollCompletedWidget (Poll _ question summary answers' endTime) = do
     explainer tagsTitle tagsExplainer = container "" $ divClass "div-explainer" $ do
       elAttr "h4" ("class" =: "h4" <> "style" =: "margin-bottom: 30px;") tagsTitle
       elAttr "p" ("class" =: "p-explainer" <> "style" =: "text-align: justify;") tagsExplainer
-      divClass "app-text-small" $ text $ "The vote ended on " <> endTime <> "."
+      divClass "app-text-small" $ text $ "The vote ended on " <> formatPollTime endTime <> "."
