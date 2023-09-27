@@ -2,6 +2,7 @@ module ENCOINS.App.Widgets.InputAddressWindow where
 
 import           Control.Monad                          (void)
 import           Reflex.Dom
+import           Data.Text                              (Text)
 import           Witherable                             (catMaybes)
 
 import           Backend.Protocol.Types
@@ -9,17 +10,25 @@ import           ENCOINS.App.Widgets.Basic              (elementResultJS)
 import           ENCOINS.Common.Widgets.Basic           (btn, errDiv)
 import           ENCOINS.Common.Widgets.Advanced        (dialogWindow)
 import           JS.App                                 (addrLoad)
+import           ENCOINS.Common.Events                  (setFocusDelayOnEvent)
+import           Backend.Wallet                         (networkConfig, NetworkConfig(..), NetworkId(..))
 
 inputAddressWindow :: MonadWidget t m => Event t () -> m (Event t Address, Dynamic t (Maybe Address))
 inputAddressWindow eOpen = mdo
-  (eOk, dmAddress) <- dialogWindow True eOpen (void eOk) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" "" $ mdo
+  let windowStyle = "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px"
+  (eOk, dmAddress) <- dialogWindow True eOpen (void eOk) windowStyle "" $ mdo
       divClass "connect-title-div" $ divClass "app-text-semibold" $
           text "Enter wallet address in bech32:"
       dAddrInp <- divClass "app-columns w-row" $ do
         inp <- inputElement $ def
-          & initialAttributes .~ ("class" =: "w-input" <> "style" =: "display: inline-block;")
+          & initialAttributes .~
+            (  "class" =: "w-input"
+            <> "style" =: "display: inline-block;"
+            <> "placeholder" =: addressBech32
+            )
           & inputElementConfig_initialValue .~ ""
           & inputElementConfig_setValue .~ ("" <$ eOpen)
+        setFocusDelayOnEvent inp eOpen
         return (value inp)
       btnOk <- btn (mkBtnAttrs <$> dmAddr)
         "width:30%;display:inline-block;margin-right:5px;" $ text "Ok"
@@ -42,3 +51,8 @@ inputAddressWindow eOpen = mdo
     err = elAttr "div" ("class" =: "app-columns w-row" <>
       "style" =: "display:flex;justify-content:center;") $
         errDiv "Incorrect address"
+
+addressBech32 :: Text
+addressBech32 = case app networkConfig of
+  Mainnet -> "addr1q88cdsle3chjufssrg9wujvseypyj8fgx..."
+  Testnet -> "addr_test1qr8cdsle3chjufssrg9wujvseypy..."

@@ -38,7 +38,7 @@ bodyContentWidget mpass = mdo
 
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen
   (eNewPass, eResetPass) <- passwordSettingsWindow eSettingsOpen
-  eResetOk <- resetPasswordDialog eResetPass
+  eCleanOk <- cleanCacheDialog eResetPass
 
   welcomeWindow welcomeWindowWalletStorageKey welcomeWallet
 
@@ -47,11 +47,11 @@ bodyContentWidget mpass = mdo
   (dSecrets, evEvStatus) <- runEventWriterT $ mainWindow mpass dWallet dIsDisableButtons
 
   performEvent_ (reEncryptEncoins <$> attachPromptlyDyn dSecrets (leftmost
-    [eNewPass, Nothing <$ eResetOk]))
+    [eNewPass, Nothing <$ eCleanOk]))
 
   copiedNotification
 
-  pure $ leftmost [Nothing <$ eResetOk, eNewPass]
+  pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
 
   where
     reEncryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) "encoins"
@@ -62,12 +62,12 @@ bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo
   mPass <- fmap PasswordHash <$> loadHashedPassword passwordSotrageKey
   (ePassOk, eReset) <- case mPass of
-    Just pass -> first (Just <$>) <$> enterPasswordWindow pass eResetOk
+    Just pass -> first (Just <$>) <$> enterPasswordWindow pass eCleanOk
     Nothing -> do
       ePb <- getPostBuild
       pure (Nothing <$ ePb, never)
-  eResetOk <- resetPasswordDialog eReset
-  dmmPass <- holdDyn Nothing $ Just <$> leftmost [ePassOk, Nothing <$ eResetOk, eNewPass]
+  eCleanOk <- cleanCacheDialog eReset
+  dmmPass <- holdDyn Nothing $ Just <$> leftmost [ePassOk, Nothing <$ eCleanOk, eNewPass]
   eNewPass <- switchHold never <=< dyn $ dmmPass <&> \case
     Nothing -> pure never
     Just mpass -> bodyContentWidget mpass

@@ -12,8 +12,8 @@ import           Reflex.Dom
 import           ENCOINS.App.Widgets.Basic              (elementResultJS, containerApp)
 import           ENCOINS.Common.Widgets.Advanced        (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic           (btnWithBlock, divClassId)
-import           ENCOINS.Common.Events                  (addFocusPostBuildDelayE)
-import           Backend.Wallet                         (Wallet(..), toJS, lucidConfig)
+import           ENCOINS.Common.Events                  (setFocusDelayOnEvent)
+import           Backend.Wallet                         (Wallet(..), toJS, lucidConfigDao)
 import           Backend.Status                         (UrlStatus(..), isNotValidUrl)
 import qualified JS.DAO as JS
 import           ENCOINS.Common.Utils (toText)
@@ -56,7 +56,7 @@ delegateWindow eOpen dWallet = mdo
           let eUrl = tagPromptlyDyn dInputText btnOk
 
           performEvent_ $
-            JS.daoDelegateTx lucidConfig
+            JS.daoDelegateTx lucidConfigDao
             <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
 
           return eUrl
@@ -70,10 +70,10 @@ inputWidget eOpen = divClass "w-row" $ do
       & initialAttributes .~
           ( "class" =: "w-input"
           <> "style" =: "display: inline-block;"
-          <> "placeholder" =: "relay url"
+          <> "placeholder" =: "url of relay"
           )
       & inputElementConfig_setValue .~ ("" <$ eOpen)
-    addFocusPostBuildDelayE inp eOpen
+    setFocusDelayOnEvent inp eOpen
     return $ value inp
 
 buttonWidget :: MonadWidget t m
