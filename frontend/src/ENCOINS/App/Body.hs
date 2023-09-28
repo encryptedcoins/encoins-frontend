@@ -25,23 +25,18 @@ import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
-import           ENCOINS.Common.Events              (logEvent)
+-- import           ENCOINS.Common.Events              (logEvent)
 
 
 bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mpass = mdo
   (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet mpass
 
-  let eStatus = coincidence $ leftmost <$> evEvStatus
-  dStatus <- foldDynMaybe
-    -- Hold BackendError status once it fired until page reloading.
-    (\ev (_, accS) -> if isBlockError accS then Nothing else Just ev)
-    (T.empty, Ready) $ leftmost [eStatus, updated dWalletNetworkStatus]
+  (dStatusT, dIsDisableButtons) <- handleAppStatus dWallet evEvStatus
 
-  notification $ flatStatus <$> dStatus
+  notification dStatusT
 
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen
-  dWalletNetworkStatus <- fetchWalletNetworkStatus dWallet
 
   (eNewPass, eResetPass) <- passwordSettingsWindow eSettingsOpen
   eCleanOk <- cleanCacheDialog eResetPass
@@ -49,8 +44,6 @@ bodyContentWidget mpass = mdo
   welcomeWindow welcomeWindowWalletStorageKey welcomeWallet
 
   divClass "section-app section-app-empty wf-section" blank
-
-  let dIsDisableButtons = (isStatusBusyBackendNetwork . snd) <$> dStatus
 
   (dSecrets, evEvStatus) <- runEventWriterT $ mainWindow mpass dWallet dIsDisableButtons
 
@@ -64,7 +57,6 @@ bodyContentWidget mpass = mdo
   where
     reEncryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) "encoins"
       . decodeUtf8 .  toStrict . encode $ d
-    flatStatus (t, s) = bool (t <> column <> space <> T.pack (show s)) T.empty $ isReady s
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo
@@ -96,7 +88,8 @@ fetchWalletNetworkStatus dWallet = do
           (True,_) -> Just ("NetworkId status", WalletNetworkError unexpectedNetworkApp)
           (False, ("", Ready)) -> Nothing
           (False, _) -> Just (T.empty, Ready)
-  dUnexpectedNetworkStatus <- foldDynMaybe mkNetworkMessage (T.empty, Ready) eUnexpectedNetworkB
+  dUnexpectedNetworkStatus <-
+    foldDynMaybe mkNetworkMessage (T.empty, Ready) eUnexpectedNetworkB
   pure dUnexpectedNetworkStatus
 
 unexpectedNetworkApp :: Text
@@ -106,3 +99,23 @@ unexpectedNetworkApp =
         <> toText (app networkConfig)
         <> space
         <> "mode."
+
+handleAppStatus :: MonadWidget t m
+  => Dynamic t Wallet
+  -> Event t [Event t (Text, Status)]
+  -> m (Dynamic t Text, Dynamic t Bool)
+handleAppStatus dWallet evEvStatus = do
+  let eStatus = coincidence $ leftmost <$> evEvStatus
+  dWalletNetworkStatus <- fetchWalletNetworkStatus dWallet
+
+  dStatus <- foldDynMaybe
+    -- Hold BackendError status once it fired until page reloading.
+    (\ev (_, accS) -> if isBlockError accS then Nothing else Just ev)
+    (T.empty, Ready) $ leftmost [eStatus, updated dWalletNetworkStatus]
+
+  let flatStatus (t, s) = bool (t <> column <> space <> T.pack (show s)) T.empty $ isReady s
+
+  let dIsDisableButtons = (isStatusBusyBackendNetwork . snd) <$> dStatus
+  let dStatusT = flatStatus <$> dStatus
+
+  pure (dStatusT, dIsDisableButtons)
