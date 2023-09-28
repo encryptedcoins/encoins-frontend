@@ -4,6 +4,7 @@ import           Control.Monad                      (void)
 import           Data.Functor                       (($>))
 import           Reflex.Dom
 import qualified Data.Text as T
+import           Data.Text (Text)
 import           Data.Time (getCurrentTime)
 import           Control.Monad.IO.Class          (MonadIO(..))
 import           Data.IntMap.Strict              (toDescList)
@@ -14,7 +15,7 @@ import           Backend.Wallet                     (Wallet (..), walletsSupport
 import           ENCOINS.App.Widgets.Basic          (waitForScripts, elementResultJS)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.Common.Widgets.Advanced    (foldDynamicAny)
-import           ENCOINS.Common.Widgets.Basic       (notification, otherStatus)
+import           ENCOINS.Common.Widgets.Basic       (notification, otherStatus, space)
 import           ENCOINS.DAO.Polls
 import           ENCOINS.DAO.Widgets.Navbar         (navbarWidget, Dao (..))
 import           ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
@@ -47,18 +48,18 @@ bodyContentWidget = mdo
   let dIsDisableButtons = foldDynamicAny
         [ isStatusBusy <$> dDelegateStatus
         , isStatusBusy <$> dVoteStatus
+        , dUnexpectedNetworkB
         ]
 
   let eVoteStatusT = ("Vote status: " <>) . toText <$> eVoteStatus
   let eDelegateStatusT = ("Delegate status: " <>) . toText <$> eDelegateStatus
-  let wrongNetworkText = "Wrong network! Please switch to " <> toText (dao networkConfig)
-  let eNetworkStatus = ffilter
-        (\w -> walletNetworkId w /= dao networkConfig)
-        eLoadedWallet
+
+  (dUnexpectedNetworkB, dUnexpectedNetworkT) <- handleInvalidNetwork eLoadedWallet
+
   dNotification <- holdDyn T.empty $ leftmost
     [ eVoteStatusT
     , eDelegateStatusT
-    , wrongNetworkText <$ eNetworkStatus
+    , updated dUnexpectedNetworkT
     ]
   notification dNotification
 
@@ -120,3 +121,30 @@ delegateStatus = do
         , Submitting                       <$ eSubmit
         , Submitted                        <$ eSubmitted
         ]
+
+unexpectedNetwork :: Text
+unexpectedNetwork =
+           "Unexpected network! Please switch the wallet to"
+        <> space
+        <> toText (dao networkConfig)
+        <> space
+        <> "mode."
+
+handleInvalidNetwork :: MonadWidget t m
+  => Event t Wallet
+  -> m (Dynamic t Bool, Dynamic t Text)
+handleInvalidNetwork eLoadedWallet = do
+  let eUnexpectedNetworkB = fmap
+        (\w -> walletNetworkId w /= dao networkConfig)
+        eLoadedWallet
+  -- logEvent "eUnexpectedNetworkB" eUnexpectedNetworkB
+  dUnexpectedNetworkB <- holdDyn False eUnexpectedNetworkB
+
+  let mkNetworkMessage isInvalidNetwork message =
+        case (isInvalidNetwork, message) of
+          (True,_) -> Just unexpectedNetwork
+          (False, "") -> Nothing
+          (False, _) -> Just ""
+  dUnexpectedNetworkT <- foldDynMaybe mkNetworkMessage "" eUnexpectedNetworkB
+
+  pure (dUnexpectedNetworkB, dUnexpectedNetworkT)
