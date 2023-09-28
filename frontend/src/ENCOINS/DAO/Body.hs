@@ -43,7 +43,6 @@ bodyContentWidget = mdo
   (dIsDisableButtons, dNotification) <- handleStatus dWallet
   notification dNotification
 
-
   (archivedPolls, activePolls) <- poolsActiveAndArchived <$> liftIO getCurrentTime
 
   section "" "" $ do
@@ -114,7 +113,6 @@ handleInvalidNetwork dWallet = do
   let eUnexpectedNetworkB = fmap
         (\w -> walletNetworkId w /= dao networkConfig)
         eLoadedWallet
-  -- logEvent "eUnexpectedNetworkB" eUnexpectedNetworkB
   dUnexpectedNetworkB <- holdDyn False eUnexpectedNetworkB
 
   let mkNetworkMessage isInvalidNetwork message =

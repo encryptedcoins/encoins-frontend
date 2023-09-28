@@ -14,7 +14,7 @@ import           Backend.EncoinsTx                      (encoinsTxWalletMode, en
 import           Backend.Environment                    (getEnvironment)
 import           Backend.Protocol.Fees                  (protocolFees)
 import           Backend.Protocol.Types
-import           Backend.Status                         (Status(..), isStatusBusyWithBackendError)
+import           Backend.Status                         (Status(..), isStatusBusyBackendNetwork)
 import           Backend.Wallet                         (Wallet (..))
 import           ENCOINS.App.Widgets.Basic              (containerApp, sectionApp, walletError, elementResultJS, tellTxStatus)
 import           ENCOINS.App.Widgets.Coin               (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
@@ -132,13 +132,13 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
             (zipDynWith
               (&&)
               (fmap (not . null) dCoinsToBurn)
-              (fmap (not . isStatusBusyWithBackendError) dStatus)
+              (fmap (not . isStatusBusyBackendNetwork) dStatus)
             ) "" " Send to a Wallet"
           eLedger <- sendButton
             (zipDynWith
               (&&)
               (fmap (not . null) dCoinsToBurn)
-              (fmap (not . isStatusBusyWithBackendError) dStatus)
+              (fmap (not . isStatusBusyBackendNetwork) dStatus)
             ) "margin-top: 20px" " Send to the Ledger"
           eWalletOk    <- sendToWalletWindow eWallet dCoinsToBurn
           (eAddrOk, _) <- inputAddressWindow eWalletOk
