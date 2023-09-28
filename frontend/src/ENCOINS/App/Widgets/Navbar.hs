@@ -1,13 +1,16 @@
 module ENCOINS.App.Widgets.Navbar (navbarWidget) where
 
-import           Data.Text                        (Text, take, takeEnd)
-import           Prelude                          hiding (take)
+import           Data.Text                          (Text, take, takeEnd)
+import           Prelude                            hiding (take)
 import           Reflex.Dom
 
-import           Backend.Wallet                   (NetworkConfig(app), NetworkId(..), Wallet (..), WalletName (..), walletIcon, networkConfig)
-import           ENCOINS.Common.Widgets.Advanced  (logo)
-import           ENCOINS.Common.Widgets.Basic     (btn, space)
-import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw )
+import           Backend.Wallet                     (Wallet (..),
+                                                     WalletName (..),
+                                                     currentNetworkApp,
+                                                     walletIcon)
+import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw)
+import           ENCOINS.Common.Widgets.Advanced    (logo)
+import           ENCOINS.Common.Widgets.Basic       (btn, space)
 
 connectText :: Wallet -> Text
 connectText w = case w of
@@ -43,7 +46,7 @@ lockerWidget :: MonadWidget  t m
 lockerWidget mPass = do
   let (iconClass, popupText) = case mPass of
         Nothing -> ("menu-item-unlocked", "isn't protected")
-        Just _ -> ("menu-item-locked", "is protected")
+        Just _  -> ("menu-item-locked", "is protected")
   lockerDiv iconClass popupText
 
 lockerDiv :: MonadWidget t m
@@ -55,8 +58,3 @@ lockerDiv iconClass popupText
     ("menu-item menu-item-button-left" <> space <> iconClass <> space <> "w-inline-block")
     (divClass "menu-item menu-item-button-left popup-text"
       $ el "p" $ text $ "Cache" <> space <> popupText)
-
-currentNetworkApp :: Text
-currentNetworkApp = case app networkConfig of
-  Mainnet -> "Mainnet"
-  Testnet -> "Testnet Preprod"
