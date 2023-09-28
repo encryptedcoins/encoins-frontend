@@ -8,7 +8,7 @@ import           Data.Text                        (Text, take, takeEnd)
 import           Prelude                          hiding (take)
 import           Reflex.Dom
 
-import           Backend.Wallet                   (Wallet (..), WalletName (..), walletIcon)
+import           Backend.Wallet                   (NetworkConfig(dao), NetworkId(..), Wallet (..), WalletName (..), walletIcon, networkConfig)
 import           ENCOINS.Common.Widgets.Advanced  (logo)
 import           ENCOINS.Common.Widgets.Basic     (btn, btnWithBlock)
 
@@ -32,7 +32,12 @@ navbarWidget w dIsBlocked = do
             elAttr "a" ("href" =: "https://encoins.io" <> "class" =: "brand w-nav-brand") do
               logo
               divClass "h3" $ text "ENCOINS"
-            divClass "h4" $ elAttr "div" ("style" =: "font-size: 20px; margin-left: 10px;") $ text "DAO"
+            divClass "h4"
+              $ elAttr "div" ("style" =: "font-size: 20px; margin-left: 10px;")
+              $ text "DAO"
+            divClass "h4"
+              $ elAttr "div" ("style" =: "font-size: 20px; margin-left: 10px;")
+              $ text currentNetworkDao
             divClass "menu-div-empty" blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do
                 eConnect <- divClass "menu-item-button-left" $
@@ -42,3 +47,8 @@ navbarWidget w dIsBlocked = do
                 eDelegate <- divClass "menu-item-button-left" $ do
                     btnWithBlock "button-switching flex-center" "" dIsBlocked $ text "DELEGATE"
                 pure $ leftmost [Connect <$ eConnect, Delegate <$ eDelegate]
+
+currentNetworkDao :: Text
+currentNetworkDao = case dao networkConfig of
+  Mainnet -> "Mainnet"
+  Testnet -> "Testnet"

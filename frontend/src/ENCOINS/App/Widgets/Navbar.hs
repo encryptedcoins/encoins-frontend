@@ -4,7 +4,7 @@ import           Data.Text                        (Text, take, takeEnd)
 import           Prelude                          hiding (take)
 import           Reflex.Dom
 
-import           Backend.Wallet                   (Wallet (..), WalletName (..), walletIcon)
+import           Backend.Wallet                   (NetworkConfig(app), NetworkId(..), Wallet (..), WalletName (..), walletIcon, networkConfig)
 import           ENCOINS.Common.Widgets.Advanced  (logo)
 import           ENCOINS.Common.Widgets.Basic     (btn, space)
 import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw )
@@ -25,7 +25,9 @@ navbarWidget w mPass = do
             elAttr "a" ("href" =: "https://encoins.io" <> "class" =: "brand w-nav-brand") do
               logo
               divClass "h3" $ text "ENCOINS"
-            divClass "h4" $ elAttr "div" ("style" =: "font-size: 20px; margin-left: 10px;") $ text "Testnet Preprod"
+            divClass "h4"
+              $ elAttr "div" ("style" =: "font-size: 20px; margin-left: 10px;")
+              $ text currentNetworkApp
             divClass "menu-div-empty" blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do
                 elLocker <- lockerWidget mPass
@@ -53,3 +55,8 @@ lockerDiv iconClass popupText
     ("menu-item menu-item-button-left" <> space <> iconClass <> space <> "w-inline-block")
     (divClass "menu-item menu-item-button-left popup-text"
       $ el "p" $ text $ "Cache" <> space <> popupText)
+
+currentNetworkApp :: Text
+currentNetworkApp = case app networkConfig of
+  Mainnet -> "Mainnet"
+  Testnet -> "Testnet Preprod"
