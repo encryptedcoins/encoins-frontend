@@ -3,11 +3,11 @@ module ENCOINS.DAO.Body (bodyWidget) where
 import           Control.Monad                      (void)
 import           Reflex.Dom
 import qualified Data.Text as T
+import           Data.Map (Map)
 import           Data.Text (Text)
 import           Data.Time (getCurrentTime)
 import           Control.Monad.IO.Class          (MonadIO(..))
 import           Data.IntMap.Strict              (toDescList)
-
 
 import           Backend.Status                     (isStatusBusy, Status(..))
 import           Backend.Wallet                     (Wallet (..), walletsSupportedInDAO, networkConfig, NetworkConfig(..))
@@ -25,61 +25,39 @@ import           ENCOINS.Common.Events              (logEvent)
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 
 
-bodyContentWidget :: MonadWidget t m => m ()
-bodyContentWidget = mdo
-  eDao <- navbarWidget dWallet dIsDisableButtons
-  let eConnectOpen = void $ ffilter (==Connect) eDao
-  let eDelegate = void $ ffilter (==Delegate) eDao
-
-  dWallet <- connectWindow walletsSupportedInDAO eConnectOpen
-  delegateWindow eDelegate dWallet
-
-  eVoteStatus <- voteStatus
-  logEvent "Vote status" eVoteStatus
-  dVoteStatus <- holdDyn Ready eVoteStatus
-
-  eDelegateStatus <- delegateStatus
-  logEvent "Delegate Status" eDelegateStatus
-  dDelegateStatus <- holdDyn Ready eDelegateStatus
-
-  eWalletLoad <- elementResultJS "EndWalletLoad" id
-  let eLoadedWallet = tagPromptlyDyn dWallet $ updated eWalletLoad
-
-  let dIsDisableButtons = foldDynamicAny
-        [ isStatusBusy <$> dDelegateStatus
-        , isStatusBusy <$> dVoteStatus
-        , dUnexpectedNetworkB
-        ]
-
-  let eVoteStatusT = ("Vote status: " <>) . toText <$> eVoteStatus
-  let eDelegateStatusT = ("Delegate status: " <>) . toText <$> eDelegateStatus
-
-  (dUnexpectedNetworkB, dUnexpectedNetworkT) <- handleInvalidNetwork eLoadedWallet
-
-  dNotification <- holdDyn T.empty $ leftmost
-    [ eVoteStatusT
-    , eDelegateStatusT
-    , updated dUnexpectedNetworkT
-    ]
-  notification dNotification
-
-  nowTime <- liftIO getCurrentTime
-
-  let (archivedPolls, activePolls) = poolsActiveAndArchived nowTime
-
-  section "" "" $ do
-    container "" $ elAttr "div" ("class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);") $ text "Active poll"
-    mapM_ (pollWidget dWallet dIsDisableButtons . snd) $ toDescList activePolls
-    blank
-
-  section "" "" $ do
-    container "" $ elAttr "div" ("class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);") $ text "Concluded polls"
-    mapM_ (pollCompletedWidget . snd) $ toDescList archivedPolls
-
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo
   bodyContentWidget
   jQueryWidget
+
+bodyContentWidget :: MonadWidget t m => m ()
+bodyContentWidget = mdo
+  eDao <- navbarWidget dWallet dIsDisableButtons
+
+  let eConnectOpen = void $ ffilter (==Connect) eDao
+  dWallet <- connectWindow walletsSupportedInDAO eConnectOpen
+
+  let eDelegate = void $ ffilter (==Delegate) eDao
+  delegateWindow eDelegate dWallet
+
+  (dIsDisableButtons, dNotification) <- handleStatus dWallet
+  notification dNotification
+
+
+  (archivedPolls, activePolls) <- poolsActiveAndArchived <$> liftIO getCurrentTime
+
+  section "" "" $ do
+    container ""
+      $ elAttr "div" pollAttr
+      $ text "Active poll"
+    mapM_ (pollWidget dWallet dIsDisableButtons . snd) $ toDescList activePolls
+    blank
+
+  section "" "" $ do
+    container ""
+      $ elAttr "div" pollAttr
+      $ text "Concluded polls"
+    mapM_ (pollCompletedWidget . snd) $ toDescList archivedPolls
 
 voteStatus :: MonadWidget t m => m (Event t Status)
 voteStatus = do
@@ -127,9 +105,12 @@ unexpectedNetwork =
         <> "mode."
 
 handleInvalidNetwork :: MonadWidget t m
-  => Event t Wallet
+  => Dynamic t Wallet
   -> m (Dynamic t Bool, Dynamic t Text)
-handleInvalidNetwork eLoadedWallet = do
+handleInvalidNetwork dWallet = do
+  eWalletLoad <- elementResultJS "EndWalletLoad" id
+  let eLoadedWallet = tagPromptlyDyn dWallet $ updated eWalletLoad
+
   let eUnexpectedNetworkB = fmap
         (\w -> walletNetworkId w /= dao networkConfig)
         eLoadedWallet
@@ -144,3 +125,38 @@ handleInvalidNetwork eLoadedWallet = do
   dUnexpectedNetworkT <- foldDynMaybe mkNetworkMessage "" eUnexpectedNetworkB
 
   pure (dUnexpectedNetworkB, dUnexpectedNetworkT)
+
+handleStatus :: MonadWidget t m
+  => Dynamic t Wallet
+  -> m (Dynamic t Bool, Dynamic t Text)
+handleStatus dWallet = do
+  eVoteStatus <- voteStatus
+  logEvent "Vote status" eVoteStatus
+  dVoteStatus <- holdDyn Ready eVoteStatus
+
+  eDelegateStatus <- delegateStatus
+  logEvent "Delegate Status" eDelegateStatus
+  dDelegateStatus <- holdDyn Ready eDelegateStatus
+
+  (dUnexpectedNetworkB, dUnexpectedNetworkT) <- handleInvalidNetwork dWallet
+
+  let dIsDisableButtons = foldDynamicAny
+        [ isStatusBusy <$> dDelegateStatus
+        , isStatusBusy <$> dVoteStatus
+        , dUnexpectedNetworkB
+        ]
+
+  let eVoteStatusT = ("Vote status: " <>) . toText <$> eVoteStatus
+  let eDelegateStatusT = ("Delegate status: " <>) . toText <$> eDelegateStatus
+
+  dNotification <- holdDyn T.empty $ leftmost
+    [ eVoteStatusT
+    , eDelegateStatusT
+    , updated dUnexpectedNetworkT
+    ]
+
+  pure (dIsDisableButtons, dNotification)
+
+pollAttr :: Map Text Text
+pollAttr =
+  "class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);"
