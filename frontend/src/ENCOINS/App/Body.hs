@@ -4,7 +4,7 @@ import           Control.Monad                      ((<=<))
 import           Data.Aeson                         (encode)
 import           Data.Bifunctor                     (first)
 import           Data.ByteString.Lazy               (toStrict)
-import           Data.Functor                       (($>), (<&>))
+import           Data.Functor                       ((<&>))
 import           Data.Text.Encoding                 (decodeUtf8)
 import           Data.Bool                          (bool)
 import           Reflex.Dom
@@ -20,6 +20,7 @@ import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWindow, welcomeWallet, welcomeWindowWalletStorageKey)
 import           ENCOINS.Common.Widgets.Basic       (notification, space, column)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
+import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
 
@@ -72,7 +73,4 @@ bodyWidget = waitForScripts blank $ mdo
     Nothing -> pure never
     Just mpass -> bodyContentWidget mpass
 
-  eJQueryLoaded <- domEvent Load . fst <$> elAttr'"script" ("src" =: "https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=63b058a2f897ba2767d5ff1b"
-    <> "type" =: "text/javascript" <> "integrity" =: "sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" <> "crossorigin" =: "anonymous") blank
-  let e = eJQueryLoaded $> elAttr "script" ("src" =: "js/webflow.js" <> "type" =: "text/javascript") blank
-  widgetHold_ blank e
+  jQueryWidget

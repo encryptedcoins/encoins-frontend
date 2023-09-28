@@ -42,6 +42,7 @@ library
     ENCOINS.App.Widgets.WelcomeWindow,
     ENCOINS.Common.Widgets.Advanced,
     ENCOINS.Common.Widgets.Basic,
+    ENCOINS.Common.Widgets.JQuery,
     ENCOINS.Common.Widgets.SelectInput,
     ENCOINS.Common.Events,
     ENCOINS.Common.Language,
