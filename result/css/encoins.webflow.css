@@ -1588,5 +1588,5 @@ body {
   font-family: Poppins, sans-serif;
   line-height: 32px;
   color: grey;
-  white-space: nowrap;
+  text-align: center; ;
 }
