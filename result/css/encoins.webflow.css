@@ -263,7 +263,8 @@ body {
 .app-button {
   position: relative;
   display: inline-block;
-  min-width: 210px;
+  /* min-width: 210px; */
+  min-width: 100%;
   padding: 10px 48px;
   -webkit-box-pack: center;
   -webkit-justify-content: center;
@@ -787,6 +788,33 @@ body {
   display: -webkit-flex;
   display: -ms-flexbox;
   display: flex;
+}
+
+.app-tab-menu {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  gap: 10px;
+}
+
+.menu-tab-item-button {
+  -webkit-align-self: center;
+  -ms-flex-item-align: center;
+  -ms-grid-row-align: center;
+  align-self: center;
+  width: 33%;
+}
+
+@media screen and (max-width: 767px) {
+  .app-tab-menu {
+    flex-direction: column;
+  }
+  .menu-tab-item-button{
+    width: 100%;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
 }
 
 .menu-item-button-left {
