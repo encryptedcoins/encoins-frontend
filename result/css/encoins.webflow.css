@@ -263,8 +263,7 @@ body {
 .app-button {
   position: relative;
   display: inline-block;
-  /* min-width: 210px; */
-  min-width: 100%;
+  min-width: 210px;
   padding: 10px 48px;
   -webkit-box-pack: center;
   -webkit-justify-content: center;
@@ -1551,6 +1550,9 @@ body {
     -webkit-flex: 1;
     -ms-flex: 1;
     flex: 1;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 10px;
   }
 
   .coin-new-input {
@@ -1629,5 +1631,5 @@ body {
   font-family: Poppins, sans-serif;
   line-height: 32px;
   color: grey;
-  text-align: center; ;
+  text-align: center;
 }
