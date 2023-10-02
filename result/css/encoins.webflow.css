@@ -795,7 +795,11 @@ body {
   display: -webkit-flex;
   display: -ms-flexbox;
   display: flex;
+  flex-direction: column;
   gap: 10px;
+  @media screen and (min-width: 767px) {
+    flex-direction: row;
+  }
 }
 
 .menu-tab-item-button {
@@ -803,19 +807,16 @@ body {
   -ms-flex-item-align: center;
   -ms-grid-row-align: center;
   align-self: center;
-  width: 33%;
+  width: 100%;
+  padding-left: 10px;
+  padding-right: 10px;
+  @media screen and (min-width: 767px) {
+    width: 33%;
+    padding-left: 0px;
+    padding-right: 0px;
+  }
 }
 
-@media screen and (max-width: 767px) {
-  .app-tab-menu {
-    flex-direction: column;
-  }
-  .menu-tab-item-button{
-    width: 100%;
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-}
 
 .menu-item-button-left {
   margin-left: 10px;
