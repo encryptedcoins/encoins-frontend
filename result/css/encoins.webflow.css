@@ -807,16 +807,18 @@ body {
   -ms-flex-item-align: center;
   -ms-grid-row-align: center;
   align-self: center;
-  width: 100%;
   padding-left: 10px;
   padding-right: 10px;
-  @media screen and (min-width: 767px) {
+  width: 100%;
+}
+
+@media screen and (min-width: 767px) {
+  .menu-tab-item-button {
     width: 33%;
     padding-left: 0px;
     padding-right: 0px;
   }
 }
-
 
 .menu-item-button-left {
   margin-left: 10px;
@@ -850,6 +852,8 @@ body {
   display: flex;
   padding-top: 5px;
   padding-bottom: 5px;
+  margin-left: 10px;
+  margin-right: 10px;
   -webkit-box-pack: center;
   -webkit-justify-content: center;
   -ms-flex-pack: center;
@@ -858,6 +862,14 @@ body {
   grid-row-gap: 30px;
   background-color: #fff;
   color: #000;
+  min-width: 210px;
+}
+
+@media screen and (min-width: 767px) {
+  .transaction-balance-div {
+    margin-left: 0px;
+    margin-right: 0px;
+  }
 }
 
 .app-text-semibold {
