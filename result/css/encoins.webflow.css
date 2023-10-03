@@ -1578,7 +1578,9 @@ body {
 
 .app-Nav_Locker-close {
   width: 22px;
+  min-width: 22px;
   height: 31px;
+  max-height: 31px;
   background-image: url('../images/locked.svg');
   background-position: 0px 0px;
   background-size: auto;
@@ -1592,12 +1594,15 @@ body {
 @media screen and (max-width: 767px) {
   .app-Nav_Locker-close {
     margin-top: 10px;
+    margin-bottom: 40px;
   }
 }
 
 .app-Nav_Locker-open {
   width: 29px;
+  min-width: 29px;
   height: 31px;
+  max-height: 31px;
   background-image: url('../images/unlocked.svg');
   background-position: 0px 0px;
   background-size: auto;
@@ -1611,7 +1616,7 @@ body {
 @media screen and (max-width: 767px) {
   .app-Nav_Locker-open {
     margin-top: 10px;
-    margin-bottom: 50px;
+    margin-bottom: 40px;
   }
 }
 
@@ -1627,7 +1632,7 @@ body {
   .app-Nav_CachePopup {
     display: flex;
     top: auto;
-    right: 70px;
+    right: 83px;
     margin-top: 10px;
     padding-top: 30px;
     position: relative;
@@ -1640,4 +1645,12 @@ body {
 
 .app-Nav_Locker-open:hover .app-Nav_CachePopup {
   display: inline-block;
+}
+
+.app-Nav_LockerContainer {
+  margin-left: 10px;
+  -webkit-align-self: center;
+  -ms-flex-item-align: center;
+  -ms-grid-row-align: center;
+  align-self: center;
 }

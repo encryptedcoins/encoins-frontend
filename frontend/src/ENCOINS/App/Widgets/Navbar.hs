@@ -55,6 +55,6 @@ lockerDiv :: MonadWidget t m
   -> m (Element EventResult (DomBuilderSpace m) t)
 lockerDiv iconClass popupText
   = fst <$> elClass' "div"
-    ("menu-item menu-item-button-right" <> space <> iconClass)
+    ("menu-item app-Nav_LockerContainer" <> space <> iconClass)
     (divClass "app-Nav_CachePopup"
       $ el "p" $ text $ "Cache" <> space <> popupText)
