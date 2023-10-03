@@ -1584,6 +1584,8 @@ body {
   background-image: url('../images/locked.svg');
   background-position: 0px 0px;
   background-size: auto;
+  margin-top: 10px;
+  margin-bottom: 40px;
 }
 
 .app-Nav_Locker-close:hover {
@@ -1591,10 +1593,10 @@ body {
   cursor: pointer;
 }
 
-@media screen and (max-width: 767px) {
+@media screen and (min-width: 767px) {
   .app-Nav_Locker-close {
-    margin-top: 10px;
-    margin-bottom: 40px;
+    margin-top: 0px;
+    margin-bottom: 0px;
   }
 }
 
@@ -1606,6 +1608,8 @@ body {
   background-image: url('../images/unlocked.svg');
   background-position: 0px 0px;
   background-size: auto;
+  margin-top: 10px;
+  margin-bottom: 40px;
 }
 
 .app-Nav_Locker-open:hover {
@@ -1613,29 +1617,29 @@ body {
   cursor: pointer;
 }
 
-@media screen and (max-width: 767px) {
+@media screen and (min-width: 767px) {
   .app-Nav_Locker-open {
-    margin-top: 10px;
-    margin-bottom: 40px;
+    margin-top: 0px;
+    margin-bottom: 0px;
   }
 }
 
 .app-Nav_CachePopup {
-  display: none;
+  display: flex;
+  top: auto;
+  right: 83px;
+  margin-top: 10px;
+  padding-top: 30px;
+  position: relative;
   font-weight: 400;
-  top: 50px;
   white-space: nowrap;
-  position: absolute;
 }
 
-@media screen and (max-width: 767px) {
+@media screen and (min-width: 767px) {
   .app-Nav_CachePopup {
-    display: flex;
-    top: auto;
-    right: 83px;
-    margin-top: 10px;
-    padding-top: 30px;
-    position: relative;
+    display: none;
+    top: 50px;
+    position: absolute;
   }
 }
 
@@ -1656,30 +1660,30 @@ body {
 }
 
 .app-ImportExportButton {
-  margin-right: 10px;
+  margin-right: 0px;
   -webkit-align-self: center;
   -ms-flex-item-align: center;
   -ms-grid-row-align: center;
   align-self: center;
 }
 
-@media screen and (max-width: 767px) {
+@media screen and (min-width: 767px) {
   .app-ImportExportButton {
-    margin-right: 0px;
+    margin-right: 10px;
   }
 }
 
 .app-SendTransferButton {
-  margin-right: 10px;
+  margin-right: 0px;
   -webkit-align-self: center;
   -ms-flex-item-align: center;
   -ms-grid-row-align: center;
   align-self: center;
 }
 
-@media screen and (max-width: 767px) {
+@media screen and (min-width: 767px) {
   .app-SendTransferButton {
-    margin-right: 0px;
+    margin-right: 10px;
   }
 }
 
