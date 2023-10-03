@@ -58,7 +58,7 @@ wrongNetworkNotification network = elAttr "div"
   )
   . divClass "notification-content"
   $ text
-  $ "Wrong network! Please switch to the "
+  $ "Wrong network! Please switch the wallet to the "
   <> toText network
   <> "."
 

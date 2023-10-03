@@ -2,29 +2,35 @@
 
 module Backend.Protocol.TxValidity where
 
-import           Data.Bool                        (bool)
-import           Data.List                        (nub)
-import           Data.Maybe                       (fromJust, isJust)
-import           Data.Text                        (Text)
+import           Data.Bool                    (bool)
+import           Data.List                    (nub)
+import           Data.Maybe                   (fromJust, isJust)
+import           Data.Text                    (Text)
 import           Reflex.Dom
-import           Servant.Reflex                   (BaseUrl)
+import           Servant.Reflex               (BaseUrl)
 
-import           Backend.Protocol.Fees            (protocolFees)
+import           Backend.Protocol.Fees        (protocolFees)
 import           Backend.Protocol.Types
-import           Backend.Status                   (Status(..), isStatusBusyWithBackendError)
-import           Backend.Wallet                   (Wallet (..), WalletName (..), networkConfig, NetworkConfig(..))
-import           CSL                              (TransactionUnspentOutput(..), amount, coin)
-import           ENCOINS.Bulletproofs             (Secrets, Secret (..))
-import           ENCOINS.Common.Utils             (toText)
-import           ENCOINS.Crypto.Field             (fromFieldElement)
+import           Backend.Status               (Status (..),
+                                               isStatusBusyBackendNetwork)
+import           Backend.Wallet               (NetworkConfig (..), Wallet (..),
+                                               WalletName (..),
+                                               currentNetworkApp, networkConfig)
+import           CSL                          (TransactionUnspentOutput (..),
+                                               amount, coin)
+import           ENCOINS.Bulletproofs         (Secret (..), Secrets)
+import           ENCOINS.Common.Utils         (toText)
+import           ENCOINS.Common.Widgets.Basic (space)
+import           ENCOINS.Crypto.Field         (fromFieldElement)
+
 
 data TxValidity = TxValid | TxInvalid Text
     deriving (Show, Eq)
 
 instance Semigroup TxValidity where
-    TxValid <> TxValid = TxValid
-    TxValid <> TxInvalid e = TxInvalid e
-    TxInvalid e <> TxValid = TxInvalid e
+    TxValid <> TxValid          = TxValid
+    TxValid <> TxInvalid e      = TxInvalid e
+    TxInvalid e <> TxValid      = TxInvalid e
     TxInvalid e1 <> TxInvalid _ = TxInvalid e1
 
 instance Monoid TxValidity where
@@ -50,7 +56,7 @@ txValidity mbaseUrl mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
         cond1 = walletName /= None || mode == LedgerMode
         cond2 = walletNetworkId == app networkConfig || mode == LedgerMode
         cond3 = mode == LedgerMode || (balance + fees + 5) * 1_000_000 < sum (map (fromJust . decodeText . coin . amount . output) walletUTXOs)
-        cond4 = not $ isStatusBusyWithBackendError s
+        cond4 = not $ isStatusBusyBackendNetwork s
         cond5 = not $ null toMint
         cond6 = length coins >= 2
         cond7 = length coins <= 5 || mode == LedgerMode
@@ -60,7 +66,7 @@ txValidity mbaseUrl mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
         cond11 = isJust mbaseUrl
         cond12 = mode /= LedgerMode || balance + fees <= 0
         e1    = "Connect ENCOINS to a wallet first."
-        e2    = "Switch to the Testnet Preprod network in your wallet."
+        e2    = "Switch to the" <> space <> currentNetworkApp <> space <> "network in your wallet."
         e3    = "Not enough ADA."
         e4    = "The transaction is being processed..."
         e5    = "Minting of at least one coin in a transaction is required."

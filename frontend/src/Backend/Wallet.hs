@@ -146,3 +146,8 @@ lucidConfigDao :: (Text, Text)
 lucidConfigDao = case dao networkConfig of
   Mainnet -> ("mainnetK4sRBCTDwqzK1KRuFxnpuxPbKF4ZQrnl", "Mainnet")
   Testnet -> ("preprodCMZ4wTbLIsLRncviikOkicVgYXyfYrga", "Preprod")
+
+currentNetworkApp :: Text
+currentNetworkApp = case app networkConfig of
+  Mainnet -> "Mainnet"
+  Testnet -> "Testnet Preprod"

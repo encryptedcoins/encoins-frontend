@@ -4,15 +4,17 @@ import           Control.Monad                      ((<=<))
 import           Data.Aeson                         (encode)
 import           Data.Bifunctor                     (first)
 import           Data.ByteString.Lazy               (toStrict)
-import           Data.Functor                       (($>), (<&>))
+import           Data.Functor                       ((<&>))
 import           Data.Text.Encoding                 (decodeUtf8)
 import           Data.Bool                          (bool)
+import           Data.Text                          (Text)
 import           Reflex.Dom
 import qualified Data.Text as T
 
-import           Backend.Status                     (Status(..), isStatusBusyWithBackendError, isReady, isBackendError)
-import           Backend.Wallet                     (walletsSupportedInApp)
-import           ENCOINS.App.Widgets.Basic          (waitForScripts)
+import           Backend.Status                     (Status(..), isStatusBusyBackendNetwork, isReady, isBlockError)
+import           Backend.Wallet                     (walletsSupportedInApp, Wallet(..), networkConfig, NetworkConfig(..))
+import           ENCOINS.Common.Utils               (toText)
+import           ENCOINS.App.Widgets.Basic          (waitForScripts, elementResultJS)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
 import           ENCOINS.App.Widgets.Navbar         (navbarWidget)
@@ -20,23 +22,21 @@ import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWindow, welcomeWallet, welcomeWindowWalletStorageKey)
 import           ENCOINS.Common.Widgets.Basic       (notification, space, column)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
+import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
+
 
 bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mpass = mdo
   (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet mpass
 
-  let eStatus = coincidence $ leftmost <$> evEvStatus
-  dStatus <- foldDynMaybe
-    -- Hold BackendError status once it fired until page reloading.
-    (\ev (_, accS) -> if isBackendError accS then Nothing else Just ev)
-    (T.empty, Ready) eStatus
-  notification $ flatStatus <$> dStatus
+  (dStatusT, dIsDisableButtons) <- handleAppStatus dWallet evEvStatus
 
-  let dIsDisableButtons = (isStatusBusyWithBackendError . snd) <$> dStatus
+  notification dStatusT
 
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen
+
   (eNewPass, eResetPass) <- passwordSettingsWindow eSettingsOpen
   eCleanOk <- cleanCacheDialog eResetPass
 
@@ -56,7 +56,6 @@ bodyContentWidget mpass = mdo
   where
     reEncryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) "encoins"
       . decodeUtf8 .  toStrict . encode $ d
-    flatStatus (t, s) = bool (t <> column <> space <> T.pack (show s)) T.empty $ isReady s
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo
@@ -72,7 +71,50 @@ bodyWidget = waitForScripts blank $ mdo
     Nothing -> pure never
     Just mpass -> bodyContentWidget mpass
 
-  eJQueryLoaded <- domEvent Load . fst <$> elAttr'"script" ("src" =: "https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=63b058a2f897ba2767d5ff1b"
-    <> "type" =: "text/javascript" <> "integrity" =: "sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" <> "crossorigin" =: "anonymous") blank
-  let e = eJQueryLoaded $> elAttr "script" ("src" =: "js/webflow.js" <> "type" =: "text/javascript") blank
-  widgetHold_ blank e
+  jQueryWidget
+
+fetchWalletNetworkStatus :: MonadWidget t m
+  => Dynamic t Wallet
+  -> m (Dynamic t (Text, Status))
+fetchWalletNetworkStatus dWallet = do
+  eWalletLoad <- elementResultJS "EndWalletLoad" id
+  let eLoadedWallet = tagPromptlyDyn dWallet $ updated eWalletLoad
+  let eUnexpectedNetworkB = fmap
+        (\w -> walletNetworkId w /= app networkConfig)
+        eLoadedWallet
+  let mkNetworkMessage isInvalidNetwork message =
+        case (isInvalidNetwork, message) of
+          (True,_) -> Just ("NetworkId status", WalletNetworkError unexpectedNetworkApp)
+          (False, ("", Ready)) -> Nothing
+          (False, _) -> Just (T.empty, Ready)
+  dUnexpectedNetworkStatus <-
+    foldDynMaybe mkNetworkMessage (T.empty, Ready) eUnexpectedNetworkB
+  pure dUnexpectedNetworkStatus
+
+unexpectedNetworkApp :: Text
+unexpectedNetworkApp =
+           "Unexpected network! Please switch the wallet to"
+        <> space
+        <> toText (app networkConfig)
+        <> space
+        <> "mode."
+
+handleAppStatus :: MonadWidget t m
+  => Dynamic t Wallet
+  -> Event t [Event t (Text, Status)]
+  -> m (Dynamic t Text, Dynamic t Bool)
+handleAppStatus dWallet evEvStatus = do
+  let eStatus = coincidence $ leftmost <$> evEvStatus
+  dWalletNetworkStatus <- fetchWalletNetworkStatus dWallet
+
+  dStatus <- foldDynMaybe
+    -- Hold BackendError status once it fired until page reloading.
+    (\ev (_, accS) -> if isBlockError accS then Nothing else Just ev)
+    (T.empty, Ready) $ leftmost [eStatus, updated dWalletNetworkStatus]
+
+  let flatStatus (t, s) = bool (t <> column <> space <> T.pack (show s)) T.empty $ isReady s
+
+  let dIsDisableButtons = (isStatusBusyBackendNetwork . snd) <$> dStatus
+  let dStatusT = flatStatus <$> dStatus
+
+  pure (dStatusT, dIsDisableButtons)
