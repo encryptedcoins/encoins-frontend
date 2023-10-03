@@ -1654,3 +1654,43 @@ body {
   -ms-grid-row-align: center;
   align-self: center;
 }
+
+.app-ImportExportButton {
+  margin-right: 10px;
+  -webkit-align-self: center;
+  -ms-flex-item-align: center;
+  -ms-grid-row-align: center;
+  align-self: center;
+}
+
+@media screen and (max-width: 767px) {
+  .app-ImportExportButton {
+    margin-right: 0px;
+  }
+}
+
+.app-SendTransferButton {
+  margin-right: 10px;
+  -webkit-align-self: center;
+  -ms-flex-item-align: center;
+  -ms-grid-row-align: center;
+  align-self: center;
+}
+
+@media screen and (max-width: 767px) {
+  .app-SendTransferButton {
+    margin-right: 0px;
+  }
+}
+
+.app-CoinColumnRight {
+  padding-top: 20px;
+  padding-bottom: 50px;
+}
+
+@media screen and (min-width: 767px) {
+  .app-CoinColumnRight {
+    padding-top: 0px;
+    padding-bottom: 0px;
+  }
+}

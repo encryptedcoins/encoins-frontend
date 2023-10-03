@@ -66,7 +66,7 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                     eISAll <- importFileWindow eImportAll
                     return $ leftmost [eIS, eISAll]
                 return (dCTB, eImp)
-            (dCoinsToMint, eSend) <- divClass "app-column w-col w-col-6" $ mdo
+            (dCoinsToMint, eSend) <- divClass "app-CoinColumnRight w-col w-col-6" $ mdo
                 dCoinsToMint' <- divClassId "" "welcome-coins-mint" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
                     dCoinsToMint'' <- coinMintCollectionWidget $
@@ -98,7 +98,7 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     tellTxStatus "Wallet status" Ready eStatus
   where
     menuButton = divClass "app-column w-col w-col-6" .
-      divClass "menu-item-button-right" . btn "button-switching flex-center"
+      divClass "app-ImportExportButton" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
 
 transferTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
@@ -127,7 +127,7 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
             eIS    <- fmap pure . catMaybes <$> importWindow eImport
             eISAll <- importFileWindow eImportAll
             return (dCTB, leftmost [eIS, eISAll])
-        divClassId "app-column w-col w-col-6" "welcome-transfer-btns" $ do
+        divClassId "app-CoinColumnRight w-col w-col-6" "welcome-transfer-btns" $ do
           eWallet <- sendButton
             (zipDynWith
               (&&)
@@ -170,9 +170,9 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     tellTxStatus "Transfer status" Ready eStatus
   where
     menuButton = divClass "app-column w-col w-col-6" .
-      divClass "menu-item-button-right" . btn "button-switching flex-center"
+      divClass "app-ImportExportButton" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
-    sendButton dActive stl = divClass "menu-item-button-right" .
+    sendButton dActive stl = divClass "app-SendTransferButton" .
       btn (("button-switching flex-center " <>) . bool "button-disabled" "" <$> dActive) stl . text
 
 ledgerTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
@@ -207,7 +207,7 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                   eISAll <- importFileWindow eImportAll
                   return $ leftmost [eIS, eISAll]
                 return (dCTB, eImp)
-            (dCoinsToMint, eSend, dChangeAddr) <- divClassId "app-column w-col w-col-6" "welcome-ledger-mint" $ mdo
+            (dCoinsToMint, eSend, dChangeAddr) <- divClassId "app-CoinColumnRight w-col w-col-6" "welcome-ledger-mint" $ mdo
                 dCoinsToMint' <- divClass "" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
                     dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [AddCoin <$> eNewSecret, ClearCoins <$ ffilter (== Constructing) eStatusUpdate, AddCoin <$> eAddChange]
@@ -231,7 +231,7 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     tellTxStatus "Ledger status" Ready eStatus
   where
     menuButton = divClass "app-column w-col w-col-6" .
-      divClass "menu-item-button-right" . btn "button-switching flex-center"
+      divClass "app-ImportExportButton" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
     calculateChange bal = negate bal - protocolFees LedgerMode 0
     f v = if v < 0
