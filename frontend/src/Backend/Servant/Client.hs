@@ -3,7 +3,6 @@ module Backend.Servant.Client where
 import           Control.Monad.IO.Class       (MonadIO(..))
 import           Data.Aeson                   (decode)
 import           Data.ByteString.Lazy         (fromStrict)
-import           Data.FileEmbed               (embedFile)
 import           Data.List                    (delete)
 import           Data.Maybe                   (isNothing, fromJust)
 import           Data.Proxy                   (Proxy(..))
@@ -17,9 +16,10 @@ import           Witherable                   (catMaybes)
 import           Backend.Protocol.Types
 import           CSL                          (TransactionInputs, Value)
 import           JS.App                       (pingServer)
+import           Config.Config                (urlsBS)
 
 urls :: [Text]
-urls = fromJust $ decode $ fromStrict $(embedFile "config/backend_url.json")
+urls = fromJust $ decode $ fromStrict urlsBS
 
 getRelayUrl :: MonadIO m => m (Maybe BaseUrl)
 getRelayUrl = go urls

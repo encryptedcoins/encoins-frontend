@@ -6,16 +6,16 @@ import           Data.Maybe                    (fromMaybe, fromJust)
 import           Data.Text                     (Text)
 import           Data.ByteString.Lazy          (fromStrict)
 import           Reflex.Dom                    hiding (Input)
+import qualified Data.Text as T
+import           GHC.Generics                  (Generic)
+import           Data.Aeson                    (FromJSON, decode)
 
 import           Backend.Protocol.Types
 import           CSL                           (TransactionUnspentOutputs)
 import           ENCOINS.App.Widgets.Basic     (elementResultJS)
 import           ENCOINS.Common.Widgets.Basic  (image)
 import           JS.App                        (walletLoad)
-import           Data.Aeson (FromJSON, decode)
-import           GHC.Generics (Generic)
-import           Data.FileEmbed                  (embedFile)
-import qualified Data.Text as T
+import           Config.Config                 (networkConfigBS)
 
 data WalletName
   =
@@ -140,7 +140,7 @@ data NetworkConfig = NetworkConfig
 
 networkConfig :: NetworkConfig
 networkConfig =
-  fromJust $ decode $ fromStrict $(embedFile "config/network_id_config.json")
+  fromJust $ decode $ fromStrict networkConfigBS
 
 lucidConfigDao :: (Text, Text)
 lucidConfigDao = case dao networkConfig of
