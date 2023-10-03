@@ -4,6 +4,10 @@ import           Control.Monad                      (void)
 import           Data.Functor                       (($>))
 import           Reflex.Dom
 import qualified Data.Text as T
+import           Data.Time (getCurrentTime)
+import           Control.Monad.IO.Class          (MonadIO(..))
+import           Data.IntMap.Strict              (toDescList)
+
 
 import           Backend.Status                     (isStatusBusy, Status(..))
 import           Backend.Wallet                     (Wallet (..), walletsSupportedInDAO, networkConfig, NetworkConfig(..))
@@ -18,7 +22,6 @@ import           ENCOINS.DAO.Widgets.PollWidget
 import           ENCOINS.Website.Widgets.Basic      (section, container)
 import           ENCOINS.Common.Utils               (toText)
 import           ENCOINS.Common.Events              (logEvent)
-import           Reflex.Dom                         (MonadHold(holdDyn), leftmost)
 
 
 bodyContentWidget :: MonadWidget t m => m ()
@@ -59,18 +62,18 @@ bodyContentWidget = mdo
     ]
   notification dNotification
 
+  nowTime <- liftIO getCurrentTime
+
+  let (archivedPolls, activePolls) = poolsActiveAndArchived nowTime
+
   section "" "" $ do
     container "" $ elAttr "div" ("class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);") $ text "Active poll"
-    -- pollWidget poll6 dWallet isDisableButtons
+    mapM_ (pollWidget dWallet dIsDisableButtons . snd) $ toDescList activePolls
     blank
 
   section "" "" $ do
     container "" $ elAttr "div" ("class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);") $ text "Concluded polls"
-    pollCompletedWidget poll5
-    pollCompletedWidget poll4
-    pollCompletedWidget poll3
-    pollCompletedWidget poll2
-    pollCompletedWidget poll1
+    mapM_ (pollCompletedWidget . snd) $ toDescList archivedPolls
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo

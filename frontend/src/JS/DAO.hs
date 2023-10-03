@@ -19,7 +19,7 @@ foreign import javascript unsafe
   "daoPollVoteTx($1, $2, $3, $4, $5);"
   daoPollVoteTx_js :: JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> IO ()
 
-daoPollVoteTx :: MonadIO m => Integer -> (Text, Text) -> (Text, Text) -> m ()
+daoPollVoteTx :: MonadIO m => Int -> (Text, Text) -> (Text, Text) -> m ()
 daoPollVoteTx n (apiKey, net) (walletName, answer) = liftIO $ do
   n_js          <- toJSVal $ (fromIntegral n :: Int)
   apiKey_js     <- toJSVal apiKey
@@ -28,7 +28,7 @@ daoPollVoteTx n (apiKey, net) (walletName, answer) = liftIO $ do
   answer_js     <- toJSVal answer
   daoPollVoteTx_js n_js apiKey_js net_js walletName_js answer_js
 #else
-daoPollVoteTx :: MonadIO m => Integer -> (Text, Text) -> (Text, Text) -> m ()
+daoPollVoteTx :: MonadIO m => Int -> (Text, Text) -> (Text, Text) -> m ()
 daoPollVoteTx = const $ error "GHCJS is required!"
 #endif
 

@@ -18,9 +18,8 @@ import           Data.Maybe                    (isNothing)
 import           Servant.Reflex                (BaseUrl)
 
 
-import           ENCOINS.Common.Events         (newEventWithDelay)
+import           ENCOINS.Common.Events         (newEventWithDelay, newEvent)
 import           JS.Website                    (loadJSON)
-import           ENCOINS.Common.Events         (newEvent)
 import           Backend.Servant.Client        (getRelayUrl)
 import           Backend.Status                (Status(..), relayError)
 
