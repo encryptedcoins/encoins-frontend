@@ -13,7 +13,7 @@ import           PlutusTx.Builtins
 import           Reflex.Dom                  (decodeText)
 import           Text.Hex                    (decodeHex, encodeHex)
 
-import           CSL                         (TransactionUnspentOutputs)
+import           CSL                         (TransactionUnspentOutputs, Value)
 import           ENCOINS.BaseTypes           (MintingPolarity)
 import           ENCOINS.Bulletproofs        (Proof)
 
@@ -60,6 +60,12 @@ checkEmptyText txt = Just txt
 type EncoinsInput = (Integer, [(BuiltinByteString, MintingPolarity)])
 type ProofSignature = BuiltinByteString
 type EncoinsRedeemer = (TxParams, EncoinsInput, Proof, ProofSignature)
+
+data InputOfEncoinsApi
+    = InputRedeemer   EncoinsRedeemer EncoinsMode
+    | InputSending    Address Value Address
+    | InputDelegation Address Text
+    deriving (Show, Generic, FromJSON, ToJSON)
 
 data Witness = Witness { vkey :: Text, signature :: Text }
     deriving stock (Eq, Show, Generic)
