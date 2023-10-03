@@ -52,7 +52,7 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
             dSecretsWithNames <- coinCollectionWithNames dSecrets
             performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins" . decodeUtf8 . toStrict . encode <$> updated dSecrets)
 
-            (dCoinsToBurn, eImportSecret) <- divClass "app-column w-col w-col-6" $ do
+            (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do
                   mainWindowColumnHeader "Coins in the Wallet"
                   dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesInTheWallet
@@ -97,7 +97,7 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Wallet status" Ready eStatus
   where
-    menuButton = divClass "app-column w-col w-col-6" .
+    menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
 
@@ -115,7 +115,7 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
         dSecretsWithNames <- coinCollectionWithNames dSecrets
         performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins" . decodeUtf8 . toStrict . encode <$> updated dSecrets)
 
-        (dCoinsToBurn, eImportSecret) <- divClass "app-column w-col w-col-6" $ do
+        (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
             dCTB <- divClassId "" "welcome-coins-transfer" $ do
                 mainWindowColumnHeader "Coins in the Wallet"
                 dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesInTheWallet
@@ -169,7 +169,7 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Transfer status" Ready eStatus
   where
-    menuButton = divClass "app-column w-col w-col-6" .
+    menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
     sendButton dActive stl = divClass "app-SendTransferButton" .
@@ -192,7 +192,7 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
             dSecretsWithNames <- coinCollectionWithNames dSecrets
             performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins" . decodeUtf8 . toStrict . encode <$> updated dSecrets)
 
-            (dCoinsToBurn, eImportSecret) <- divClass "app-column w-col w-col-6" $ do
+            (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-ledger-coins" $ do
                   mainWindowColumnHeader "Coins in the Ledger"
                   dSecretsWithNamesUniq <- holdUniqDyn dSecretsWithNamesInTheWallet
@@ -230,7 +230,7 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Ledger status" Ready eStatus
   where
-    menuButton = divClass "app-column w-col w-col-6" .
+    menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
     calculateChange bal = negate bal - protocolFees LedgerMode 0

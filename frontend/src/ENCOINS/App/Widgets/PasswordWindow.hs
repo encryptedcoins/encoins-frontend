@@ -55,7 +55,7 @@ enterPasswordWindow passHash eResetOk = mdo
       divClass "app-columns w-row" $ divClass "connect-title-div" $
         divClass "app-text-semibold" $ text "Password for the Encoins application cache in the browser"
       dPassOk <- divClass "app-columns w-row" $
-        divClass "app-column w-col w-col-12" $ do
+        divClass "w-col w-col-12" $ do
           ePb <- getPostBuild
           dmCurPass <- passwordInput "Enter your password:" False True (pure Nothing) ePb
           emCurPass <- performEvent $ checkPass passHash <$> updated dmCurPass
@@ -90,7 +90,7 @@ passwordSettingsWindow eOpen = do
   let windowStyle = "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px"
   dialogWindow True eOpen never windowStyle "Protecting the Encoins application cache in the browser" $ do
     ePassOk <- switchHold never <=< dyn $ dmPassHash <&> \case
-      Just passHash -> divClass "app-columns w-row" $ divClass "app-column w-col w-col-12" $ do
+      Just passHash -> divClass "app-columns w-row" $ divClass "w-col w-col-12" $ do
         dmCurPass <- passwordInput "Current password:" False True (pure Nothing) eOpen
         eCheckedPass <- performEvent $ checkPass passHash <$> updated dmCurPass
         dCheckedPass <- holdDyn False eCheckedPass
@@ -98,9 +98,9 @@ passwordSettingsWindow eOpen = do
         return (ffilter id $ updated dCheckedPass)
       Nothing -> pure never
     dmNewPass <- divClass "app-columns w-row" $ mdo
-      dmPass1 <- divClass "app-column w-col w-col-6" $ do
+      dmPass1 <- divClass "w-col w-col-6" $ do
         passwordInput "Enter password:" False True (pure Nothing) eOpen
-      dmPass2 <- divClass "app-column w-col w-col-6" $ do
+      dmPass2 <- divClass "w-col w-col-6" $ do
         passwordInput "Repeat password:" True False dmPass1 eOpen
       return dmPass2
     dPassOk <- holdDyn False ePassOk
