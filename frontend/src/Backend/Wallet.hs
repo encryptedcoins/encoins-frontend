@@ -142,7 +142,7 @@ networkConfig :: NetworkConfig
 networkConfig =
   fromJust $ decode $ fromStrict $(embedFile "config/network_id_config.json")
 
-lucidConfig :: (Text, Text)
-lucidConfig = case dao networkConfig of
+lucidConfigDao :: (Text, Text)
+lucidConfigDao = case dao networkConfig of
   Mainnet -> ("mainnetK4sRBCTDwqzK1KRuFxnpuxPbKF4ZQrnl", "Mainnet")
   Testnet -> ("preprodCMZ4wTbLIsLRncviikOkicVgYXyfYrga", "Preprod")
