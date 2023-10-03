@@ -67,7 +67,9 @@ encoinsTxWalletMode
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
 
     -- Constructing a new transaction
-    let dNewTxReqBody = zipDyn (fmap (Right . (,WalletMode) . fromJust) dFinalRedeemer) dInputs
+    let dNewTxReqBody = zipDyn
+          (fmap (\r -> InputRedeemer (fromJust r) WalletMode) dFinalRedeemer)
+          dInputs
     (eNewTxSuccess, eRelayDown) <- case mBaseUrl of
       Just baseUrl -> newTxRequestWrapper baseUrl dNewTxReqBody eFinalRedeemer
       _            -> pure (never, never)
@@ -131,7 +133,7 @@ encoinsTxTransferMode
       Just baseUrl ->
         newTxRequestWrapper
           baseUrl
-          (zipDyn (fmap Left $ (,,) <$> dAddr <*> zipDynWith mkValue dCoins dNames <*> dAddrWallet) dInputs)
+          (zipDyn (InputSending <$> dAddr <*> zipDynWith mkValue dCoins dNames <*> dAddrWallet) dInputs)
           eSend
       _            -> pure (never, never)
     let eTxId = fmap fst eNewTxSuccess
@@ -221,7 +223,8 @@ encoinsTxLedgerMode
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
 
     -- Constructing a new transaction
-    let dServerTxReqBody = zipDyn (fmap (Right . (,LedgerMode) . fromJust) dFinalRedeemer) dInputs
+    let dServerTxReqBody = zipDyn
+          (fmap (\r -> InputRedeemer (fromJust r) LedgerMode) dFinalRedeemer) dInputs
     (eServerOk, eRelayDown) <- case mBaseUrl of
       Just baseUrl -> serverTxRequestWrapper baseUrl dServerTxReqBody eFinalRedeemer
       _            -> pure (never, never)

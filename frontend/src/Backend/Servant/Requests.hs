@@ -9,12 +9,12 @@ import           Witherable                   (catMaybes)
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
 import           Backend.Status               (Status(..), relayError)
-import           CSL                          (TransactionInputs, Value)
+import           CSL                          (TransactionInputs)
 import           ENCOINS.Common.Events        (logEvent)
 
 newTxRequestWrapper :: MonadWidget t m
   => BaseUrl
-  -> Dynamic t (Either (Address, Value, Address) (EncoinsRedeemer, EncoinsMode), TransactionInputs)
+  -> Dynamic t (InputOfEncoinsApi, TransactionInputs)
   -> Event t ()
   -> m (Event t (Text, Text), Event t Status)
 newTxRequestWrapper baseUrl dReqBody e = do
@@ -42,7 +42,7 @@ pingRequestWrapper baseUrl e = do
 
 serverTxRequestWrapper :: MonadWidget t m
   => BaseUrl
-  -> Dynamic t (Either (Address, Value, Address) (EncoinsRedeemer, EncoinsMode), TransactionInputs)
+  -> Dynamic t (InputOfEncoinsApi, TransactionInputs)
   -> Event t ()
   -> m (Event t (), Event t Status)
 serverTxRequestWrapper baseUrl dReqBody e = do
