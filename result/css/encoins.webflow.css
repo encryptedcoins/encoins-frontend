@@ -48,64 +48,6 @@ body {
   font-weight: 400;
 }
 
-.menu-item.menu-item-locked {
-  width: 22px;
-  height: 31px;
-  background-image: url('../images/locked.svg');
-  background-position: 0px 0px;
-  background-size: auto;
-}
-
-.menu-item.menu-item-locked:hover {
-  background-image: url('../images/locked-active.svg');
-  cursor: pointer;
-}
-
-.menu-item.popup-text {
-  display: none;
-}
-
-.menu-item.menu-item-locked:hover .popup-text {
-  display: block;
-  font-weight: 400;
-  position: relative;
-  top: 50px;
-  white-space: nowrap;
-}
-
-.menu-item.menu-item-unlocked {
-  width: 29px;
-  height: 31px;
-  background-image: url('../images/unlocked.svg');
-  background-position: 0px 0px;
-  background-size: auto;
-}
-
-.menu-item.menu-item-unlocked:hover {
-  background-image: url('../images/unlocked-active.svg');
-  cursor: pointer;
-}
-
-.menu-item.popup-text {
-  display: none;
-}
-
-.menu-item.menu-item-unlocked:hover .popup-text {
-  display: block;
-  font-weight: 400;
-  position: relative;
-  top: 50px;
-  white-space: nowrap;
-}
-
-.menu-item-notify-text {
-  display: block;
-  font-weight: 400;
-  position: fixed;
-  margin-top: 5px;
-  white-space: nowrap;
-}
-
 .nav-menu {
   display: -webkit-box;
   display: -webkit-flex;
@@ -1632,4 +1574,70 @@ body {
   line-height: 32px;
   color: grey;
   text-align: center;
+}
+
+.app-Nav_Locker-close {
+  width: 22px;
+  height: 31px;
+  background-image: url('../images/locked.svg');
+  background-position: 0px 0px;
+  background-size: auto;
+}
+
+.app-Nav_Locker-close:hover {
+  background-image: url('../images/locked-active.svg');
+  cursor: pointer;
+}
+
+@media screen and (max-width: 767px) {
+  .app-Nav_Locker-close {
+    margin-top: 10px;
+  }
+}
+
+.app-Nav_Locker-open {
+  width: 29px;
+  height: 31px;
+  background-image: url('../images/unlocked.svg');
+  background-position: 0px 0px;
+  background-size: auto;
+}
+
+.app-Nav_Locker-open:hover {
+  background-image: url('../images/unlocked-active.svg');
+  cursor: pointer;
+}
+
+@media screen and (max-width: 767px) {
+  .app-Nav_Locker-open {
+    margin-top: 10px;
+    margin-bottom: 50px;
+  }
+}
+
+.app-Nav_CachePopup {
+  display: none;
+  font-weight: 400;
+  top: 50px;
+  white-space: nowrap;
+  position: absolute;
+}
+
+@media screen and (max-width: 767px) {
+  .app-Nav_CachePopup {
+    display: flex;
+    top: auto;
+    right: 70px;
+    margin-top: 10px;
+    padding-top: 30px;
+    position: relative;
+  }
+}
+
+.app-Nav_Locker-close:hover .app-Nav_CachePopup {
+  display: inline-block;
+}
+
+.app-Nav_Locker-open:hover .app-Nav_CachePopup {
+  display: inline-block;
 }
