@@ -51,3 +51,9 @@ postDelay :: MonadWidget t m => NominalDiffTime -> m (Event t ())
 postDelay seconds = do
   postBuild <- getPostBuild
   delay seconds postBuild
+
+-- waitEvent :: MonadWidget t m => Event t a -> m (Event t a)
+-- waitEvent ev = do
+--   ne <- newEvent
+--   eD <- delay 0.1 ne
+--   if leftmost [True <$ ev, False <$ eD]

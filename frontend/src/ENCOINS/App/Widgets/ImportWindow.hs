@@ -1,4 +1,8 @@
-module ENCOINS.App.Widgets.ImportWindow (importWindow, importFileWindow, exportWindow) where
+module ENCOINS.App.Widgets.ImportWindow
+  ( importWindow
+  , importFileWindow
+  , exportWindow
+  ) where
 
 import           Control.Monad                   ((<=<), void)
 import           Data.Aeson                      (encode, decode)

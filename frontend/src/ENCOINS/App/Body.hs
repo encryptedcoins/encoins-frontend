@@ -25,6 +25,7 @@ import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
+import ENCOINS.Common.Events
 
 
 bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe PasswordRaw))
@@ -36,6 +37,7 @@ bodyContentWidget mpass = mdo
   notification dStatusT
 
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen
+  logDyn "dWallet" $ walletName <$> dWallet
 
   (eNewPass, eResetPass) <- passwordSettingsWindow eSettingsOpen
   eCleanOk <- cleanCacheDialog eResetPass
@@ -54,7 +56,7 @@ bodyContentWidget mpass = mdo
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
 
   where
-    reEncryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) "encoins"
+    reEncryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) "encoins-with-name"
       . decodeUtf8 .  toStrict . encode $ d
 
 bodyWidget :: MonadWidget t m => m ()
