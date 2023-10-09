@@ -49,6 +49,7 @@ function saveJSON(key, val, encr, pass) {
     val1 = CryptoJS.AES.encrypt(val, pass).toString();
   }
   localStorage.setItem(key, val1);
+  setInputValue(key, "");
 }
 
 function loadJSON(key, resId, decr, pass) {

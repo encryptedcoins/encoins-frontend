@@ -23,7 +23,6 @@ import           ENCOINS.Common.Widgets.Basic    (image)
 import           ENCOINS.Crypto.Field            (toFieldElement)
 import           JS.App                          (fingerprintFromAssetName)
 import           JS.Website                      (copyText)
-import ENCOINS.Common.Events
 
 data CoinUpdate = AddCoin Secret | RemoveCoin Secret | ClearCoins
 
@@ -36,10 +35,10 @@ data CoinUpdate = AddCoin Secret | RemoveCoin Secret | ClearCoins
 -- coinsWithNames :: Secrets -> [(Secret, Text)]
 -- coinsWithNames = map coinWithName
 
--- coinWithName :: MonadWidget t m => Secret -> m (Dynamic t (Secret, Text))
--- coinWithName s = do
---     let bsHex = encodeHex . fromBuiltin . snd . fromSecret bulletproofSetup $ s
---     return $ pure (s, bsHex)
+coinWithName :: Secret -> (Secret, Text)
+coinWithName s =
+    let bsHex = encodeHex . fromBuiltin . snd . fromSecret bulletproofSetup $ s
+    in (s, bsHex)
 
 -- TODO: fix recalculation on addition/deletion of secrets
 coinCollectionWithNames :: MonadWidget t m => Dynamic t Secrets -> m (Dynamic t [(Secret, Text)])
@@ -55,26 +54,6 @@ coinCollectionWithNames dSecrets = do
     -- sequenceA :: [Dynamic t (Secret, Text)] -> Dynamic t [(Secret, Text)]
     -- fmap sequenceA eCoinWithNameWidgets :: Event t (Dynamic t [(Secret, Text)])
     join <$> holdDyn (pure []) eCoinsWithNames
-
-coinWithName :: Secret -> (Secret, Text)
-coinWithName s =
-    let bsHex = encodeHex . fromBuiltin . snd . fromSecret bulletproofSetup $ s
-    in (s, bsHex)
-
--- TODO: fix recalculation on addition/deletion of secrets
--- coinCollectionWithNames' :: MonadWidget t m => Dynamic t Secrets -> Dynamic t [(Secret, Text)]
--- coinCollectionWithNames' dSecrets =
-    -- dCoinWithNameWidgets <- mapM coinWithName' dSecrets
-    -- map coinWithName' <$> dSecrets
-    -- mapM coinWithName :: (a -> m b) -> t a -> m (t b)
-    -- mapM coinWithName :: (Secret -> Dynamic t (Secret, Text)) -> [Secret] -> [Dynamic t (Secret, Text)]
-    -- fmap (mapM coinWithName) dSecrets :: Dynamic t [Dynamic t (Secret, Text)]
-    -- sequenceA =<< dCoinWithNameWidgets
-    -- sequenceA :: t (f a) -> f (t a)
-    -- sequenceA :: [Dynamic t (Secret, Text)] -> Dynamic t [(Secret, Text)]
-    -- fmap sequenceA eCoinWithNameWidgets :: Dynamic t (Dynamic t [(Secret, Text)])
-    -- join dCoinsWithNames
-    -- pure dCoinsWithNames
 
 shortenCoinName :: Text -> Text
 shortenCoinName txt = Text.take 4 txt `Text.append` "..." `Text.append` Text.takeEnd 4 txt

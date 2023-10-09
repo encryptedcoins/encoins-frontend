@@ -23,7 +23,7 @@ import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           ENCOINS.Common.Utils            (toText)
 import           JS.App                          (walletSignTx)
-import           ENCOINS.Common.Events           (logEvent, logDyn)
+import           ENCOINS.Common.Events           (logEvent)
 
 encoinsTxWalletMode :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Dynamic t Wallet

@@ -89,9 +89,7 @@ fetchWalletNetworkStatus dWallet = do
           (True,_) -> Just ("NetworkId status", WalletNetworkError unexpectedNetworkApp)
           (False, ("", Ready)) -> Nothing
           (False, _) -> Just (T.empty, Ready)
-  dUnexpectedNetworkStatus <-
-    foldDynMaybe mkNetworkMessage (T.empty, Ready) eUnexpectedNetworkB
-  pure dUnexpectedNetworkStatus
+  foldDynMaybe mkNetworkMessage (T.empty, Ready) eUnexpectedNetworkB
 
 unexpectedNetworkApp :: Text
 unexpectedNetworkApp =

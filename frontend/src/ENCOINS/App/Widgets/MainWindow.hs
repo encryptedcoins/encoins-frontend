@@ -4,23 +4,20 @@ import           Control.Monad                          ((<=<))
 import           Data.Functor                           ((<&>))
 import           Data.Text                              (Text)
 import           Reflex.Dom
+import           Data.Bool                              (bool)
 import           Data.ByteString.Lazy                   (toStrict)
 import           Data.Text.Encoding                     (decodeUtf8)
 import           Data.Aeson                             (encode)
-import           Data.List                              (nub)
 
 import           Backend.Wallet                         (Wallet (..))
 import           ENCOINS.App.Widgets.Basic              (loadAppData, elementResultJS, tellTxStatus )
 import           ENCOINS.App.Widgets.MainTabs           (walletTab, transferTab, ledgerTab)
 import           ENCOINS.App.Widgets.PasswordWindow     (PasswordRaw(..))
 import           ENCOINS.App.Widgets.TabsSelection      (AppTab(..), tabsSection)
-import           ENCOINS.Bulletproofs                   (Secret, Secrets)
-import           Backend.Status                         (Status (CustomStatus))
-import ENCOINS.Common.Events
+import           ENCOINS.Bulletproofs                   (Secret)
+import           Backend.Status                         (Status (..))
 import           JS.Website                             (saveJSON)
 import           ENCOINS.App.Widgets.Coin               (coinWithName)
-import Reflex.Dom (MonadHold(holdDyn), Reflex (Behavior))
-import           Backend.Status                         (Status(..))
 
 
 mainWindow :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
@@ -34,44 +31,55 @@ mainWindow mPass dWallet dIsDisableButtons = mdo
     eSecretsWithName <- switchHold never <=< dyn $ dTab <&> \tab -> mdo
       dOldSecretsWithName <- loadAppData (getPassRaw <$> mPass) "encoins-with-name" id []
 
-      let bIsEmptySecretsWithName = current $ null <$> dOldSecretsWithName
-      logDyn "null <$> dOldSecretsWithName" $ null <$> dOldSecretsWithName
-
-      eConvertedSecrets <- loadCache mPass bIsEmptySecretsWithName
-      logEvent "eConvertedSecrets" $ take 1 <$> eConvertedSecrets
-      dConvertedSecrets <- holdDyn [] $ gate bIsEmptySecretsWithName eConvertedSecrets
-      -- logDyn "dConvertedSecrets" $ take 1 <$> dConvertedSecrets
-
-      let dOldSecretsWithNameAll = nub <$> mconcat [dOldSecretsWithName, dConvertedSecrets]
-      -- let dOldSecretsWithNameAll = mconcat [dOldSecretsWithName]
-      logDyn "dOldSecretsWithNameAll" $ take 1 <$> dOldSecretsWithNameAll
+      updateCache mPass dOldSecretsWithName
 
       case tab of
-        WalletTab   -> walletTab mPass dWallet dOldSecretsWithNameAll
-        TransferTab -> transferTab mPass dWallet dOldSecretsWithNameAll
-        LedgerTab   -> ledgerTab mPass dWallet dOldSecretsWithNameAll
-      return $ updated dOldSecretsWithNameAll
+        WalletTab   -> walletTab mPass dWallet dOldSecretsWithName
+        TransferTab -> transferTab mPass dWallet dOldSecretsWithName
+        LedgerTab   -> ledgerTab mPass dWallet dOldSecretsWithName
+      return $ updated dOldSecretsWithName
     holdDyn [] eSecretsWithName
+
+-- Update cache only when
+-- "encoins-with-name" cache doesn't exist
+--  and
+-- "encoins" cache exists.
+updateCache :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+  => Maybe PasswordRaw
+  -> Dynamic t [(Secret, Text)]
+  -> m ()
+updateCache mPass dSecretsWithName = do
+  let eSecretsWithNameIsEmpty = updated $ null <$> dSecretsWithName
+  widgetHold_ blank $
+    bool blank (loadCache mPass) <$> eSecretsWithNameIsEmpty
 
 loadCache :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
-  -> Behavior t Bool
-  -> m (Event t [(Secret, Text)])
-loadCache mPass bIsEmptySecretsWithName = do
-  dOldSecrets <- loadAppData (getPassRaw <$> mPass) "encoins" id []
-  let dConvertedSecrets = map coinWithName <$> dOldSecrets
+  -> m ()
+loadCache mPass = do
+  eSecrets <- updated <$> loadAppData (getPassRaw <$> mPass) "encoins" id []
 
-  let eConvertedSecrets = gate bIsEmptySecretsWithName $ updated dConvertedSecrets
-  -- logEvent "eConvertedSecrets" $ take 1 <$> eConvertedSecrets
+  let eSecretsIsEmpty = null <$> eSecrets
 
-  -- let statusEvent' = CustomStatus "Cache structure is updating. Please wait." <$ eConvertedSecrets
-  -- let statusEvent = gate bIsEmptySecretsWithName statusEvent'
-  -- logEvent "statusEvent" statusEvent
-  -- tellTxStatus "Wallet status" Ready statusEvent
+  let statusEvent = bool
+        (CustomStatus "Cache structure is updating. Please wait.")
+        Ready
+        <$> eSecretsIsEmpty
+  tellTxStatus "App status" Ready statusEvent
+
+
+  -- Convert "encoins" cache when it is not empty
+  let eConvertedSecrets = coincidence $
+        bool (map coinWithName <$> eSecrets) never <$> eSecretsIsEmpty
 
   performEvent_ $
       saveJSON (getPassRaw <$> mPass) "encoins-with-name"
         . decodeUtf8
         . toStrict
         . encode <$> eConvertedSecrets
-  pure eConvertedSecrets
+
+  -- Ask user to reload when cache structure is updated
+  let eSecretsIsEmptyLog = () <$ ffilter id eSecretsIsEmpty
+  eSaved <- updated <$> elementResultJS "encoins-with-name" (const ())
+  tellTxStatus "App status" Ready $
+    CustomStatus "Please reload the page" <$ leftmost [eSecretsIsEmptyLog, eSaved]
