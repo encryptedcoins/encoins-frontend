@@ -25,11 +25,11 @@ import           JS.Website                      (saveTextFile)
 
 importWindow :: MonadWidget t m => Event t () -> m (Event t (Maybe Secret))
 importWindow eImportOpen = mdo
-    eImportClose <- dialogWindow True eImportOpen (void eImportClose) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" "Import a New Coin" $ mdo
+    eImportClose <- dialogWindow True eImportOpen (void eImportClose) "width: min(90%, 950px); padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" "Import a New Coin" $ mdo
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
           text "All known coins are saved on the device. Enter the minting key to import a new coin:"
       let conf    = def { _inputElementConfig_setValue = pure ("" <$ eImportOpen) } & (initialAttributes .~ ("class" =: "coin-new-input w-input" <> "type" =: "text"
-              <> "style" =: "width: 810px; margin-bottom: 15px" <> "placeholder" =: "0a00f07d1431910315c05aa5204c5e8f9e0c6..."))
+              <> "style" =: "width: min(100%, 810px); margin-bottom: 15px" <> "placeholder" =: "0a00f07d1431910315c05aa5204c5e8f9e0c6..."))
       t <- inputElement conf
       let d    = hexToSecret <$> _inputElement_value t
       eImportClose <- btn "button-switching inverted flex-center" "" $ text "Ok"
@@ -38,11 +38,11 @@ importWindow eImportOpen = mdo
 
 importFileWindow :: MonadWidget t m => Event t () -> m (Event t [Secret])
 importFileWindow eImportOpen = mdo
-    eImportClose <- dialogWindow True eImportOpen (void eImportClose) "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" "Import New Coins" $ mdo
+    eImportClose <- dialogWindow True eImportOpen (void eImportClose) "width: min(90%, 950px); padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" "Import New Coins" $ mdo
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
           text "Choose a file to import coins:"
       let conf    = def { _inputElementConfig_setValue = pure ("" <$ eImportOpen) } & (initialAttributes .~ ("class" =: "coin-new-input w-input" <> "type" =: "file"
-              <> "style" =: "width: 788px; margin-bottom: 15px; box-sizing: content-box;"))
+              <> "style" =: "width: min(100%, 788px); margin-bottom: 15px; box-sizing: content-box;"))
       dFiles <- _inputElement_files <$> inputElement conf
       emFileContent <- switchHold never <=< dyn $ dFiles <&> \case
         [file] -> readFileContent file
@@ -65,11 +65,11 @@ readFileContent file = do
 
 exportWindow :: MonadWidget t m => Event t () -> Dynamic t [Secret] -> m ()
 exportWindow eOpen dSecrets = mdo
-    eClose <- dialogWindow True eOpen eClose "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" "Export Coins" $ mdo
+    eClose <- dialogWindow True eOpen eClose "width: min(90%, 950px); padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px" "Export Coins" $ mdo
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
           text "Enter file name:"
       let conf    = def { _inputElementConfig_setValue = pure ("" <$ eOpen) } & (initialAttributes .~ ("class" =: "coin-new-input w-input" <> "type" =: "text"
-              <> "style" =: "width: 810px; margin-bottom: 15px" <> "placeholder" =: "coins.txt"))
+              <> "style" =: "width: min(100%, 810px); margin-bottom: 15px" <> "placeholder" =: "coins.txt"))
       dFile <- value <$> inputElement conf
       eSave <- btn "button-switching inverted flex-center" "" $ text "Save"
       let dContent = decodeUtf8 . toStrict . encode <$> dSecrets
