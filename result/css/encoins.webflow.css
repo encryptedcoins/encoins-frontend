@@ -1698,3 +1698,35 @@ body {
     padding-bottom: 0px;
   }
 }
+
+.app-EnterPassword_ButtonContainer {
+  display:flex;
+  flex-direction: column;
+  justify-content:center;
+  gap: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+}
+
+@media screen and (min-width: 662px) {
+  .app-EnterPassword_ButtonContainer {
+    display:flex;
+    flex-direction: row;
+  }
+}
+
+.app-PasswordSetting_ButtonContainer {
+  display: flex;
+  justify-content:center;
+  flex-direction: column;
+  gap: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+}
+
+  @media screen and (min-width: 860px) {
+    .app-PasswordSetting_ButtonContainer {
+      display:flex;
+      flex-direction: row;
+    }
+  }
