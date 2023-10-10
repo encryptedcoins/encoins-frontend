@@ -933,6 +933,7 @@ body {
   line-height: 32px;
 }
 
+
 .body {
   border-bottom: 1px solid #313135;
 }
@@ -1730,3 +1731,26 @@ body {
       flex-direction: row;
     }
   }
+
+.app-CleanCache_ButtonContainer {
+  display: flex;
+  justify-content:center;
+  flex-direction: column;
+  gap: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+}
+
+@media screen and (min-width: 900px) {
+    .app-CleanCache_ButtonContainer {
+      display:flex;
+      flex-direction: row;
+    }
+  }
+
+.app-CleanCache_Description {
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+  text-align: center;
+}

@@ -13,7 +13,7 @@ import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
-import           ENCOINS.Common.Widgets.Basic    (btn, errDiv, br)
+import           ENCOINS.Common.Widgets.Basic    (btn, errDiv)
 import           JS.App                          (saveHashedTextToStorage, loadHashedPassword, checkPassword)
 import           JS.Website                      (saveJSON)
 import           ENCOINS.Common.Events           (setFocusDelayOnEvent)
@@ -60,7 +60,7 @@ enterPasswordWindow passHash eResetOk = mdo
           dmCurPass <- passwordInput "Enter password:" False True (pure Nothing) ePb
           emCurPass <- performEvent $ checkPass passHash <$> updated dmCurPass
           holdDyn Nothing emCurPass
-      (eClean, eOk) <- elAttr "div" ("class" =: "app-columns w-row app-EnterPasswordWindow_ButtonContainer") $ do
+      (eClean, eOk) <- elAttr "div" ("class" =: "app-columns w-row app-EnterPassword_ButtonContainer") $ do
         eSave' <- btn
           "button-switching inverted flex-center"
           ""
@@ -192,16 +192,12 @@ passwordInput txt rep isFocus dmPass eOpen = mdo
 
 cleanCacheDialog :: MonadWidget t m => Event t () -> m (Event t ())
 cleanCacheDialog eOpen = mdo
-  (eOk, eCancel) <- dialogWindow True eOpen (leftmost [eOk,eCancel]) "width: 60%" "" $ do
-    divClass "connect-title-div" $ divClass "app-text-semibold" $ do
-        text "This action will reset password and clean cache (the list of known coins)!"
-        br
-        text "Are you sure?"
-    elAttr "div" ("class" =: "app-columns w-row" <> "style" =: "display:flex;justify-content:center;") $ do
-      btnOk <- btn "button-switching inverted flex-center"
-        "width:30%;display:inline-block;margin-right:5px;" $ text "Ok"
-      btnCancel <- btn "button-switching flex-center"
-        "width:30%;display:inline-block;margin-left:5px;" $ text "Cancel"
+  (eOk, eCancel) <- dialogWindow True eOpen (leftmost [eOk,eCancel]) "width: 60%" "Clean cache" $ do
+    divClass "app-CleanCache_Description" $
+        text "This action will reset password and clean cache (remove known coins)! Are you sure?"
+    elAttr "div" ("class" =: "app-columns w-row app-CleanCache_ButtonContainer") $ do
+      btnOk <- btn "button-switching inverted flex-center" "" $ text "Ok"
+      btnCancel <- btn "button-switching flex-center" "" $ text "Cancel"
       return (btnOk, btnCancel)
   performEvent_ (saveHashedTextToStorage passwordSotrageKey "" <$ eOk)
   performEvent_ ((saveJSON Nothing "encoins" . decodeUtf8 . toStrict $ encode @Text "") <$ eOk)
