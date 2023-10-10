@@ -1754,3 +1754,10 @@ body {
   line-height: 32px;
   text-align: center;
 }
+
+.app-ToolTip_MintingKey {
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+  overflow-wrap: anywhere;
+}
