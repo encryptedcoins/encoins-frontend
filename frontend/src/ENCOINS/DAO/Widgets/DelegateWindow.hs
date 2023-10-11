@@ -27,9 +27,9 @@ delegateWindow eOpen dWallet = mdo
     True
     eOpen
     (leftmost [void eUrlOk])
-    "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px"
-    "" $ mdo
-          divClass "connect-title-div" $ divClass "app-text-semibold" $ text "Enter url:"
+    "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px)"
+    "Delegate Encoins" $ mdo
+          divClass "dao-DelegateWindow_EnterUrl" $ text "Enter url:"
 
           dInputText <- inputWidget eOpen
           let eInputText = updated dInputText
@@ -80,15 +80,16 @@ buttonWidget :: MonadWidget t m
   => Dynamic t UrlStatus
   -> m (Event t ())
 buttonWidget dUrlStatus =
-  divClass "app-top-menu-div menu-item-button-right" $ do
+  divClass "dao-DelegateWindow_ButtonStatusContainer" $ do
     b <- btnWithBlock
         "button-switching inverted flex-center"
-        "width:30%;display:inline-block;margin-right:5px;"
+        -- "width: min(100%, 210px); display:inline-block;"
+        ""
         (isNotValidUrl <$> dUrlStatus)
         (text "Ok")
     divClass "menu-item-button-right" $ do
       containerApp ""
-        $ divClassId "app-text-small" "url-status"
+        $ divClassId "app-text-small" ""
         $ dynText
         $ toText <$> dUrlStatus
     pure b
