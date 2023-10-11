@@ -83,7 +83,6 @@ buttonWidget dUrlStatus =
   divClass "dao-DelegateWindow_ButtonStatusContainer" $ do
     b <- btnWithBlock
         "button-switching inverted flex-center"
-        -- "width: min(100%, 210px); display:inline-block;"
         ""
         (isNotValidUrl <$> dUrlStatus)
         (text "Ok")
