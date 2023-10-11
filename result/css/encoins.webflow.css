@@ -1299,7 +1299,7 @@ body {
   }
 }
 
-@media screen and (max-width: 767px) {
+@media screen and (max-width: 1000px) {
   .nav-menu {
     -webkit-box-orient: vertical;
     -webkit-box-direction: normal;
