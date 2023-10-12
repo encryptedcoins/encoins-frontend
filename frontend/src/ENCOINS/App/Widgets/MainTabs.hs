@@ -17,8 +17,8 @@ import           Backend.Protocol.Types
 import           Backend.Status                         (Status(..), isStatusBusyBackendNetwork)
 import           Backend.Wallet                         (Wallet (..))
 import           ENCOINS.App.Widgets.Basic              (containerApp, sectionApp, walletError, elementResultJS, tellTxStatus)
-import           ENCOINS.App.Widgets.Coin               (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,
-                                                          coinCollectionWithNames, filterKnownCoinNames, noCoinsFoundWidget, coinNewButtonWidget)
+import           ENCOINS.App.Widgets.Coin               (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,coinWithName,
+                                                          filterKnownCoinNames, noCoinsFoundWidget, coinNewButtonWidget)
 import           ENCOINS.App.Widgets.InputAddressWindow (inputAddressWindow)
 import           ENCOINS.App.Widgets.ImportWindow       (importWindow, importFileWindow, exportWindow)
 import           ENCOINS.App.Widgets.PasswordWindow     (PasswordRaw(..))
@@ -26,7 +26,7 @@ import           ENCOINS.App.Widgets.SendRequestButton  (sendRequestButton)
 import           ENCOINS.App.Widgets.SendToWalletWindow (sendToWalletWindow)
 import           ENCOINS.App.Widgets.TransactionBalance (transactionBalanceWidget)
 import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeWindow, welcomeTransfer, welcomeWindowTransferStorageKey, welcomeLedger, welcomeWindowLedgerStorageKey)
-import           ENCOINS.Bulletproofs                   (Secrets)
+import           ENCOINS.Bulletproofs                   (Secret)
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
 import           JS.Website                             (saveJSON)
 
@@ -38,9 +38,9 @@ mainWindowColumnHeader title =
 walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
-  -> Dynamic t Secrets
+  -> Dynamic t [(Secret, Text)]
   -> m ()
-walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
+walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     (dBalance, dFees, dBulletproofParams, bRandomness) <-
         getEnvironment WalletMode dWallet (pure Nothing) dToBurn dToMint
     containerApp "" $ transactionBalanceWidget dBalance dFees
@@ -48,9 +48,12 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
         divClass "app-columns w-row" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
             dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
-            let dSecrets = fmap nub $ zipDynWith (++) dImportedSecrets $ zipDynWith (++) dOldSecrets dNewSecrets
-            dSecretsWithNames <- coinCollectionWithNames dSecrets
-            performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins" . decodeUtf8 . toStrict . encode <$> updated dSecrets)
+            let dSecretsWithNames = fmap nub
+                  $ zipDynWith (++) dOldSecretsWithNames
+                  $ map coinWithName
+                  <$> zipDynWith (++) dImportedSecrets dNewSecrets
+
+            performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins-with-name" . decodeUtf8 . toStrict . encode <$> updated dSecretsWithNames)
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do
@@ -61,11 +64,12 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                     (eImport, eImportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Import" <*> menuButton " Import All"
                     (eExport, eExportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Export" <*> menuButton " Export All"
                     exportWindow eExport dCTB
-                    exportWindow eExportAll dSecrets
+                    exportWindow eExportAll $ map fst <$> dSecretsWithNames
                     eIS    <- fmap pure . catMaybes <$> importWindow eImport
                     eISAll <- importFileWindow eImportAll
                     return $ leftmost [eIS, eISAll]
                 return (dCTB, eImp)
+
             (dCoinsToMint, eSend) <- divClass "app-CoinColumnRight w-col w-col-6" $ mdo
                 dCoinsToMint' <- divClassId "" "welcome-coins-mint" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
@@ -104,16 +108,15 @@ walletTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
 transferTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
-  -> Dynamic t Secrets
+  -> Dynamic t [(Secret, Text)]
   -> m ()
-transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
+transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
     containerApp "" $ transactionBalanceWidget (pure 0) (pure 0)
-    (dCoins, eSendToLedger, eAddr, dSecretsWithNames) <- containerApp "" $ divClass "app-columns w-row" $ mdo
+    (dCoins, eSendToLedger, eAddr, dSecretsName) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
-        let dSecrets = nub <$> zipDynWith (++) dImportedSecrets dOldSecrets
-        dSecretsWithNames <- coinCollectionWithNames dSecrets
-        performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins" . decodeUtf8 . toStrict . encode <$> updated dSecrets)
+        let dSecretsWithNames = nub <$> zipDynWith (++) dOldSecretsWithNames (map coinWithName <$> dImportedSecrets)
+        performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins-with-name" . decodeUtf8 . toStrict . encode <$> updated dSecretsWithNames)
 
         (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
             dCTB <- divClassId "" "welcome-coins-transfer" $ do
@@ -123,7 +126,7 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
             (eImport, eImportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Import" <*> menuButton " Import All"
             (eExport, eExportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Export" <*> menuButton " Export All"
             exportWindow eExport dCTB
-            exportWindow eExportAll dSecrets
+            exportWindow eExportAll $ map fst <$> dSecretsWithNames
             eIS    <- fmap pure . catMaybes <$> importWindow eImport
             eISAll <- importFileWindow eImportAll
             return (dCTB, leftmost [eIS, eISAll])
@@ -154,7 +157,8 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
         (void eAddr)
         dWalletSignature
 
-    let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
+    let dSecretsWithNamesInTheWallet =
+          zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsName
     (_, eStatusUpdate2, _) <-
       encoinsTxTransferMode
         dWallet
@@ -178,19 +182,19 @@ transferTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
 ledgerTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
-  -> Dynamic t Secrets
+  -> Dynamic t [(Secret, Text)]
   -> m ()
-ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
+ledgerTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowLedgerStorageKey welcomeLedger
-    (dBalance, dFees, dBulletproofParams, bRandomness) <- getEnvironment LedgerMode dWallet dAddr dToBurn dToMint
+    (dBalance, dFees, dBulletproofParams, bRandomness) <-
+        getEnvironment LedgerMode dWallet dAddr dToBurn dToMint
     containerApp "" $ transactionBalanceWidget dBalance dFees
     (dToBurn, dToMint, dAddr, eStatusUpdate) <- containerApp "" $
         divClassId "app-columns w-row" "welcome-ledger" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
             dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
-            let dSecrets = fmap nub $ zipDynWith (++) dImportedSecrets $ zipDynWith (++) dOldSecrets dNewSecrets
-            dSecretsWithNames <- coinCollectionWithNames dSecrets
-            performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins" . decodeUtf8 . toStrict . encode <$> updated dSecrets)
+            let dSecretsWithNames = fmap nub $ zipDynWith (++) dOldSecretsWithNames $ map coinWithName <$> zipDynWith (++) dImportedSecrets dNewSecrets
+            performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins-with-name" . decodeUtf8 . toStrict . encode <$> updated dSecretsWithNames)
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-ledger-coins" $ do
@@ -202,7 +206,7 @@ ledgerTab mpass dWallet dOldSecrets = sectionApp "" "" $ mdo
                   (eImport, eImportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Import" <*> menuButton " Import All"
                   (eExport, eExportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Export" <*> menuButton " Export All"
                   exportWindow eExport dCTB
-                  exportWindow eExportAll dSecrets
+                  exportWindow eExportAll $ map fst <$> dSecretsWithNames
                   eIS    <- fmap pure . catMaybes <$> importWindow eImport
                   eISAll <- importFileWindow eImportAll
                   return $ leftmost [eIS, eISAll]
