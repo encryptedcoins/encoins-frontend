@@ -731,36 +731,6 @@ body {
   display: flex;
 }
 
-.app-tab-menu {
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -ms-flexbox;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  @media screen and (min-width: 767px) {
-    flex-direction: row;
-  }
-}
-
-.menu-tab-item-button {
-  -webkit-align-self: center;
-  -ms-flex-item-align: center;
-  -ms-grid-row-align: center;
-  align-self: center;
-  padding-left: 10px;
-  padding-right: 10px;
-  width: 100%;
-}
-
-@media screen and (min-width: 767px) {
-  .menu-tab-item-button {
-    width: 33%;
-    padding-left: 0px;
-    padding-right: 0px;
-  }
-}
-
 .menu-item-button-left {
   margin-left: 10px;
   -webkit-align-self: center;
@@ -932,6 +902,7 @@ body {
   font-size: 18px;
   line-height: 32px;
 }
+
 
 .body {
   border-bottom: 1px solid #313135;
@@ -1328,7 +1299,7 @@ body {
   }
 }
 
-@media screen and (max-width: 767px) {
+@media screen and (max-width: 989px) {
   .nav-menu {
     -webkit-box-orient: vertical;
     -webkit-box-direction: normal;
@@ -1559,6 +1530,36 @@ body {
   }
 }
 
+.app-tab-menu {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  @media screen and (min-width: 767px) {
+    flex-direction: row;
+  }
+}
+
+.menu-tab-item-button {
+  -webkit-align-self: center;
+  -ms-flex-item-align: center;
+  -ms-grid-row-align: center;
+  align-self: center;
+  padding-left: 10px;
+  padding-right: 10px;
+  width: 100%;
+}
+
+@media screen and (min-width: 767px) {
+  .menu-tab-item-button {
+    width: 33%;
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+}
+
 .notification {
   position: absolute;
   margin-top: 10px;
@@ -1698,3 +1699,89 @@ body {
     padding-bottom: 0px;
   }
 }
+
+.app-EnterPassword_ButtonContainer {
+  display:flex;
+  flex-direction: column;
+  justify-content:center;
+  gap: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+}
+
+@media screen and (min-width: 662px) {
+  .app-EnterPassword_ButtonContainer {
+    display:flex;
+    flex-direction: row;
+  }
+}
+
+.app-PasswordSetting_ButtonContainer {
+  display: flex;
+  justify-content:center;
+  flex-direction: column;
+  gap: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+}
+
+  @media screen and (min-width: 860px) {
+    .app-PasswordSetting_ButtonContainer {
+      display:flex;
+      flex-direction: row;
+    }
+  }
+
+.app-CleanCache_ButtonContainer {
+  display: flex;
+  justify-content:center;
+  flex-direction: column;
+  gap: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+}
+
+@media screen and (min-width: 900px) {
+    .app-CleanCache_ButtonContainer {
+      display:flex;
+      flex-direction: row;
+    }
+  }
+
+.app-CleanCache_Description {
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+  text-align: center;
+}
+
+.app-ToolTip_MintingKey {
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+  overflow-wrap: anywhere;
+}
+
+.dao-DelegateWindow_EnterUrl {
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+  text-align: left;
+}
+
+.dao-DelegateWindow_ButtonStatusContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content:center;
+  gap: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+}
+
+@media screen and (min-width: 550px) {
+  .dao-DelegateWindow_ButtonStatusContainer {
+    display:flex;
+    flex-direction: row;
+    justify-content:left;
+    }
+  }
