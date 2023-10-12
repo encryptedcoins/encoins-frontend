@@ -18,6 +18,9 @@ newEventWithDelay t = newEvent >>= delay t
 logEvent :: (MonadWidget t m, Show a) => Text -> Event t a -> m ()
 logEvent title e = performEvent_ $ liftIO . logInfo . ((title <> ": ") <>) . toText <$> e
 
+logDyn :: (MonadWidget t m, Show a) => Text -> Dynamic t a -> m ()
+logDyn title d = logEvent title $ updated d
+
 setFocus :: MonadJSM m
   => InputElement EventResult GhcjsDomSpace t
   -> m ()

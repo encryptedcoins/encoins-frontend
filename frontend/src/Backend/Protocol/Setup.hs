@@ -4,7 +4,6 @@ module Backend.Protocol.Setup where
 
 import           Data.Aeson                      (decode)
 import           Data.ByteString.Lazy            (fromStrict)
-import           Data.FileEmbed                  (embedFile)
 import           Data.Maybe                      (fromJust)
 import           Data.Text                       (Text)
 import           PlutusTx.Builtins
@@ -12,9 +11,10 @@ import           Text.Hex                        (decodeHex)
 
 import           Backend.Protocol.Types
 import           ENCOINS.Bulletproofs
+import           Config.Config                   (bulletproofSetupBS)
 
 bulletproofSetup :: BulletproofSetup
-bulletproofSetup = fromJust $ decode $ fromStrict $(embedFile "config/bulletproof_setup.json")
+bulletproofSetup = fromJust $ decode $ fromStrict bulletproofSetupBS
 
 minAdaTxOutInLedger :: Integer
 minAdaTxOutInLedger = 4_000_000

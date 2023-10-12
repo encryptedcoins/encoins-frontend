@@ -45,8 +45,8 @@ lockerWidget :: MonadWidget  t m
   -> m (Element EventResult (DomBuilderSpace m) t)
 lockerWidget mPass = do
   let (iconClass, popupText) = case mPass of
-        Nothing -> ("menu-item-unlocked", "isn't protected")
-        Just _  -> ("menu-item-locked", "is protected")
+        Nothing -> ("app-Nav_Locker-open", "isn't protected")
+        Just _  -> ("app-Nav_Locker-close", "is protected")
   lockerDiv iconClass popupText
 
 lockerDiv :: MonadWidget t m
@@ -55,6 +55,6 @@ lockerDiv :: MonadWidget t m
   -> m (Element EventResult (DomBuilderSpace m) t)
 lockerDiv iconClass popupText
   = fst <$> elClass' "div"
-    ("menu-item menu-item-button-left" <> space <> iconClass <> space <> "w-inline-block")
-    (divClass "menu-item menu-item-button-left popup-text"
+    ("menu-item app-Nav_LockerContainer" <> space <> iconClass)
+    (divClass "app-Nav_CachePopup"
       $ el "p" $ text $ "Cache" <> space <> popupText)

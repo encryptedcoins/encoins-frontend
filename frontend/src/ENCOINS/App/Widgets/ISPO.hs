@@ -6,7 +6,6 @@ module ENCOINS.App.Widgets.ISPO (calculator) where
 
 import           Data.Aeson                        (ToJSON, FromJSON, decode)
 import           Data.ByteString.Lazy              (fromStrict)
-import           Data.FileEmbed                    (embedFile)
 import           Data.List                         (find)
 import           Data.Maybe                        (fromJust)
 import           Data.Text                         (Text, pack)
@@ -14,13 +13,13 @@ import           GHC.Generics                      (Generic)
 import           Reflex.Dom
 
 import           ENCOINS.Common.Widgets.Basic      (pClass)
-
+import           Config.Config                     (delegatorListBS)
 data DelegatorC = DelegatorC { addressC :: Text, rewardC :: Double }
   deriving (Show, Generic, ToJSON, FromJSON)
 type DelegatorsC = [DelegatorC]
 
 delegatorList :: DelegatorsC
-delegatorList = fromJust (decode $ fromStrict $(embedFile "../result/ispo/calculator.json") :: Maybe DelegatorsC)
+delegatorList = fromJust (decode $ fromStrict delegatorListBS :: Maybe DelegatorsC)
 
 calculator :: MonadWidget t m => m ()
 calculator = divClass "div-calculator w-row" $ do

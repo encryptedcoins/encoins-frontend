@@ -13,13 +13,13 @@ tabsSection :: MonadWidget t m
   -> Dynamic t Bool
   -> m (Event t AppTab)
 tabsSection dTab dIsDisableButtons = sectionApp "" "" $ containerApp "" $
-    divClassId "app-top-menu-div" "welcome-tabs" $ do
-        eWallet <- divClass "menu-item-button-right" $
-            btnWithBlock (mkBtnCls WalletTab <$> dTab) "" dIsDisableButtons $ text "Wallet"
-        eTransfer <- divClass "menu-item-button-right" $
-            btnWithBlock (mkBtnCls TransferTab <$> dTab) "" dIsDisableButtons $ text "Transfer"
-        eLedger <- divClass "menu-item-button-right" $
-            btnWithBlock (mkBtnCls LedgerTab <$> dTab) "" dIsDisableButtons $ text "Ledger"
+    divClassId "app-tab-menu" "welcome-tabs" $ do
+        eWallet <- divClass "menu-tab-item-button" $
+            btnWithBlock (mkBtnCls WalletTab <$> dTab) "width:100%" dIsDisableButtons $ text "Wallet"
+        eTransfer <- divClass "menu-tab-item-button" $
+            btnWithBlock (mkBtnCls TransferTab <$> dTab) "width:100%" dIsDisableButtons $ text "Transfer"
+        eLedger <- divClass "menu-tab-item-button" $
+            btnWithBlock (mkBtnCls LedgerTab <$> dTab) "width:100%" dIsDisableButtons $ text "Ledger"
         return $ leftmost
             [ WalletTab <$ eWallet
             , TransferTab <$ eTransfer
