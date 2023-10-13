@@ -40,7 +40,7 @@ pClass = elClass "p"
 btn :: MonadWidget t m => Dynamic t Text -> Dynamic t Text -> m () -> m (Event t ())
 btn dCls dStyle tags = do
     let f cls style = "href" =: "#" <> "class" =: "app-button  w-button " `T.append` cls <> "style" =: style
-    (e, _) <- elDynAttr' "a" (zipDynWith f dCls dStyle) tags
+    (e, _) <- elDynAttr' "button" (zipDynWith f dCls dStyle) tags
     return $ () <$ domEvent Click e
 
 btnWithBlock :: MonadWidget t m
@@ -55,7 +55,7 @@ btnWithBlock dCls dStyle dIsBlock = btn
   where
     mkBtnAttrs dSt = do
       defaultClass <- dCls
-      let classWithDisable = defaultClass <> " " <> "button-disabled-independent"
+      let classWithDisable = defaultClass <> space <> "button-disabled"
       bool defaultClass classWithDisable <$> dSt
 
 btnExternal :: MonadWidget t m => Dynamic t Text -> Dynamic t Text -> Dynamic t Text -> m () -> m (Event t ())

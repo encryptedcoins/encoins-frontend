@@ -1,27 +1,28 @@
 module ENCOINS.App.Widgets.Basic where
 
-import           Data.Aeson                    (ToJSON, FromJSON, encode, decode, decodeStrict)
-import           Data.ByteString               (ByteString)
-import           Data.ByteString.Lazy          (fromStrict, toStrict)
-import           Data.Text                     (Text)
-import           Data.Bool                     (bool)
-import qualified Data.Text                     as T
-import           Data.Text.Encoding            (encodeUtf8, decodeUtf8)
-import           GHCJS.DOM                     (currentWindowUnchecked)
-import           GHCJS.DOM.Storage             (getItem, setItem)
-import           GHCJS.DOM.Types               (MonadDOM)
-import           GHCJS.DOM.Window              (getLocalStorage)
+import           Control.Monad            (when)
+import           Data.Aeson               (FromJSON, ToJSON, decode,
+                                           decodeStrict, encode)
+import           Data.Bool                (bool)
+import           Data.ByteString          (ByteString)
+import           Data.ByteString.Lazy     (fromStrict, toStrict)
+import           Data.Maybe               (isNothing)
+import           Data.Text                (Text)
+import qualified Data.Text                as T
+import           Data.Text.Encoding       (decodeUtf8, encodeUtf8)
+import           GHCJS.DOM                (currentWindowUnchecked)
+import           GHCJS.DOM.Storage        (getItem, setItem)
+import           GHCJS.DOM.Types          (MonadDOM)
+import           GHCJS.DOM.Window         (getLocalStorage)
 import           Reflex.Dom
-import           Reflex.ScriptDependent        (widgetHoldUntilDefined)
-import           Control.Monad                 (when)
-import           Data.Maybe                    (isNothing)
-import           Servant.Reflex                (BaseUrl)
+import           Reflex.ScriptDependent   (widgetHoldUntilDefined)
+import           Servant.Reflex           (BaseUrl)
 
 
-import           ENCOINS.Common.Events         (newEventWithDelay, newEvent)
-import           JS.Website                    (loadJSON)
-import           Backend.Servant.Client        (getRelayUrl)
-import           Backend.Status                (Status(..), relayError)
+import           Backend.Servant.Requests (getRelayUrl)
+import           Backend.Status           (Status (..), relayError)
+import           ENCOINS.Common.Events    (newEvent, newEventWithDelay)
+import           JS.Website               (loadJSON)
 
 sectionApp :: MonadWidget t m => Text -> Text -> m a -> m a
 sectionApp elemId cls = elAttr "div" ("id" =: elemId <> "class" =: "section-app wf-section " `T.append` cls)

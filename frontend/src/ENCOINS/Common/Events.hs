@@ -1,13 +1,13 @@
 module ENCOINS.Common.Events where
 
-import           Control.Monad.IO.Class (liftIO)
-import           Data.Text              (Text)
-import           Data.Time              (NominalDiffTime)
+import           Control.Monad.IO.Class      (liftIO)
+import           Data.Text                   (Text)
+import           Data.Time                   (NominalDiffTime)
 import           Reflex.Dom
 
-import           ENCOINS.Common.Utils   (toText)
-import           JS.Website             (logInfo)
-import Language.Javascript.JSaddle (MonadJSM, toJSVal, (#), liftJSM)
+import           ENCOINS.Common.Utils        (toText)
+import           JS.Website                  (logInfo)
+import           Language.Javascript.JSaddle (MonadJSM, liftJSM, toJSVal, (#))
 
 newEvent :: MonadWidget t m => m (Event t ())
 newEvent = dyn $ constDyn blank

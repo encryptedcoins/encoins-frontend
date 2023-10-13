@@ -1,37 +1,16 @@
 module Backend.Servant.Client where
 
-import           Control.Monad.IO.Class       (MonadIO(..))
-import           Data.Aeson                   (decode)
-import           Data.ByteString.Lazy         (fromStrict)
-import           Data.List                    (delete)
-import           Data.Maybe                   (isNothing, fromJust)
-import           Data.Proxy                   (Proxy(..))
-import           Data.Text                    (Text)
-import           Reflex.Dom                   hiding (Value)
+import           Data.Maybe             (isNothing)
+import           Data.Proxy             (Proxy (..))
+import           Data.Text              (Text)
+import           Reflex.Dom             hiding (Value)
 import           Servant.API
-import           Servant.Reflex
-import           System.Random                (randomRIO)
-import           Witherable                   (catMaybes)
+import           Servant.Reflex         (BaseUrl, ReqResult (ResponseSuccess),
+                                         client)
+import           Witherable             (catMaybes)
 
 import           Backend.Protocol.Types
-import           CSL                          (TransactionInputs)
-import           JS.App                       (pingServer)
-import           Config.Config                (urlsBS)
-
-urls :: [Text]
-urls = fromJust $ decode $ fromStrict urlsBS
-
-getRelayUrl :: MonadIO m => m (Maybe BaseUrl)
-getRelayUrl = go urls
-  where
-    go [] = pure Nothing
-    go l = do
-      idx <- randomRIO (0, length l - 1)
-      let url = l !! idx
-      pingOk <- pingServer url
-      if pingOk
-        then return $ Just $ BasePath url
-        else go (delete url l)
+import           CSL                    (TransactionInputs)
 
 type API =   "newTx"        :> ReqBody '[JSON] (InputOfEncoinsApi, TransactionInputs)
                             :> Post '[JSON] (Text, Text)
@@ -56,17 +35,17 @@ data ApiClient t m = ApiClient
   , statusRequest       :: ReqRes t m EncoinsStatusReqBody EncoinsStatusResult
   }
 
-mkApiClient :: forall t m . MonadWidget t m => BaseUrl -> ApiClient t m
-mkApiClient host = ApiClient{..}
+mkApiClient :: forall t m . MonadWidget t m => Dynamic t BaseUrl -> ApiClient t m
+mkApiClient dHost = ApiClient{..}
   where
     (newTxRequest :<|> submitTxRequest :<|> pingRequest :<|> serverTxRequest
-      :<|> statusRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
+      :<|> statusRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) dHost
 
 ---------------------------------------------- Utilities ----------------------------------------
 
 makeResponse :: ReqResult tag a -> Maybe a
 makeResponse (ResponseSuccess _ a _) = Just a
-makeResponse _ = Nothing
+makeResponse _                       = Nothing
 
 eventMaybe :: Reflex t => b -> Event t (Maybe a) -> (Event t a, Event t b)
 eventMaybe errValue e = (catMaybes e, errValue <$ ffilter isNothing e)

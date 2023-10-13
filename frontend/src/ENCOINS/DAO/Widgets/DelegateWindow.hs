@@ -8,6 +8,7 @@ import           Control.Monad                          (void)
 import           Data.Text                              (Text)
 import qualified Data.Text as T
 import           Reflex.Dom
+import           Servant.Reflex                         (BaseUrl (..))
 
 import           ENCOINS.App.Widgets.Basic              (elementResultJS, containerApp)
 import           ENCOINS.Common.Widgets.Advanced        (dialogWindow)
@@ -17,6 +18,8 @@ import           Backend.Wallet                         (Wallet(..), toJS, lucid
 import           Backend.Status                         (UrlStatus(..), isNotValidUrl)
 import qualified JS.DAO as JS
 import           ENCOINS.Common.Utils (toText)
+import           Backend.Servant.Requests (pingRequestWrapper)
+
 
 delegateWindow :: MonadWidget t m
   => Event t ()
@@ -43,12 +46,16 @@ delegateWindow eOpen dWallet = mdo
           eValidUrl <- updated <$> elementResultJS "ValidUrl" id
           eInvalidUrl <- updated <$> elementResultJS "InvalidUrl" id
 
+          ePing <- pingRequestWrapper (BasePath . normalizePingUrl <$> dInputText) $ () <$ eValidUrl
+
           let eUrlStatus = leftmost
                 [
                   UrlEmpty   <$ eEmptyUrl
                 , UrlInvalid <$ eInvalidUrl
                 , UrlValid   <$ eValidUrl
+                , maybe UrlPingFail (const UrlPingSuccess) <$> ePing
                 ]
+
           dIsInvalidUrl <- holdDyn UrlEmpty eUrlStatus
           -- The button disable with invalid url and performant status.
           btnOk <- buttonWidget dIsInvalidUrl
@@ -92,3 +99,6 @@ buttonWidget dUrlStatus =
         $ dynText
         $ toText <$> dUrlStatus
     pure b
+
+normalizePingUrl :: Text -> Text
+normalizePingUrl t = T.append (T.dropWhileEnd (== '/') t) "//"

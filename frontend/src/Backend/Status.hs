@@ -1,3 +1,4 @@
+{-# LANGUAGE InstanceSigs #-}
 module Backend.Status where
 
 import           Data.Text (Text, unpack)
@@ -48,21 +49,28 @@ isReady Ready = True
 isReady _     = False
 
 isBlockError :: Status -> Bool
-isBlockError (BackendError _)       = True
-isBlockError _                      = False
+isBlockError (BackendError _) = True
+isBlockError _                = False
 
 data UrlStatus
     = UrlEmpty
     | UrlInvalid
     | UrlValid
+    | UrlPingFail
+    | UrlPingSuccess
     deriving Eq
 
 instance Show UrlStatus where
-    show UrlEmpty   = "Relay URL is empty"
-    show UrlInvalid = "Relay URL is invalid"
-    show UrlValid   = "Relay URL is valid"
+    show :: UrlStatus -> String
+    show UrlEmpty       = "URL is empty"
+    show UrlInvalid     = "Format of URL is invalid"
+    show UrlValid       = "Format of URL is valid"
+    show UrlPingFail    = "Ping of relay is failed"
+    show UrlPingSuccess = "Ping of relay is succeeded"
 
 isNotValidUrl :: UrlStatus -> Bool
-isNotValidUrl UrlEmpty   = True
-isNotValidUrl UrlInvalid = True
-isNotValidUrl UrlValid   = False
+isNotValidUrl UrlEmpty       = True
+isNotValidUrl UrlInvalid     = True
+isNotValidUrl UrlValid       = True
+isNotValidUrl UrlPingFail    = True
+isNotValidUrl UrlPingSuccess = False
