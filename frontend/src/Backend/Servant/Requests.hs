@@ -17,7 +17,7 @@ import           Servant.API            (NoContent)
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
 import           Backend.Status         (Status (..), relayError)
-import           ENCOINS.Common.Events  (logEvent, logDyn)
+import           ENCOINS.Common.Events  (logEvent)
 import           JS.App                 (pingServer)
 
 newTxRequestWrapper :: MonadWidget t m
@@ -48,8 +48,8 @@ pingRequestWrapper :: MonadWidget t m
   -> m (Event t (Maybe NoContent))
 pingRequestWrapper dBaseUrl e = do
   let ApiClient{..} = mkApiClient dBaseUrl
-  logDyn "Ping url" dBaseUrl
-  ePingRes <- fmap makeResponse <$> pingRequest e
+  delayed <- delay 0.2 e
+  ePingRes <- fmap makeResponse <$> pingRequest delayed
   logEvent "Ping response" ePingRes
   return ePingRes
 
