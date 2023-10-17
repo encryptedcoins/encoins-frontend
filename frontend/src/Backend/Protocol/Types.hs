@@ -1,21 +1,23 @@
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE DeriveAnyClass      #-}
-{-# LANGUAGE JavaScriptFFI       #-}
+{-# LANGUAGE CPP            #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE JavaScriptFFI  #-}
 
 module Backend.Protocol.Types where
 
-import           Data.Aeson                  (ToJSON(..), FromJSON (..))
-import           Data.Maybe                  (fromJust)
-import           Data.Text                   (Text)
-import qualified Data.Text as Text
-import           GHC.Generics                (Generic)
+import           Data.Aeson           (FromJSON (..), ToJSON (..))
+import           Data.Maybe           (fromJust)
+import           Data.Text            (Text)
+import qualified Data.Text            as Text
+import           Data.Time            (UTCTime)
+import           Data.Version         (Version)
+import           GHC.Generics         (Generic)
 import           PlutusTx.Builtins
-import           Reflex.Dom                  (decodeText)
-import           Text.Hex                    (decodeHex, encodeHex)
+import           Reflex.Dom           (decodeText)
+import           Text.Hex             (decodeHex, encodeHex)
 
-import           CSL                         (TransactionUnspentOutputs, Value)
-import           ENCOINS.BaseTypes           (MintingPolarity)
-import           ENCOINS.Bulletproofs        (Proof)
+import           CSL                  (TransactionUnspentOutputs, Value)
+import           ENCOINS.BaseTypes    (MintingPolarity)
+import           ENCOINS.Bulletproofs (Proof)
 
 type TxParams = (Address, Address, Integer)
 
@@ -46,7 +48,7 @@ addressToBytes :: Address -> Text
 addressToBytes (Address cr scr) = bs1 `Text.append` bs2
     where
         bs1 = encodeHex $ fromBuiltin $ case cr of
-          PubKeyCredential (PubKeyHash pkh) -> pkh
+          PubKeyCredential (PubKeyHash pkh)   -> pkh
           ScriptCredential (ValidatorHash vh) -> vh
         bs2 = encodeHex $ fromBuiltin $ case scr of
           Just (StakingHash (PubKeyCredential (PubKeyHash pkh))) -> pkh
@@ -54,7 +56,7 @@ addressToBytes (Address cr scr) = bs1 `Text.append` bs2
           _       -> emptyByteString
 
 checkEmptyText :: Text -> Maybe Text
-checkEmptyText "" = Nothing
+checkEmptyText ""  = Nothing
 checkEmptyText txt = Just txt
 
 type EncoinsInput = (Integer, [(BuiltinByteString, MintingPolarity)])
@@ -84,8 +86,8 @@ newtype Signature = Signature { getSignature :: Text }
 
 data SubmitTxReqBody = SubmitTxReqBody
     {
-        submitReqTx         :: Text,
-        submitReqWitnesses  :: [(Text, Text)]
+        submitReqTx        :: Text,
+        submitReqWitnesses :: [(Text, Text)]
     }
     deriving (Show, Generic, ToJSON, FromJSON)
 
@@ -104,3 +106,11 @@ data EncoinsStatusResult = MaxAdaWithdrawResult Integer | LedgerUtxoResult Trans
 showStatus :: EncoinsStatusResult -> Text
 showStatus (MaxAdaWithdrawResult n) = "MaxAdaWithdrawResult: " <> Text.pack (show n)
 showStatus (LedgerUtxoResult t) = "LedgerUtxoResult: " <> Text.pack (show $ length t)
+
+data ServerVersion = ServerVersion
+  { svVersion :: Version
+  , svCommit  :: Text
+  , svDate    :: UTCTime
+  }
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (ToJSON, FromJSON)

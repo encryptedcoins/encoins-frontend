@@ -10,9 +10,9 @@ import           Data.List              (delete)
 import           Data.Maybe             (fromJust)
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
+import           Servant.API            (NoContent)
 import           Servant.Reflex         (BaseUrl (..))
 import           System.Random          (randomRIO)
-import           Servant.API            (NoContent)
 
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
@@ -76,6 +76,16 @@ statusRequestWrapper dBaseUrl dReqBody e = do
   let eRespUnwrapped = makeResponse <$> eResp
   logEvent "statusRequestWrapper: eRespUnwrapped:" $ fmap showStatus <$> eRespUnwrapped
   return $ eventMaybe (BackendError relayError) eRespUnwrapped
+
+versionRequestWrapper :: MonadWidget t m
+  => Dynamic t BaseUrl
+  -> Event t ()
+  -> m (Event t (Maybe ServerVersion))
+versionRequestWrapper dBaseUrl e = do
+  let ApiClient{..} = mkApiClient dBaseUrl
+  eVersionRes <- fmap makeResponse <$> versionRequest e
+  logEvent "Version" eVersionRes
+  return eVersionRes
 
 urls :: [Text]
 urls = fromJust $ decode $ fromStrict urlsBS

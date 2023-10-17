@@ -65,12 +65,15 @@ encoinsTxWalletMode
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eSend
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
 
+
     -- Constructing a new transaction
     let dNewTxReqBody = zipDyn
           (fmap (\r -> InputRedeemer (fromJust r) WalletMode) dFinalRedeemer)
           dInputs
     (eNewTxSuccess, eRelayDown) <- case mBaseUrl of
-      Just baseUrl -> newTxRequestWrapper (constDyn baseUrl) dNewTxReqBody eFinalRedeemer
+      Just baseUrl -> do
+        void $ versionRequestWrapper (constDyn baseUrl) eFinalRedeemer
+        newTxRequestWrapper (constDyn baseUrl) dNewTxReqBody eFinalRedeemer
       _            -> pure (never, never)
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
