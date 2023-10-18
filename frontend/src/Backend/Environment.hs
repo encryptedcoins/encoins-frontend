@@ -62,6 +62,4 @@ getEnvironment mode dWallet dmChangeAddr dCoinsBurn dCoinsMint = do
   let dFees = fmap (protocolFees mode) dBalance
   dBulletproofParams <- getBulletproofParams dWallet dmChangeAddr dFees
   bRandomness        <- getRandomness $ void $ updated dBulletproofParams
-  logDyn "dBalance" dBalance
-  logDyn "dFees" dFees
   return (dBalance, dFees, dBulletproofParams, bRandomness)

@@ -199,9 +199,6 @@ ledgerTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
       zipDynWith (-) (getDeposit <$> dToMint) (getDeposit <$> dToBurn)
     dEncoinsDepositBalance <- holdUniqDyn $ zipDynWith (+) dBalance dDepositBalance
     dTotalBalance <- holdUniqDyn $ zipDynWith (+) dEncoinsDepositBalance dFees
-    logDyn "dDepositBalance" dDepositBalance
-    logDyn "dEncoinsDepositBalance" dEncoinsDepositBalance
-    logDyn "dTotalBalance" dTotalBalance
     containerApp "" $ transactionBalanceWidget (negate <$> dTotalBalance) dFees ""
 
     (dToBurn, dToMint, dAddr, eStatusUpdate) <- containerApp "" $
@@ -238,13 +235,9 @@ ledgerTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
                     return dCoinsToMint''
                 eSend' <- sendRequestButton LedgerMode dStatus dWallet dCoinsToBurn dCoinsToMint (void $ updated dBalance)
                 let dV = fmap calculateChange dTotalBalance
-                -- let dV = dTotalBalance
-                    -- dBalanceWithFees = zipDynWith (+) dBalance dFees
                     eSendZeroBalance = gate ((==0) <$> current dTotalBalance) eSend'
                     eSendNonZeroBalance = gate ((/=0) <$> current dTotalBalance) eSend'
-                logDyn "dV" dV
                 eAddChange <- coinNewButtonWidget dV never (addChangeButton dTotalBalance)
-                logEvent "eAddChange" eAddChange
                 (eAddrOk, dmAddr) <- inputAddressWindow eSendNonZeroBalance
                 dAddr'          <- holdDyn Nothing (leftmost [updated dmAddr, Nothing <$ eSendZeroBalance])
                 return (dCoinsToMint', leftmost [void eAddrOk, eSendZeroBalance], dAddr')
@@ -267,7 +260,6 @@ ledgerTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
-    -- calculateChange bal = negate bal - protocolFees LedgerMode 0
     calculateChange bal = negate bal - 4
     f v = if v < 0
       then "button-switching flex-center"
