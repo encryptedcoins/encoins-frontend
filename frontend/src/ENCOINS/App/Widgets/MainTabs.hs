@@ -196,13 +196,13 @@ ledgerTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
         getEnvironment LedgerMode dWallet dAddr dToBurn dToMint
 
     dDepositBalance <- holdUniqDyn $
-      zipDynWith (-) (getDeposit <$> dToBurn) (getDeposit <$> dToMint)
-    dEncoinsDepositBalance <- holdUniqDyn $ zipDynWith (+) (negate <$> dBalance) dDepositBalance
-    dTotalBalance <- holdUniqDyn $ zipDynWith (-) dEncoinsDepositBalance dFees
+      zipDynWith (-) (getDeposit <$> dToMint) (getDeposit <$> dToBurn)
+    dEncoinsDepositBalance <- holdUniqDyn $ zipDynWith (+) dBalance dDepositBalance
+    dTotalBalance <- holdUniqDyn $ zipDynWith (+) dEncoinsDepositBalance dFees
     logDyn "dDepositBalance" dDepositBalance
     logDyn "dEncoinsDepositBalance" dEncoinsDepositBalance
     logDyn "dTotalBalance" dTotalBalance
-    containerApp "" $ transactionBalanceWidget dTotalBalance dFees ""
+    containerApp "" $ transactionBalanceWidget (negate <$> dTotalBalance) dFees ""
 
     (dToBurn, dToMint, dAddr, eStatusUpdate) <- containerApp "" $
         divClassId "app-columns w-row" "welcome-ledger" $ mdo
@@ -229,19 +229,34 @@ ledgerTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
             (dCoinsToMint, eSend, dChangeAddr) <- divClassId "app-CoinColumnRight w-col w-col-6" "welcome-ledger-mint" $ mdo
                 dCoinsToMint' <- divClass "" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
-                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [AddCoin <$> eNewSecret, ClearCoins <$ ffilter (== Constructing) eStatusUpdate, AddCoin <$> eAddChange]
+                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost
+                      [ AddCoin <$> eNewSecret
+                      , ClearCoins <$ ffilter (== Constructing) eStatusUpdate
+                      , AddCoin <$> eAddChange
+                      ]
                     eNewSecret     <- coinNewWidget
                     return dCoinsToMint''
                 eSend' <- sendRequestButton LedgerMode dStatus dWallet dCoinsToBurn dCoinsToMint (void $ updated dBalance)
-                let dV = fmap calculateChange dBalance
-                    dBalanceWithFees = zipDynWith (+) dBalance dFees
-                    eSendZeroBalance = gate ((==0) <$> current dBalanceWithFees) eSend'
-                    eSendNonZeroBalance = gate ((/=0) <$> current dBalanceWithFees) eSend'
-                eAddChange <- coinNewButtonWidget dV never (addChangeButton dBalanceWithFees)
+                let dV = fmap calculateChange dTotalBalance
+                -- let dV = dTotalBalance
+                    -- dBalanceWithFees = zipDynWith (+) dBalance dFees
+                    eSendZeroBalance = gate ((==0) <$> current dTotalBalance) eSend'
+                    eSendNonZeroBalance = gate ((/=0) <$> current dTotalBalance) eSend'
+                logDyn "dV" dV
+                eAddChange <- coinNewButtonWidget dV never (addChangeButton dTotalBalance)
+                logEvent "eAddChange" eAddChange
                 (eAddrOk, dmAddr) <- inputAddressWindow eSendNonZeroBalance
                 dAddr'          <- holdDyn Nothing (leftmost [updated dmAddr, Nothing <$ eSendZeroBalance])
                 return (dCoinsToMint', leftmost [void eAddrOk, eSendZeroBalance], dAddr')
-            (dAssetNamesInTheWallet, eStatusUpdate) <- encoinsTxLedgerMode dWallet dBulletproofParams bRandomness dChangeAddr dCoinsToBurn dCoinsToMint eSend
+
+            (dAssetNamesInTheWallet, eStatusUpdate) <- encoinsTxLedgerMode
+              dWallet
+              dBulletproofParams
+              bRandomness
+              dChangeAddr
+              dCoinsToBurn
+              dCoinsToMint
+              eSend
             let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
             return (dCoinsToBurn, dCoinsToMint, dChangeAddr, eStatusUpdate)
     eWalletError <- walletError
@@ -252,7 +267,8 @@ ledgerTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
-    calculateChange bal = negate bal - protocolFees LedgerMode 0
+    -- calculateChange bal = negate bal - protocolFees LedgerMode 0
+    calculateChange bal = negate bal - 4
     f v = if v < 0
       then "button-switching flex-center"
       else "button-not-selected button-disabled flex-center"

@@ -115,7 +115,7 @@ coinTooltip name = elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visi
         fp <- fingerprintFromAssetName encoinsCurrencySymbol name
         performEvent_ (liftIO (copyText fp) <$ eCopy)
         text fp
----------------------------------------------- Coins to Mint ---------------------------------------------
+--------------------------------- Coins to Mint -------------------------------
 
 coinMintWidget :: MonadWidget t m => (Secret, Text) -> m (Event t Secret)
 coinMintWidget (s, name) = mdo
@@ -139,7 +139,7 @@ coinMintCollectionWidget eCoinUpdate = mdo
     eRemoveSecret <- dyn (fmap (mapM coinMintWidget) dCoinsToMintWithNames) >>= switchHold never . fmap leftmost
     return $ fmap (map fst) dCoinsToMintWithNames
 
------------------------------------------------ New coin input --------------------------------------------
+--------------------------------- New coin input ------------------------------
 
 -- TODO: do not allow to input incorrect values
 coinNewInputWidget :: MonadWidget t m => Text -> (Text -> a) -> Event t b ->
