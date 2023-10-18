@@ -4,7 +4,6 @@ import           Control.Monad             (void)
 import           Control.Monad.IO.Class    (MonadIO (..))
 import           Data.Maybe                (fromJust, fromMaybe)
 import qualified Data.Text                 as Text
-import           GHC.Real                  (fromIntegral)
 import           PlutusTx.Builtins
 import           Reflex.Dom                hiding (Input)
 import           System.Random             (randomIO)
@@ -16,29 +15,19 @@ import           Backend.Protocol.Types
 import           Backend.Wallet            (Wallet (..))
 import           ENCOINS.App.Widgets.Basic (elementResultJS)
 import           ENCOINS.Bulletproofs
-import           ENCOINS.Crypto.Field      (Field (..), fromFieldElement)
+import           ENCOINS.Crypto.Field      (Field (..))
 import           JS.App                    (sha2_256)
 import           PlutusTx.Extra.ByteString (ToBuiltinByteString (..))
+import           Backend.Protocol.TxValidity (getAda)
+import           ENCOINS.Common.Events
 
 
 getBalance :: MonadWidget t m
-  => EncoinsMode
-  -> Dynamic t Secrets
+  => Dynamic t Secrets
   -> Dynamic t Secrets
   -> m (Dynamic t Integer)
-getBalance mode dCoinsBurn dCoinsMint = do
-  let getAda = fmap (sum . map (fromFieldElement . secretV))
-  let getDeposit = fmap ((*4) . fromIntegral . length)
-  case mode of
-    WalletMode -> holdUniqDyn $ zipDynWith (-) (getAda dCoinsBurn) (getAda dCoinsMint)
-    -- In Transfer mode
-    -- It count deposit amount that should be put
-    TransferMode -> holdUniqDyn $ getDeposit dCoinsBurn
-    LedgerMode -> do
-      dEncoinsBalance <- holdUniqDyn $ zipDynWith (-) (getAda dCoinsBurn) (getAda dCoinsMint)
-      dDepositBalance <- holdUniqDyn $
-        zipDynWith (-) (getDeposit dCoinsBurn) (getDeposit dCoinsMint)
-      holdUniqDyn $ zipDynWith (+) dEncoinsBalance dDepositBalance
+getBalance dCoinsBurn dCoinsMint =
+  holdUniqDyn $ zipDynWith (-) (getAda <$> dCoinsMint) (getAda <$> dCoinsBurn)
 
 getBulletproofParams :: MonadWidget t m
   => Dynamic t Wallet
@@ -69,9 +58,10 @@ getEnvironment :: MonadWidget t m
        , Behavior t Randomness
        )
 getEnvironment mode dWallet dmChangeAddr dCoinsBurn dCoinsMint = do
-  dBalance <- getBalance mode dCoinsBurn dCoinsMint
+  dBalance <- getBalance dCoinsBurn dCoinsMint
   let dFees = fmap (protocolFees mode) dBalance
-  dTotalBalance <- holdUniqDyn $ zipDynWith (-) dBalance dFees
   dBulletproofParams <- getBulletproofParams dWallet dmChangeAddr dFees
   bRandomness        <- getRandomness $ void $ updated dBulletproofParams
-  return (dTotalBalance, dFees, dBulletproofParams, bRandomness)
+  logDyn "dBalance" dBalance
+  logDyn "dFees" dFees
+  return (dBalance, dFees, dBulletproofParams, bRandomness)

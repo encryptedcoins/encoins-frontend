@@ -29,6 +29,8 @@ import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeWindow, welcomeT
 import           ENCOINS.Bulletproofs                   (Secret)
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
 import           JS.Website                             (saveJSON)
+import           Backend.Protocol.TxValidity (getDeposit)
+import           ENCOINS.Common.Events
 
 
 mainWindowColumnHeader :: MonadWidget t m => Text -> m ()
@@ -44,7 +46,8 @@ walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
 walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     (dBalance, dFees, dBulletproofParams, bRandomness) <-
         getEnvironment WalletMode dWallet (pure Nothing) dToBurn dToMint
-    containerApp "" $ transactionBalanceWidget dBalance dFees ""
+    dTotalBalance <- holdUniqDyn $ zipDynWith (-) (negate <$> dBalance) dFees
+    containerApp "" $ transactionBalanceWidget dTotalBalance dFees ""
     (dToBurn, dToMint, eStatusUpdate) <- containerApp "" $
         divClass "app-columns w-row" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
@@ -113,14 +116,9 @@ transferTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   -> m ()
 transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
-    (dBalance, _, _, _) <- getEnvironment
-      TransferMode
-      dWallet
-      (pure Nothing)
-      dCoins
-      dCoins
+    dDepositBalance <- holdUniqDyn $ negate . getDeposit <$> dCoins
     containerApp "" $ transactionBalanceWidget (pure 0) (pure 0) " (to Wallet)"
-    containerApp "" $ transactionBalanceWidget dBalance (pure 0) " (to Ledger)"
+    containerApp "" $ transactionBalanceWidget dDepositBalance (pure 0) " (to Ledger)"
     (dCoins, eSendToLedger, eAddr, dSecretsName) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         let dSecretsWithNames = nub <$> zipDynWith (++) dOldSecretsWithNames (map coinWithName <$> dImportedSecrets)
@@ -196,7 +194,16 @@ ledgerTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowLedgerStorageKey welcomeLedger
     (dBalance, dFees, dBulletproofParams, bRandomness) <-
         getEnvironment LedgerMode dWallet dAddr dToBurn dToMint
-    containerApp "" $ transactionBalanceWidget dBalance dFees ""
+
+    dDepositBalance <- holdUniqDyn $
+      zipDynWith (-) (getDeposit <$> dToBurn) (getDeposit <$> dToMint)
+    dEncoinsDepositBalance <- holdUniqDyn $ zipDynWith (+) (negate <$> dBalance) dDepositBalance
+    dTotalBalance <- holdUniqDyn $ zipDynWith (-) dEncoinsDepositBalance dFees
+    logDyn "dDepositBalance" dDepositBalance
+    logDyn "dEncoinsDepositBalance" dEncoinsDepositBalance
+    logDyn "dTotalBalance" dTotalBalance
+    containerApp "" $ transactionBalanceWidget dTotalBalance dFees ""
+
     (dToBurn, dToMint, dAddr, eStatusUpdate) <- containerApp "" $
         divClassId "app-columns w-row" "welcome-ledger" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret

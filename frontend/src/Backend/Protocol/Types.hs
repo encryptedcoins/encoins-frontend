@@ -89,10 +89,7 @@ data SubmitTxReqBody = SubmitTxReqBody
     }
     deriving (Show, Generic, ToJSON, FromJSON)
 
-data EncoinsMode
-  = WalletMode
-  | TransferMode
-  | LedgerMode
+data EncoinsMode = WalletMode | LedgerMode
     deriving stock (Eq, Read, Show, Generic)
     deriving anyclass (ToJSON, FromJSON)
 
