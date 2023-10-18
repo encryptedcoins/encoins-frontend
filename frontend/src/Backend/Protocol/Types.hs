@@ -100,3 +100,7 @@ data EncoinsStatusReqBody = MaxAdaWithdraw | LedgerEncoins
 data EncoinsStatusResult = MaxAdaWithdrawResult Integer | LedgerUtxoResult TransactionUnspentOutputs
     deriving stock (Show, Eq, Generic)
     deriving anyclass (ToJSON, FromJSON)
+
+showStatus :: EncoinsStatusResult -> Text
+showStatus (MaxAdaWithdrawResult n) = "MaxAdaWithdrawResult: " <> Text.pack (show n)
+showStatus (LedgerUtxoResult t) = "LedgerUtxoResult: " <> Text.pack (show $ length t)

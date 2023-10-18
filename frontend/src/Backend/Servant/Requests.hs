@@ -74,7 +74,7 @@ statusRequestWrapper dBaseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient dBaseUrl
   eResp <- statusRequest (Right <$> dReqBody) e
   let eRespUnwrapped = makeResponse <$> eResp
-  logEvent "statusRequestWrapper: eRespUnwrapped:" eRespUnwrapped
+  logEvent "statusRequestWrapper: eRespUnwrapped:" $ fmap showStatus <$> eRespUnwrapped
   return $ eventMaybe (BackendError relayError) eRespUnwrapped
 
 urls :: [Text]

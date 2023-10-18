@@ -49,6 +49,7 @@ txValidity mbaseUrl mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
         [cond1, cond2, cond3, cond4, cond5, cond6, cond7, cond8, cond9, cond10, cond11, cond12]
     where
         balance = getAda toMint - getAda toBurn
+        deposit = getDeposit toMint - getDeposit toBurn
         fees    = protocolFees mode balance
         f e = bool (TxInvalid e) TxValid
         coins = toBurn ++ toMint
@@ -65,7 +66,7 @@ txValidity mbaseUrl mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
         cond9 = length coins == length (nub coins)
         cond10 = maxAda + balance >= 0
         cond11 = isJust mbaseUrl
-        cond12 = mode /= LedgerMode || balance + fees <= 0
+        cond12 = mode /= LedgerMode || balance + deposit + fees <= 0
         e1    = "Connect ENCOINS to a wallet first."
         e2    = "Switch to the" <> space <> currentNetworkApp <> space <> "network in your wallet."
         e3    = "Not enough ADA."
