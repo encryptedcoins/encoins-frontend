@@ -13,6 +13,8 @@ import           Reflex.Dom             hiding (Value)
 import           Servant.API            (NoContent)
 import           Servant.Reflex         (BaseUrl (..))
 import           System.Random          (randomRIO)
+import qualified Data.IntMap            as IMap
+import qualified Data.IntSet            as ISet
 
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
@@ -30,7 +32,7 @@ newTxRequestWrapper dBaseUrl dReqBody e = do
   eResp <- newTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = makeResponse <$> eResp
   logEvent "newTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
-  return $ eventMaybe (BackendError relayError) eRespUnwrapped
+  return $ eventOrError (BackendError relayError) eRespUnwrapped
 
 submitTxRequestWrapper :: MonadWidget t m
   => Dynamic t BaseUrl
@@ -40,18 +42,18 @@ submitTxRequestWrapper :: MonadWidget t m
 submitTxRequestWrapper dBaseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient dBaseUrl
   eResp <- fmap (void . makeResponse) <$> submitTxRequest (Right <$> dReqBody) e
-  return $ eventMaybe (BackendError relayError) eResp
+  return $ eventOrError (BackendError relayError) eResp
 
 pingRequestWrapper :: MonadWidget t m
   => Dynamic t BaseUrl
   -> Event t ()
-  -> m (Event t (Maybe NoContent))
+  -> m (Event t NoContent, Event t Status)
 pingRequestWrapper dBaseUrl e = do
   let ApiClient{..} = mkApiClient dBaseUrl
   delayed <- delay 0.2 e
   ePingRes <- fmap makeResponse <$> pingRequest delayed
   logEvent "Ping response" ePingRes
-  return ePingRes
+  pure $ eventOrError (BackendError relayError) ePingRes
 
 serverTxRequestWrapper :: MonadWidget t m
   => Dynamic t BaseUrl
@@ -63,7 +65,7 @@ serverTxRequestWrapper dBaseUrl dReqBody e = do
   eResp <- serverTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = (() <$) . makeResponse <$> eResp
   logEvent "serverTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
-  return $ eventMaybe (BackendError relayError) eRespUnwrapped
+  return $ eventOrError (BackendError relayError) eRespUnwrapped
 
 statusRequestWrapper :: MonadWidget t m
   => Dynamic t BaseUrl
@@ -75,7 +77,7 @@ statusRequestWrapper dBaseUrl dReqBody e = do
   eResp <- statusRequest (Right <$> dReqBody) e
   let eRespUnwrapped = makeResponse <$> eResp
   logEvent "statusRequestWrapper: eRespUnwrapped:" $ fmap showStatus <$> eRespUnwrapped
-  return $ eventMaybe (BackendError relayError) eRespUnwrapped
+  return $ eventOrError (BackendError relayError) eRespUnwrapped
 
 versionRequestWrapper :: MonadWidget t m
   => Dynamic t BaseUrl
@@ -101,3 +103,26 @@ getRelayUrl = go urls
       if pingOk
         then return $ Just $ BasePath url
         else go (delete url l)
+
+urlMap :: IntMap Text
+urlMap = IMap.fromList $ zip [1..] urls
+
+getCheckedRelay :: MonadWidget t m => Event t () -> m (Dynamic t BaseUrl)
+getCheckedRelay ev = mdo
+  dUrls <- foldDyn IMap.delete urlMap eInvalidKey
+  let dKeys = IMap.keys <$> dUrls
+  let dKeyLength = length <$> dKeys
+  eRandomIndex <- dyn $ (\l -> liftIO $ randomRIO (0, l-1)) <$> dKeyLength
+  let eKey = attachPromptlyDynWith (\ks i -> ks !! i) dKeys eRandomIndex
+  let eUrl = attachPromptlyDynWith (\urls key -> urls IMap.! key) dUrls eKey
+  -- expect that dUrl never be empty txt
+  dUrl <- foldDyn const "" eUrl
+
+  (ePingOk, ePingFail) <- pingRequestWrapper dUrl eUrl
+
+  -- expect that dKey never be -1
+  dKey <- foldDyn const (-1) eKey
+  eInvalidKey <- tagPromptlyDyn dKey ePingOk
+
+  -- Return url when it is ok, don't return default ever.
+  foldDyn const "" $ tagPromptlyDyn dUrl ePingOk

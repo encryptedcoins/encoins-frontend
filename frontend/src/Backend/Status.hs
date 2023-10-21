@@ -41,8 +41,11 @@ isStatusBusyBackendNetwork = \case
   WalletNetworkError _ -> True
   _                    -> False
 
+everyRelayDown :: Text
+everyRelayDown = "All available relays are down! Try reloading the page or come back later."
+
 relayError :: Text
-relayError = "All known relays are down! Try reloading the page or come back later."
+relayError = "Relay returned an error!"
 
 isReady :: Status -> Bool
 isReady Ready = True

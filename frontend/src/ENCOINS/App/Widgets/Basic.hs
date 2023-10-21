@@ -20,7 +20,7 @@ import           Servant.Reflex           (BaseUrl)
 
 
 import           Backend.Servant.Requests (getRelayUrl)
-import           Backend.Status           (Status (..), relayError)
+import           Backend.Status           (Status (..), everyRelayDown)
 import           ENCOINS.Common.Events    (newEvent, newEventWithDelay)
 import           JS.Website               (loadJSON)
 
@@ -82,7 +82,7 @@ relayStatusM mRelayUrl = do
     ev <- newEvent
     tellRelayStatus
       "Relay status"
-      (BackendError relayError)
+      (BackendError everyRelayDown)
       ev
 
 tellRelayStatus :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)

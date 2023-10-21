@@ -58,5 +58,5 @@ makeResponseDev (ResponseSuccess _ a _) = (Just a, Nothing)
 makeResponseDev (ResponseFailure _ txt _) = (Nothing, Just $ "ResponseFailure: " <> txt)
 makeResponseDev (RequestFailure _ txt) = (Nothing, Just $ "RequestFailure: " <> txt)
 
-eventMaybe :: Reflex t => b -> Event t (Maybe a) -> (Event t a, Event t b)
-eventMaybe errValue e = (catMaybes e, errValue <$ ffilter isNothing e)
+eventOrError :: Reflex t => b -> Event t (Maybe a) -> (Event t a, Event t b)
+eventOrError errValue e = (catMaybes e, errValue <$ ffilter isNothing e)

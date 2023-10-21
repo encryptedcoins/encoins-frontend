@@ -68,7 +68,6 @@ encoinsTxWalletMode
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eSend
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
 
-
     -- Constructing a new transaction
     let dNewTxReqBody = zipDyn
           (fmap (\r -> InputRedeemer (fromJust r) WalletMode) dFinalRedeemer)
