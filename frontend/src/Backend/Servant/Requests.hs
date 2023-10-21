@@ -14,7 +14,7 @@ import           Servant.API            (NoContent)
 import           Servant.Reflex         (BaseUrl (..))
 import           System.Random          (randomRIO)
 import qualified Data.IntMap            as IMap
-import qualified Data.IntSet            as ISet
+import           Data.IntMap            (IntMap)
 
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
@@ -104,8 +104,8 @@ getRelayUrl = go urls
         then return $ Just $ BasePath url
         else go (delete url l)
 
-urlMap :: IntMap Text
-urlMap = IMap.fromList $ zip [1..] urls
+urlMap :: IntMap BaseUrl
+urlMap = IMap.fromList $ zip [1..] $ map BasePath urls
 
 getCheckedRelay :: MonadWidget t m => Event t () -> m (Dynamic t BaseUrl)
 getCheckedRelay ev = mdo
@@ -114,15 +114,15 @@ getCheckedRelay ev = mdo
   let dKeyLength = length <$> dKeys
   eRandomIndex <- dyn $ (\l -> liftIO $ randomRIO (0, l-1)) <$> dKeyLength
   let eKey = attachPromptlyDynWith (\ks i -> ks !! i) dKeys eRandomIndex
-  let eUrl = attachPromptlyDynWith (\urls key -> urls IMap.! key) dUrls eKey
+  let eUrl = attachPromptlyDynWith (\urls' key -> urls' IMap.! key) dUrls eKey
   -- expect that dUrl never be empty txt
-  dUrl <- foldDyn const "" eUrl
+  dUrl <- foldDyn const (BasePath "") eUrl
 
-  (ePingOk, ePingFail) <- pingRequestWrapper dUrl eUrl
+  (ePingOk, ePingFail) <- pingRequestWrapper dUrl $ () <$ eUrl
 
   -- expect that dKey never be -1
   dKey <- foldDyn const (-1) eKey
-  eInvalidKey <- tagPromptlyDyn dKey ePingOk
+  let eInvalidKey = tagPromptlyDyn dKey ePingFail
 
   -- Return url when it is ok, don't return default ever.
-  foldDyn const "" $ tagPromptlyDyn dUrl ePingOk
+  foldDyn const (BasePath "") $ tagPromptlyDyn dUrl ePingOk
