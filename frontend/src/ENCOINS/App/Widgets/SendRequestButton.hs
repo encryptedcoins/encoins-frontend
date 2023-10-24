@@ -25,7 +25,7 @@ sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = do
   mBaseUrl <- getRelayUrl
   relayStatusM mBaseUrl
   (eMaxAda, _) <- case mBaseUrl of
-    Just baseUrl -> statusRequestWrapper (constDyn baseUrl) (pure MaxAdaWithdraw) e
+    Just baseUrl -> statusRequestWrapper baseUrl (pure MaxAdaWithdraw) e
     _ -> pure (never, never)
   let getMaxAda (MaxAdaWithdrawResult n) = Just n
       getMaxAda _ = Nothing

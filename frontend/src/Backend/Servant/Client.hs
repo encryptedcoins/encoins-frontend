@@ -37,15 +37,15 @@ data ApiClient t m = ApiClient
   , versionRequest      :: Res t m ServerVersion
   }
 
-mkApiClient :: forall t m . MonadWidget t m => Dynamic t BaseUrl -> ApiClient t m
-mkApiClient dHost = ApiClient{..}
+mkApiClient :: forall t m . MonadWidget t m => BaseUrl -> ApiClient t m
+mkApiClient host = ApiClient{..}
   where
     ( newTxRequest :<|>
       submitTxRequest :<|>
       pingRequest :<|>
       serverTxRequest :<|>
       statusRequest :<|>
-      versionRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) dHost
+      versionRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
 
 ---------------------------------------------- Utilities ----------------------------------------
 
@@ -53,10 +53,10 @@ makeResponse :: ReqResult tag a -> Maybe a
 makeResponse (ResponseSuccess _ a _) = Just a
 makeResponse _                       = Nothing
 
-makeResponseDev :: ReqResult tag a -> (Maybe a, Maybe Text)
-makeResponseDev (ResponseSuccess _ a _) = (Just a, Nothing)
-makeResponseDev (ResponseFailure _ txt _) = (Nothing, Just $ "ResponseFailure: " <> txt)
-makeResponseDev (RequestFailure _ txt) = (Nothing, Just $ "RequestFailure: " <> txt)
+makeResponseEither :: ReqResult tag a -> Either Text a
+makeResponseEither (ResponseSuccess _ a _) = Right a
+makeResponseEither (ResponseFailure _ txt _) = Left $ "ResponseFailure: " <> txt
+makeResponseEither (RequestFailure _ txt) = Left $ "RequestFailure: " <> txt
 
-eventOrError :: Reflex t => b -> Event t (Maybe a) -> (Event t a, Event t b)
-eventOrError errValue e = (catMaybes e, errValue <$ ffilter isNothing e)
+eventMaybe :: Reflex t => b -> Event t (Maybe a) -> (Event t a, Event t b)
+eventMaybe errValue e = (catMaybes e, errValue <$ ffilter isNothing e)

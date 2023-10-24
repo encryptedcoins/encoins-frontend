@@ -7,6 +7,7 @@ import           CSL                    (TransactionInputs)
 import           Data.Aeson             (decode)
 import           Data.ByteString.Lazy   (fromStrict)
 import           Data.List              (delete)
+import           Data.Bool              (bool)
 import           Data.Maybe             (fromJust)
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
@@ -19,72 +20,77 @@ import           Data.IntMap            (IntMap)
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
 import           Backend.Status         (Status (..), relayError)
-import           ENCOINS.Common.Events  (logEvent)
+import           ENCOINS.Common.Events  (logEvent, logDyn, newEvent, postDelay)
 import           JS.App                 (pingServer)
 
+import Debug.Trace
+-- import System.Random
+import Data.Array.IO
+import Control.Monad
+
 newTxRequestWrapper :: MonadWidget t m
-  => Dynamic t BaseUrl
+  => BaseUrl
   -> Dynamic t (InputOfEncoinsApi, TransactionInputs)
   -> Event t ()
   -> m (Event t (Text, Text), Event t Status)
-newTxRequestWrapper dBaseUrl dReqBody e = do
-  let ApiClient{..} = mkApiClient dBaseUrl
+newTxRequestWrapper baseUrl dReqBody e = do
+  let ApiClient{..} = mkApiClient baseUrl
   eResp <- newTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = makeResponse <$> eResp
   logEvent "newTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
-  return $ eventOrError (BackendError relayError) eRespUnwrapped
+  return $ eventMaybe (BackendError relayError) eRespUnwrapped
 
 submitTxRequestWrapper :: MonadWidget t m
-  => Dynamic t BaseUrl
+  => BaseUrl
   -> Dynamic t SubmitTxReqBody
   -> Event t ()
   -> m (Event t (), Event t Status)
-submitTxRequestWrapper dBaseUrl dReqBody e = do
-  let ApiClient{..} = mkApiClient dBaseUrl
+submitTxRequestWrapper baseUrl dReqBody e = do
+  let ApiClient{..} = mkApiClient baseUrl
   eResp <- fmap (void . makeResponse) <$> submitTxRequest (Right <$> dReqBody) e
-  return $ eventOrError (BackendError relayError) eResp
+  return $ eventMaybe (BackendError relayError) eResp
 
 pingRequestWrapper :: MonadWidget t m
-  => Dynamic t BaseUrl
+  => BaseUrl
   -> Event t ()
-  -> m (Event t NoContent, Event t Status)
-pingRequestWrapper dBaseUrl e = do
-  let ApiClient{..} = mkApiClient dBaseUrl
+  -> m (Event t (Either Text NoContent))
+pingRequestWrapper baseUrl e = do
+  let ApiClient{..} = mkApiClient baseUrl
   delayed <- delay 0.2 e
-  ePingRes <- fmap makeResponse <$> pingRequest delayed
+  ePingRes <- fmap makeResponseEither <$> pingRequest delayed
   logEvent "Ping response" ePingRes
-  pure $ eventOrError (BackendError relayError) ePingRes
+  pure ePingRes
 
 serverTxRequestWrapper :: MonadWidget t m
-  => Dynamic t BaseUrl
+  => BaseUrl
   -> Dynamic t (InputOfEncoinsApi, TransactionInputs)
   -> Event t ()
   -> m (Event t (), Event t Status)
-serverTxRequestWrapper dBaseUrl dReqBody e = do
-  let ApiClient{..} = mkApiClient dBaseUrl
+serverTxRequestWrapper baseUrl dReqBody e = do
+  let ApiClient{..} = mkApiClient baseUrl
   eResp <- serverTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = (() <$) . makeResponse <$> eResp
   logEvent "serverTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
-  return $ eventOrError (BackendError relayError) eRespUnwrapped
+  return $ eventMaybe (BackendError relayError) eRespUnwrapped
 
 statusRequestWrapper :: MonadWidget t m
-  => Dynamic t BaseUrl
+  => BaseUrl
   -> Dynamic t EncoinsStatusReqBody
   -> Event t ()
   -> m (Event t EncoinsStatusResult, Event t Status)
-statusRequestWrapper dBaseUrl dReqBody e = do
-  let ApiClient{..} = mkApiClient dBaseUrl
+statusRequestWrapper baseUrl dReqBody e = do
+  let ApiClient{..} = mkApiClient baseUrl
   eResp <- statusRequest (Right <$> dReqBody) e
   let eRespUnwrapped = makeResponse <$> eResp
   logEvent "statusRequestWrapper: eRespUnwrapped:" $ fmap showStatus <$> eRespUnwrapped
-  return $ eventOrError (BackendError relayError) eRespUnwrapped
+  return $ eventMaybe (BackendError relayError) eRespUnwrapped
 
 versionRequestWrapper :: MonadWidget t m
-  => Dynamic t BaseUrl
+  => BaseUrl
   -> Event t ()
   -> m (Event t (Maybe ServerVersion))
-versionRequestWrapper dBaseUrl e = do
-  let ApiClient{..} = mkApiClient dBaseUrl
+versionRequestWrapper baseUrl e = do
+  let ApiClient{..} = mkApiClient baseUrl
   eVersionRes <- fmap makeResponse <$> versionRequest e
   logEvent "Version" eVersionRes
   return eVersionRes
@@ -104,25 +110,205 @@ getRelayUrl = go urls
         then return $ Just $ BasePath url
         else go (delete url l)
 
-urlMap :: IntMap BaseUrl
-urlMap = IMap.fromList $ zip [1..] $ map BasePath urls
+mkUrlMap :: [Text] -> IntMap BaseUrl
+mkUrlMap = IMap.fromList . zip [1..] . map BasePath
 
-getCheckedRelay :: MonadWidget t m => Event t () -> m (Dynamic t BaseUrl)
-getCheckedRelay ev = mdo
-  dUrls <- foldDyn IMap.delete urlMap eInvalidKey
-  let dKeys = IMap.keys <$> dUrls
-  let dKeyLength = length <$> dKeys
-  eRandomIndex <- dyn $ (\l -> liftIO $ randomRIO (0, l-1)) <$> dKeyLength
-  let eKey = attachPromptlyDynWith (\ks i -> ks !! i) dKeys eRandomIndex
-  let eUrl = attachPromptlyDynWith (\urls' key -> urls' IMap.! key) dUrls eKey
-  -- expect that dUrl never be empty txt
+-- getValidRelay :: MonadWidget t m
+--   => Event t ()
+--   -> m (Maybe BaseUrl)
+-- getValidRelay ev = do
+
+--   urlsShuffled <- liftIO $ shuffle $ map BasePath urls
+
+--   traceM $ show urlsShuffled
+
+--   -- eUrl <- leftmost <$> traverse (\u -> checkUrl u ev) urlsShuffled
+
+--   (_, mUrl) <- foldM (foldUrlChecker ev) (False, Nothing) urlsShuffled
+--   traceM $ "mUrl: " <> show mUrl
+--   -- 'Nothing' means that all relays are down.
+--   pure mUrl
+
+
+-- foldUrlChecker :: MonadWidget t m
+--   => Event t ()
+--   -> (Bool, Maybe BaseUrl)
+--   -> BaseUrl
+--   -> m (Bool, Maybe BaseUrl)
+-- foldUrlChecker ev acc@(isLastPingOk, _) url = do
+--   if isLastPingOk
+--     then pure acc
+--     else do
+--       ePing <- pingRequestWrapper url ev
+--       logEvent "foldUrlChecker: ePing" ePing
+--       dUrl <- foldDyn const Nothing ePing
+--       logDyn "foldUrlChecker: dUrl" dUrl
+--       mUrl <- sample $ current dUrl
+--       case mUrl of
+--         Nothing -> pure (False, Nothing)
+--         Just _ -> pure (True, Just url)
+
+-- foldM :: (Foldable t, Monad m) => (b -> a -> m b) -> b -> t a -> m b
+
+-- checkUrl :: MonadWidget t m
+--   => BaseUrl
+--   -> Event t ()
+--   -> m (Event t (Maybe BaseUrl))
+-- checkUrl url ev = mdo
+
+--   (ePingOk, ePingFail) <- pingRequestWrapper url ev
+--   -- logEvent "checkUrl: ePingOk" ePingOk
+--   -- logEvent "checkUrl: ePingFail" ePingFail
+
+--   pure $ leftmost [url <$ ePingOk, Nothing <$ ePingFail]
+
+getValidRelay :: MonadWidget t m
+  => Event t ()
+  -> m (Event t (Maybe BaseUrl))
+getValidRelay ev = mdo
+
+  let urlMap = map BasePath urls
+
+  dUrls <- holdDyn urlMap $ coincidence $ eUrls <$ ePingFail
+  logDyn "getValidRelay: dUrls" dUrls
+
+  let (dmUrl, dmUrls) = splitDynPure $ ffor dUrls $ \us -> case us of
+        [] -> (Left "empty head", Left "empty tail")
+        [x] -> (Right x, Left "empty tail")
+        x:xs -> (Right x, Right xs)
+
+  let (eEmptyHead, eUrl) = fanEither $ updated dmUrl
+  let (eEmptyTail, eUrls) = fanEither $ updated dmUrls
+
   dUrl <- foldDyn const (BasePath "") eUrl
 
-  (ePingOk, ePingFail) <- pingRequestWrapper dUrl $ () <$ eUrl
+  let eShouldPing = leftmost [ev, () <$ eUrl]
 
-  -- expect that dKey never be -1
-  dKey <- foldDyn const (-1) eKey
-  let eInvalidKey = tagPromptlyDyn dKey ePingFail
+  eePing <- dyn $ (\url -> trace ("dUrl: " <> show url) $ pingRequestWrapper url eShouldPing) <$> dUrl
+  let (ePingFail, ePingOk) = fanEither $ coincidence eePing
+  logEvent "getValidRelay: ePingOk" ePingOk
+  logEvent "getValidRelay: ePingFail" ePingFail
 
-  -- Return url when it is ok, don't return default ever.
-  foldDyn const (BasePath "") $ tagPromptlyDyn dUrl ePingOk
+  -- postDelay 1
+
+  pure $ leftmost [tagPromptlyDyn (Just <$> dUrl) ePingOk, tagPromptlyDyn (constDyn Nothing) eEmptyHead]
+
+
+-- | Randomly shuffle a list
+--   /O(N)/
+shuffle :: [a] -> IO [a]
+shuffle xs = do
+        ar <- newArr xsLength xs
+        forM [1..xsLength] $ \i -> do
+            j <- randomRIO (i,xsLength)
+            vi <- readArray ar i
+            vj <- readArray ar j
+            writeArray ar j vi
+            return vj
+  where
+    xsLength = length xs
+    newArr :: Int -> [a] -> IO (IOArray Int a)
+    newArr n ls =  newListArray (1,n) ls
+
+-- getValidRelay :: MonadWidget t m
+--   => Event t ()
+--   -> m (Dynamic t (Maybe BaseUrl))
+-- getValidRelay ev = mdo
+
+--   let urlMap = mkUrlMap urls
+
+--   dUrls <- holdDyn urlMap eRestUrls
+--   logDyn "getValidRelay: dUrls" dUrls
+
+--   let (eAllRelayError, eNonEmptyUrls) = fanEither $ (\us -> bool (Right us) (Left "err") $ IMap.null us) <$> updated dUrls
+--   logEvent "getValidRelay: eNonEmptyUrls" eNonEmptyUrls
+--   logEvent "getValidRelay: eAllRelayError" eAllRelayError
+
+--   dNonEmptyUrls <- foldDyn const urlMap eNonEmptyUrls
+--   logDyn "getValidRelay: dNonEmptyUrls" dNonEmptyUrls
+
+--   (eUrl, eInvalidKey) <-
+--     getRandomUrl dNonEmptyUrls $ leftmost [ev, () <$ eNonEmptyUrls]
+
+--   postDelay 1
+
+--   let eRestUrls = attachPromptlyDynWith
+--         (\urls' k -> IMap.delete k urls')
+--         dNonEmptyUrls
+--         eInvalidKey
+--   logEvent "getValidRelay: eRestUrls" eRestUrls
+
+
+
+--   foldDyn const Nothing $ leftmost [Just <$> eUrl, Nothing <$ eAllRelayError]
+
+
+  -- ev <- newEvent
+  -- let eRestUrls = urlMap <$ ev
+
+-- getRandomUrl :: MonadWidget t m
+--   => Dynamic t (IntMap BaseUrl)
+--   -> Event t ()
+--   -> m (Event t BaseUrl, Event t Int)
+-- getRandomUrl dUrls ev = mdo
+--   let dKeys = IMap.keys <$> dUrls
+--   logDyn "getRandomUrl: dKeys" dKeys
+--   let dKeyQuantity = length <$> dKeys
+--   logDyn "getRandomUrl: dKeyQuantity" dKeyQuantity
+
+--   eRandomIndex <- dyn $ (\l -> liftIO $ randomRIO (0, l - 1)) <$> dKeyQuantity
+--   logEvent "getRandomUrl: eRandomIndex" eRandomIndex
+
+--   let eKey = attachPromptlyDynWith (\ks i -> ks !! i) dKeys eRandomIndex
+--   logEvent "getRandomUrl: eKey" eKey
+--   let eUrl = attachPromptlyDynWith (\urls' key -> urls' IMap.! key) dUrls eKey
+--   logEvent "getRandomUrl: eUrl" eUrl
+
+--   -- expect that dUrl never be empty txt
+--   dUrl <- foldDyn const (BasePath "") eUrl
+--   logDyn "getRandomUrl: dUrl" dUrl
+
+--   eePing <- dyn $ (\url -> pingRequestWrapper url ev) <$> dUrl
+--   let (ePingFail, ePingOk) = fanEither $ coincidence eePing
+--   logEvent "getRandomUrl: ePingOk" ePingOk
+--   logEvent "getRandomUrl: ePingFail" ePingFail
+
+--   -- expect that dKey never be -1
+--   -- dKey <- foldDyn const (-1) eKey
+--   let eInvalidKey = coincidence $ eKey <$ ePingFail
+--   logEvent "getRandomUrl: eInvalidKey" eInvalidKey
+
+--   -- Return url when it is ok, don't return default ever.
+--   pure (coincidence $ eUrl <$ ePingOk, eInvalidKey)
+
+
+-- getRandomUrl :: MonadWidget t m
+--   => Dynamic t (IntMap BaseUrl)
+--   -> m (Event t BaseUrl, Event t Int)
+-- getRandomUrl dUrls = mdo
+--   let dKeys = IMap.keys <$> dUrls
+--   logDyn "getRandomUrl: dKeys" dKeys
+--   let dKeyLength = length <$> dKeys
+--   logDyn "getRandomUrl: dKeyLength" dKeyLength
+--   eRandomIndex <- dyn $ (\l -> liftIO $ randomRIO (0, l-1)) <$> dKeyLength
+--   logEvent "getRandomUrl: eRandomIndex" eRandomIndex
+--   let eKey = attachPromptlyDynWith (\ks i -> ks !! i) dKeys eRandomIndex
+--   logEvent "getRandomUrl: eKey" eKey
+--   let eUrl = attachPromptlyDynWith (\urls' key -> urls' IMap.! key) dUrls eKey
+--   logEvent "getRandomUrl: eUrl" eUrl
+
+--   -- expect that dUrl never be empty txt
+--   dUrl <- foldDyn const (BasePath "") eUrl
+--   logDyn "getRandomUrl: dUrl" dUrl
+
+--   (ePingOk, ePingFail) <- pingRequestWrapper dUrl $ () <$ eUrl
+--   logEvent "getRandomUrl: ePingOk" ePingOk
+--   logEvent "getRandomUrl: ePingFail" ePingFail
+
+--   -- expect that dKey never be -1
+--   dKey <- foldDyn const (-1) eKey
+--   let eInvalidKey = tagPromptlyDyn dKey ePingFail
+--   logEvent "getRandomUrl: eInvalidKey" eInvalidKey
+
+--   -- Return url when it is ok, don't return default ever.
+--   pure (tagPromptlyDyn dUrl ePingOk, eInvalidKey)
