@@ -1,14 +1,24 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE DeriveAnyClass #-}
+
 module ENCOINS.DAO.Widgets.DelegateWindow
   (
-    delegateWindow
+    delegateWindow,
+    parseRelayAmount
   ) where
 
 import           Control.Monad                          (void)
+import           Data.Map  (Map)
+import qualified Data.Map  as Map
+import           Numeric.Natural  (Natural)
 import           Data.Text                              (Text)
 import qualified Data.Text as T
 import           Reflex.Dom
 import           Servant.Reflex                         (BaseUrl (..))
+import           Data.Aeson           (decode)
+import           Data.ByteString.Lazy   (fromStrict)
+import           Data.Maybe             (fromJust)
+
 
 import           ENCOINS.App.Widgets.Basic              (elementResultJS, containerApp)
 import           ENCOINS.Common.Widgets.Advanced        (dialogWindow)
@@ -19,7 +29,7 @@ import           Backend.Status                         (UrlStatus(..), isNotVal
 import qualified JS.DAO as JS
 import           ENCOINS.Common.Utils (toText)
 import           Backend.Servant.Requests (pingRequestWrapper)
-
+import           Config.Config (delegateRelayAmount)
 
 delegateWindow :: MonadWidget t m
   => Event t ()
@@ -102,3 +112,16 @@ buttonWidget dUrlStatus =
 
 normalizePingUrl :: Text -> Text
 normalizePingUrl t = T.append (T.dropWhileEnd (== '/') t) "//"
+
+
+parseRelayAmount :: Map Text Integer
+parseRelayAmount =
+  let parsedData :: Map Text String
+        = fromJust
+        $ decode
+        $ fromStrict delegateRelayAmount
+  in Map.map
+      ( floor @Double
+      . (\x -> fromIntegral x / 1000000)
+      . read @Natural
+      ) parsedData
