@@ -22,6 +22,7 @@ library
     Backend.Servant.Client,
     Backend.Servant.Requests,
     Backend.Status,
+    Backend.Utility,
     Backend.Wallet,
     Config.Config,
     ENCOINS.App,

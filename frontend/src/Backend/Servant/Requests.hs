@@ -24,6 +24,7 @@ import           Backend.Servant.Client
 import           Backend.Status         (Status (..), relayError)
 import           ENCOINS.Common.Events  (logEvent, logDyn, newEvent, postDelay)
 import           JS.App                 (pingServer)
+import           Backend.Utility (normalizePingUrl)
 
 import Debug.Trace
 -- import System.Random
@@ -56,8 +57,8 @@ pingRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Event t ()
   -> m (Event t (Either Text BaseUrl))
-pingRequestWrapper baseUrl e = do
-  let ApiClient{..} = mkApiClient baseUrl
+pingRequestWrapper baseUrl@(BasePath url) e = do
+  let ApiClient{..} = mkApiClient $ BasePath $ normalizePingUrl url
   delayed <- delay 0.2 e
   ePingRes <- fmap makeResponseEither <$> pingRequest delayed
   logEvent "Ping response" ePingRes
