@@ -1,13 +1,11 @@
 module Backend.Servant.Client where
 
-import           Data.Maybe             (isNothing)
 import           Data.Proxy             (Proxy (..))
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
 import           Servant.API
 import           Servant.Reflex         (BaseUrl, ReqResult (..),
                                          client)
-import           Witherable             (catMaybes)
 
 import           Backend.Protocol.Types
 import           CSL                    (TransactionInputs)
@@ -57,6 +55,3 @@ makeResponseEither :: ReqResult tag a -> Either Text a
 makeResponseEither (ResponseSuccess _ a _) = Right a
 makeResponseEither (ResponseFailure _ txt _) = Left $ "ResponseFailure: " <> txt
 makeResponseEither (RequestFailure _ txt) = Left $ "RequestFailure: " <> txt
-
-eventMaybe :: Reflex t => b -> Event t (Maybe a) -> (Event t a, Event t b)
-eventMaybe errValue e = (catMaybes e, errValue <$ ffilter isNothing e)
