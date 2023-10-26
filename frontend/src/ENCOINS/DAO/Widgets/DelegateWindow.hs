@@ -3,11 +3,10 @@
 
 module ENCOINS.DAO.Widgets.DelegateWindow
   (
-    delegateWindow,
-    parseRelayAmount
+    delegateWindow
   ) where
 
-import           Control.Monad                          (void)
+import           Control.Monad                          (void, forM_)
 import           Data.Map  (Map)
 import qualified Data.Map  as Map
 import           Numeric.Natural  (Natural)
@@ -42,6 +41,9 @@ delegateWindow eOpen dWallet = mdo
     (leftmost [void eUrlOk])
     "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px)"
     "Delegate Encoins" $ mdo
+
+          relayAmountWidget
+
           divClass "dao-DelegateWindow_EnterUrl" $ text "Enter url:"
 
           dInputText <- inputWidget eOpen
@@ -113,9 +115,28 @@ buttonWidget dUrlStatus =
 normalizePingUrl :: Text -> Text
 normalizePingUrl t = T.append (T.dropWhileEnd (== '/') t) "//"
 
+relayAmountWidget :: MonadWidget t m => m ()
+relayAmountWidget = do
+  elAttr "div" ("class" =: "dao-DelegateWindow_TableWrapper") $
+    el "table" $ do
+      el "thead" $ tr $
+        mapM_ (\h -> th $ text h) ["Relay", "Amount"]
+      el "tbody" $
+        forM_ (Map.toList relayAmounts) $ \(relay, amount) -> tr $ do
+          td $ text relay
+          td $ text $ toText amount
 
-parseRelayAmount :: Map Text Integer
-parseRelayAmount =
+        -- listWithKey (constDyn relayAmounts) (\k r -> do
+        --   elAttr "tr" "dao-DelegateWindow_TableRow" $
+        --     mapM (\x -> elAttr "td" "dao-DelegateWindow_TableColumn" $ snd x k r) cols)
+
+  where
+    tr = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow")
+    th = elAttr "th" ("class" =: "dao-DelegateWindow_TableHeader")
+    td = elAttr "td" ("class" =: "dao-DelegateWindow_TableColumn")
+
+relayAmounts :: Map Text Integer
+relayAmounts =
   let parsedData :: Map Text String
         = fromJust
         $ decode
