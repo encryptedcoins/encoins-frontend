@@ -6,7 +6,7 @@ module ENCOINS.DAO.Widgets.DelegateWindow
     delegateWindow
   ) where
 
-import           Control.Monad                          (void, forM_)
+import           Control.Monad                          (void, forM)
 import           Data.Map  (Map)
 import qualified Data.Map  as Map
 import           Numeric.Natural  (Natural)
@@ -21,8 +21,8 @@ import           Data.Maybe             (fromJust)
 
 import           ENCOINS.App.Widgets.Basic              (elementResultJS, containerApp)
 import           ENCOINS.Common.Widgets.Advanced        (dialogWindow)
-import           ENCOINS.Common.Widgets.Basic           (btnWithBlock, divClassId)
-import           ENCOINS.Common.Events                  (setFocusDelayOnEvent)
+import           ENCOINS.Common.Widgets.Basic           (btnWithBlock, divClassId, btn)
+import           ENCOINS.Common.Events
 import           Backend.Wallet                         (Wallet(..), toJS, lucidConfigDao)
 import           Backend.Status                         (UrlStatus(..), isNotValidUrl)
 import qualified JS.DAO as JS
@@ -42,7 +42,8 @@ delegateWindow eOpen dWallet = mdo
     "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px)"
     "Delegate Encoins" $ mdo
 
-          relayAmountWidget
+          eUrlTable <- relayAmountWidget
+          logEvent "eUrlTable" eUrlTable
 
           divClass "dao-DelegateWindow_EnterUrl" $ text "Enter url:"
 
@@ -72,8 +73,11 @@ delegateWindow eOpen dWallet = mdo
           -- The button disable with invalid url and performant status.
           btnOk <- buttonWidget dIsInvalidUrl
 
-          let eUrl = tagPromptlyDyn dInputText btnOk
+          let eUrlButton = tagPromptlyDyn dInputText btnOk
+          logEvent "eUrlButton" eUrlButton
 
+          let eUrl = leftmost [eUrlTable, eUrlButton]
+          logEvent "eUrl" eUrl
           performEvent_ $
             JS.daoDelegateTx lucidConfigDao
             <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
@@ -115,16 +119,20 @@ buttonWidget dUrlStatus =
 normalizePingUrl :: Text -> Text
 normalizePingUrl t = T.append (T.dropWhileEnd (== '/') t) "//"
 
-relayAmountWidget :: MonadWidget t m => m ()
+relayAmountWidget :: MonadWidget t m => m (Event t Text)
 relayAmountWidget = do
   elAttr "div" ("class" =: "dao-DelegateWindow_TableWrapper") $
     el "table" $ do
       el "thead" $ tr $
-        mapM_ (\h -> th $ text h) ["Relay", "Amount"]
-      el "tbody" $
-        forM_ (Map.toList relayAmounts) $ \(relay, amount) -> tr $ do
+        mapM_ (\h -> th $ text h) ["Relay", "Amount", ""]
+      evs <- el "tbody" $
+        forM (Map.toList relayAmounts) $ \(relay, amount) -> tr $ do
           td $ text relay
           td $ text $ toText amount
+          eClick <- td $ btn "" "" $ text "Delegate"
+          pure $ relay <$ eClick
+      pure $ leftmost evs
+
 
         -- listWithKey (constDyn relayAmounts) (\k r -> do
         --   elAttr "tr" "dao-DelegateWindow_TableRow" $
