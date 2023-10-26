@@ -39,13 +39,13 @@ delegateWindow eOpen dWallet = mdo
     True
     eOpen
     (leftmost [void eUrlOk])
-    "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px)"
+    "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
     "Delegate Encoins" $ mdo
 
           eUrlTable <- relayAmountWidget
           logEvent "eUrlTable" eUrlTable
 
-          divClass "dao-DelegateWindow_EnterUrl" $ text "Enter url:"
+          divClass "dao-DelegateWindow_EnterUrl" $ text "Enter relay url:"
 
           dInputText <- inputWidget eOpen
           let eInputText = updated dInputText
@@ -93,7 +93,7 @@ inputWidget eOpen = divClass "w-row" $ do
       & initialAttributes .~
           ( "class" =: "w-input"
           <> "style" =: "display: inline-block;"
-          <> "placeholder" =: "url of relay"
+          <> "placeholder" =: "url"
           )
       & inputElementConfig_setValue .~ ("" <$ eOpen)
     setFocusDelayOnEvent inp eOpen
@@ -108,7 +108,7 @@ buttonWidget dUrlStatus =
         "button-switching inverted flex-center"
         ""
         (isNotValidUrl <$> dUrlStatus)
-        (text "Ok")
+        (text "Delegate")
     divClass "menu-item-button-right" $ do
       containerApp ""
         $ divClassId "app-text-small" ""
@@ -121,27 +121,27 @@ normalizePingUrl t = T.append (T.dropWhileEnd (== '/') t) "//"
 
 relayAmountWidget :: MonadWidget t m => m (Event t Text)
 relayAmountWidget = do
-  elAttr "div" ("class" =: "dao-DelegateWindow_TableWrapper") $
-    el "table" $ do
-      el "thead" $ tr $
-        mapM_ (\h -> th $ text h) ["Relay", "Amount", ""]
-      evs <- el "tbody" $
-        forM (Map.toList relayAmounts) $ \(relay, amount) -> tr $ do
-          td $ text relay
-          td $ text $ toText amount
-          eClick <- td $ btn "" "" $ text "Delegate"
-          pure $ relay <$ eClick
-      pure $ leftmost evs
-
-
-        -- listWithKey (constDyn relayAmounts) (\k r -> do
-        --   elAttr "tr" "dao-DelegateWindow_TableRow" $
-        --     mapM (\x -> elAttr "td" "dao-DelegateWindow_TableColumn" $ snd x k r) cols)
-
+  article $
+    tableWrapper $
+      table $ do
+        el "thead" $ tr $
+          mapM_ (\h -> th $ text h) ["Relay", "Amount", ""]
+        evs <- el "tbody" $
+          forM (Map.toList relayAmounts) $ \(relay, amount) -> tr $ do
+            tdRelay $ text relay
+            tdAmount $ text $ toText amount
+            eClick <- tdButton $ btn "button-switching inverted" "" $ text "Delegate"
+            pure $ relay <$ eClick
+        pure $ leftmost evs
   where
+    tableWrapper = elAttr "div" ("class" =: "dao-DelegateWindow_TableWrapper")
+    table = elAttr "table" ("class" =: "dao-DelegateWindow_Table")
+    article = elAttr "article" ("class" =: "dao-DelegateWindow_RelayAmount")
     tr = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow")
     th = elAttr "th" ("class" =: "dao-DelegateWindow_TableHeader")
-    td = elAttr "td" ("class" =: "dao-DelegateWindow_TableColumn")
+    tdRelay = elAttr "td" ("class" =: "dao-DelegateWindow_TableRelay")
+    tdAmount = elAttr "td" ("class" =: "dao-DelegateWindow_TableAmount")
+    tdButton = elAttr "td" ("class" =: "dao-DelegateWindow_TableButton")
 
 relayAmounts :: Map Text Integer
 relayAmounts =
