@@ -11,7 +11,7 @@ import           Control.Monad.IO.Class          (MonadIO(..))
 import           Data.IntMap.Strict              (toDescList)
 
 import           Backend.Status                     (isStatusBusy, Status(..), isReady)
-import           Backend.Wallet                     (Wallet (..), walletsSupportedInDAO, networkConfig, NetworkConfig(..))
+import           Backend.Wallet                     (Wallet (..), walletsSupportedInDAO, networkConfig, NetworkConfig(..), WalletName(..), fromJS)
 import           ENCOINS.App.Widgets.Basic          (waitForScripts, elementResultJS)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.Common.Widgets.Advanced    (foldDynamicAny)
@@ -22,7 +22,7 @@ import           ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
 import           ENCOINS.DAO.Widgets.PollWidget
 import           ENCOINS.Website.Widgets.Basic      (section, container)
 import           ENCOINS.Common.Utils               (toText)
-import           ENCOINS.Common.Events              (logEvent)
+import           ENCOINS.Common.Events
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 
 
@@ -108,22 +108,30 @@ handleInvalidNetwork :: MonadWidget t m
   => Dynamic t Wallet
   -> m (Dynamic t Bool, Dynamic t Text)
 handleInvalidNetwork dWallet = do
-  eWalletLoad <- elementResultJS "EndWalletLoad" id
-  let eLoadedWallet = tagPromptlyDyn dWallet $ updated eWalletLoad
-
+  dWalletLoad <- elementResultJS "EndWalletLoad" id
+  let eLoadedWallet = tagPromptlyDyn dWallet $ updated dWalletLoad
   let eUnexpectedNetworkB = fmap
         (\w -> walletNetworkId w /= dao networkConfig)
         eLoadedWallet
   dUnexpectedNetworkB <- holdDyn False eUnexpectedNetworkB
-
   let mkNetworkMessage isInvalidNetwork message =
         case (isInvalidNetwork, message) of
           (True,_) -> Just unexpectedNetwork
           (False, "") -> Nothing
           (False, _) -> Just ""
   dUnexpectedNetworkT <- foldDynMaybe mkNetworkMessage "" eUnexpectedNetworkB
-
   pure (dUnexpectedNetworkB, dUnexpectedNetworkT)
+
+handleWalletNone :: MonadWidget t m
+  => m (Dynamic t Bool, Dynamic t Text)
+handleWalletNone = do
+  eWalletName <- updated <$> elementResultJS "daoWalletNameNotConnected" fromJS
+  dWalletMessage <-
+    foldDyn (\w _ -> if w == None then (True, "Wallet is not connected!") else (False, ""))
+    (False, "")
+    eWalletName
+  let (dWalletNotConnectedB, dWalletNotConnectedT) = splitDynPure dWalletMessage
+  pure (dWalletNotConnectedB, dWalletNotConnectedT)
 
 handleStatus :: MonadWidget t m
   => Dynamic t Wallet
@@ -138,11 +146,13 @@ handleStatus dWallet = do
   dDelegateStatus <- holdDyn Ready eDelegateStatus
 
   (dUnexpectedNetworkB, dUnexpectedNetworkT) <- handleInvalidNetwork dWallet
+  (dWalletNotConnectedB, dWalletNotConnectedT) <- handleWalletNone
 
   let dIsDisableButtons = foldDynamicAny
         [ isStatusBusy <$> dDelegateStatus
         , isStatusBusy <$> dVoteStatus
         , dUnexpectedNetworkB
+        , dWalletNotConnectedB
         ]
 
   let flatStatus t s = bool (t <> column <> space <> toText s) T.empty $ isReady s
@@ -151,6 +161,7 @@ handleStatus dWallet = do
     [ flatStatus "Vote status" <$> eVoteStatus
     , flatStatus "Delegate status" <$> eDelegateStatus
     , updated dUnexpectedNetworkT
+    , updated dWalletNotConnectedT
     ]
 
   pure (dIsDisableButtons, dNotification)

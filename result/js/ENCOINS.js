@@ -67,6 +67,7 @@ function loadJSON(key, resId, decr, pass) {
 
 function setWalletNone() {
   setInputValue("walletNameElement", "None");
+  setInputValue("daoWalletNameNotConnected", "none");
   setInputValue("changeAddressBech32Element", "");
   setInputValue("pubKeyHashElement", "");
   setInputValue("stakeKeyHashElement", "");
@@ -159,6 +160,7 @@ async function walletLoad(walletName)
     const api = await walletAPI(walletName);
 
     setInputValue("walletNameElement", walletName);
+    setInputValue("daoWalletNameNotConnected", walletName);
 
     const networkId           = await api.getNetworkId();
     setInputValue("networkIdElement", networkId);
