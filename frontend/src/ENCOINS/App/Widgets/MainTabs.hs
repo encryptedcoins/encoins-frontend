@@ -12,7 +12,6 @@ import           Witherable                             (catMaybes)
 
 import           Backend.EncoinsTx                      (encoinsTxWalletMode, encoinsTxTransferMode, encoinsTxLedgerMode)
 import           Backend.Environment                    (getEnvironment)
-import           Backend.Protocol.Fees                  (protocolFees)
 import           Backend.Protocol.Types
 import           Backend.Status                         (Status(..), isStatusBusyBackendNetwork)
 import           Backend.Wallet                         (Wallet (..))

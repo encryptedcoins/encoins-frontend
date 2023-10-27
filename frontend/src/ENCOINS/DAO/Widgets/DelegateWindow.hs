@@ -13,7 +13,7 @@ import           Numeric.Natural  (Natural)
 import           Data.Text                              (Text)
 import qualified Data.Text as T
 import           Reflex.Dom
-import           Servant.Reflex                         (BaseUrl (..))
+-- import           Servant.Reflex                         (BaseUrl (..))
 import           Data.Aeson           (decode)
 import           Data.ByteString.Lazy   (fromStrict)
 import           Data.Maybe             (fromJust)
@@ -27,7 +27,7 @@ import           Backend.Wallet                         (Wallet(..), toJS, lucid
 import           Backend.Status                         (UrlStatus(..), isNotValidUrl)
 import qualified JS.DAO as JS
 import           ENCOINS.Common.Utils (toText)
-import           Backend.Servant.Requests (pingRequestWrapper)
+-- import           Backend.Servant.Requests (pingRequestWrapper)
 import           Config.Config (delegateRelayAmount)
 
 delegateWindow :: MonadWidget t m
@@ -43,7 +43,6 @@ delegateWindow eOpen dWallet = mdo
     "Delegate Encoins" $ mdo
 
           eUrlTable <- relayAmountWidget
-          logEvent "eUrlTable" eUrlTable
 
           divClass "dao-DelegateWindow_EnterUrl" $ text "Enter relay url:"
 
@@ -55,18 +54,18 @@ delegateWindow eOpen dWallet = mdo
 
           -- Check url when it is ONLY not empty
           performEvent_ (JS.checkUrl <$> eNonEmptyUrl)
-
           eValidUrl <- updated <$> elementResultJS "ValidUrl" id
           eInvalidUrl <- updated <$> elementResultJS "InvalidUrl" id
 
-          ePing <- pingRequestWrapper (BasePath . normalizePingUrl <$> dInputText) $ () <$ eValidUrl
+          -- ePing <- pingRequestWrapper (BasePath . normalizePingUrl <$> dInputText) $ () <$ eValidUrl
+
 
           let eUrlStatus = leftmost
                 [
                   UrlEmpty   <$ eEmptyUrl
                 , UrlInvalid <$ eInvalidUrl
                 , UrlValid   <$ eValidUrl
-                , maybe UrlPingFail (const UrlPingSuccess) <$> ePing
+                -- , maybe UrlPingFail (const UrlPingSuccess) <$> ePing
                 ]
 
           dIsInvalidUrl <- holdDyn UrlEmpty eUrlStatus

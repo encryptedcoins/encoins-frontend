@@ -56,8 +56,8 @@ data UrlStatus
     = UrlEmpty
     | UrlInvalid
     | UrlValid
-    | UrlPingFail
-    | UrlPingSuccess
+    -- | UrlPingFail
+    -- | UrlPingSuccess
     deriving Eq
 
 instance Show UrlStatus where
@@ -65,12 +65,12 @@ instance Show UrlStatus where
     show UrlEmpty       = "URL is empty"
     show UrlInvalid     = "Format of URL is invalid"
     show UrlValid       = "Format of URL is valid"
-    show UrlPingFail    = "Ping of relay is failed"
-    show UrlPingSuccess = "Ping of relay is succeeded"
+    -- show UrlPingFail    = "Ping of relay is failed"
+    -- show UrlPingSuccess = "Ping of relay is succeeded"
 
 isNotValidUrl :: UrlStatus -> Bool
 isNotValidUrl UrlEmpty       = True
 isNotValidUrl UrlInvalid     = True
-isNotValidUrl UrlValid       = True
-isNotValidUrl UrlPingFail    = True
-isNotValidUrl UrlPingSuccess = False
+isNotValidUrl UrlValid       = False
+-- isNotValidUrl UrlPingFail    = True
+-- isNotValidUrl UrlPingSuccess = False
