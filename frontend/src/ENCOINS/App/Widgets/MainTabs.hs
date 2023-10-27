@@ -29,6 +29,9 @@ import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeWindow, welcomeT
 import           ENCOINS.Bulletproofs                   (Secret)
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
 import           JS.Website                             (saveJSON)
+import           Backend.Protocol.TxValidity (getDeposit)
+import           ENCOINS.Common.Events
+
 
 mainWindowColumnHeader :: MonadWidget t m => Text -> m ()
 mainWindowColumnHeader title =
@@ -43,7 +46,8 @@ walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
 walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     (dBalance, dFees, dBulletproofParams, bRandomness) <-
         getEnvironment WalletMode dWallet (pure Nothing) dToBurn dToMint
-    containerApp "" $ transactionBalanceWidget dBalance dFees
+    dTotalBalance <- holdUniqDyn $ zipDynWith (-) (negate <$> dBalance) dFees
+    containerApp "" $ transactionBalanceWidget dTotalBalance dFees ""
     (dToBurn, dToMint, eStatusUpdate) <- containerApp "" $
         divClass "app-columns w-row" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
@@ -112,7 +116,9 @@ transferTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   -> m ()
 transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
-    containerApp "" $ transactionBalanceWidget (pure 0) (pure 0)
+    dDepositBalance <- holdUniqDyn $ negate . getDeposit <$> dCoins
+    containerApp "" $ transactionBalanceWidget (pure 0) (pure 0) " (to Wallet)"
+    containerApp "" $ transactionBalanceWidget dDepositBalance (pure 0) " (to Ledger)"
     (dCoins, eSendToLedger, eAddr, dSecretsName) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         let dSecretsWithNames = nub <$> zipDynWith (++) dOldSecretsWithNames (map coinWithName <$> dImportedSecrets)
@@ -136,13 +142,13 @@ transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
               (&&)
               (fmap (not . null) dCoinsToBurn)
               (fmap (not . isStatusBusyBackendNetwork) dStatus)
-            ) "" " Send to a Wallet"
+            ) "" " Send to Wallet"
           eLedger <- sendButton
             (zipDynWith
               (&&)
               (fmap (not . null) dCoinsToBurn)
               (fmap (not . isStatusBusyBackendNetwork) dStatus)
-            ) "margin-top: 20px" " Send to the Ledger"
+            ) "margin-top: 20px" " Send to Ledger"
           eWalletOk    <- sendToWalletWindow eWallet dCoinsToBurn
           (eAddrOk, _) <- inputAddressWindow eWalletOk
           return (dCoinsToBurn, eLedger, eAddrOk, dSecretsWithNames)
@@ -188,7 +194,13 @@ ledgerTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowLedgerStorageKey welcomeLedger
     (dBalance, dFees, dBulletproofParams, bRandomness) <-
         getEnvironment LedgerMode dWallet dAddr dToBurn dToMint
-    containerApp "" $ transactionBalanceWidget dBalance dFees
+
+    dDepositBalance <- holdUniqDyn $
+      zipDynWith (-) (getDeposit <$> dToMint) (getDeposit <$> dToBurn)
+    dEncoinsDepositBalance <- holdUniqDyn $ zipDynWith (+) dBalance dDepositBalance
+    dTotalBalance <- holdUniqDyn $ zipDynWith (+) dEncoinsDepositBalance dFees
+    containerApp "" $ transactionBalanceWidget (negate <$> dTotalBalance) dFees ""
+
     (dToBurn, dToMint, dAddr, eStatusUpdate) <- containerApp "" $
         divClassId "app-columns w-row" "welcome-ledger" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
@@ -214,19 +226,30 @@ ledgerTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
             (dCoinsToMint, eSend, dChangeAddr) <- divClassId "app-CoinColumnRight w-col w-col-6" "welcome-ledger-mint" $ mdo
                 dCoinsToMint' <- divClass "" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
-                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost [AddCoin <$> eNewSecret, ClearCoins <$ ffilter (== Constructing) eStatusUpdate, AddCoin <$> eAddChange]
+                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost
+                      [ AddCoin <$> eNewSecret
+                      , ClearCoins <$ ffilter (== Constructing) eStatusUpdate
+                      , AddCoin <$> eAddChange
+                      ]
                     eNewSecret     <- coinNewWidget
                     return dCoinsToMint''
                 eSend' <- sendRequestButton LedgerMode dStatus dWallet dCoinsToBurn dCoinsToMint (void $ updated dBalance)
-                let dV = fmap calculateChange dBalance
-                    dBalanceWithFees = zipDynWith (+) dBalance dFees
-                    eSendZeroBalance = gate ((==0) <$> current dBalanceWithFees) eSend'
-                    eSendNonZeroBalance = gate ((/=0) <$> current dBalanceWithFees) eSend'
-                eAddChange <- coinNewButtonWidget dV never (addChangeButton dBalanceWithFees)
+                let dV = fmap calculateChange dTotalBalance
+                    eSendZeroBalance = gate ((==0) <$> current dTotalBalance) eSend'
+                    eSendNonZeroBalance = gate ((/=0) <$> current dTotalBalance) eSend'
+                eAddChange <- coinNewButtonWidget dV never (addChangeButton dTotalBalance)
                 (eAddrOk, dmAddr) <- inputAddressWindow eSendNonZeroBalance
                 dAddr'          <- holdDyn Nothing (leftmost [updated dmAddr, Nothing <$ eSendZeroBalance])
                 return (dCoinsToMint', leftmost [void eAddrOk, eSendZeroBalance], dAddr')
-            (dAssetNamesInTheWallet, eStatusUpdate) <- encoinsTxLedgerMode dWallet dBulletproofParams bRandomness dChangeAddr dCoinsToBurn dCoinsToMint eSend
+
+            (dAssetNamesInTheWallet, eStatusUpdate) <- encoinsTxLedgerMode
+              dWallet
+              dBulletproofParams
+              bRandomness
+              dChangeAddr
+              dCoinsToBurn
+              dCoinsToMint
+              eSend
             let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
             return (dCoinsToBurn, dCoinsToMint, dChangeAddr, eStatusUpdate)
     eWalletError <- walletError
@@ -237,7 +260,7 @@ ledgerTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
-    calculateChange bal = negate bal - protocolFees LedgerMode 0
+    calculateChange bal = negate bal - 4
     f v = if v < 0
       then "button-switching flex-center"
       else "button-not-selected button-disabled flex-center"

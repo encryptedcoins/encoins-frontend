@@ -90,10 +90,17 @@ data SubmitTxReqBody = SubmitTxReqBody
     deriving (Show, Generic, ToJSON, FromJSON)
 
 data EncoinsMode = WalletMode | LedgerMode
-    deriving (Show, Read, Eq, Generic, FromJSON, ToJSON)
+    deriving stock (Eq, Read, Show, Generic)
+    deriving anyclass (ToJSON, FromJSON)
 
 data EncoinsStatusReqBody = MaxAdaWithdraw | LedgerEncoins
-    deriving (Show, Eq, Enum, Generic, FromJSON, ToJSON)
+    deriving stock (Eq, Enum, Show, Generic)
+    deriving anyclass (ToJSON, FromJSON)
 
 data EncoinsStatusResult = MaxAdaWithdrawResult Integer | LedgerUtxoResult TransactionUnspentOutputs
-    deriving (Show, Eq, Generic, FromJSON, ToJSON)
+    deriving stock (Show, Eq, Generic)
+    deriving anyclass (ToJSON, FromJSON)
+
+showStatus :: EncoinsStatusResult -> Text
+showStatus (MaxAdaWithdrawResult n) = "MaxAdaWithdrawResult: " <> Text.pack (show n)
+showStatus (LedgerUtxoResult t) = "LedgerUtxoResult: " <> Text.pack (show $ length t)
