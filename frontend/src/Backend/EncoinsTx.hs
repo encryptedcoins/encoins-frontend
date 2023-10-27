@@ -12,7 +12,6 @@ import           Witherable                      (catMaybes)
 
 import           Backend.Protocol.Setup          (encoinsCurrencySymbol, ledgerAddress, minAdaTxOutInLedger)
 import           Backend.Protocol.Utility        (getEncoinsInUtxos, mkRedeemer)
-import           Backend.Servant.Client          (getRelayUrl)
 import           Backend.Servant.Requests
 import           Backend.Status                  (Status (..))
 import           Backend.Protocol.Types
@@ -71,7 +70,7 @@ encoinsTxWalletMode
           (fmap (\r -> InputRedeemer (fromJust r) WalletMode) dFinalRedeemer)
           dInputs
     (eNewTxSuccess, eRelayDown) <- case mBaseUrl of
-      Just baseUrl -> newTxRequestWrapper baseUrl dNewTxReqBody eFinalRedeemer
+      Just baseUrl -> newTxRequestWrapper (constDyn baseUrl) dNewTxReqBody eFinalRedeemer
       _            -> pure (never, never)
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
@@ -86,7 +85,7 @@ encoinsTxWalletMode
     -- Submitting the transaction
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
     (eSubmitted, eRelayDown') <- case mBaseUrl of
-      Just baseUrl -> submitTxRequestWrapper baseUrl dSubmitReqBody eWalletSignature
+      Just baseUrl -> submitTxRequestWrapper (constDyn baseUrl) dSubmitReqBody eWalletSignature
       _            -> pure (never, never)
 
     -- Tracking the pending transaction
@@ -132,7 +131,7 @@ encoinsTxTransferMode
     (eNewTxSuccess, eRelayDown) <- case mBaseUrl of
       Just baseUrl ->
         newTxRequestWrapper
-          baseUrl
+          (constDyn baseUrl)
           (zipDyn (InputSending <$> dAddr <*> zipDynWith mkValue dCoins dNames <*> dAddrWallet) dInputs)
           eSend
       _            -> pure (never, never)
@@ -148,7 +147,7 @@ encoinsTxTransferMode
     -- Submitting the transaction
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
     (eSubmitted, eRelayDown') <- case mBaseUrl of
-      Just baseUrl -> submitTxRequestWrapper baseUrl dSubmitReqBody eWalletSignature
+      Just baseUrl -> submitTxRequestWrapper (constDyn baseUrl) dSubmitReqBody eWalletSignature
       _            -> pure (never, never)
 
     -- Tracking the pending transaction
@@ -196,7 +195,7 @@ encoinsTxLedgerMode
     (eStatusResp, eRelayDown') <- case mBaseUrl of
       Just baseUrl ->
           statusRequestWrapper
-            baseUrl
+            (constDyn baseUrl)
             (pure LedgerEncoins)
             $ leftmost [ePb, void eTick]
       Nothing      -> pure (never, never)
@@ -226,7 +225,7 @@ encoinsTxLedgerMode
     let dServerTxReqBody = zipDyn
           (fmap (\r -> InputRedeemer (fromJust r) LedgerMode) dFinalRedeemer) dInputs
     (eServerOk, eRelayDown) <- case mBaseUrl of
-      Just baseUrl -> serverTxRequestWrapper baseUrl dServerTxReqBody eFinalRedeemer
+      Just baseUrl -> serverTxRequestWrapper (constDyn baseUrl) dServerTxReqBody eFinalRedeemer
       _            -> pure (never, never)
 
     -- Tracking the pending transaction
