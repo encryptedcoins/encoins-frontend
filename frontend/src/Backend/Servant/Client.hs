@@ -21,6 +21,7 @@ type API =   "newTx"        :> ReqBody '[JSON] (InputOfEncoinsApi, TransactionIn
                             :> Post '[JSON] NoContent
         :<|> "status"       :> ReqBody '[JSON] EncoinsStatusReqBody
                             :> Post '[JSON] EncoinsStatusResult
+        :<|> "version"      :> Get '[JSON] ServerVersion
 
 type RespEvent t a      = Event t (ReqResult () a)
 type Res t m res        = Event t () -> m (RespEvent t res)
@@ -33,13 +34,18 @@ data ApiClient t m = ApiClient
   , pingRequest         :: Res t m NoContent
   , serverTxRequest     :: ReqRes t m (InputOfEncoinsApi, TransactionInputs) NoContent
   , statusRequest       :: ReqRes t m EncoinsStatusReqBody EncoinsStatusResult
+  , versionRequest      :: Res t m ServerVersion
   }
 
 mkApiClient :: forall t m . MonadWidget t m => Dynamic t BaseUrl -> ApiClient t m
 mkApiClient dHost = ApiClient{..}
   where
-    (newTxRequest :<|> submitTxRequest :<|> pingRequest :<|> serverTxRequest
-      :<|> statusRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) dHost
+    ( newTxRequest :<|>
+      submitTxRequest :<|>
+      pingRequest :<|>
+      serverTxRequest :<|>
+      statusRequest :<|>
+      versionRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) dHost
 
 ---------------------------------------------- Utilities ----------------------------------------
 
