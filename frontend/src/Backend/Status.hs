@@ -42,7 +42,7 @@ isStatusBusyBackendNetwork = \case
   _                    -> False
 
 relayError :: Text
-relayError = "All available relays are down! Try reloading the page or come back later."
+relayError = "All known relays are down! Try reloading the page or come back later."
 
 isReady :: Status -> Bool
 isReady Ready = True
@@ -63,10 +63,10 @@ data UrlStatus
 instance Show UrlStatus where
     show :: UrlStatus -> String
     show UrlEmpty       = "URL is empty"
-    show UrlInvalid     = "Format of URL is invalid"
-    show UrlValid       = "Format of URL is valid"
-    -- show UrlPingFail    = "Ping of relay is failed"
-    -- show UrlPingSuccess = "Ping of relay is succeeded"
+    show UrlInvalid     = "Invalid URL format"
+    show UrlValid       = "Valid URL"
+    -- show UrlPingFail    = "Relay is not found"
+    -- show UrlPingSuccess = "Found relay"
 
 isNotValidUrl :: UrlStatus -> Bool
 isNotValidUrl UrlEmpty       = True
