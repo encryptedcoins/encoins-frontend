@@ -1,5 +1,7 @@
 dist-newstyle/
 frontend/config/backend_url.json
+frontend/config/delegate_relay_amount.json
+frontend/config/network_id_config.json
 result/app.js
 result/index.js
 result/dao.js

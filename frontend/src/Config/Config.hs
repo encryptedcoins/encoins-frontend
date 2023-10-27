@@ -14,3 +14,6 @@ bulletproofSetupBS = $(embedFile "config/bulletproof_setup.json")
 
 delegatorListBS :: ByteString
 delegatorListBS = $(embedFile "../result/ispo/calculator.json")
+
+delegateRelayAmount :: ByteString
+delegateRelayAmount = $(embedFile "config/delegate_relay_amount.json")

@@ -4,17 +4,18 @@ import           Control.Monad                      (void)
 import           Reflex.Dom
 import qualified Data.Text as T
 import           Data.Map (Map)
+import           Data.Bool (bool)
 import           Data.Text (Text)
 import           Data.Time (getCurrentTime)
 import           Control.Monad.IO.Class          (MonadIO(..))
 import           Data.IntMap.Strict              (toDescList)
 
-import           Backend.Status                     (isStatusBusy, Status(..))
+import           Backend.Status                     (isStatusBusy, Status(..), isReady)
 import           Backend.Wallet                     (Wallet (..), walletsSupportedInDAO, networkConfig, NetworkConfig(..))
 import           ENCOINS.App.Widgets.Basic          (waitForScripts, elementResultJS)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.Common.Widgets.Advanced    (foldDynamicAny)
-import           ENCOINS.Common.Widgets.Basic       (notification, otherStatus, space)
+import           ENCOINS.Common.Widgets.Basic       (notification, otherStatus, space, column)
 import           ENCOINS.DAO.Polls
 import           ENCOINS.DAO.Widgets.Navbar         (navbarWidget, Dao (..))
 import           ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
@@ -144,12 +145,11 @@ handleStatus dWallet = do
         , dUnexpectedNetworkB
         ]
 
-  let eVoteStatusT = ("Vote status: " <>) . toText <$> eVoteStatus
-  let eDelegateStatusT = ("Delegate status: " <>) . toText <$> eDelegateStatus
+  let flatStatus t s = bool (t <> column <> space <> toText s) T.empty $ isReady s
 
   dNotification <- holdDyn T.empty $ leftmost
-    [ eVoteStatusT
-    , eDelegateStatusT
+    [ flatStatus "Vote status" <$> eVoteStatus
+    , flatStatus "Delegate status" <$> eDelegateStatus
     , updated dUnexpectedNetworkT
     ]
 
