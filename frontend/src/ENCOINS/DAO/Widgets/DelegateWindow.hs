@@ -8,12 +8,13 @@ module ENCOINS.DAO.Widgets.DelegateWindow
 
 import           Control.Monad                          (void, forM)
 import           Data.Map  (Map)
+import           Data.List  (sortOn)
+import           Data.Ord  (Down(..))
 import qualified Data.Map  as Map
 import           Numeric.Natural  (Natural)
 import           Data.Text                              (Text)
 import qualified Data.Text as T
 import           Reflex.Dom
--- import           Servant.Reflex                         (BaseUrl (..))
 import           Data.Aeson           (decode)
 import           Data.ByteString.Lazy   (fromStrict)
 import           Data.Maybe             (fromJust)
@@ -27,7 +28,6 @@ import           Backend.Wallet                         (Wallet(..), toJS, lucid
 import           Backend.Status                         (UrlStatus(..), isNotValidUrl)
 import qualified JS.DAO as JS
 import           ENCOINS.Common.Utils (toText)
--- import           Backend.Servant.Requests (pingRequestWrapper)
 import           Config.Config (delegateRelayAmount)
 
 delegateWindow :: MonadWidget t m
@@ -126,7 +126,7 @@ relayAmountWidget = do
         el "thead" $ tr $
           mapM_ (\h -> th $ text h) ["Relay", "Amount", ""]
         evs <- el "tbody" $
-          forM (Map.toList relayAmounts) $ \(relay, amount) -> tr $ do
+          forM (sortOn (Down . snd) $ Map.toList relayAmounts) $ \(relay, amount) -> tr $ do
             tdRelay $ text relay
             tdAmount $ text $ toText amount
             eClick <- tdButton $ btn "button-switching inverted" "" $ text "Delegate"
