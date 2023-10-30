@@ -3,7 +3,6 @@ module ENCOINS.Website.Widgets.Footer (footerWidget) where
 import           Data.Text                         (Text)
 import           Reflex.Dom
 
-import           ENCOINS.Common.Widgets.Advanced   (logo)
 import           ENCOINS.Common.Widgets.Basic
 import           ENCOINS.Website.Widgets.Resourses (ourResourses)
 
