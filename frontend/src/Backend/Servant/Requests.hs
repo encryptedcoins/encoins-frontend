@@ -35,23 +35,35 @@ newTxRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Dynamic t (InputOfEncoinsApi, TransactionInputs)
   -> Event t ()
-  -> m (Event t (Either Text (Text, Text)))
+  -> m (Event t (Text, Text), Event t Status)
 newTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- newTxRequest (Right <$> dReqBody) e
-  let eRespUnwrapped = makeResponseEither <$> eResp
+  let eRespUnwrapped = makeResponse <$> eResp
   logEvent "newTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
-  pure eRespUnwrapped
+  return $ eventMaybe (BackendError relayError) eRespUnwrapped
+--   -> m (Event t (Either Text (Text, Text)))
+-- newTxRequestWrapper baseUrl dReqBody e = do
+--   let ApiClient{..} = mkApiClient baseUrl
+--   eResp <- newTxRequest (Right <$> dReqBody) e
+--   let eRespUnwrapped = makeResponseEither <$> eResp
+--   logEvent "newTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
+--   pure eRespUnwrapped
 
 submitTxRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Dynamic t SubmitTxReqBody
   -> Event t ()
-  -> m (Event t (Either Text ()))
+  -> m (Event t (), Event t Status)
 submitTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
-  eResp <- fmap (void . makeResponseEither) <$> submitTxRequest (Right <$> dReqBody) e
-  return eResp
+  eResp <- fmap (void . makeResponse) <$> submitTxRequest (Right <$> dReqBody) e
+  return $ eventMaybe (BackendError relayError) eResp
+--   -> m (Event t (Either Text ()))
+-- submitTxRequestWrapper baseUrl dReqBody e = do
+--   let ApiClient{..} = mkApiClient baseUrl
+--   eResp <- fmap (void . makeResponseEither) <$> submitTxRequest (Right <$> dReqBody) e
+--   return eResp
 
 pingRequestWrapper :: MonadWidget t m
   => BaseUrl
