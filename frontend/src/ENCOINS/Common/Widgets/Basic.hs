@@ -73,16 +73,20 @@ btnWithBlock dCls dStyle dIsBlock = btn (mkBtnAttrs dIsBlock) dStyle
 
 btnWithEnterBlock :: MonadWidget t m
   => Dynamic t Text
+  -> Dynamic t Text
   -> Dynamic t Bool
   -> m ()
   -> m (Event t ())
-btnWithEnterBlock dCls dIsBlock tags = do
-    let f cls = "href" =: "#" <> "class" =: "app-button  w-button " `T.append` cls
+btnWithEnterBlock dCls dStyle dIsBlock tags = do
+    let f style cls =
+             "href" =: "#"
+          <> "class" =: "app-button  w-button " `T.append` cls
+          <> "style" =: style
     let dBlockBtnCls = do
           defaultClass <- dCls
           let classWithDisable = defaultClass <> space <> "button-disabled"
           bool defaultClass classWithDisable <$> dIsBlock
-    (e, _) <- elDynAttr' "a" (f <$> dBlockBtnCls) tags
+    (e, _) <- elDynAttr' "a" (zipDynWith f dStyle dBlockBtnCls) tags
     let eGated = gate (current $ not <$> dIsBlock) $
           leftmost [() <$ domEvent Click e, keydown Enter e]
     pure eGated

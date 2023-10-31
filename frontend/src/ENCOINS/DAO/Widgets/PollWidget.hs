@@ -2,7 +2,8 @@ module ENCOINS.DAO.Widgets.PollWidget where
 
 import           Reflex.Dom
 
-import           Backend.Wallet                (Wallet (..), toJS, lucidConfigDao)
+import           Backend.Wallet                (Wallet (..), lucidConfigDao,
+                                                toJS)
 import           ENCOINS.App.Widgets.Basic     (elementResultJS)
 import           ENCOINS.Common.Utils          (toText)
 import           ENCOINS.Common.Widgets.Basic  (btn, btnWithEnterBlock)
@@ -24,9 +25,7 @@ pollWidget dWallet dIsBlocked (Poll n question summary answers' endTime) = do
     es <- mapM
       (btnWithEnterBlock
         "button-switching dao-Poll_Button"
-      -- (btnWithBlock
-        -- "button-switching"
-        -- "margin-left: 30px; margin-right: 30px; margin-bottom: 20px;"
+        ""
         dIsBlocked . text
       ) answers
     let e = leftmost $ zipWith (<$) answers es

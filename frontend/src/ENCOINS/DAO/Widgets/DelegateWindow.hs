@@ -106,6 +106,7 @@ buttonWidget dUrlStatus =
     let dIsBlocked = isNotValidUrl <$> dUrlStatus
     eButton <- btnWithEnterBlock
         "button-switching inverted flex-center"
+        ""
         dIsBlocked
         (text "Delegate")
     divClass "menu-item-button-right" $ do

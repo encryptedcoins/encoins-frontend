@@ -9,8 +9,8 @@ import           Data.Time                    (LocalTime (LocalTime), UTCTime,
                                                makeTimeOfDayValid, utc)
 import           Reflex.Dom
 
-import           ENCOINS.Common.Widgets.Basic (br, lnkInline, column, space)
-import ENCOINS.Common.Utils (toText)
+import           ENCOINS.Common.Utils         (toText)
+import           ENCOINS.Common.Widgets.Basic (br, column, lnkInline, space)
 
 data Poll m = Poll {
         pollNumber   :: Int,
@@ -30,7 +30,6 @@ polls = fromList $ zip [1..]
   , poll5 5
   ]
 
-
 poll5 :: MonadWidget t m => Int -> Poll m
 poll5 n = Poll n
     (text $ pollNum n <> "Do you approve the Treasury Allocation and Sustainable Development Plan proposed by the ENCOINS team?")
@@ -45,8 +44,7 @@ poll5 n = Poll n
     )
     [("Yes", "100%")
     , ("No", "0%")]
-    $ endTime22x00 2024 9 4
-
+    $ endTime22x00 2023 9 4
 
 poll4 :: MonadWidget t m => Int -> Poll m
 poll4 n = Poll n
