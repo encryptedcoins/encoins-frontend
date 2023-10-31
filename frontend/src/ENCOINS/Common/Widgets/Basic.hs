@@ -5,12 +5,8 @@ import           Data.Bool                       (bool)
 import           Data.Text                       (Text, unpack)
 import qualified Data.Text                       as T
 import           Reflex.Dom
-import           Control.Lens ((%~))
-import           Data.Proxy             (Proxy (..))
-import           Data.Map  (Map)
 
 import           Backend.Status                  (Status (..))
-import           ENCOINS.Common.Events
 
 h1 :: MonadWidget t m => Text -> m ()
 h1 = elClass "h1" "h1" . text

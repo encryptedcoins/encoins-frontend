@@ -29,7 +29,6 @@ import           ENCOINS.Bulletproofs                   (Secret)
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
 import           JS.Website                             (saveJSON)
 import           Backend.Protocol.TxValidity (getDeposit)
-import           ENCOINS.Common.Events
 
 
 mainWindowColumnHeader :: MonadWidget t m => Text -> m ()

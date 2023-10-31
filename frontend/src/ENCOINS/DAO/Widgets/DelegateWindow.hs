@@ -102,11 +102,10 @@ buttonWidget :: MonadWidget t m
   -> m (Event t ())
 buttonWidget dUrlStatus =
   divClass "dao-DelegateWindow_ButtonStatusContainer" $ do
-    let dIsBlocked = isNotValidUrl <$> dUrlStatus
     eButton <- btnWithBlock
         "button-switching inverted flex-center"
         ""
-        dIsBlocked
+        (isNotValidUrl <$> dUrlStatus)
         (text "Delegate")
     divClass "menu-item-button-right" $ do
       containerApp ""
