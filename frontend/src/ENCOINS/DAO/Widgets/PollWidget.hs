@@ -23,7 +23,7 @@ pollWidget dWallet dIsBlocked (Poll n question summary answers' endTime) = do
   container "" $ do
     es <- mapM
       (btnWithEnterBlock
-        "button-switching .dao-Poll_Button"
+        "button-switching dao-Poll_Button"
       -- (btnWithBlock
         -- "button-switching"
         -- "margin-left: 30px; margin-right: 30px; margin-bottom: 20px;"
