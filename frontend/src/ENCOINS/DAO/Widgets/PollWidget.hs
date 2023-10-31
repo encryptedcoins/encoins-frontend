@@ -6,7 +6,7 @@ import           Backend.Wallet                (Wallet (..), lucidConfigDao,
                                                 toJS)
 import           ENCOINS.App.Widgets.Basic     (elementResultJS)
 import           ENCOINS.Common.Utils          (toText)
-import           ENCOINS.Common.Widgets.Basic  (btn, btnWithEnterBlock)
+import           ENCOINS.Common.Widgets.Basic  (btn, btnWithBlock)
 import           ENCOINS.DAO.Polls             (Poll (..), formatPollTime)
 import           ENCOINS.Website.Widgets.Basic (container)
 import           JS.DAO                        (daoPollVoteTx)
@@ -23,7 +23,7 @@ pollWidget dWallet dIsBlocked (Poll n question summary answers' endTime) = do
   let answers = fmap fst answers'
   container "" $ do
     es <- mapM
-      (btnWithEnterBlock
+      (btnWithBlock
         "button-switching dao-Poll_Button"
         ""
         dIsBlocked . text

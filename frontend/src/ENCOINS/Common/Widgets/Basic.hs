@@ -64,20 +64,7 @@ btnWithBlock :: MonadWidget t m
   -> Dynamic t Bool
   -> m ()
   -> m (Event t ())
-btnWithBlock dCls dStyle dIsBlock = btn (mkBtnAttrs dIsBlock) dStyle
-  where
-    mkBtnAttrs dBlock = do
-      defaultClass <- dCls
-      let classWithDisable = defaultClass <> space <> "button-disabled"
-      bool defaultClass classWithDisable <$> dBlock
-
-btnWithEnterBlock :: MonadWidget t m
-  => Dynamic t Text
-  -> Dynamic t Text
-  -> Dynamic t Bool
-  -> m ()
-  -> m (Event t ())
-btnWithEnterBlock dCls dStyle dIsBlock tags = do
+btnWithBlock dCls dStyle dIsBlock tags = do
     let f style cls =
              "href" =: "#"
           <> "class" =: "app-button  w-button " `T.append` cls

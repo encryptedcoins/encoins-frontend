@@ -11,7 +11,7 @@ import           Reflex.Dom
 import           Backend.Wallet                (NetworkConfig (dao),
                                                 NetworkId (..), Wallet (..),
                                                 WalletName (..), networkConfig)
-import           ENCOINS.Common.Widgets.Basic  (btn, btnWithEnterBlock, logo)
+import           ENCOINS.Common.Widgets.Basic  (btn, btnWithBlock, logo)
 import           ENCOINS.Common.Widgets.Wallet (walletIcon)
 
 
@@ -47,7 +47,7 @@ navbarWidget w dIsBlocked = do
                         dyn_ $ fmap (walletIcon . walletName) w
                         dynText $ fmap connectText w
                 eDelegate <- divClass "menu-item-button-left" $ do
-                    btnWithEnterBlock
+                    btnWithBlock
                       "button-switching flex-center"
                       ""
                       dIsBlocked

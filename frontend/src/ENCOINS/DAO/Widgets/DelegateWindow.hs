@@ -22,8 +22,7 @@ import           Data.Maybe             (fromJust)
 
 import           ENCOINS.App.Widgets.Basic              (elementResultJS, containerApp)
 import           ENCOINS.Common.Widgets.Advanced        (dialogWindow)
--- import           ENCOINS.Common.Widgets.Basic           (btnWithBlock, divClassId, btn)
-import           ENCOINS.Common.Widgets.Basic
+import           ENCOINS.Common.Widgets.Basic           (btnWithBlock, btn, divClassId)
 import           ENCOINS.Common.Events
 import           Backend.Wallet                         (Wallet(..), toJS, lucidConfigDao)
 import           Backend.Status                         (UrlStatus(..), isNotValidUrl)
@@ -104,7 +103,7 @@ buttonWidget :: MonadWidget t m
 buttonWidget dUrlStatus =
   divClass "dao-DelegateWindow_ButtonStatusContainer" $ do
     let dIsBlocked = isNotValidUrl <$> dUrlStatus
-    eButton <- btnWithEnterBlock
+    eButton <- btnWithBlock
         "button-switching inverted flex-center"
         ""
         dIsBlocked
