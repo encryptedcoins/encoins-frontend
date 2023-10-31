@@ -104,10 +104,8 @@ buttonWidget :: MonadWidget t m
 buttonWidget dUrlStatus =
   divClass "dao-DelegateWindow_ButtonStatusContainer" $ do
     let dIsBlocked = isNotValidUrl <$> dUrlStatus
-    logDyn "dIsBlocked" dIsBlocked
-    eButton <- btnWithBlock'
+    eButton <- btnWithEnterBlock
         "button-switching inverted flex-center"
-        ""
         dIsBlocked
         (text "Delegate")
     divClass "menu-item-button-right" $ do
@@ -115,14 +113,7 @@ buttonWidget dUrlStatus =
         $ divClassId "app-text-small" ""
         $ dynText
         $ toText <$> dUrlStatus
-
-    logEvent "button event" eButton
-    let dIsNotBlock = not <$> dIsBlocked
-    logDyn "dIsNotBlock" dIsNotBlock
-    let eGated = gate (current dIsNotBlock) eButton
-    logEvent "eGated" eGated
-    pure eGated
-    -- pure b
+    pure eButton
 
 relayAmountWidget :: MonadWidget t m => m (Event t Text)
 relayAmountWidget = do

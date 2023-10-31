@@ -51,8 +51,11 @@ imageButton dFile w = do
 
 btn :: MonadWidget t m => Dynamic t Text -> Dynamic t Text -> m () -> m (Event t ())
 btn dCls dStyle tags = do
-    let f cls style = "href" =: "#" <> "class" =: "app-button  w-button " `T.append` cls <> "style" =: style
-    (e, _) <- elDynAttrPrevDef Keydown "a" (zipDynWith f dCls dStyle) tags
+    let f cls style =
+             "href" =: "#"
+          <> "class" =: "app-button  w-button " `T.append` cls
+          <> "style" =: style
+    (e, _) <- elDynAttr' "a" (zipDynWith f dCls dStyle) tags
     return $ () <$ domEvent Click e
 
 btnWithBlock :: MonadWidget t m
@@ -68,38 +71,21 @@ btnWithBlock dCls dStyle dIsBlock = btn (mkBtnAttrs dIsBlock) dStyle
       let classWithDisable = defaultClass <> space <> "button-disabled"
       bool defaultClass classWithDisable <$> dBlock
 
-btn' :: MonadWidget t m
+btnWithEnterBlock :: MonadWidget t m
   => Dynamic t Text
-  -> Dynamic t Text
-  -> m ()
-  -> m (Event t ())
-btn' dCls dStyle tags = do
-    let f cls style = "href" =: "#" <> "class" =: "app-button  w-button " `T.append` cls <> "style" =: style
-    (e, _) <- elDynAttrPrevDef Keypress "a" (zipDynWith f dCls dStyle) tags
-    pure $ leftmost [() <$ domEvent Click e, keypress Enter e]
-
-btnWithBlock' :: MonadWidget t m
-  => Dynamic t Text
-  -> Dynamic t Text
   -> Dynamic t Bool
   -> m ()
   -> m (Event t ())
-btnWithBlock' dCls dStyle dIsBlock tags = do
-  e <- btn' (mkBtnAttrs dIsBlock) dStyle tags
-  -- let eClick = () <$ domEvent Click e
-  logEvent "e" e
-  -- let eEnter = keydown Enter e
-  -- logEvent "eEnter" eEnter
-  let dIsNotBlock = not <$> dIsBlock
-  logDyn "dIsNotBlock" dIsNotBlock
-  let eGated = gate (current dIsNotBlock) e
-  logEvent "eGated" eGated
-  pure eGated
-  where
-    mkBtnAttrs dBlock = do
-      defaultClass <- dCls
-      let classWithDisable = defaultClass <> space <> "button-disabled"
-      bool defaultClass classWithDisable <$> dBlock
+btnWithEnterBlock dCls dIsBlock tags = do
+    let f cls = "href" =: "#" <> "class" =: "app-button  w-button " `T.append` cls
+    let dBlockBtnCls = do
+          defaultClass <- dCls
+          let classWithDisable = defaultClass <> space <> "button-disabled"
+          bool defaultClass classWithDisable <$> dIsBlock
+    (e, _) <- elDynAttr' "a" (f <$> dBlockBtnCls) tags
+    let eGated = gate (current $ not <$> dIsBlock) $
+          leftmost [() <$ domEvent Click e, keydown Enter e]
+    pure eGated
 
 btnExternal :: MonadWidget t m => Dynamic t Text -> Dynamic t Text -> Dynamic t Text -> m () -> m (Event t ())
 btnExternal dRef dCls dStyle tags = do
@@ -151,44 +137,3 @@ otherStatus :: MonadWidget t m => Event t Text -> m (Event t Status)
 otherStatus eOtherError = do
     let eOtherStatusNonEmpty = ffilter ("" /=) eOtherError
     return $ CustomStatus <$> eOtherStatusNonEmpty
-
--- | From https://gist.github.com/3noch/134b1ee7fa48c347be9d164c3fac4ef7
---   Like 'elDynAttr'' but configures "prevent default" on the given event.
---   Blocks for example a context menu from poping up on right mouse click.
---   This should be used with caution, as it may be unexpected for end user.
-elDynAttrPrevDef
-  :: forall a en m t
-   . (DomBuilder t m, PostBuild t m)
-  => EventName en -- ^ Event on the element to configure with 'preventDefault'
-  -> Text -- ^ Element tag
-  -> Dynamic t (Map Text Text) -- ^ Element attributes
-  -> m a -- ^ Child of element
-  -> m (Element EventResult (DomBuilderSpace m) t, a) -- An element and the result of the child
-elDynAttrPrevDef ev = elDynAttrModConf
-  (\elCfg -> elCfg & elementConfig_eventSpec %~ addEventSpecFlags
-    (Proxy :: Proxy (DomBuilderSpace m))
-    ev
-    -- (const preventDefault)
-    (const stopPropagation)
-  )
-
--- | Like 'elDynAttr'' but allows you to modify the element configuration.
---
--- Special thanks to @luigy: https://gist.github.com/luigy/b49ce04de8462e594c9c2b5b455ae5a5#file-foo-hs
-elDynAttrModConf
-  :: (DomBuilder t m, PostBuild t m)
-  => (  ElementConfig EventResult t (DomBuilderSpace m)
-     -> ElementConfig EventResult t (DomBuilderSpace m)
-     )
-  -> Text
-  -> Dynamic t (Map Text Text)
-  -> m a
-  -> m (Element EventResult (DomBuilderSpace m) t, a)
-elDynAttrModConf f elementTag attrs child = do
-  modifyAttrs <- dynamicAttributesToModifyAttributes attrs
-  let cfg =
-        def & modifyAttributes .~ fmapCheap mapKeysToAttributeName modifyAttrs
-  result    <- element elementTag (f cfg) child
-  postBuild <- getPostBuild
-  notReadyUntil postBuild
-  pure result

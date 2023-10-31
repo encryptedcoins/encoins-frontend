@@ -1842,3 +1842,9 @@ body {
   text-align: right;
   padding: 0.5em 1em;
 }
+
+.dao-Poll_Button {
+  margin-left: 30px;
+  margin-right: 30px;
+  margin-bottom: 20px;
+}
