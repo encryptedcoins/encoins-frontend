@@ -1,23 +1,27 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.App.Widgets.MainWindow where
 
-import           Control.Monad                          ((<=<))
-import           Data.Functor                           ((<&>))
-import           Data.Text                              (Text)
+import           Control.Monad                      ((<=<))
+import           Data.Aeson                         (encode)
+import           Data.Bool                          (bool)
+import           Data.ByteString.Lazy               (toStrict)
+import           Data.Functor                       ((<&>))
+import           Data.Text                          (Text)
+import           Data.Text.Encoding                 (decodeUtf8)
 import           Reflex.Dom
-import           Data.Bool                              (bool)
-import           Data.ByteString.Lazy                   (toStrict)
-import           Data.Text.Encoding                     (decodeUtf8)
-import           Data.Aeson                             (encode)
 
-import           Backend.Wallet                         (Wallet (..))
-import           ENCOINS.App.Widgets.Basic              (loadAppData, elementResultJS, tellTxStatus )
-import           ENCOINS.App.Widgets.MainTabs           (walletTab, transferTab, ledgerTab)
-import           ENCOINS.App.Widgets.PasswordWindow     (PasswordRaw(..))
-import           ENCOINS.App.Widgets.TabsSelection      (AppTab(..), tabsSection)
-import           ENCOINS.Bulletproofs                   (Secret)
-import           Backend.Status                         (Status (..))
-import           JS.Website                             (saveJSON)
-import           ENCOINS.App.Widgets.Coin               (coinWithName)
+import           Backend.Status                     (Status (..))
+import           Backend.Wallet                     (Wallet (..))
+import           ENCOINS.App.Widgets.Basic          (elementResultJS,
+                                                     loadAppData, tellTxStatus)
+import           ENCOINS.App.Widgets.Coin           (coinWithName)
+import           ENCOINS.App.Widgets.MainTabs       (ledgerTab, transferTab,
+                                                     walletTab)
+import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw (..))
+import           ENCOINS.App.Widgets.TabsSelection  (AppTab (..), tabsSection)
+import           ENCOINS.Bulletproofs               (Secret)
+import           JS.Website                         (saveJSON)
 
 
 mainWindow :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)

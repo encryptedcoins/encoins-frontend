@@ -1,17 +1,20 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.App.Widgets.InputAddressWindow where
 
-import           Control.Monad                          (void)
+import           Control.Monad                   (void)
+import           Data.Text                       (Text)
 import           Reflex.Dom
-import           Data.Text                              (Text)
-import           Witherable                             (catMaybes)
+import           Witherable                      (catMaybes)
 
 import           Backend.Protocol.Types
-import           ENCOINS.App.Widgets.Basic              (elementResultJS)
-import           ENCOINS.Common.Widgets.Basic           (btn, errDiv)
-import           ENCOINS.Common.Widgets.Advanced        (dialogWindow)
-import           JS.App                                 (addrLoad)
-import           ENCOINS.Common.Events                  (setFocusDelayOnEvent)
-import           Backend.Wallet                         (networkConfig, NetworkConfig(..), NetworkId(..))
+import           Backend.Wallet                  (NetworkConfig (..),
+                                                  NetworkId (..), networkConfig)
+import           ENCOINS.App.Widgets.Basic       (elementResultJS)
+import           ENCOINS.Common.Events           (setFocusDelayOnEvent)
+import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
+import           ENCOINS.Common.Widgets.Basic    (btn, errDiv)
+import           JS.App                          (addrLoad)
 
 inputAddressWindow :: MonadWidget t m => Event t () -> m (Event t Address, Dynamic t (Maybe Address))
 inputAddressWindow eOpen = mdo
@@ -46,7 +49,7 @@ inputAddressWindow eOpen = mdo
   where
     btnAttrs = "button-switching inverted flex-center"
     mkBtnAttrs maddr = btnAttrs <> maybe " button-disabled" (const "") maddr
-    mkAddr Nothing _ = Nothing
+    mkAddr Nothing _       = Nothing
     mkAddr (Just pkh) mskh = Just $ mkAddressFromPubKeys pkh mskh
     err = elAttr "div" ("class" =: "app-columns w-row" <>
       "style" =: "display:flex;justify-content:center;") $

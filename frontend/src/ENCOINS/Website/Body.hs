@@ -1,14 +1,16 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.Website.Body (bodyWidget) where
 
-import           Data.Function (on)
+import           Data.Function                       (on)
 import           Data.Text                           (Text)
 import           Reflex.Dom
 
+import           ENCOINS.Common.Widgets.JQuery       (jQueryWidget)
 import           ENCOINS.Website.Widgets.Footer      (footerWidget)
 import           ENCOINS.Website.Widgets.ISPOPage    (ispoPage)
 import           ENCOINS.Website.Widgets.LandingPage (landingPage)
 import           ENCOINS.Website.Widgets.Navbar      (navbarWidget)
-import           ENCOINS.Common.Widgets.JQuery       (jQueryWidget)
 
 pageSelect :: MonadWidget t m => (Text, Text) -> m (Event t (Text, Text))
 pageSelect (page, idFocus) = case page of

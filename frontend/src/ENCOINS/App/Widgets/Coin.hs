@@ -1,7 +1,9 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.App.Widgets.Coin where
 
 import           Control.Monad                   (join, void)
-import           Control.Monad.IO.Class          (MonadIO(..))
+import           Control.Monad.IO.Class          (MonadIO (..))
 import           Data.Bool                       (bool)
 import           Data.List                       (delete)
 import           Data.Maybe                      (catMaybes, fromMaybe)
@@ -13,12 +15,15 @@ import           System.Random                   (randomIO)
 import           Text.Hex                        (encodeHex)
 import           Text.Read                       (readMaybe)
 
-import           Backend.Protocol.Setup          (bulletproofSetup, encoinsCurrencySymbol)
+import           Backend.Protocol.Setup          (bulletproofSetup,
+                                                  encoinsCurrencySymbol)
 import           Backend.Protocol.Utility        (secretToHex)
 import           ENCOINS.BaseTypes               (FieldElement)
-import           ENCOINS.Bulletproofs            (Secret (..), Secrets, fromSecret)
+import           ENCOINS.Bulletproofs            (Secret (..), Secrets,
+                                                  fromSecret)
 import           ENCOINS.Common.Utils            (toText)
-import           ENCOINS.Common.Widgets.Advanced (checkboxButton, copyButton, withTooltip, copyEvent)
+import           ENCOINS.Common.Widgets.Advanced (checkboxButton, copyButton,
+                                                  copyEvent, withTooltip)
 import           ENCOINS.Common.Widgets.Basic    (image)
 import           ENCOINS.Crypto.Field            (toFieldElement)
 import           JS.App                          (fingerprintFromAssetName)

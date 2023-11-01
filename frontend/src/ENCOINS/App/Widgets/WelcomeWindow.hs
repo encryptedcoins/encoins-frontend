@@ -1,17 +1,20 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.App.Widgets.WelcomeWindow where
 
 import           Control.Monad                   (when)
 import           Data.Text                       (Text)
 import           Reflex.Dom
 
-import           ENCOINS.App.Widgets.Basic       (loadJsonFromStorage, saveJsonToStorage)
+import           ENCOINS.App.Widgets.Basic       (loadJsonFromStorage,
+                                                  saveJsonToStorage)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn, lnkInlineInverted)
 import           JS.Website                      (setElementStyle)
 
 data WelcomeItem m = WelcomeItem
-  { elemId :: Text
-  , border :: Bool
+  { elemId  :: Text
+  , border  :: Bool
   , message :: m ()
   }
 
@@ -44,7 +47,7 @@ welcomeWallet =
     \ coins for backup or use on another device."
   , WelcomeItem "welcome-read-docs"
     False
-    $ do 
+    $ do
       text "Full user documentation is always available at "
       lnkInlineInverted "https://docs.encoins.io" "docs.encoins.io"
       text ". Visit our Discord community at "

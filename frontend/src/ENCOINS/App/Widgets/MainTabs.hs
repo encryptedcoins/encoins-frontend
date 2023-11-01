@@ -1,3 +1,5 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.App.Widgets.MainTabs where
 
 import           Control.Monad                          (void)
@@ -10,25 +12,44 @@ import           Data.Text.Encoding                     (decodeUtf8)
 import           Reflex.Dom
 import           Witherable                             (catMaybes)
 
-import           Backend.EncoinsTx                      (encoinsTxWalletMode, encoinsTxTransferMode, encoinsTxLedgerMode)
+import           Backend.EncoinsTx                      (encoinsTxLedgerMode,
+                                                         encoinsTxTransferMode,
+                                                         encoinsTxWalletMode)
 import           Backend.Environment                    (getEnvironment)
+import           Backend.Protocol.TxValidity            (getDeposit)
 import           Backend.Protocol.Types
-import           Backend.Status                         (Status(..), isStatusBusyBackendNetwork)
+import           Backend.Status                         (Status (..),
+                                                         isStatusBusyBackendNetwork)
 import           Backend.Wallet                         (Wallet (..))
-import           ENCOINS.App.Widgets.Basic              (containerApp, sectionApp, walletError, elementResultJS, tellTxStatus)
-import           ENCOINS.App.Widgets.Coin               (CoinUpdate (..), coinNewWidget, coinBurnCollectionWidget, coinMintCollectionWidget,coinWithName,
-                                                          filterKnownCoinNames, noCoinsFoundWidget, coinNewButtonWidget)
+import           ENCOINS.App.Widgets.Basic              (containerApp,
+                                                         elementResultJS,
+                                                         sectionApp,
+                                                         tellTxStatus,
+                                                         walletError)
+import           ENCOINS.App.Widgets.Coin               (CoinUpdate (..),
+                                                         coinBurnCollectionWidget,
+                                                         coinMintCollectionWidget,
+                                                         coinNewButtonWidget,
+                                                         coinNewWidget,
+                                                         coinWithName,
+                                                         filterKnownCoinNames,
+                                                         noCoinsFoundWidget)
+import           ENCOINS.App.Widgets.ImportWindow       (exportWindow,
+                                                         importFileWindow,
+                                                         importWindow)
 import           ENCOINS.App.Widgets.InputAddressWindow (inputAddressWindow)
-import           ENCOINS.App.Widgets.ImportWindow       (importWindow, importFileWindow, exportWindow)
-import           ENCOINS.App.Widgets.PasswordWindow     (PasswordRaw(..))
+import           ENCOINS.App.Widgets.PasswordWindow     (PasswordRaw (..))
 import           ENCOINS.App.Widgets.SendRequestButton  (sendRequestButton)
 import           ENCOINS.App.Widgets.SendToWalletWindow (sendToWalletWindow)
 import           ENCOINS.App.Widgets.TransactionBalance (transactionBalanceWidget)
-import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeWindow, welcomeTransfer, welcomeWindowTransferStorageKey, welcomeLedger, welcomeWindowLedgerStorageKey)
+import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeLedger,
+                                                         welcomeTransfer,
+                                                         welcomeWindow,
+                                                         welcomeWindowLedgerStorageKey,
+                                                         welcomeWindowTransferStorageKey)
 import           ENCOINS.Bulletproofs                   (Secret)
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
 import           JS.Website                             (saveJSON)
-import           Backend.Protocol.TxValidity (getDeposit)
 
 
 mainWindowColumnHeader :: MonadWidget t m => Text -> m ()

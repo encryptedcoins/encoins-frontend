@@ -1,12 +1,14 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.Website.Widgets.Navbar (navbarWidget) where
 
-import           Control.Monad                    (when)
-import           Data.Bool                        (bool)
-import           Data.Text                        (Text)
-import qualified Data.Text                        as Text
+import           Control.Monad                (when)
+import           Data.Bool                    (bool)
+import           Data.Text                    (Text)
+import qualified Data.Text                    as Text
 import           Reflex.Dom
 
-import           ENCOINS.Common.Widgets.Basic  (logo)
+import           ENCOINS.Common.Widgets.Basic (logo)
 
 navbarWidget :: MonadWidget t m => Dynamic t (Text, Text) -> m (Event t (Text, Text))
 navbarWidget dPageFocus = do
