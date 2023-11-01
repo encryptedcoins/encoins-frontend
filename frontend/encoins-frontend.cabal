@@ -45,6 +45,7 @@ library
     ENCOINS.Common.Widgets.Basic,
     ENCOINS.Common.Widgets.JQuery,
     ENCOINS.Common.Widgets.SelectInput,
+    ENCOINS.Common.Widgets.Wallet,
     ENCOINS.Common.Events,
     ENCOINS.Common.Language,
     ENCOINS.Common.Utils,

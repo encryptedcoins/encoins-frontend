@@ -7,7 +7,8 @@ import           Data.ByteString.Lazy            (toStrict)
 import           Data.Text.Encoding              (decodeUtf8)
 import           Reflex.Dom
 
-import           Backend.Wallet                  (WalletName (..), Wallet (..), loadWallet, walletIcon, fromJS, toJS)
+import           Backend.Wallet                  (WalletName (..), Wallet (..), fromJS, toJS)
+import           ENCOINS.Common.Widgets.Wallet   (loadWallet, walletIcon)
 import           ENCOINS.App.Widgets.Basic       (loadAppData)
 import           ENCOINS.Common.Utils            (toText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)

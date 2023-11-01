@@ -4,13 +4,15 @@ module ENCOINS.DAO.Widgets.Navbar
   , Dao (..)
   ) where
 
-import           Data.Text                        (Text, take, takeEnd)
-import           Prelude                          hiding (take)
+import           Data.Text                     (Text, take, takeEnd)
+import           Prelude                       hiding (take)
 import           Reflex.Dom
 
-import           Backend.Wallet                   (NetworkConfig(dao), NetworkId(..), Wallet (..), WalletName (..), walletIcon, networkConfig)
-import           ENCOINS.Common.Widgets.Advanced  (logo)
-import           ENCOINS.Common.Widgets.Basic     (btn, btnWithBlock)
+import           Backend.Wallet                (NetworkConfig (dao),
+                                                NetworkId (..), Wallet (..),
+                                                WalletName (..), networkConfig)
+import           ENCOINS.Common.Widgets.Basic  (btn, btnWithBlock, logo)
+import           ENCOINS.Common.Widgets.Wallet (walletIcon)
 
 
 data Dao = Connect | Delegate
@@ -45,7 +47,11 @@ navbarWidget w dIsBlocked = do
                         dyn_ $ fmap (walletIcon . walletName) w
                         dynText $ fmap connectText w
                 eDelegate <- divClass "menu-item-button-left" $ do
-                    btnWithBlock "button-switching flex-center" "" dIsBlocked $ text "DELEGATE"
+                    btnWithBlock
+                      "button-switching flex-center"
+                      ""
+                      dIsBlocked
+                      (text "DELEGATE")
                 pure $ leftmost [Connect <$ eConnect, Delegate <$ eDelegate]
 
 currentNetworkDao :: Text

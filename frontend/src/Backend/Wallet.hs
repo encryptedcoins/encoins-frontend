@@ -1,20 +1,16 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module Backend.Wallet where
 
-import           Control.Monad                 (void)
-import           Data.Maybe                    (fromMaybe, fromJust)
+import           Data.Maybe                    (fromJust)
 import           Data.Text                     (Text)
 import           Data.ByteString.Lazy          (fromStrict)
-import           Reflex.Dom                    hiding (Input)
 import qualified Data.Text as T
 import           GHC.Generics                  (Generic)
 import           Data.Aeson                    (FromJSON, decode)
 
 import           Backend.Protocol.Types
 import           CSL                           (TransactionUnspentOutputs)
-import           ENCOINS.App.Widgets.Basic     (elementResultJS)
-import           ENCOINS.Common.Widgets.Basic  (image)
-import           JS.App                        (walletLoad)
+
 import           Config.Config                 (networkConfigBS)
 
 data WalletName
@@ -92,32 +88,6 @@ data Wallet = Wallet
     walletUTXOs             :: TransactionUnspentOutputs
   }
   deriving (Show, Eq)
-
-loadWallet :: MonadWidget t m => Event t WalletName -> m (Dynamic t Wallet)
-loadWallet eWalletName = mdo
-  performEvent_ (walletLoad . toJS <$> eWalletName)
-  dWalletName <- elementResultJS "walletNameElement" fromJS
-  eWalletNetworkId <- updated <$> elementResultJS "networkIdElement" id
-  dWalletNetworkId <- foldDynMaybe
-    (\n _ -> if T.null n then Nothing else Just $ toNetworkId n)
-    Testnet
-    eWalletNetworkId
-  dWalletAddressBech32 <- elementResultJS "changeAddressBech32Element" id
-  dPubKeyHash <- elementResultJS "pubKeyHashElement" id
-  dStakeKeyHash <- elementResultJS "stakeKeyHashElement" id
-  dUTXOs <- elementResultJS "utxosElement" (fromMaybe [] . decodeText :: Text -> CSL.TransactionUnspentOutputs)
-  let dAddrWallet = zipDynWith mkAddressFromPubKeys dPubKeyHash (checkEmptyText <$> dStakeKeyHash)
-  return $ Wallet
-    <$> dWalletName
-    <*> dWalletNetworkId
-    <*> dWalletAddressBech32
-    <*> dAddrWallet
-    <*> dUTXOs
-
-walletIcon :: MonadWidget t m => WalletName -> m ()
-walletIcon w = case w of
-  None -> blank
-  name -> void $ image (pure $ toJS name <> ".svg") "wallet-image" "30px"
 
 data WalletError = WalletError
   {

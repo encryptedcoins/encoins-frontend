@@ -1,6 +1,5 @@
 module ENCOINS.Common.Widgets.Advanced where
 
-import           Control.Monad                 (void)
 import           Data.Bool                     (bool)
 import           Data.Text                     (Text)
 import           Data.Time                     (NominalDiffTime)
@@ -9,20 +8,12 @@ import           GHCJS.DOM.EventM              (on, target)
 import           GHCJS.DOM.GlobalEventHandlers (click)
 import           GHCJS.DOM.Node                (contains)
 import qualified GHCJS.DOM.Types               as DOM
-
 import           Reflex.Dom
 
-import           ENCOINS.Common.Widgets.Basic  (image)
 import           JS.Website                    (setElementStyle)
 import           Backend.Wallet                (NetworkId)
 import           ENCOINS.Common.Utils          (toText)
 
-logo :: MonadWidget t m => m ()
-logo = void $ image "logo.svg" "logo inverted" ""
-
-imageButton :: MonadWidget t m => Dynamic t Text -> Text -> m (Event t ())
-imageButton dFile w = do
-  image dFile (pure "w-button") w
 
 copyEvent :: MonadWidget t m => Event t () -> m (Dynamic t Bool)
 copyEvent e = do

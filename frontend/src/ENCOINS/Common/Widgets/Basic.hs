@@ -1,11 +1,12 @@
 module ENCOINS.Common.Widgets.Basic where
 
-import           Data.Bool              (bool)
-import           Data.Text              (Text, unpack)
-import qualified Data.Text              as T
+import           Control.Monad                   (void)
+import           Data.Bool                       (bool)
+import           Data.Text                       (Text, unpack)
+import qualified Data.Text                       as T
 import           Reflex.Dom
 
-import           Backend.Status (Status(..))
+import           Backend.Status                  (Status (..))
 
 h1 :: MonadWidget t m => Text -> m ()
 h1 = elClass "h1" "h1" . text
@@ -37,9 +38,19 @@ h6 = elClass "h6" "h6" . text
 pClass :: MonadWidget t m => Text -> m () -> m ()
 pClass = elClass "p"
 
+logo :: MonadWidget t m => m ()
+logo = void $ image "logo.svg" "logo inverted" ""
+
+imageButton :: MonadWidget t m => Dynamic t Text -> Text -> m (Event t ())
+imageButton dFile w = do
+  image dFile (pure "w-button") w
+
 btn :: MonadWidget t m => Dynamic t Text -> Dynamic t Text -> m () -> m (Event t ())
 btn dCls dStyle tags = do
-    let f cls style = "href" =: "#" <> "class" =: "app-button  w-button " `T.append` cls <> "style" =: style
+    let f cls style =
+             "href" =: "#"
+          <> "class" =: "app-button  w-button " `T.append` cls
+          <> "style" =: style
     (e, _) <- elDynAttr' "a" (zipDynWith f dCls dStyle) tags
     return $ () <$ domEvent Click e
 
@@ -49,14 +60,19 @@ btnWithBlock :: MonadWidget t m
   -> Dynamic t Bool
   -> m ()
   -> m (Event t ())
-btnWithBlock dCls dStyle dIsBlock = btn
-    (mkBtnAttrs dIsBlock)
-    dStyle
-  where
-    mkBtnAttrs dSt = do
-      defaultClass <- dCls
-      let classWithDisable = defaultClass <> space <> "button-disabled"
-      bool defaultClass classWithDisable <$> dSt
+btnWithBlock dCls dStyle dIsBlock tags = do
+    let f style cls =
+             "href" =: "#"
+          <> "class" =: "app-button  w-button " `T.append` cls
+          <> "style" =: style
+    let dBlockBtnCls = do
+          defaultClass <- dCls
+          let classWithDisable = defaultClass <> space <> "button-disabled"
+          bool defaultClass classWithDisable <$> dIsBlock
+    (e, _) <- elDynAttr' "a" (zipDynWith f dStyle dBlockBtnCls) tags
+    let eGated = gate (current $ not <$> dIsBlock) $
+          leftmost [() <$ domEvent Click e, keydown Enter e]
+    pure eGated
 
 btnExternal :: MonadWidget t m => Dynamic t Text -> Dynamic t Text -> Dynamic t Text -> m () -> m (Event t ())
 btnExternal dRef dCls dStyle tags = do

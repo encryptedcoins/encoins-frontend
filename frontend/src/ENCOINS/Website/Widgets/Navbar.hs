@@ -6,7 +6,7 @@ import           Data.Text                        (Text)
 import qualified Data.Text                        as Text
 import           Reflex.Dom
 
-import           ENCOINS.Common.Widgets.Advanced  (logo)
+import           ENCOINS.Common.Widgets.Basic  (logo)
 
 navbarWidget :: MonadWidget t m => Dynamic t (Text, Text) -> m (Event t (Text, Text))
 navbarWidget dPageFocus = do

@@ -22,7 +22,7 @@ import           Data.Maybe             (fromJust)
 
 import           ENCOINS.App.Widgets.Basic              (elementResultJS, containerApp)
 import           ENCOINS.Common.Widgets.Advanced        (dialogWindow)
-import           ENCOINS.Common.Widgets.Basic           (btnWithBlock, divClassId, btn)
+import           ENCOINS.Common.Widgets.Basic           (btnWithBlock, btn, divClassId)
 import           ENCOINS.Common.Events
 import           Backend.Wallet                         (Wallet(..), toJS, lucidConfigDao)
 import           Backend.Status                         (UrlStatus(..), isNotValidUrl)
@@ -58,7 +58,6 @@ delegateWindow eOpen dWallet = mdo
           eInvalidUrl <- updated <$> elementResultJS "InvalidUrl" id
 
           -- ePing <- pingRequestWrapper (BasePath . normalizePingUrl <$> dInputText) $ () <$ eValidUrl
-
 
           let eUrlStatus = leftmost
                 [
@@ -103,7 +102,7 @@ buttonWidget :: MonadWidget t m
   -> m (Event t ())
 buttonWidget dUrlStatus =
   divClass "dao-DelegateWindow_ButtonStatusContainer" $ do
-    b <- btnWithBlock
+    eButton <- btnWithBlock
         "button-switching inverted flex-center"
         ""
         (isNotValidUrl <$> dUrlStatus)
@@ -113,10 +112,7 @@ buttonWidget dUrlStatus =
         $ divClassId "app-text-small" ""
         $ dynText
         $ toText <$> dUrlStatus
-    pure b
-
-normalizePingUrl :: Text -> Text
-normalizePingUrl t = T.append (T.dropWhileEnd (== '/') t) "//"
+    pure eButton
 
 relayAmountWidget :: MonadWidget t m => m (Event t Text)
 relayAmountWidget = do

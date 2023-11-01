@@ -6,11 +6,10 @@ import           Reflex.Dom
 
 import           Backend.Wallet                     (Wallet (..),
                                                      WalletName (..),
-                                                     currentNetworkApp,
-                                                     walletIcon)
+                                                     currentNetworkApp)
 import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw)
-import           ENCOINS.Common.Widgets.Advanced    (logo)
-import           ENCOINS.Common.Widgets.Basic       (btn, space)
+import           ENCOINS.Common.Widgets.Basic       (btn, logo, space)
+import           ENCOINS.Common.Widgets.Wallet      (walletIcon)
 
 connectText :: Wallet -> Text
 connectText w = case w of
