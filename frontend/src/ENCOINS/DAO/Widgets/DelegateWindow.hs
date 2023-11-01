@@ -42,7 +42,7 @@ delegateWindow eOpen dWallet = mdo
     "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
     "Delegate Encoins" $ mdo
 
-          eUrlTable <- relayAmountWidget
+          eUrlTable <- relayAmountWidget eOpen
 
           divClass "dao-DelegateWindow_EnterUrl" $ text "Enter relay url:"
 
@@ -114,8 +114,12 @@ buttonWidget dUrlStatus =
         $ toText <$> dUrlStatus
     pure eButton
 
-relayAmountWidget :: MonadWidget t m => m (Event t Text)
-relayAmountWidget = do
+relayAmountWidget :: MonadWidget t m
+  => Event t ()
+  -> m (Event t Text)
+relayAmountWidget eOpen = do
+  eRelays <- fetchRelayTable eOpen
+  logEvent "eRelays" eRelays
   article $
     tableWrapper $
       table $ do
@@ -149,3 +153,14 @@ relayAmounts =
       . (\x -> fromIntegral x / 1000000)
       . read @Natural
       ) parsedData
+
+toRelayAmounts :: Maybe (Map Text String) -> Map Text Integer
+toRelayAmounts = Map.map
+  (floor @Double . (\x -> fromIntegral x / 1000000) . read @Natural ) . fromJust
+
+fetchRelayTable :: MonadWidget t m
+  => Event t ()
+  -> m (Event t (Map Text Integer))
+fetchRelayTable eOpen = do
+  let eUrl = "https://encoins.io/delegations.json" <$ eOpen
+  fmap toRelayAmounts <$> getAndDecode eUrl
