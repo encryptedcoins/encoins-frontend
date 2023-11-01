@@ -1,16 +1,24 @@
+{-# LANGUAGE RecursiveDo #-}
+
+
 module ENCOINS.App.Widgets.SendRequestButton where
 
+import           Control.Monad                (void, (<=<))
+import           Data.Functor                 ((<&>))
+import           Data.Text                    (Text)
 import           Reflex.Dom
-import           Data.Text                              (Text)
+import           Servant.Reflex               (BaseUrl (..))
 
-import           Backend.Protocol.TxValidity            (TxValidity(..), txValidity)
+import           Backend.Protocol.TxValidity  (TxValidity (..), txValidity)
 import           Backend.Protocol.Types
-import           Backend.Servant.Requests               (statusRequestWrapper, getRelayUrl)
-import           Backend.Status                         (Status(..))
-import           Backend.Wallet                         (Wallet (..))
-import           ENCOINS.Bulletproofs                   (Secrets)
-import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
-import           ENCOINS.App.Widgets.Basic              (relayStatusM)
+import           Backend.Servant.Requests     (getRelayUrl, getRelayUrlE,
+                                               statusRequestWrapper, eventMaybe)
+import           Backend.Status               (Status (..), relayError)
+import           Backend.Wallet               (Wallet (..))
+import           ENCOINS.App.Widgets.Basic    (relayStatusM, tellRelayStatus)
+import           ENCOINS.Bulletproofs         (Secrets)
+import           ENCOINS.Common.Events        (logDyn, logEvent, newEvent)
+import           ENCOINS.Common.Widgets.Basic (btn, divClassId)
 
 sendRequestButton :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => EncoinsMode
@@ -20,18 +28,42 @@ sendRequestButton :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   -> Dynamic t Secrets
   -> Event t ()
   -> m (Event t ())
-sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = do
+sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = mdo
   -- Getting the current MaxAda
-  mBaseUrl <- getRelayUrl
-  relayStatusM mBaseUrl
-  (eMaxAda, _) <- case mBaseUrl of
-    Just baseUrl -> statusRequestWrapper baseUrl (pure MaxAdaWithdraw) e
-    _ -> pure (never, never)
+  -- mBaseUrl <- getRelayUrl
+  -- relayStatusM mBaseUrl
+  -- ev <- newEvent
+
+
+  emUrl <- getRelayUrlE $ leftmost [e, () <$ eRelayDown]
+  logEvent "sendRequestButton: emUrl:" emUrl
+  tellRelayStatus emUrl
+  dmUrl <- holdDyn Nothing emUrl
+  dUrl <- foldDynMaybe const (BasePath "") emUrl
+  logDyn "sendRequestButton: dUrl:" dUrl
+
+  emStatus <- switchHold never <=< dyn $ dUrl <&> \url ->
+    statusRequestWrapper url (pure MaxAdaWithdraw) e
+  let (eMaxAda, eRelayDown) = eventMaybe (BackendError relayError) emStatus
+
+
+  -- (eMaxAda, _) <- case mBaseUrl of
+  --   Just baseUrl -> statusRequestWrapper baseUrl (pure MaxAdaWithdraw) e
+  --   _ -> pure (never, never)
+
+
   let getMaxAda (MaxAdaWithdrawResult n) = Just n
-      getMaxAda _ = Nothing
+      getMaxAda _                        = Nothing
   dMaxAda <- holdDyn 0 (mapMaybe getMaxAda eMaxAda)
   -- SEND REQUEST button
-  let dTxValidity = txValidity mBaseUrl mode <$> dMaxAda <*> dStatus <*> dWallet <*> dCoinsToBurn <*> dCoinsToMint
+  -- let dTxValidity = txValidity mBaseUrl mode <$> dMaxAda <*> dStatus <*> dWallet <*> dCoinsToBurn <*> dCoinsToMint
+  let dTxValidity = txValidity mode
+        <$> dmUrl
+        <*> dMaxAda
+        <*> dStatus
+        <*> dWallet
+        <*> dCoinsToBurn
+        <*> dCoinsToMint
       f v = case v of
           TxValid -> "button-switching flex-center"
           _       -> "button-not-selected button-disabled flex-center"

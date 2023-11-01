@@ -36,15 +36,18 @@ instance Semigroup TxValidity where
 instance Monoid TxValidity where
     mempty = TxValid
 
-txValidity :: Maybe BaseUrl
-  -> EncoinsMode
+-- txValidity :: Maybe BaseUrl
+--   -> EncoinsMode
+txValidity :: EncoinsMode
+  -> Maybe BaseUrl
   -> Integer
   -> Status
   -> Wallet
   -> Secrets
   -> Secrets
   -> TxValidity
-txValidity mbaseUrl mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
+-- txValidity mbaseUrl mode maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
+txValidity mode mbaseUrl maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
         [e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12]
         [cond1, cond2, cond3, cond4, cond5, cond6, cond7, cond8, cond9, cond10, cond11, cond12]
     where

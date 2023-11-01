@@ -20,8 +20,9 @@ import           Servant.Reflex           (BaseUrl)
 
 
 import           Backend.Servant.Requests (getRelayUrl)
-import           Backend.Status           (Status (..), everyRelayDown)
-import           ENCOINS.Common.Events    (newEvent, newEventWithDelay)
+import           Backend.Status           (Status (..), everyRelayDown,
+                                           relayError)
+import           ENCOINS.Common.Events
 import           JS.Website               (loadJSON)
 
 sectionApp :: MonadWidget t m => Text -> Text -> m a -> m a
@@ -78,19 +79,17 @@ relayStatusM :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe BaseUrl
   -> m ()
 relayStatusM mRelayUrl = do
-  when (isNothing mRelayUrl) $ do
+  -- when (isNothing mRelayUrl) $ do
     ev <- newEvent
-    tellRelayStatus
-      "Relay status"
-      (BackendError everyRelayDown)
-      ev
+    tellRelayStatus $ mRelayUrl <$ ev
 
 tellRelayStatus :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
-  => Text
-  -> Status
-  -> Event t ()
+  => Event t (Maybe BaseUrl)
   -> m ()
-tellRelayStatus title status ev = tellEvent $ [(title, status) <$ ev] <$ ev
+tellRelayStatus emUrl = do
+  let eStatus = maybe (BackendError relayError) (const Ready) <$> emUrl
+  logEvent "tellRelayStatus: eStatus" eStatus
+  tellTxStatus "Relay status" Ready eStatus
 
 tellTxStatus :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Text

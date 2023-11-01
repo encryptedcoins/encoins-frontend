@@ -10,6 +10,7 @@ import           Data.Aeson             (decode)
 import           Data.Bool              (bool)
 import           Data.ByteString.Lazy   (fromStrict)
 import           Data.Either.Extra
+import           Data.Functor           ((<&>), ($>))
 import           Data.IntMap            (IntMap)
 import qualified Data.IntMap            as IMap
 import           Data.List              (delete)
@@ -37,46 +38,49 @@ newTxRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Dynamic t (InputOfEncoinsApi, TransactionInputs)
   -> Event t ()
-  -> m (Event t (Text, Text), Event t Status)
+--   -> m (Event t (Text, Text), Event t Status)
+-- newTxRequestWrapper baseUrl dReqBody e = do
+--   let ApiClient{..} = mkApiClient baseUrl
+--   eResp <- newTxRequest (Right <$> dReqBody) e
+--   let eRespUnwrapped = makeResponse <$> eResp
+--   logEvent "newTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
+--   return $ eventMaybe (BackendError relayError) eRespUnwrapped
+  -> m (Event t (Maybe (Text, Text)))
 newTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- newTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = makeResponse <$> eResp
   logEvent "newTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
-  return $ eventMaybe (BackendError relayError) eRespUnwrapped
---   -> m (Event t (Either Text (Text, Text)))
--- newTxRequestWrapper baseUrl dReqBody e = do
---   let ApiClient{..} = mkApiClient baseUrl
---   eResp <- newTxRequest (Right <$> dReqBody) e
---   let eRespUnwrapped = makeResponseEither <$> eResp
---   logEvent "newTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
---   pure eRespUnwrapped
+  pure eRespUnwrapped
 
 submitTxRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Dynamic t SubmitTxReqBody
   -> Event t ()
-  -> m (Event t (), Event t Status)
+--   -> m (Event t (), Event t Status)
+-- submitTxRequestWrapper baseUrl dReqBody e = do
+--   let ApiClient{..} = mkApiClient baseUrl
+--   eResp <- fmap (void . makeResponse) <$> submitTxRequest (Right <$> dReqBody) e
+--   return $ eventMaybe (BackendError relayError) eResp
+  -> m (Event t (Maybe ()))
 submitTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- fmap (void . makeResponse) <$> submitTxRequest (Right <$> dReqBody) e
-  return $ eventMaybe (BackendError relayError) eResp
---   -> m (Event t (Either Text ()))
--- submitTxRequestWrapper baseUrl dReqBody e = do
---   let ApiClient{..} = mkApiClient baseUrl
---   eResp <- fmap (void . makeResponseEither) <$> submitTxRequest (Right <$> dReqBody) e
---   return eResp
+  return eResp
 
 pingRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Event t ()
-  -> m (Event t (Either Text BaseUrl))
+  -> m (Event t (Maybe BaseUrl))
 pingRequestWrapper baseUrl@(BasePath url) e = do
-  let ApiClient{..} = mkApiClient $ BasePath $ normalizePingUrl url
+  -- let ApiClient{..} = mkApiClient $ BasePath $ normalizePingUrl url
+  let ApiClient{..} = mkApiClient $ BasePath url
   delayed <- delay 0.2 e
-  ePingRes <- fmap makeResponseEither <$> pingRequest delayed
-  logEvent "Ping response" ePingRes
-  pure $ mapRight (const baseUrl) <$> ePingRes
+  ePingRes <- fmap makeResponse <$> pingRequest delayed
+  logEvent "pingRequestWrapper: ping response" ePingRes
+  let eRes = (\p -> baseUrl <$ p) <$> ePingRes
+  logEvent "pingRequestWrapper: eRes" eRes
+  pure eRes
 
 serverTxRequestWrapper :: MonadWidget t m
   => BaseUrl
@@ -94,13 +98,13 @@ statusRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Dynamic t EncoinsStatusReqBody
   -> Event t ()
-  -> m (Event t EncoinsStatusResult, Event t Status)
+  -> m (Event t (Maybe EncoinsStatusResult))
 statusRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- statusRequest (Right <$> dReqBody) e
   let eRespUnwrapped = makeResponse <$> eResp
   logEvent "statusRequestWrapper: eRespUnwrapped:" $ fmap showStatus <$> eRespUnwrapped
-  return $ eventMaybe (BackendError relayError) eRespUnwrapped
+  return eRespUnwrapped
 
 versionRequestWrapper :: MonadWidget t m
   => BaseUrl
@@ -130,20 +134,58 @@ getRelayUrl = go urls
         then return $ Just $ BasePath url
         else go (delete url l)
 
-mkUrlMap :: [Text] -> IntMap BaseUrl
-mkUrlMap = IMap.fromList . zip [1..] . map BasePath
-
-getValidRelay :: MonadWidget t m
+getRelayUrlE :: MonadWidget t m
   => Event t ()
   -> m (Event t (Maybe BaseUrl))
-getValidRelay ev = do
-  urlsShuffled <- liftIO $ shuffle $ map BasePath urls
-  eList <- traverse (\u -> checkUrl u ev) urlsShuffled
-  let eUrl = leftmost eList
-  logEvent "getValidRelay: eUrl" eUrl
-  eEmptyList <- bool (pure never) newEvent $ null eList
-  logEvent "getValidRelay: eEmptyList" eEmptyList
-  pure $ leftmost [Just <$> eUrl, Nothing <$ eEmptyList]
+getRelayUrlE ev = performEvent $ ev $> go urls
+  where
+    go [] = pure Nothing
+    go l = do
+      idx <- randomRIO (0, length l - 1)
+      let url = l !! idx
+      pingOk <- pingServer url
+      if pingOk
+        then return $ Just $ BasePath url
+        else go (delete url l)
+
+  -- where
+  --   go dUrls = switchHold never <=< dyn $ dUrls <$> \case
+  --     [] -> pure Nothing
+  --     l  -> do
+  --       idx <- liftIO $ randomRIO (0, length l - 1)
+  --       let url = l !! idx
+  --       pingOk <- pingServer url
+  --       if pingOk
+  --         then pure $ Just $ BasePath url
+  --         else go (delete url l)
+        -- emUrl <- pingRequestWrapper url ev
+        -- logEvent "getRelayUrlE: list" $ l <$ emUrl
+        -- logEvent "getRelayUrlE: index" $ idx <$ emUrl
+        -- logEvent "getRelayUrlE: emUrl" emUrl
+        -- dmUrl <- holdDyn Nothing emUrl
+        -- logDyn "getRelayUrlE: dmUrl" dmUrl
+        -- switchHold never <=< dyn $ dmUrl <&> \case
+          -- Just u  -> pure $ Just u
+          -- Nothing -> do
+          --   let restList = delete url l <$ ev
+          --   go restList
+
+-- mkUrlMap :: [Text] -> IntMap BaseUrl
+-- mkUrlMap = IMap.fromList . zip [1..] . map BasePath
+
+-- getValidRelay :: MonadWidget t m
+--   => Event t ()
+--   -> m (Event t (Maybe BaseUrl))
+-- getValidRelay ev = do
+--   urlsShuffled <- shuffle ev $ map BasePath urls
+--   -- logEvent "urls" $ urls <$ ev
+--   -- logEvent "urlsShuffled" $ urlsShuffled
+--   eList <- traverse (\u -> checkUrl u ev) urlsShuffled
+--   let eUrl = leftmost eList
+--   -- logEvent "getValidRelay: eUrl" eUrl
+--   eEmptyList <- bool (pure never) newEvent $ null eList
+--   -- logEvent "getValidRelay: eEmptyList" eEmptyList
+--   pure $ leftmost [Just <$> eUrl, Nothing <$ eEmptyList]
 
 
 checkUrl :: MonadWidget t m
@@ -152,8 +194,25 @@ checkUrl :: MonadWidget t m
   -> m (Event t BaseUrl)
 checkUrl url ev = mdo
   ePing <- pingRequestWrapper url ev
-  let (ePingFail, ePingOk) = fanEither ePing
-  pure ePingOk
+  pure $ fmapMaybe id ePing
+
+-- | Randomly shuffle a list on event fires
+--   /O(N)/
+shuffle :: MonadWidget t m => Event t () -> [a] -> m (Event t [a])
+shuffle ev xs = performEvent $ ev $> (liftIO $ do
+  ar <- newArr xsLength xs
+  forM [1..xsLength] $ \i -> do
+      j <- randomRIO (i,xsLength)
+      vi <- readArray ar i
+      vj <- readArray ar j
+      writeArray ar j vi
+      return vj)
+  where
+    xsLength = length xs
+    newArr :: Int -> [a] -> IO (IOArray Int a)
+    newArr n ls =  newListArray (1,n) ls
+
+
 
 -- foldUrlChecker :: MonadWidget t m
 --   => Event t ()
@@ -216,21 +275,7 @@ checkUrl url ev = mdo
 --   pure $ leftmost [tagPromptlyDyn (Just <$> dUrl) ePingOk, tagPromptlyDyn (constDyn Nothing) eEmptyHead]
 
 
--- -- | Randomly shuffle a list
--- --   /O(N)/
-shuffle :: [a] -> IO [a]
-shuffle xs = do
-        ar <- newArr xsLength xs
-        forM [1..xsLength] $ \i -> do
-            j <- randomRIO (i,xsLength)
-            vi <- readArray ar i
-            vj <- readArray ar j
-            writeArray ar j vi
-            return vj
-  where
-    xsLength = length xs
-    newArr :: Int -> [a] -> IO (IOArray Int a)
-    newArr n ls =  newListArray (1,n) ls
+
 
 -- getValidRelay :: MonadWidget t m
 --   => Event t ()
