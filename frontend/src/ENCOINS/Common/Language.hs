@@ -1,18 +1,20 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.Common.Language where
 
-import           Control.Monad.Extra     (mconcatMapM)
-import           Data.Text               (Text)
+import           Control.Monad.Extra (mconcatMapM)
+import           Data.Text           (Text)
 import           Reflex.Dom
 
-import qualified JS.Website              as JS
+import qualified JS.Website          as JS
 
 -- Multi-language support
 
 data WebsiteTextEntry = WebsiteTextEntry
   {
     elementId :: Text,
-    valueEn :: Text,
-    valueRu :: Text
+    valueEn   :: Text,
+    valueRu   :: Text
   }
 
 -- TODO: remove this from here

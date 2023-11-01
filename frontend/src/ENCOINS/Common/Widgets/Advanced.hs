@@ -1,3 +1,5 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.Common.Widgets.Advanced where
 
 import           Data.Bool                     (bool)
@@ -10,9 +12,9 @@ import           GHCJS.DOM.Node                (contains)
 import qualified GHCJS.DOM.Types               as DOM
 import           Reflex.Dom
 
-import           JS.Website                    (setElementStyle)
 import           Backend.Wallet                (NetworkId)
 import           ENCOINS.Common.Utils          (toText)
+import           JS.Website                    (setElementStyle)
 
 
 copyEvent :: MonadWidget t m => Event t () -> m (Dynamic t Bool)

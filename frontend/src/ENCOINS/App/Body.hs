@@ -1,27 +1,37 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.App.Body (bodyWidget) where
 
 import           Control.Monad                      ((<=<))
 import           Data.Aeson                         (encode)
 import           Data.Bifunctor                     (first)
+import           Data.Bool                          (bool)
 import           Data.ByteString.Lazy               (toStrict)
 import           Data.Functor                       ((<&>))
-import           Data.Text.Encoding                 (decodeUtf8)
-import           Data.Bool                          (bool)
 import           Data.Text                          (Text)
+import qualified Data.Text                          as T
+import           Data.Text.Encoding                 (decodeUtf8)
 import           Reflex.Dom
-import qualified Data.Text as T
 
-import           Backend.Status                     (Status(..), isStatusBusyBackendNetwork, isReady, isBlockError)
-import           Backend.Wallet                     (walletsSupportedInApp, Wallet(..), networkConfig, NetworkConfig(..))
-import           ENCOINS.Common.Utils               (toText)
-import           ENCOINS.App.Widgets.Basic          (waitForScripts, elementResultJS)
+import           Backend.Status                     (Status (..), isBlockError,
+                                                     isReady,
+                                                     isStatusBusyBackendNetwork)
+import           Backend.Wallet                     (NetworkConfig (..),
+                                                     Wallet (..), networkConfig,
+                                                     walletsSupportedInApp)
+import           ENCOINS.App.Widgets.Basic          (elementResultJS,
+                                                     waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
 import           ENCOINS.App.Widgets.Navbar         (navbarWidget)
 import           ENCOINS.App.Widgets.PasswordWindow
-import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWindow, welcomeWallet, welcomeWindowWalletStorageKey)
-import           ENCOINS.Common.Widgets.Basic       (notification, space, column)
+import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWallet,
+                                                     welcomeWindow,
+                                                     welcomeWindowWalletStorageKey)
+import           ENCOINS.Common.Utils               (toText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
+import           ENCOINS.Common.Widgets.Basic       (column, notification,
+                                                     space)
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
@@ -68,7 +78,7 @@ bodyWidget = waitForScripts blank $ mdo
   eCleanOk <- cleanCacheDialog eReset
   dmmPass <- holdDyn Nothing $ Just <$> leftmost [ePassOk, Nothing <$ eCleanOk, eNewPass]
   eNewPass <- switchHold never <=< dyn $ dmmPass <&> \case
-    Nothing -> pure never
+    Nothing    -> pure never
     Just mpass -> bodyContentWidget mpass
 
   jQueryWidget

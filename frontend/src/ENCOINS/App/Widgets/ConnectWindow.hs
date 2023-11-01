@@ -1,3 +1,5 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.App.Widgets.ConnectWindow (connectWindow) where
 
 import           Control.Monad                   (void)
@@ -7,11 +9,12 @@ import           Data.ByteString.Lazy            (toStrict)
 import           Data.Text.Encoding              (decodeUtf8)
 import           Reflex.Dom
 
-import           Backend.Wallet                  (WalletName (..), Wallet (..), fromJS, toJS)
-import           ENCOINS.Common.Widgets.Wallet   (loadWallet, walletIcon)
+import           Backend.Wallet                  (Wallet (..), WalletName (..),
+                                                  fromJS, toJS)
 import           ENCOINS.App.Widgets.Basic       (loadAppData)
 import           ENCOINS.Common.Utils            (toText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
+import           ENCOINS.Common.Widgets.Wallet   (loadWallet, walletIcon)
 import           JS.Website                      (saveJSON)
 
 walletEntry :: MonadWidget t m => WalletName -> m (Event t WalletName)

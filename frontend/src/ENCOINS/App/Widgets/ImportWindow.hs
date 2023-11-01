@@ -1,19 +1,24 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.App.Widgets.ImportWindow
   ( importWindow
   , importFileWindow
   , exportWindow
   ) where
 
-import           Control.Monad                   ((<=<), void)
-import           Data.Aeson                      (encode, decode)
-import           Data.ByteString.Lazy            (toStrict, fromStrict)
+import           Control.Monad                   (void, (<=<))
+import           Data.Aeson                      (decode, encode)
+import           Data.ByteString.Lazy            (fromStrict, toStrict)
 import           Data.Functor                    ((<&>))
 import           Data.Maybe                      (fromMaybe)
 import           Data.Text                       (Text)
 import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
 import           GHCJS.DOM.EventM                (on)
-import           GHCJS.DOM.FileReader            (newFileReader, readAsText, load, getResult)
-import           GHCJS.DOM.Types                 (File, toJSVal, fromJSVal, liftJSM)
+import           GHCJS.DOM.FileReader            (getResult, load,
+                                                  newFileReader, readAsText)
+import           GHCJS.DOM.Types                 (File, fromJSVal, liftJSM,
+                                                  toJSVal)
+import           JS.Website                      (saveTextFile)
 import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
@@ -21,7 +26,6 @@ import           Backend.Protocol.Utility        (hexToSecret)
 import           ENCOINS.Bulletproofs            (Secret)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn)
-import           JS.Website                      (saveTextFile)
 
 importWindow :: MonadWidget t m => Event t () -> m (Event t (Maybe Secret))
 importWindow eImportOpen = mdo
@@ -46,7 +50,7 @@ importFileWindow eImportOpen = mdo
       dFiles <- _inputElement_files <$> inputElement conf
       emFileContent <- switchHold never <=< dyn $ dFiles <&> \case
         [file] -> readFileContent file
-        _ -> pure never
+        _      -> pure never
       dContent <- holdDyn "" (catMaybes emFileContent)
       let dRes = parseContent <$> dContent
       eImportClose <- btn "button-switching inverted flex-center" "" $ text "Ok"

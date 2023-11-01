@@ -1,40 +1,33 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE LambdaCase  #-}
+{-# LANGUAGE RecursiveDo #-}
 
 module ENCOINS.DAO.Widgets.DelegateWindow
   (
     delegateWindow
   ) where
 
-import           Control.Monad                          (void, forM)
-import           Data.Map  (Map)
-import           Data.List  (sortOn)
-import           Data.Ord  (Down(..))
-import qualified Data.Map  as Map
-import           Numeric.Natural  (Natural)
-import           Data.Text                              (Text)
-import qualified Data.Text as T
+import           Control.Monad                   (void)
+import           Data.Text                       (Text)
+import qualified Data.Text                       as T
 import           Reflex.Dom
-import           Data.Aeson           (decode)
-import           Data.ByteString.Lazy   (fromStrict)
-import           Data.Maybe             (fromJust)
 
-
-import           ENCOINS.App.Widgets.Basic              (elementResultJS, containerApp)
-import           ENCOINS.Common.Widgets.Advanced        (dialogWindow)
-import           ENCOINS.Common.Widgets.Basic           (btnWithBlock, btn, divClassId)
+import           Backend.Status                  (UrlStatus (..), isNotValidUrl)
+import           Backend.Wallet                  (Wallet (..), lucidConfigDao,
+                                                  toJS)
+import           ENCOINS.App.Widgets.Basic       (containerApp, elementResultJS)
 import           ENCOINS.Common.Events
-import           Backend.Wallet                         (Wallet(..), toJS, lucidConfigDao)
-import           Backend.Status                         (UrlStatus(..), isNotValidUrl)
-import qualified JS.DAO as JS
-import           ENCOINS.Common.Utils (toText)
-import           Config.Config (delegateRelayAmount)
+import           ENCOINS.Common.Utils            (toText)
+import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
+import           ENCOINS.Common.Widgets.Basic    (btnWithBlock, divClassId)
+import           ENCOINS.DAO.Widgets.RelayTable  (relayAmountWidget)
+import qualified JS.DAO                          as JS
 
 delegateWindow :: MonadWidget t m
   => Event t ()
   -> Dynamic t Wallet
+  -> Dynamic t [(Text, Integer)]
   -> m ()
-delegateWindow eOpen dWallet = mdo
+delegateWindow eOpen dWallet dRelays = mdo
   eUrlOk <- dialogWindow
     True
     eOpen
@@ -42,7 +35,7 @@ delegateWindow eOpen dWallet = mdo
     "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
     "Delegate Encoins" $ mdo
 
-          eUrlTable <- relayAmountWidget
+          eUrlTable <- relayAmountWidget dRelays
 
           divClass "dao-DelegateWindow_EnterUrl" $ text "Enter relay url:"
 
@@ -113,39 +106,3 @@ buttonWidget dUrlStatus =
         $ dynText
         $ toText <$> dUrlStatus
     pure eButton
-
-relayAmountWidget :: MonadWidget t m => m (Event t Text)
-relayAmountWidget = do
-  article $
-    tableWrapper $
-      table $ do
-        el "thead" $ tr $
-          mapM_ (\h -> th $ text h) ["Relay", "Amount", ""]
-        evs <- el "tbody" $
-          forM (sortOn (Down . snd) $ Map.toList relayAmounts) $ \(relay, amount) -> tr $ do
-            tdRelay $ text relay
-            tdAmount $ text $ toText amount
-            eClick <- tdButton $ btn "button-switching inverted" "" $ text "Delegate"
-            pure $ relay <$ eClick
-        pure $ leftmost evs
-  where
-    tableWrapper = elAttr "div" ("class" =: "dao-DelegateWindow_TableWrapper")
-    table = elAttr "table" ("class" =: "dao-DelegateWindow_Table")
-    article = elAttr "article" ("class" =: "dao-DelegateWindow_RelayAmount")
-    tr = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow")
-    th = elAttr "th" ("class" =: "dao-DelegateWindow_TableHeader")
-    tdRelay = elAttr "td" ("class" =: "dao-DelegateWindow_TableRelay")
-    tdAmount = elAttr "td" ("class" =: "dao-DelegateWindow_TableAmount")
-    tdButton = elAttr "td" ("class" =: "dao-DelegateWindow_TableButton")
-
-relayAmounts :: Map Text Integer
-relayAmounts =
-  let parsedData :: Map Text String
-        = fromJust
-        $ decode
-        $ fromStrict delegateRelayAmount
-  in Map.map
-      ( floor @Double
-      . (\x -> fromIntegral x / 1000000)
-      . read @Natural
-      ) parsedData

@@ -1,17 +1,20 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.Common.Widgets.Wallet where
 
-import           Reflex.Dom                    hiding (Input)
-import           Control.Monad                 (void)
-import           Data.Maybe                    (fromMaybe)
-import           JS.App                        (walletLoad)
-import qualified Data.Text as T
-import           Data.Text                              (Text)
+import           Control.Monad                (void)
+import           Data.Maybe                   (fromMaybe)
+import           Data.Text                    (Text)
+import qualified Data.Text                    as T
+import           JS.App                       (walletLoad)
+import           Reflex.Dom                   hiding (Input)
 
-import           CSL                           (TransactionUnspentOutputs)
-import           ENCOINS.App.Widgets.Basic     (elementResultJS)
-import           ENCOINS.Common.Widgets.Basic  (image)
+import           Backend.Protocol.Types       (checkEmptyText,
+                                               mkAddressFromPubKeys)
 import           Backend.Wallet
-import           Backend.Protocol.Types (checkEmptyText, mkAddressFromPubKeys)
+import           CSL                          (TransactionUnspentOutputs)
+import           ENCOINS.App.Widgets.Basic    (elementResultJS)
+import           ENCOINS.Common.Widgets.Basic (image)
 
 loadWallet :: MonadWidget t m => Event t WalletName -> m (Dynamic t Wallet)
 loadWallet eWalletName = mdo

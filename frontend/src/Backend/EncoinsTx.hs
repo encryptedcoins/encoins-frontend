@@ -1,28 +1,31 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module Backend.EncoinsTx where
 
-import           Control.Monad                   (void)
-import           Control.Monad.IO.Class          (MonadIO(..))
-import qualified Data.Map                        as Map
-import           Data.Maybe                      (fromJust, fromMaybe)
-import           Data.Text                       (Text)
-import           PlutusTx.Prelude                (length)
-import           Prelude                         hiding (length)
-import           Reflex.Dom                      hiding (Input)
-import           Witherable                      (catMaybes)
+import           Control.Monad             (void)
+import           Control.Monad.IO.Class    (MonadIO (..))
+import qualified Data.Map                  as Map
+import           Data.Maybe                (fromJust, fromMaybe)
+import           Data.Text                 (Text)
+import           PlutusTx.Prelude          (length)
+import           Prelude                   hiding (length)
+import           Reflex.Dom                hiding (Input)
+import           Witherable                (catMaybes)
 
-import           Backend.Protocol.Setup          (encoinsCurrencySymbol, ledgerAddress, minAdaTxOutInLedger)
-import           Backend.Protocol.Utility        (getEncoinsInUtxos, mkRedeemer)
-import           Backend.Servant.Requests
-import           Backend.Status                  (Status (..))
+import           Backend.Protocol.Setup    (encoinsCurrencySymbol,
+                                            ledgerAddress, minAdaTxOutInLedger)
 import           Backend.Protocol.Types
-import           Backend.Wallet                  (Wallet(..), toJS)
+import           Backend.Protocol.Utility  (getEncoinsInUtxos, mkRedeemer)
+import           Backend.Servant.Requests
+import           Backend.Status            (Status (..))
+import           Backend.Wallet            (Wallet (..), toJS)
 import qualified CSL
-import           ENCOINS.App.Widgets.Basic       (elementResultJS, relayStatusM)
+import           ENCOINS.App.Widgets.Basic (elementResultJS, relayStatusM)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
-import           ENCOINS.Common.Utils            (toText)
-import           JS.App                          (walletSignTx)
-import           ENCOINS.Common.Events           (logEvent)
+import           ENCOINS.Common.Events     (logEvent)
+import           ENCOINS.Common.Utils      (toText)
+import           JS.App                    (walletSignTx)
 
 encoinsTxWalletMode :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Dynamic t Wallet
@@ -201,7 +204,7 @@ encoinsTxLedgerMode
             $ leftmost [ePb, void eTick]
       Nothing      -> pure (never, never)
     let toLedgerUtxoResult (LedgerUtxoResult xs) = Just xs
-        toLedgerUtxoResult _ = Nothing
+        toLedgerUtxoResult _                     = Nothing
         eLedgerUtxoResult = mapMaybe toLedgerUtxoResult eStatusResp
     dUTXOs <- holdDyn [] eLedgerUtxoResult
     let dInputs = map CSL.input <$> dUTXOs

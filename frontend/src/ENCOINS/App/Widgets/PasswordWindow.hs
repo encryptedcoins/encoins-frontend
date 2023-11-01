@@ -1,10 +1,14 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.App.Widgets.PasswordWindow where
 
 import           Control.Monad                   (void, (<=<))
 import           Data.Aeson                      (encode)
 import           Data.Bool                       (bool)
 import           Data.ByteString.Lazy            (toStrict)
-import           Data.Char                       (isLower, isUpper, ord, isAsciiLower, isAsciiUpper, isDigit)
+import           Data.Char                       (isAsciiLower, isAsciiUpper,
+                                                  isDigit, isLower, isUpper,
+                                                  ord)
 import           Data.Functor                    ((<&>))
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
@@ -12,11 +16,13 @@ import           Data.Text.Encoding              (decodeUtf8)
 import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
+import           ENCOINS.Common.Events           (setFocusDelayOnEvent)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn, errDiv)
-import           JS.App                          (saveHashedTextToStorage, loadHashedPassword, checkPassword)
+import           JS.App                          (checkPassword,
+                                                  loadHashedPassword,
+                                                  saveHashedTextToStorage)
 import           JS.Website                      (saveJSON)
-import           ENCOINS.Common.Events           (setFocusDelayOnEvent)
 
 
 passwordSotrageKey :: Text
@@ -111,10 +117,10 @@ passwordSettingsWindow eOpen = do
     (eReset, eClear, eSave) <- elAttr "div" ("class" =: "app-columns w-row app-PasswordSetting_ButtonContainer") $ do
       eSave' <- btn (mkSaveBtnCls <$> dmPassHash <*> dPassOk <*> dmNewPass) "" $ text "Save"
       eClear' <- switchHold never <=< dyn $ dmPassHash <&> \case
-        Just _ -> btn (mkClearBtnCls <$> dPassOk) "" $ text "Reset password"
+        Just _  -> btn (mkClearBtnCls <$> dPassOk) "" $ text "Reset password"
         Nothing -> pure never
       eReset' <- switchHold never <=< dyn $ dmPassHash <&> \case
-        Just _ -> btn "button-switching flex-center" "" $ text "Clean cache"
+        Just _  -> btn "button-switching flex-center" "" $ text "Clean cache"
         Nothing -> pure never
       return (eReset', eClear', eSave')
     let eNewPass = catMaybes (tagPromptlyDyn dmNewPass eSave)
@@ -129,15 +135,15 @@ passwordSettingsWindow eOpen = do
       , blank <$ eOpen ]
     return (leftmost [Just <$> eNewPass, Nothing <$ eClear], eReset)
   where
-    mkErr _ Nothing = blank
+    mkErr _ Nothing                 = blank
     mkErr _ (Just (PasswordRaw "")) = blank
-    mkErr c _ = bool (errDiv "Incorrect password") blank c
+    mkErr c _                       = bool (errDiv "Incorrect password") blank c
     checkPass hash (Just raw) = checkPassword (getPassHash hash) (getPassRaw raw)
     checkPass _ _ = return False
     cls = "button-switching inverted flex-center"
-    mkSaveBtnCls Nothing _ (Just _) = cls
+    mkSaveBtnCls Nothing _ (Just _)     = cls
     mkSaveBtnCls (Just _) True (Just _) = cls
-    mkSaveBtnCls _ _ _ = cls <> " button-disabled"
+    mkSaveBtnCls _ _ _                  = cls <> " button-disabled"
     mkClearBtnCls = (cls <>) . bool " button-disabled" ""
 
 passwordInput :: MonadWidget t m

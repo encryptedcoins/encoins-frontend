@@ -1,30 +1,39 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.DAO.Body (bodyWidget) where
 
 import           Control.Monad                      (void)
+import           Control.Monad.IO.Class             (MonadIO (..))
+import           Data.Bool                          (bool)
+import           Data.IntMap.Strict                 (toDescList)
+import           Data.Map                           (Map)
+import           Data.Text                          (Text)
+import qualified Data.Text                          as T
+import           Data.Time                          (getCurrentTime)
 import           Reflex.Dom
-import qualified Data.Text as T
-import           Data.Map (Map)
-import           Data.Bool (bool)
-import           Data.Text (Text)
-import           Data.Time (getCurrentTime)
-import           Control.Monad.IO.Class          (MonadIO(..))
-import           Data.IntMap.Strict              (toDescList)
 
-import           Backend.Status                     (isStatusBusy, Status(..), isReady)
-import           Backend.Wallet                     (Wallet (..), walletsSupportedInDAO, networkConfig, NetworkConfig(..), WalletName(..), fromJS)
-import           ENCOINS.App.Widgets.Basic          (waitForScripts, elementResultJS)
+import           Backend.Status                     (Status (..), isReady,
+                                                     isStatusBusy)
+import           Backend.Wallet                     (NetworkConfig (..),
+                                                     Wallet (..),
+                                                     WalletName (..), fromJS,
+                                                     networkConfig,
+                                                     walletsSupportedInDAO)
+import           ENCOINS.App.Widgets.Basic          (elementResultJS,
+                                                     waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
-import           ENCOINS.Common.Widgets.Advanced    (foldDynamicAny)
-import           ENCOINS.Common.Widgets.Basic       (notification, otherStatus, space, column)
-import           ENCOINS.DAO.Polls
-import           ENCOINS.DAO.Widgets.Navbar         (navbarWidget, Dao (..))
-import           ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
-import           ENCOINS.DAO.Widgets.PollWidget
-import           ENCOINS.Website.Widgets.Basic      (section, container)
-import           ENCOINS.Common.Utils               (toText)
 import           ENCOINS.Common.Events
+import           ENCOINS.Common.Utils               (toText)
+import           ENCOINS.Common.Widgets.Advanced    (foldDynamicAny)
+import           ENCOINS.Common.Widgets.Basic       (column, notification,
+                                                     otherStatus, space)
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
-
+import           ENCOINS.DAO.Polls
+import           ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
+import           ENCOINS.DAO.Widgets.Navbar         (Dao (..), navbarWidget)
+import           ENCOINS.DAO.Widgets.PollWidget
+import           ENCOINS.DAO.Widgets.RelayTable     (fetchRelayTable)
+import           ENCOINS.Website.Widgets.Basic      (container, section)
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo
@@ -39,7 +48,9 @@ bodyContentWidget = mdo
   dWallet <- connectWindow walletsSupportedInDAO eConnectOpen
 
   let eDelegate = void $ ffilter (==Delegate) eDao
-  delegateWindow eDelegate dWallet
+  eDelay <- postDelay 0.05
+  dRelays <- holdDyn [] =<< fetchRelayTable eDelay
+  delegateWindow eDelegate dWallet dRelays
 
   (dIsDisableButtons, dNotification) <- handleStatus dWallet
   notification dNotification
@@ -116,9 +127,9 @@ handleInvalidNetwork dWallet = do
   dUnexpectedNetworkB <- holdDyn False eUnexpectedNetworkB
   let mkNetworkMessage isInvalidNetwork message =
         case (isInvalidNetwork, message) of
-          (True,_) -> Just unexpectedNetwork
+          (True,_)    -> Just unexpectedNetwork
           (False, "") -> Nothing
-          (False, _) -> Just ""
+          (False, _)  -> Just ""
   dUnexpectedNetworkT <- foldDynMaybe mkNetworkMessage "" eUnexpectedNetworkB
   pure (dUnexpectedNetworkB, dUnexpectedNetworkT)
 
