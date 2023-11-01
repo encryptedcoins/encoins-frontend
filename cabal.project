@@ -29,4 +29,6 @@ source-repository-package
   location: https://github.com/encryptedcoins/encoins-bulletproofs.git
   tag: 4336461c4a1a4a33b28fc84af8b3ea2bbf267656
 
-constraints: clock == 0.8.3
+constraints:
+  clock == 0.8.3,
+  some == 1.0.5

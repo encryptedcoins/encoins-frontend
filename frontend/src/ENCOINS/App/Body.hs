@@ -77,8 +77,8 @@ fetchWalletNetworkStatus :: MonadWidget t m
   => Dynamic t Wallet
   -> m (Dynamic t (Text, Status))
 fetchWalletNetworkStatus dWallet = do
-  eWalletLoad <- elementResultJS "EndWalletLoad" id
-  let eLoadedWallet = tagPromptlyDyn dWallet $ updated eWalletLoad
+  dWalletLoad <- elementResultJS "EndWalletLoad" id
+  let eLoadedWallet = tagPromptlyDyn dWallet $ updated dWalletLoad
   let eUnexpectedNetworkB = fmap
         (\w -> walletNetworkId w /= app networkConfig)
         eLoadedWallet
