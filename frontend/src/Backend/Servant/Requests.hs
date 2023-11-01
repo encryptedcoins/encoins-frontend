@@ -1,35 +1,37 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module Backend.Servant.Requests where
 
 import           Config.Config          (urlsBS)
 import           Control.Monad          (void)
 import           Control.Monad.IO.Class (MonadIO (..))
 import           CSL                    (TransactionInputs)
-import           Data.Either.Extra
 import           Data.Aeson             (decode)
-import           Data.ByteString.Lazy   (fromStrict)
-import           Data.List              (delete)
 import           Data.Bool              (bool)
+import           Data.ByteString.Lazy   (fromStrict)
+import           Data.Either.Extra
+import           Data.IntMap            (IntMap)
+import qualified Data.IntMap            as IMap
+import           Data.List              (delete)
 import           Data.Maybe             (fromJust, isNothing)
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
 import           Servant.API            (NoContent)
 import           Servant.Reflex         (BaseUrl (..))
 import           System.Random          (randomRIO)
-import qualified Data.IntMap            as IMap
-import           Data.IntMap            (IntMap)
 import           Witherable             (catMaybes)
 
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
 import           Backend.Status         (Status (..), relayError)
-import           ENCOINS.Common.Events  (logEvent, logDyn, newEvent, postDelay)
+import           Backend.Utility        (normalizePingUrl)
+import           ENCOINS.Common.Events  (logDyn, logEvent, newEvent, postDelay)
 import           JS.App                 (pingServer)
-import           Backend.Utility (normalizePingUrl)
 
-import Debug.Trace
+import           Debug.Trace
 -- import System.Random
-import Data.Array.IO
-import Control.Monad
+import           Control.Monad
+import           Data.Array.IO
 
 newTxRequestWrapper :: MonadWidget t m
   => BaseUrl
