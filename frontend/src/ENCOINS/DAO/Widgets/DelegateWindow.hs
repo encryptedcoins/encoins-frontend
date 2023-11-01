@@ -1,22 +1,14 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE LambdaCase     #-}
-{-# LANGUAGE RecursiveDo    #-}
+{-# LANGUAGE LambdaCase  #-}
+{-# LANGUAGE RecursiveDo #-}
 
 module ENCOINS.DAO.Widgets.DelegateWindow
   (
     delegateWindow
   ) where
 
-import           Control.Monad                   (forM, void, (<=<))
-import           Data.Functor                    ((<&>))
-import           Data.List                       (sortOn)
-import           Data.Map                        (Map)
-import qualified Data.Map                        as Map
-import           Data.Maybe                      (fromJust)
-import           Data.Ord                        (Down (..))
+import           Control.Monad                   (void)
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
-import           Numeric.Natural                 (Natural)
 import           Reflex.Dom
 
 import           Backend.Status                  (UrlStatus (..), isNotValidUrl)
@@ -26,14 +18,16 @@ import           ENCOINS.App.Widgets.Basic       (containerApp, elementResultJS)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (toText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
-import           ENCOINS.Common.Widgets.Basic    (btn, btnWithBlock, divClassId)
+import           ENCOINS.Common.Widgets.Basic    (btnWithBlock, divClassId)
+import           ENCOINS.DAO.Widgets.RelayTable  (relayAmountWidget)
 import qualified JS.DAO                          as JS
 
 delegateWindow :: MonadWidget t m
   => Event t ()
   -> Dynamic t Wallet
+  -> Dynamic t [(Text, Integer)]
   -> m ()
-delegateWindow eOpen dWallet = mdo
+delegateWindow eOpen dWallet dRelays = mdo
   eUrlOk <- dialogWindow
     True
     eOpen
@@ -41,7 +35,7 @@ delegateWindow eOpen dWallet = mdo
     "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
     "Delegate Encoins" $ mdo
 
-          eUrlTable <- relayAmountWidget eOpen
+          eUrlTable <- relayAmountWidget dRelays
 
           divClass "dao-DelegateWindow_EnterUrl" $ text "Enter relay url:"
 
@@ -112,44 +106,3 @@ buttonWidget dUrlStatus =
         $ dynText
         $ toText <$> dUrlStatus
     pure eButton
-
-relayAmountWidget :: MonadWidget t m
-  => Event t ()
-  -> m (Event t Text)
-relayAmountWidget eOpen = do
-  dRelays <- holdDyn [] =<< fetchRelayTable eOpen
-  article $ tableWrapper $
-    table $ do
-      el "thead" $ tr $
-        mapM_ (\h -> th $ text h) ["Relay", "Amount", ""]
-      el "tbody" $ do
-        switchHold never <=< dyn $ dRelays <&> \relays -> do
-          evs <- forM relays $ \(relay, amount) -> tr $ do
-            tdRelay $ text relay
-            tdAmount $ text $ toText amount
-            eClick <- tdButton $ btn "button-switching inverted" "" $ text "Delegate"
-            pure $ relay <$ eClick
-          pure $ leftmost evs
-  where
-    tableWrapper = elAttr "div" ("class" =: "dao-DelegateWindow_TableWrapper")
-    table = elAttr "table" ("class" =: "dao-DelegateWindow_Table")
-    article = elAttr "article" ("class" =: "dao-DelegateWindow_RelayAmount")
-    tr = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow")
-    th = elAttr "th" ("class" =: "dao-DelegateWindow_TableHeader")
-    tdRelay = elAttr "td" ("class" =: "dao-DelegateWindow_TableRelay")
-    tdAmount = elAttr "td" ("class" =: "dao-DelegateWindow_TableAmount")
-    tdButton = elAttr "td" ("class" =: "dao-DelegateWindow_TableButton")
-
-sortRelayAmounts :: Maybe (Map Text String) -> [(Text, Integer)]
-sortRelayAmounts =
-    sortOn (Down . snd)
-  . Map.toList
-  . Map.map (floor @Double . (\x -> fromIntegral x / 1000000) . read @Natural )
-  . fromJust
-
-fetchRelayTable :: MonadWidget t m
-  => Event t ()
-  -> m (Event t [(Text, Integer)])
-fetchRelayTable eOpen = do
-  let eUrl = "https://encoins.io/delegations.json" <$ eOpen
-  fmap sortRelayAmounts <$> getAndDecode eUrl
