@@ -99,15 +99,15 @@ encoinsTxWalletMode
           <*> bRandomness
 
     -- Constructing the final redeemer
-    let eRed = bRed `tag` eSend
-    dFinalRedeemer <- holdDyn Nothing $ Just <$> eRed
+    dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eSend
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
 
+    logEvent "eFinalRedeemer" eFinalRedeemer
     -- Constructing a new transaction
     let dNewTxReqBody = zipDyn
           (fmap (\r -> InputRedeemer (fromJust r) WalletMode) dFinalRedeemer)
           dInputs
-
+    logDyn "dNewTxReqBody" dNewTxReqBody
     -- (eNewTxSuccess, eRelayDown) <- case mBaseUrl of
     --   Just baseUrl -> newTxRequestWrapper baseUrl dNewTxReqBody eFinalRedeemer
     --   _            -> pure (never, never)
@@ -121,10 +121,15 @@ encoinsTxWalletMode
     let (eNewTxSuccess, eNewTxRelayDown) =
           eventMaybe (BackendError relayError) eeNewTxResponse
 
+    logEvent "eeNewTxResponse" eeNewTxResponse
+    logEvent "eNewTxRelayDown" eNewTxRelayDown
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
     dTx   <- holdDyn "" eTx
     dTxId <- holdDyn "" eTxId
+
+    logEvent "eTxId" eTxId
+    logEvent "eTx" eTx
 
     -- Signing the transaction
     dWalletSignature <- elementResultJS "walletSignatureElement" decodeWitness
