@@ -63,16 +63,17 @@ encoinsTxWalletMode
     -- let emUrl = (Just $ BasePath "http://localhost:3000") <$ ev
     -- emUrl <- getValidRelay $ () <$ updated evTick
 
-    -- ev <- newEvent
-    emUrl <- getRelayUrlE eSend
+    ev <- newEvent
+    emUrl <- getRelayUrlE $ leftmost [eSend, ev]
     logEvent "encoinsTxWalletMode: emUrl:" emUrl
-    tellRelayStatus emUrl
+    -- tellRelayStatus emUrl
 
-    emUrlNewTx <- getRelayUrlE $ () <$ eNewTxRelayDown
-    tellRelayStatus emUrlNewTx
+    -- emUrlNewTx <- getRelayUrlE $ () <$ eNewTxRelayDown
+    -- tellRelayStatus emUrlNewTx
 
-    dUrl <- foldDynMaybe const (BasePath "") $ leftmost [emUrl, emUrlNewTx]
-    logDyn "encoinsTxWalletMode: dUrl: " dUrl
+    dmUrl <- holdDyn Nothing emUrl
+    logDyn "encoinsTxWalletMode: dmUrl: " dmUrl
+    logEvent "encoinsTxWalletMode: updated dmUrl: " $ updated dmUrl
 
 
     -- mBaseUrl <- getRelayUrl -- this chooses random server with successful ping
@@ -98,8 +99,7 @@ encoinsTxWalletMode
           <*> bRandomness
 
     -- Constructing the final redeemer
-    let eRed = bRed `tag` leftmost [eSend, () <$ emUrlNewTx]
-    logEvent "encoinsTxWalletMode: eRed" eRed
+    let eRed = bRed `tag` eSend
     dFinalRedeemer <- holdDyn Nothing $ Just <$> eRed
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
 
@@ -112,8 +112,9 @@ encoinsTxWalletMode
     --   Just baseUrl -> newTxRequestWrapper baseUrl dNewTxReqBody eFinalRedeemer
     --   _            -> pure (never, never)
 
-    eeNewTxResponse <- switchHold never <=< dyn $ dUrl <&> \url ->
-      newTxRequestWrapper
+    eeNewTxResponse <- switchHold never <=< dyn $ dmUrl <&> \case
+      Nothing -> pure never
+      Just url -> newTxRequestWrapper
         url
         dNewTxReqBody
         eFinalRedeemer
@@ -137,8 +138,9 @@ encoinsTxWalletMode
     --   Just baseUrl -> submitTxRequestWrapper baseUrl dSubmitReqBody eWalletSignature
     --   _            -> pure (never, never)
 
-    eeSubmitResponse <- switchHold never <=< dyn $ dUrl <&> \url ->
-      submitTxRequestWrapper url dSubmitReqBody eWalletSignature
+    eeSubmitResponse <- switchHold never <=< dyn $ dmUrl <&> \case
+      Nothing -> pure never
+      Just url -> submitTxRequestWrapper url dSubmitReqBody eWalletSignature
     let (eSubmitted, eSubmitRelayDown) =
           eventMaybe (BackendError relayError) eeSubmitResponse
 

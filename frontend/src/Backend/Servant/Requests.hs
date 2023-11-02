@@ -38,13 +38,6 @@ newTxRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Dynamic t (InputOfEncoinsApi, TransactionInputs)
   -> Event t ()
---   -> m (Event t (Text, Text), Event t Status)
--- newTxRequestWrapper baseUrl dReqBody e = do
---   let ApiClient{..} = mkApiClient baseUrl
---   eResp <- newTxRequest (Right <$> dReqBody) e
---   let eRespUnwrapped = makeResponse <$> eResp
---   logEvent "newTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
---   return $ eventMaybe (BackendError relayError) eRespUnwrapped
   -> m (Event t (Maybe (Text, Text)))
 newTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
@@ -52,6 +45,14 @@ newTxRequestWrapper baseUrl dReqBody e = do
   let eRespUnwrapped = makeResponse <$> eResp
   logEvent "newTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
   pure eRespUnwrapped
+
+--   -> m (Event t (Text, Text), Event t Status)
+-- newTxRequestWrapper baseUrl dReqBody e = do
+--   let ApiClient{..} = mkApiClient baseUrl
+--   eResp <- newTxRequest (Right <$> dReqBody) e
+--   let eRespUnwrapped = makeResponse <$> eResp
+--   logEvent "newTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
+--   return $ eventMaybe (BackendError relayError) eRespUnwrapped
 
 submitTxRequestWrapper :: MonadWidget t m
   => BaseUrl
