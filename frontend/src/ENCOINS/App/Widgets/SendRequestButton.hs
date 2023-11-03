@@ -35,7 +35,7 @@ sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = mdo
   ev <- newEvent
 
 
-  emUrl <- getRelayUrlE ev
+  emUrl <- getRelayUrlE $ leftmost [ev, () <$ eRelayDown]
   -- logEvent "sendRequestButton: emUrl:" emUrl
   -- tellRelayStatus emUrl
   dmUrl <- holdDyn Nothing emUrl

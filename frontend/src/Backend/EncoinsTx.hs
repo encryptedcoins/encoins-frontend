@@ -73,6 +73,7 @@ encoinsTxWalletMode
     -- tellRelayStatus emUrlNewTx
 
     dmUrl <- holdDyn Nothing $ leftmost [emUrl, emUrlNewTx]
+    -- dmUrl <- holdDyn Nothing emUrl
     logEvent "encoinsTxWalletMode: updated dmUrl: " $ updated dmUrl
 
 
@@ -101,6 +102,7 @@ encoinsTxWalletMode
     eFallBackNewTx <- delay 1 emUrlNewTx
     -- Constructing the final redeemer
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` leftmost [eSend, () <$ eFallBackNewTx]
+    -- dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eSend
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
 
     logEvent "eFinalRedeemer" eFinalRedeemer
