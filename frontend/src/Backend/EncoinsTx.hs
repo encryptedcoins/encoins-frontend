@@ -64,15 +64,15 @@ encoinsTxWalletMode
     -- emUrl <- getValidRelay $ () <$ updated evTick
 
     ev <- newEvent
-    emUrl <- getRelayUrlE $ leftmost [eSend, ev]
+    emUrl <- getRelayUrlE ev
     logEvent "encoinsTxWalletMode: emUrl:" emUrl
     -- tellRelayStatus emUrl
 
-    -- emUrlNewTx <- getRelayUrlE $ () <$ eNewTxRelayDown
+    emUrlNewTx <- getRelayUrlE $ () <$ eNewTxRelayDown
+    logEvent "encoinsTxWalletMode: emUrlNewTx:" emUrlNewTx
     -- tellRelayStatus emUrlNewTx
 
-    dmUrl <- holdDyn Nothing emUrl
-    logDyn "encoinsTxWalletMode: dmUrl: " dmUrl
+    dmUrl <- holdDyn Nothing $ leftmost [emUrl, emUrlNewTx]
     logEvent "encoinsTxWalletMode: updated dmUrl: " $ updated dmUrl
 
 
@@ -98,8 +98,9 @@ encoinsTxWalletMode
           <*> current dMPs
           <*> bRandomness
 
+    eFallBackNewTx <- delay 1 emUrlNewTx
     -- Constructing the final redeemer
-    dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eSend
+    dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` leftmost [eSend, () <$ eFallBackNewTx]
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
 
     logEvent "eFinalRedeemer" eFinalRedeemer
@@ -107,11 +108,10 @@ encoinsTxWalletMode
     let dNewTxReqBody = zipDyn
           (fmap (\r -> InputRedeemer (fromJust r) WalletMode) dFinalRedeemer)
           dInputs
-    logDyn "dNewTxReqBody" dNewTxReqBody
+
     -- (eNewTxSuccess, eRelayDown) <- case mBaseUrl of
     --   Just baseUrl -> newTxRequestWrapper baseUrl dNewTxReqBody eFinalRedeemer
     --   _            -> pure (never, never)
-
     eeNewTxResponse <- switchHold never <=< dyn $ dmUrl <&> \case
       Nothing -> pure never
       Just url -> newTxRequestWrapper
@@ -121,15 +121,11 @@ encoinsTxWalletMode
     let (eNewTxSuccess, eNewTxRelayDown) =
           eventMaybe (BackendError relayError) eeNewTxResponse
 
-    logEvent "eeNewTxResponse" eeNewTxResponse
     logEvent "eNewTxRelayDown" eNewTxRelayDown
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
     dTx   <- holdDyn "" eTx
     dTxId <- holdDyn "" eTxId
-
-    logEvent "eTxId" eTxId
-    logEvent "eTx" eTx
 
     -- Signing the transaction
     dWalletSignature <- elementResultJS "walletSignatureElement" decodeWitness

@@ -32,10 +32,10 @@ sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = mdo
   -- Getting the current MaxAda
   -- mBaseUrl <- getRelayUrl
   -- relayStatusM mBaseUrl
-  -- ev <- newEvent
+  ev <- newEvent
 
 
-  emUrl <- getRelayUrlE e
+  emUrl <- getRelayUrlE ev
   -- logEvent "sendRequestButton: emUrl:" emUrl
   -- tellRelayStatus emUrl
   dmUrl <- holdDyn Nothing emUrl
