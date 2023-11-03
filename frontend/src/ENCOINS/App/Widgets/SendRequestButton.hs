@@ -35,15 +35,19 @@ sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = mdo
   ev <- newEvent
 
 
-  emUrl <- getRelayUrlE $ leftmost [ev, () <$ eRelayDown]
+  emUrl <- getRelayUrlE ev
+
+  emUrlFallBack <- getRelayUrlE $ () <$ eRelayDown
   -- logEvent "sendRequestButton: emUrl:" emUrl
   -- tellRelayStatus emUrl
-  dmUrl <- holdDyn Nothing emUrl
+  dmUrl <- holdDyn Nothing $ leftmost [emUrl, emUrlFallBack]
   -- logDyn "sendRequestButton: updated dmUrl:" dmUrl
+
+  eFallback <- delay 1 $ () <$ emUrlFallBack
 
   emStatus <- switchHold never <=< dyn $ dmUrl <&> \case
     Nothing -> pure never
-    Just url -> statusRequestWrapper url (pure MaxAdaWithdraw) e
+    Just url -> statusRequestWrapper url (pure MaxAdaWithdraw) $ leftmost [e, eFallback]
   let (eMaxAda, eRelayDown) = eventMaybe (BackendError relayError) emStatus
 
   -- (eMaxAda, _) <- case mBaseUrl of
