@@ -17,6 +17,9 @@ import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           PlutusTx.Extra.ByteString       (ToBuiltinByteString(..), byteStringToInteger)
 
+import           Debug.Trace
+
+
 getEncoinsInUtxos :: CSL.TransactionUnspentOutputs -> [Text]
 getEncoinsInUtxos utxos = Map.keys assets
   where getMultiAsset (CSL.MultiAsset a) = a
@@ -38,6 +41,7 @@ mkRedeemer mode ledgerAddr changeAddr bp secrets mps rs = red
           inputs' = map (\(Input g p) -> (fromGroupElement g, p)) inputs
           sig = toBuiltin $ fromJust $
             decodeHex ""
+          -- red = trace ("mkredeemer: " <> show proof) ((ledgerAddr, changeAddr, protocolFees mode v), (v, inputs'), proof, sig)
           red = ((ledgerAddr, changeAddr, protocolFees mode v), (v, inputs'), proof, sig)
 
 verifyRedeemer :: BulletproofParams -> Maybe EncoinsRedeemer -> Bool

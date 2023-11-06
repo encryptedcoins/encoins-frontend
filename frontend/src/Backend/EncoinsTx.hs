@@ -64,10 +64,12 @@ encoinsTxWalletMode
     -- emUrl <- getValidRelay $ () <$ updated evTick
 
     ev <- newEvent
+    logEvent "encoinsTxWalletMode: ev:" ev
     emUrl <- getRelayUrlE ev
     logEvent "encoinsTxWalletMode: emUrl:" emUrl
     -- tellRelayStatus emUrl
-
+    -- eDelayedRelayDown <- delay 1 eNewTxRelayDown
+    -- logEvent "encoinsTxWalletMode: eDelayedRelayDown:" eDelayedRelayDown
     emUrlNewTx <- getRelayUrlE $ () <$ eNewTxRelayDown
     logEvent "encoinsTxWalletMode: emUrlNewTx:" emUrlNewTx
     -- tellRelayStatus emUrlNewTx
@@ -90,6 +92,8 @@ encoinsTxWalletMode
     let dLst = unzip <$> zipDynWith (++) (fmap (map (, Burn)) dCoinsBurn) (fmap (map (, Mint)) dCoinsMint)
         dSecrets = fmap fst dLst
         dMPs     = fmap snd dLst
+    logDyn "encoinsTxWalletMode: dSecrets: " dSecrets
+    logDyn "encoinsTxWalletMode: dMPs: " dMPs
 
     -- Obtaining EncoinsRedeemer
     let bRed = mkRedeemer WalletMode ledgerAddress
@@ -99,13 +103,15 @@ encoinsTxWalletMode
           <*> current dMPs
           <*> bRandomness
 
-    eFallBackNewTx <- delay 1 emUrlNewTx
+    eFallBackNewTx <- delay 5 eNewTxRelayDown
+    logEvent "encoinsTxWalletMode: eFallBackNewTx" eFallBackNewTx
     -- Constructing the final redeemer
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` leftmost [eSend, () <$ eFallBackNewTx]
+    -- logDyn "encoinsTxWalletMode: dFinalRedeemer: " dFinalRedeemer
     -- dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eSend
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
 
-    logEvent "eFinalRedeemer" eFinalRedeemer
+    logEvent "encoinsTxWalletMode: eFinalRedeemer" eFinalRedeemer
     -- Constructing a new transaction
     let dNewTxReqBody = zipDyn
           (fmap (\r -> InputRedeemer (fromJust r) WalletMode) dFinalRedeemer)
@@ -123,7 +129,8 @@ encoinsTxWalletMode
     let (eNewTxSuccess, eNewTxRelayDown) =
           eventMaybe (BackendError relayError) eeNewTxResponse
 
-    logEvent "eNewTxRelayDown" eNewTxRelayDown
+    logEvent "encoinsTxWalletMode: eNewTxRelayDown" eNewTxRelayDown
+    logEvent "encoinsTxWalletMode: eNewTxSuccess" $ () <$ eNewTxSuccess
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
     dTx   <- holdDyn "" eTx
