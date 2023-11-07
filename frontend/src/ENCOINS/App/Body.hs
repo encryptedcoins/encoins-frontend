@@ -43,7 +43,7 @@ bodyContentWidget mpass = mdo
 
   (dStatusT, dIsDisableButtons) <- handleAppStatus dWallet evEvStatus
 
-  logDyn "bodyContentWidget: dStatusT" dStatusT
+  logDyn "status:" dStatusT
 
   notification dStatusT
 

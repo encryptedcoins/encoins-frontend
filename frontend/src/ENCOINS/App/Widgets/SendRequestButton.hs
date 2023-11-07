@@ -3,26 +3,22 @@
 
 module ENCOINS.App.Widgets.SendRequestButton where
 
-import           Control.Monad                (void, (<=<))
+import           Control.Monad                ((<=<))
 import           Data.Functor                 ((<&>))
-import           Data.Text                    (Text)
 import           Reflex.Dom
-import           Servant.Reflex               (BaseUrl (..))
 
 import           Backend.Protocol.TxValidity  (TxValidity (..), txValidity)
 import           Backend.Protocol.Types
-import           Backend.Servant.Requests     (eventMaybe, getRelayUrl,
-                                               getRelayUrlE,
+import           Backend.Servant.Requests     (eventMaybe, getRelayUrlE,
                                                statusRequestWrapper)
 import           Backend.Status               (Status (..), relayError)
 import           Backend.Utility              (toEither)
 import           Backend.Wallet               (Wallet (..))
-import           ENCOINS.App.Widgets.Basic    (tellTxStatus)
 import           ENCOINS.Bulletproofs         (Secrets)
-import           ENCOINS.Common.Events        (logDyn, logEvent, newEvent)
+import           ENCOINS.Common.Events        (newEvent)
 import           ENCOINS.Common.Widgets.Basic (btn, divClassId)
 
-sendRequestButton :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+sendRequestButton :: MonadWidget t m
   => EncoinsMode
   -> Dynamic t Status
   -> Dynamic t Wallet
@@ -35,13 +31,8 @@ sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = mdo
   -- TODO: choose url every time by 'e' fires
   -- or every time user enters the tab.
   eInit <- newEvent
-  logEvent "sendRequestButton: eInit:" eInit
   emUrl <- getRelayUrlE $ leftmost [eInit, () <$ eRelayDown]
-  logEvent "sendRequestButton: emUrl:" emUrl
-
   let eAllRelayDown = filterLeft $ toEither () <$> emUrl
-  tellTxStatus "" $ NoRelay <$ eAllRelayDown
-
   dmUrl <- holdDyn Nothing emUrl
 
   eFireStatus <- delay 1 $ leftmost [e, () <$ eRelayDown]

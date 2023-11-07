@@ -7,15 +7,12 @@ import           Control.Monad.IO.Class    (MonadIO (..))
 import qualified CSL
 import           Data.Functor              ((<&>))
 import qualified Data.Map                  as Map
-import           Data.Maybe                (fromJust, fromMaybe, isJust,
-                                            isNothing)
+import           Data.Maybe                (fromJust, fromMaybe)
 import           Data.Text                 (Text)
-import           Data.Time
 import           JS.App                    (walletSignTx)
 import           PlutusTx.Prelude          (length)
 import           Prelude                   hiding (length)
 import           Reflex.Dom                hiding (Input)
-import           Servant.Reflex            (BaseUrl (..))
 import           Witherable                (catMaybes)
 
 import           Backend.Protocol.Setup    (encoinsCurrencySymbol,
@@ -32,7 +29,6 @@ import           ENCOINS.Bulletproofs
 import           ENCOINS.Common.Events     (logDyn, logEvent, newEvent)
 import           ENCOINS.Common.Utils      (toText)
 
-import           Debug.Trace
 
 encoinsTxWalletMode :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Dynamic t Wallet
@@ -50,17 +46,9 @@ encoinsTxWalletMode
   dCoinsMint
   eSend = mdo
 
-    emUrlSend <- getRelayUrlE eSend
-    logEvent "encoinsTxWalletMode: emUrlSend:" emUrlSend
-
     let eFallback = leftmost [() <$ eNewTxRelayDown, () <$ eSubmitRelayDown]
-
-    emUrlFallback <- getRelayUrlE eFallback
-    logEvent "encoinsTxWalletMode: emUrlFallback:" emUrlFallback
-
-    let emUrl = leftmost [emUrlSend, emUrlFallback]
+    emUrl <- getRelayUrlE $ leftmost [eSend, eFallback]
     dmUrl <- holdDyn Nothing emUrl
-    logEvent "encoinsTxWalletMode: updated dmUrl: " $ updated dmUrl
 
     let dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
@@ -82,12 +70,10 @@ encoinsTxWalletMode
           <*> bRandomness
 
     eFireRedeemer <- delay 1 $ leftmost [eSend, () <$ eFallback]
-    logEvent "encoinsTxWalletMode: eFireRedeemer" eFireRedeemer
 
     -- Constructing the final redeemer
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eFireRedeemer
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
-    logEvent "encoinsTxWalletMode: eFinalRedeemer" eFinalRedeemer
 
     -- Constructing a new transaction
     let dNewTxReqBody = zipDyn
@@ -103,8 +89,6 @@ encoinsTxWalletMode
     let (eNewTxSuccess, eNewTxRelayDown) =
           eventMaybe (BackendError relayError) eeNewTxResponse
 
-    logEvent "encoinsTxWalletMode: eNewTxRelayDown" eNewTxRelayDown
-    logEvent "encoinsTxWalletMode: eNewTxSuccess" $ () <$ eNewTxSuccess
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
     dTx   <- holdDyn "" eTx
@@ -114,19 +98,13 @@ encoinsTxWalletMode
     dWalletSignature <- elementResultJS "walletSignatureElement" decodeWitness
     performEvent_ $ liftIO . walletSignTx <$> bWalletName `attach` eTx
     let eWalletSignature = void $ updated dWalletSignature
-    logEvent "encoinsTxWalletMode: eWalletSignature" eWalletSignature
-
-    -- TODO: this relay is just for debug
-    eDelayedWalletSignature <- delay 10 eWalletSignature
-    logEvent "encoinsTxWalletMode: eDelayedWalletSignature" eDelayedWalletSignature
 
     -- Submitting the transaction
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
 
     eeSubmitResponse <- switchHold never <=< dyn $ dmUrl <&> \case
-      Nothing -> pure never
-      -- Just url -> submitTxRequestWrapper url dSubmitReqBody eWalletSignature
-      Just url -> submitTxRequestWrapper url dSubmitReqBody eDelayedWalletSignature
+      Nothing  -> pure never
+      Just url -> submitTxRequestWrapper url dSubmitReqBody eWalletSignature
     let (eSubmitted, eSubmitRelayDown) =
           eventMaybe (BackendError relayError) eeSubmitResponse
 
@@ -134,7 +112,6 @@ encoinsTxWalletMode
     eConfirmed <- updated <$> holdUniqDyn dUTXOs
 
     let eAllRelayDown = filterLeft $ toEither () <$> emUrl
-
 
     let eStatus = leftmost [
           Ready        <$ eConfirmed,
@@ -146,7 +123,7 @@ encoinsTxWalletMode
           eSubmitRelayDown,
           Submitted    <$ eSubmitted
           ]
-    logEvent "encoinsTxWalletMode: eStatus" eStatus
+    -- logEvent "encoinsTxWalletMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
 
 encoinsTxTransferMode :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
@@ -165,20 +142,11 @@ encoinsTxTransferMode
   eSend
   dWalletSignature = mdo
 
-    -- emUrl <- getValidRelay $ leftmost [ev, () <$ eNewTxRelayDown, () <$ eSubmitRelayDown]
-    -- logEvent "encoinsTxWalletMode: emUrl: " emUrl
-    -- let emUrl = (Just $ BasePath "http://localhost:3000") <$ ev
-    -- emUrl <- getRelayUrlE ev
-    -- logEvent "encoinsTxWalletMode: getRelayUrlE: emUrl:" emUrl
-    -- dUrl <- foldDynMaybe const (BasePath "") emUrl
-    -- logDyn "encoinsTxWalletMode: dUrl: " dUrl
+    let eFallback = leftmost [() <$ eNewTxRelayDown, () <$ eSubmitRelayDown]
+    emUrl <- getRelayUrlE $ leftmost [eSend, eFallback]
+    dmUrl <- holdDyn Nothing emUrl
 
-    ev <- newEvent
-    emUrl <- getRelayUrlE ev
-    logEvent "encoinsTxWalletMode: emUrl:" emUrl
-
-    dUrl <- foldDynMaybe const (BasePath "") emUrl
-    logDyn "encoinsTxWalletMode: dUrl: " dUrl
+    eFireTx <- delay 1 $ leftmost [eSend, () <$ eFallback]
 
     let dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
@@ -187,20 +155,13 @@ encoinsTxTransferMode
         bWalletName = toJS . walletName <$> current dWallet
         dAddr       = fromMaybe ledgerAddress <$> dmAddr
 
-    -- Constructing a new transaction
-    -- (eNewTxSuccess, eRelayDown) <- case mBaseUrl of
-    --   Just baseUrl ->
-    --     newTxRequestWrapper
-    --       baseUrl
-    --       (zipDyn (InputSending <$> dAddr <*> zipDynWith mkValue dCoins dNames <*> dAddrWallet) dInputs)
-    --       eSend
-    --   _            -> pure (never, never)
-
-    eeNewTxResponse <- switchHold never <=< dyn $ dUrl <&> \url ->
-        newTxRequestWrapper
-          url
-          (zipDyn (InputSending <$> dAddr <*> zipDynWith mkValue dCoins dNames <*> dAddrWallet) dInputs)
-          eSend
+    -- Create transaction
+    eeNewTxResponse <- switchHold never <=< dyn $ dmUrl <&> \case
+      Nothing -> pure never
+      Just url -> newTxRequestWrapper
+        url
+        (zipDyn (InputSending <$> dAddr <*> zipDynWith mkValue dCoins dNames <*> dAddrWallet) dInputs)
+        eFireTx
     let (eNewTxSuccess, eNewTxRelayDown) =
             eventMaybe (BackendError relayError) eeNewTxResponse
 
@@ -215,31 +176,28 @@ encoinsTxTransferMode
 
     -- Submitting the transaction
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
-    -- (eSubmitted, eRelayDown') <- case mBaseUrl of
-    --   Just baseUrl -> submitTxRequestWrapper baseUrl dSubmitReqBody eWalletSignature
-    --   _            -> pure (never, never)
 
-    eeSubmitResponse <- switchHold never <=< dyn $ dUrl <&> \url ->
-      submitTxRequestWrapper url dSubmitReqBody eWalletSignature
-    logEvent "submitTxRequestWrapper: url:" $ tagPromptlyDyn dUrl eeSubmitResponse
+    eeSubmitResponse <- switchHold never <=< dyn $ dmUrl <&> \case
+      Nothing  -> pure never
+      Just url -> submitTxRequestWrapper url dSubmitReqBody eWalletSignature
     let (eSubmitted, eSubmitRelayDown) =
           eventMaybe (BackendError relayError) eeSubmitResponse
 
     -- Tracking the pending transaction
     eConfirmed <- updated <$> holdUniqDyn dUTXOs
+    let eAllRelayDown = filterLeft $ toEither () <$> emUrl
 
     let eStatus = leftmost [
           Ready        <$ eConfirmed,
-          -- eRelayDown,
+          NoRelay      <$ eAllRelayDown,
+          Constructing <$ eFireTx,
           eNewTxRelayDown,
           Signing      <$ eNewTxSuccess,
-          Constructing <$ eSend,
           Submitting   <$ eWalletSignature,
-          -- eRelayDown',
           eSubmitRelayDown,
           Submitted    <$ eSubmitted
           ]
-    logEvent "encoinsTxTransferMode: eStatus" eStatus
+    -- logEvent "encoinsTxTransferMode: eStatus" eStatus
 
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
   where
