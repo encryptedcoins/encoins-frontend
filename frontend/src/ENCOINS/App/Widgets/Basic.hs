@@ -20,8 +20,7 @@ import           Servant.Reflex           (BaseUrl)
 
 
 import           Backend.Servant.Requests (getRelayUrl)
-import           Backend.Status           (Status (..), everyRelayDown,
-                                           relayError)
+import           Backend.Status           (Status (..), relayError)
 import           ENCOINS.Common.Events
 import           JS.Website               (loadJSON)
 

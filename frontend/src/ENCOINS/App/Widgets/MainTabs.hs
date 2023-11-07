@@ -124,7 +124,7 @@ walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     eWalletError <- walletError
     let eStatus = leftmost [eStatusUpdate, eWalletError]
     dStatus <- holdDyn Ready eStatus
-    tellTxStatus "Wallet status" Ready eStatus
+    tellTxStatus "Wallet mode" Ready eStatus
   where
     menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"

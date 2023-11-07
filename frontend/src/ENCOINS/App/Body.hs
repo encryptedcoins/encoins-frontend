@@ -5,7 +5,6 @@ module ENCOINS.App.Body (bodyWidget) where
 import           Control.Monad                      ((<=<))
 import           Data.Aeson                         (encode)
 import           Data.Bifunctor                     (first)
-import           Data.Bool                          (bool)
 import           Data.ByteString.Lazy               (toStrict)
 import           Data.Functor                       ((<&>))
 import           Data.Text                          (Text)
@@ -35,6 +34,7 @@ import           ENCOINS.Common.Widgets.Basic       (column, notification,
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
+import           ENCOINS.Common.Events     (logDyn, logEvent, newEvent)
 
 
 bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe PasswordRaw))
@@ -42,6 +42,8 @@ bodyContentWidget mpass = mdo
   (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet mpass
 
   (dStatusT, dIsDisableButtons) <- handleAppStatus dWallet evEvStatus
+
+  logDyn "bodyContentWidget: dStatusT" dStatusT
 
   notification dStatusT
 
@@ -120,7 +122,10 @@ handleAppStatus dWallet evEvStatus = do
     (\ev (_, accS) -> if isBlockError accS then Nothing else Just ev)
     (T.empty, Ready) $ leftmost [eStatus, updated dWalletNetworkStatus]
 
-  let flatStatus (t, s) = bool (t <> column <> space <> T.pack (show s)) T.empty $ isReady s
+  let flatStatus (t, s)
+        | isReady s = T.empty
+        | T.null $ T.strip t = toText s
+        | otherwise = t <> column <> space <> toText s
 
   let dIsDisableButtons = (isStatusBusyBackendNetwork . snd) <$> dStatus
   let dStatusT = flatStatus <$> dStatus

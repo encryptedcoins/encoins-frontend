@@ -11,11 +11,12 @@ import           Servant.Reflex               (BaseUrl (..))
 
 import           Backend.Protocol.TxValidity  (TxValidity (..), txValidity)
 import           Backend.Protocol.Types
+import           Backend.Utility (toEither)
 import           Backend.Servant.Requests     (getRelayUrl, getRelayUrlE,
                                                statusRequestWrapper, eventMaybe)
 import           Backend.Status               (Status (..), relayError)
 import           Backend.Wallet               (Wallet (..))
-import           ENCOINS.App.Widgets.Basic    (relayStatusM, tellRelayStatus)
+import           ENCOINS.App.Widgets.Basic    (relayStatusM, tellTxStatus)
 import           ENCOINS.Bulletproofs         (Secrets)
 import           ENCOINS.Common.Events        (logDyn, logEvent, newEvent)
 import           ENCOINS.Common.Widgets.Basic (btn, divClassId)
@@ -40,7 +41,9 @@ sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = mdo
 
   -- emUrlFallBack <- getRelayUrlE $ () <$ eRelayDown
   -- logEvent "sendRequestButton: emUrlFallBack:" emUrlFallBack
-  -- tellRelayStatus emUrl
+  let eAllRelayDown = filterLeft $ toEither () <$> emUrl
+
+  tellTxStatus "" Ready $ NoRelay <$ eAllRelayDown
   dmUrl <- holdDyn Nothing emUrl
   -- logDyn "sendRequestButton: updated dmUrl:" dmUrl
 
