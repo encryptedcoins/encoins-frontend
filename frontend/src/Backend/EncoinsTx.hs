@@ -24,10 +24,9 @@ import           Backend.Protocol.Types
 import           Backend.Protocol.Utility  (getEncoinsInUtxos, mkRedeemer)
 import           Backend.Servant.Requests
 import           Backend.Status            (Status (..), relayError)
+import           Backend.Utility           (toEither)
 import           Backend.Wallet            (Wallet (..), toJS)
-import           ENCOINS.App.Widgets.Basic (elementResultJS, relayStatusM,
-                                            tellRelayStatus)
-import           Backend.Utility (toEither)
+import           ENCOINS.App.Widgets.Basic (elementResultJS)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           ENCOINS.Common.Events     (logDyn, logEvent, newEvent)
@@ -174,19 +173,12 @@ encoinsTxTransferMode
     -- dUrl <- foldDynMaybe const (BasePath "") emUrl
     -- logDyn "encoinsTxWalletMode: dUrl: " dUrl
 
-    -- tellRelayStatus
-    --   "Relay status"
-    --   (BackendError relayError)
-    --   (fmapMaybe (\mU -> if isNothing mU then Just () else Nothing) emUrl)
     ev <- newEvent
     emUrl <- getRelayUrlE ev
     logEvent "encoinsTxWalletMode: emUrl:" emUrl
-    tellRelayStatus emUrl
 
     dUrl <- foldDynMaybe const (BasePath "") emUrl
     logDyn "encoinsTxWalletMode: dUrl: " dUrl
-    -- mBaseUrl <- getRelayUrl -- this chooses random server with successful ping
-    -- relayStatusM mBaseUrl
 
     let dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
@@ -273,7 +265,6 @@ encoinsTxLedgerMode
   dCoinsMint
   eSend = mdo
     mBaseUrl <- getRelayUrl -- this chooses random server with successful ping
-    relayStatusM mBaseUrl
 
     ePb   <- getPostBuild
     eTick <- tickLossyFromPostBuildTime 12

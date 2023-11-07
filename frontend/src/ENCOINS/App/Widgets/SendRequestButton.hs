@@ -11,12 +11,13 @@ import           Servant.Reflex               (BaseUrl (..))
 
 import           Backend.Protocol.TxValidity  (TxValidity (..), txValidity)
 import           Backend.Protocol.Types
-import           Backend.Utility (toEither)
-import           Backend.Servant.Requests     (getRelayUrl, getRelayUrlE,
-                                               statusRequestWrapper, eventMaybe)
+import           Backend.Servant.Requests     (eventMaybe, getRelayUrl,
+                                               getRelayUrlE,
+                                               statusRequestWrapper)
 import           Backend.Status               (Status (..), relayError)
+import           Backend.Utility              (toEither)
 import           Backend.Wallet               (Wallet (..))
-import           ENCOINS.App.Widgets.Basic    (relayStatusM, tellTxStatus)
+import           ENCOINS.App.Widgets.Basic    (tellTxStatus)
 import           ENCOINS.Bulletproofs         (Secrets)
 import           ENCOINS.Common.Events        (logDyn, logEvent, newEvent)
 import           ENCOINS.Common.Widgets.Basic (btn, divClassId)
@@ -28,36 +29,33 @@ sendRequestButton :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   -> Dynamic t Secrets
   -> Dynamic t Secrets
   -> Event t ()
-  -> m (Event t ())
+  -> m (Event t Status, Event t ())
 sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = mdo
-  -- Getting the current MaxAda
 
-  -- TODO: choose firing every time by 'e' fires
+  -- TODO: choose url every time by 'e' fires
   -- or every time user enters the tab.
-  ev <- newEvent
-  logEvent "sendRequestButton: ev:" ev
-  emUrl <- getRelayUrlE $ leftmost [ev, () <$ eRelayDown]
+  eInit <- newEvent
+  logEvent "sendRequestButton: eInit:" eInit
+  emUrl <- getRelayUrlE $ leftmost [eInit, () <$ eRelayDown]
   logEvent "sendRequestButton: emUrl:" emUrl
 
-  -- emUrlFallBack <- getRelayUrlE $ () <$ eRelayDown
-  -- logEvent "sendRequestButton: emUrlFallBack:" emUrlFallBack
   let eAllRelayDown = filterLeft $ toEither () <$> emUrl
+  tellTxStatus "" $ NoRelay <$ eAllRelayDown
 
-  tellTxStatus "" Ready $ NoRelay <$ eAllRelayDown
   dmUrl <- holdDyn Nothing emUrl
-  -- logDyn "sendRequestButton: updated dmUrl:" dmUrl
 
   eFireStatus <- delay 1 $ leftmost [e, () <$ eRelayDown]
-  -- logEvent "sendRequestButton: eFallback:" eFallback
 
+  -- Getting current MaxAda
   emStatus <- switchHold never <=< dyn $ dmUrl <&> \case
-    Nothing -> pure never
+    Nothing  -> pure never
     Just url -> statusRequestWrapper url (pure MaxAdaWithdraw) eFireStatus
   let (eMaxAda, eRelayDown) = eventMaybe (BackendError relayError) emStatus
 
   let getMaxAda (MaxAdaWithdrawResult n) = Just n
       getMaxAda _                        = Nothing
   dMaxAda <- holdDyn 0 (mapMaybe getMaxAda eMaxAda)
+
   -- SEND REQUEST button
   let dTxValidity = txValidity mode
         <$> dmUrl
@@ -80,4 +78,5 @@ sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = mdo
   eSend <- divClassId "" "welcome-send-req" $
     btn (fmap f dTxValidity) (fmap h dTxValidity) $ text "SEND REQUEST"
   dyn_ $ fmap g dTxValidity
-  return $ () <$ ffilter (== TxValid) (current dTxValidity `tag` eSend)
+  let eValidTx = () <$ ffilter (== TxValid) (current dTxValidity `tag` eSend)
+  pure (NoRelay <$ eAllRelayDown, eValidTx)

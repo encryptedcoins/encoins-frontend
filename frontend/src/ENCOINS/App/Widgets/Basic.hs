@@ -70,31 +70,30 @@ walletError = do
     let eWalletError = ffilter ("" /=) $ updated dWalletError
     return $ WalletError <$> eWalletError
 
-relayStatus :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m) => m ()
-relayStatus = do
-  relayStatusM =<< getRelayUrl
+-- relayStatus :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m) => m ()
+-- relayStatus = do
+--   relayStatusM =<< getRelayUrl
 
-relayStatusM :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
-  => Maybe BaseUrl
-  -> m ()
-relayStatusM mRelayUrl = do
+-- relayStatusM :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+--   => Maybe BaseUrl
+--   -> m ()
+-- relayStatusM mRelayUrl = do
   -- when (isNothing mRelayUrl) $ do
-    ev <- newEvent
-    tellRelayStatus $ mRelayUrl <$ ev
+    -- ev <- newEvent
+    -- tellRelayStatus $ mRelayUrl <$ ev
 
-tellRelayStatus :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
-  => Event t (Maybe BaseUrl)
-  -> m ()
-tellRelayStatus emUrl = do
-  let eStatus = maybe (BackendError relayError) (const Ready) <$> emUrl
-  logEvent "tellRelayStatus: eStatus" eStatus
-  tellTxStatus "Relay status" Ready eStatus
+-- tellRelayStatus :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+--   => Event t (Maybe BaseUrl)
+--   -> m ()
+-- tellRelayStatus emUrl = do
+--   let eStatus = maybe (BackendError relayError) (const Ready) <$> emUrl
+--   logEvent "tellRelayStatus: eStatus" eStatus
+--   tellTxStatus "Relay status" eStatus
 
 tellTxStatus :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
-  => Text
-  -> Status
+  => Text -- Category of the status. E.g. 'wallet mode'
   -> Event t Status
   -> m ()
-tellTxStatus title status ev =
+tellTxStatus title ev =
   tellEvent $
-      [(\x -> bool (title, x) (T.empty, status) $ x == status) <$> ev] <$ ev
+      [(\x -> bool (title, x) (T.empty, Ready) $ x == Ready) <$> ev] <$ ev

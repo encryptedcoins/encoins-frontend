@@ -69,7 +69,7 @@ loadCache mPass = do
         (CustomStatus "Cache structure is updating. Please wait.")
         Ready
         <$> eSecretsIsEmpty
-  tellTxStatus "App status" Ready statusEvent
+  tellTxStatus "App status" statusEvent
 
 
   -- Convert "encoins" cache when it is not empty
@@ -85,5 +85,5 @@ loadCache mPass = do
   -- Ask user to reload when cache structure is updated
   let eSecretsIsEmptyLog = () <$ ffilter id eSecretsIsEmpty
   eSaved <- updated <$> elementResultJS "encoins-with-name" (const ())
-  tellTxStatus "App status" Ready $
+  tellTxStatus "App status" $
     CustomStatus "Please reload the page" <$ leftmost [eSecretsIsEmptyLog, eSaved]
