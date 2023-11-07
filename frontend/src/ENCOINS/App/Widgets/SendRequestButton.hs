@@ -30,41 +30,32 @@ sendRequestButton :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   -> m (Event t ())
 sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = mdo
   -- Getting the current MaxAda
-  -- mBaseUrl <- getRelayUrl
-  -- relayStatusM mBaseUrl
 
+  -- TODO: choose firing every time by 'e' fires
+  -- or every time user enters the tab.
   ev <- newEvent
-  -- logEvent "sendRequestButton: ev:" ev
-  emUrl <- getRelayUrlE ev
-  -- logEvent "sendRequestButton: emUrl:" emUrl
+  logEvent "sendRequestButton: ev:" ev
+  emUrl <- getRelayUrlE $ leftmost [ev, () <$ eRelayDown]
+  logEvent "sendRequestButton: emUrl:" emUrl
 
-  eDelayedRelayDown <- delay 1 eRelayDown
-  emUrlFallBack <- getRelayUrlE $ () <$ eDelayedRelayDown
+  -- emUrlFallBack <- getRelayUrlE $ () <$ eRelayDown
   -- logEvent "sendRequestButton: emUrlFallBack:" emUrlFallBack
   -- tellRelayStatus emUrl
-  dmUrl <- holdDyn Nothing $ leftmost [emUrl, emUrlFallBack]
+  dmUrl <- holdDyn Nothing emUrl
   -- logDyn "sendRequestButton: updated dmUrl:" dmUrl
 
-  eFallback <- delay 1 $ () <$ emUrlFallBack
+  eFireStatus <- delay 1 $ leftmost [e, () <$ eRelayDown]
   -- logEvent "sendRequestButton: eFallback:" eFallback
 
   emStatus <- switchHold never <=< dyn $ dmUrl <&> \case
     Nothing -> pure never
-    Just url -> statusRequestWrapper url (pure MaxAdaWithdraw) $ leftmost [e, eFallback]
+    Just url -> statusRequestWrapper url (pure MaxAdaWithdraw) eFireStatus
   let (eMaxAda, eRelayDown) = eventMaybe (BackendError relayError) emStatus
-  -- logEvent "sendRequestButton: eMaxAda:" eMaxAda
-  -- logEvent "sendRequestButton: eRelayDown:" eRelayDown
-
-  -- (eMaxAda, _) <- case mBaseUrl of
-  --   Just baseUrl -> statusRequestWrapper baseUrl (pure MaxAdaWithdraw) e
-  --   _ -> pure (never, never)
-
 
   let getMaxAda (MaxAdaWithdrawResult n) = Just n
       getMaxAda _                        = Nothing
   dMaxAda <- holdDyn 0 (mapMaybe getMaxAda eMaxAda)
   -- SEND REQUEST button
-  -- let dTxValidity = txValidity mBaseUrl mode <$> dMaxAda <*> dStatus <*> dWallet <*> dCoinsToBurn <*> dCoinsToMint
   let dTxValidity = txValidity mode
         <$> dmUrl
         <*> dMaxAda

@@ -96,9 +96,10 @@ walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
             (dCoinsToMint, eSend) <- divClass "app-CoinColumnRight w-col w-col-6" $ mdo
                 dCoinsToMint' <- divClassId "" "welcome-coins-mint" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
-                    dCoinsToMint'' <- coinMintCollectionWidget $
-                      -- leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Constructing) eStatusUpdate]
-                      leftmost [fmap AddCoin eNewSecret, ClearCoins <$ ffilter (== Submitted) eStatusUpdate]
+                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost
+                      [ fmap AddCoin eNewSecret
+                      , ClearCoins <$ ffilter (== Submitted) eStatusUpdate
+                      ]
                     eNewSecret <- coinNewWidget
                     return dCoinsToMint''
                 eSend' <- sendRequestButton
