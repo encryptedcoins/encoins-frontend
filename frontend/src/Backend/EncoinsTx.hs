@@ -262,23 +262,23 @@ encoinsTxLedgerMode
           <*> current dMPs
           <*> bRandomness
 
-    logEvent "eSend" eSend
+    -- logEvent "eSend" eSend
     -- logEvent "eServerRelayDown" eServerRelayDown
     -- Constructing the final redeemer
-    eFireTx <- delay 1 $ leftmost [eSend, () <$ eServerRelayDown]
-    logEvent "eFireTx" eFireTx
+    let eFireTx = leftmost [eSend, () <$ eServerRelayDown]
+    -- logEvent "eFireTx" eFireTx
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eFireTx
     -- logDyn "dFinalRedeemer" dFinalRedeemer
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
     logEvent "eFinalRedeemer" eFinalRedeemer
-    let eFireNotComplete = coincidence $ eFinalRedeemer <$ eStatusRelayDown
-    logEvent "Fire is still exist" eFireNotComplete
+    -- let eFireNotComplete = coincidence $ eFinalRedeemer <$ eStatusRelayDown
+    -- logEvent "Fire is still exist" eFireNotComplete
 
     -- Constructing a new transaction
     let dServerTxReqBody = zipDyn
           (fmap (\r -> InputRedeemer (fromJust r) LedgerMode) dFinalRedeemer) dInputs
-    let eFinalRedeemerReq = void $ tagPromptlyDyn dServerTxReqBody eFinalRedeemer
-    logEvent "eFinalRedeemer req body" eFinalRedeemerReq
+    eFinalRedeemerReq <- delay 1 $ void $ tagPromptlyDyn dServerTxReqBody eFinalRedeemer
+    -- logEvent "eFinalRedeemer req body" eFinalRedeemerReq
     eeServerTx <- switchHold never <=< dyn $ dmUrl <&> \case
       Just url -> serverTxRequestWrapper url dServerTxReqBody eFinalRedeemerReq
       Nothing  -> pure never
