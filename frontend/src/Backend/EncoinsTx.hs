@@ -222,26 +222,23 @@ encoinsTxLedgerMode
   dCoinsBurn
   dCoinsMint
   eSend = mdo
-
-
     ePb   <- getPostBuild
     eTick <- tickLossyFromPostBuildTime 12
 
     let eFallback = leftmost [() <$ eStatusRelayDown, () <$ eServerRelayDown]
     emUrl <- getRelayUrlE $ leftmost [ePb, eSend, eFallback]
-    logEvent "encoinsTxLedgerMode: emUrl" emUrl
+    logEvent "emUrl" emUrl
     dmUrl <- holdDyn Nothing emUrl
 
     eFireStatus <- delay 1 $ leftmost [ePb, void eTick, eFallback]
-    -- let eFireStatus = leftmost [ePb, void eTick, eFallback]
-    -- logEvent "encoinsTxLedgerMode: eFireStatus" eFireStatus
+    -- logEvent "eFireStatus" eFireStatus
 
     emStatus <- switchHold never <=< dyn $ dmUrl <&> \case
       Nothing  -> pure never
       Just url -> statusRequestWrapper url (pure LedgerEncoins) eFireStatus
     let (eStatusResp, eStatusRelayDown) = eventMaybe (BackendError relayError) emStatus
-    -- logEvent "encoinsTxLedgerMode: eStatusResp" $ () <$ eStatusResp
-    logEvent "encoinsTxLedgerMode: eStatusRelayDown" eStatusRelayDown
+    logEvent "eStatus ok" $ () <$ eStatusResp
+    logEvent "eStatus fetching failed" eStatusRelayDown
 
     let toLedgerUtxoResult (LedgerUtxoResult xs) = Just xs
         toLedgerUtxoResult _                     = Nothing
@@ -265,29 +262,45 @@ encoinsTxLedgerMode
           <*> current dMPs
           <*> bRandomness
 
+    logEvent "eSend" eSend
+    -- logEvent "eServerRelayDown" eServerRelayDown
     -- Constructing the final redeemer
     eFireTx <- delay 1 $ leftmost [eSend, () <$ eServerRelayDown]
-    logEvent "encoinsTxLedgerMode: eFireTx" eFireTx
+    logEvent "eFireTx" eFireTx
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eFireTx
+    -- logDyn "dFinalRedeemer" dFinalRedeemer
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
-    logEvent "encoinsTxLedgerMode: eFinalRedeemer" eFinalRedeemer
+    logEvent "eFinalRedeemer" eFinalRedeemer
+    let eFireNotComplete = coincidence $ eFinalRedeemer <$ eStatusRelayDown
+    logEvent "Fire is still exist" eFireNotComplete
 
     -- Constructing a new transaction
     let dServerTxReqBody = zipDyn
           (fmap (\r -> InputRedeemer (fromJust r) LedgerMode) dFinalRedeemer) dInputs
-    emServerTx <- switchHold never <=< dyn $ dmUrl <&> \case
+    let eFinalRedeemerReq = void $ tagPromptlyDyn dServerTxReqBody eFinalRedeemer
+    logEvent "eFinalRedeemer req body" eFinalRedeemerReq
+    eeServerTx <- switchHold never <=< dyn $ dmUrl <&> \case
+      Just url -> serverTxRequestWrapper url dServerTxReqBody eFinalRedeemerReq
       Nothing  -> pure never
-      Just url -> serverTxRequestWrapper url dServerTxReqBody eFinalRedeemer
-    let (eServerOk, eServerRelayDown) = eventMaybe (BackendError relayError) emServerTx
+    let (eServerStatus, eServerOk) = eventEither eeServerTx
+    let eeServerStatus = hasStatusZero <$> eServerStatus
+    let (eServerRelayDown, eBackendErrorResp) =
+          (filterLeft eeServerStatus, filterRight eeServerStatus)
+    logEvent "Server Ok" eServerOk
+    logEvent "Server failed with status" eServerRelayDown
+    logEvent "Server failed with status" eBackendErrorResp
 
     -- Tracking the pending transaction
     eConfirmed <- updated <$> holdUniqDyn dUTXOs
+    let eAllRelayDown = filterLeft $ toEither () <$> emUrl
 
     let eStatus = leftmost
           [ Ready        <$ eConfirmed
+          , NoRelay      <$ eAllRelayDown
           , eStatusRelayDown
-          , Constructing <$ eFireTx
+          , Constructing <$ eFinalRedeemer
           , Submitted    <$ eServerOk
-          , eServerRelayDown
+          , (BackendError . toText) <$> eBackendErrorResp
+          , (BackendError . toText) <$> eServerRelayDown
           ]
     return (fmap getEncoinsInUtxos dUTXOs, eStatus)

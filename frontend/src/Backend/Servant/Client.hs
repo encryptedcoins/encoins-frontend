@@ -44,14 +44,3 @@ mkApiClient host = ApiClient{..}
       serverTxRequest :<|>
       statusRequest :<|>
       versionRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
-
----------------------------------------------- Utilities ----------------------------------------
-
-makeResponse :: ReqResult tag a -> Maybe a
-makeResponse (ResponseSuccess _ a _) = Just a
-makeResponse _                       = Nothing
-
-makeResponseEither :: ReqResult tag a -> Either Text a
-makeResponseEither (ResponseSuccess _ a _) = Right a
-makeResponseEither (ResponseFailure _ txt _) = Left $ "ResponseFailure: " <> txt
-makeResponseEither (RequestFailure _ txt) = Left $ "RequestFailure: " <> txt

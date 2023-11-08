@@ -3,6 +3,7 @@
 module Backend.Servant.Requests where
 
 import           Config.Config          (urlsBS)
+import           Control.Lens
 import           Control.Monad          (void)
 import           Control.Monad.IO.Class (MonadIO (..))
 import           CSL                    (TransactionInputs)
@@ -10,7 +11,7 @@ import           Data.Aeson             (decode)
 import           Data.Bool              (bool)
 import           Data.ByteString.Lazy   (fromStrict)
 import           Data.Either.Extra
-import           Data.Functor           ((<&>), ($>))
+import           Data.Functor           (($>), (<&>))
 import           Data.IntMap            (IntMap)
 import qualified Data.IntMap            as IMap
 import           Data.List              (delete)
@@ -18,7 +19,7 @@ import           Data.Maybe             (fromJust, isNothing)
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
 import           Servant.API            (NoContent)
-import           Servant.Reflex         (BaseUrl (..))
+import           Servant.Reflex         (BaseUrl (..), ReqResult (..), response)
 import           System.Random          (randomRIO)
 import           Witherable             (catMaybes)
 
@@ -87,13 +88,17 @@ serverTxRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Dynamic t (InputOfEncoinsApi, TransactionInputs)
   -> Event t ()
-  -> m (Event t (Maybe ()))
+  -> m (Event t (Either Int ()))
 serverTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
+  logEvent "Before serverTx request" e
   eResp <- serverTxRequest (Right <$> dReqBody) e
-  let eRespUnwrapped = (() <$) . makeResponse <$> eResp
-  logEvent "serverTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
-  return eRespUnwrapped
+  let eRespUnwrappedE = response <$> eResp
+  logEvent "xhrResponse_status" $ fmap (view xhrResponse_status) <$> eRespUnwrappedE
+  let eStatusResp = (() <$) . makeStatusOrResponse <$> eResp
+  logEvent "Either response:" eStatusResp
+  -- let eRespUnwrapped = (() <$) . makeResponse <$> eResp
+  return eStatusResp
 
 statusRequestWrapper :: MonadWidget t m
   => BaseUrl
@@ -116,9 +121,6 @@ versionRequestWrapper baseUrl e = do
   eVersionRes <- fmap makeResponse <$> versionRequest e
   logEvent "Version" eVersionRes
   return eVersionRes
-
-eventMaybe :: Reflex t => b -> Event t (Maybe a) -> (Event t a, Event t b)
-eventMaybe errValue e = (catMaybes e, errValue <$ ffilter isNothing e)
 
 urls :: [Text]
 urls = fromJust $ decode $ fromStrict urlsBS
@@ -380,3 +382,30 @@ shuffle ev xs = performEvent $ ev $> (liftIO $ do
 
 --   -- Return url when it is ok, don't return default ever.
 --   pure (tagPromptlyDyn dUrl ePingOk, eInvalidKey)
+
+---------------------------------------------- Utilities ----------------------------------------
+
+makeResponse :: ReqResult tag a -> Maybe a
+makeResponse (ResponseSuccess _ a _) = Just a
+makeResponse _                       = Nothing
+
+makeResponseEither :: ReqResult tag a -> Either Text a
+makeResponseEither (ResponseSuccess _ a _)   = Right a
+makeResponseEither (ResponseFailure _ txt _) = Left $ "ResponseFailure: " <> txt
+makeResponseEither (RequestFailure _ txt)    = Left $ "RequestFailure: " <> txt
+
+makeStatusOrResponse :: ReqResult tag a -> Either Int a
+makeStatusOrResponse (ResponseSuccess _ a _) = Right a
+makeStatusOrResponse (ResponseFailure _ _ xhr) = Left $ fromIntegral $ view xhrResponse_status xhr
+makeStatusOrResponse (RequestFailure _ _) = Left $ -1
+
+eventMaybe :: Reflex t => b -> Event t (Maybe a) -> (Event t a, Event t b)
+eventMaybe errValue ev = (catMaybes ev, errValue <$ ffilter isNothing ev)
+
+eventEither :: Reflex t => Event t (Either e a) -> (Event t e, Event t a)
+eventEither ev = (filterLeft ev, filterRight ev)
+
+hasStatusZero :: Int -> Either Int Int
+hasStatusZero = \case
+  0 -> Left 0
+  n -> Right n

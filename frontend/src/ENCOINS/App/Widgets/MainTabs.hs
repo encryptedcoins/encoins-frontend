@@ -256,7 +256,13 @@ ledgerTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
                       ]
                     eNewSecret     <- coinNewWidget
                     return dCoinsToMint''
-                (eSendStatus, eSend') <- sendRequestButton LedgerMode dStatus dWallet dCoinsToBurn dCoinsToMint (void $ updated dBalance)
+                (eSendStatus, eSend') <- sendRequestButton
+                  LedgerMode
+                  dStatus
+                  dWallet
+                  dCoinsToBurn
+                  dCoinsToMint
+                  (void $ updated dBalance)
                 let dV = fmap calculateChange dTotalBalance
                     eSendZeroBalance = gate ((==0) <$> current dTotalBalance) eSend'
                     eSendNonZeroBalance = gate ((/=0) <$> current dTotalBalance) eSend'
