@@ -1,25 +1,24 @@
 module Backend.Environment where
 
-import           Control.Monad             (void)
-import           Control.Monad.IO.Class    (MonadIO (..))
-import           Data.Maybe                (fromJust, fromMaybe)
-import qualified Data.Text                 as Text
+import           Control.Monad               (void)
+import           Control.Monad.IO.Class      (MonadIO (..))
+import           Data.Maybe                  (fromJust, fromMaybe)
+import qualified Data.Text                   as Text
 import           PlutusTx.Builtins
-import           Reflex.Dom                hiding (Input)
-import           System.Random             (randomIO)
-import           Text.Hex                  (decodeHex, encodeHex)
+import           Reflex.Dom                  hiding (Input)
+import           System.Random               (randomIO)
+import           Text.Hex                    (decodeHex, encodeHex)
 
-import           Backend.Protocol.Fees     (protocolFees)
-import           Backend.Protocol.Setup    (ledgerAddress)
-import           Backend.Protocol.Types
-import           Backend.Wallet            (Wallet (..))
-import           ENCOINS.App.Widgets.Basic (elementResultJS)
-import           ENCOINS.Bulletproofs
-import           ENCOINS.Crypto.Field      (Field (..))
-import           JS.App                    (sha2_256)
-import           PlutusTx.Extra.ByteString (ToBuiltinByteString (..))
+import           Backend.Protocol.Fees       (protocolFees)
+import           Backend.Protocol.Setup      (ledgerAddress)
 import           Backend.Protocol.TxValidity (getAda)
-import           ENCOINS.Common.Events
+import           Backend.Protocol.Types
+import           Backend.Wallet              (Wallet (..))
+import           ENCOINS.App.Widgets.Basic   (elementResultJS)
+import           ENCOINS.Bulletproofs
+import           ENCOINS.Crypto.Field        (Field (..))
+import           JS.App                      (sha2_256)
+import           PlutusTx.Extra.ByteString   (ToBuiltinByteString (..))
 
 
 getBalance :: MonadWidget t m

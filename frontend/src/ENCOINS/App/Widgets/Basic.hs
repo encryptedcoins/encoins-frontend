@@ -1,12 +1,10 @@
 module ENCOINS.App.Widgets.Basic where
 
-import           Control.Monad            (when)
 import           Data.Aeson               (FromJSON, ToJSON, decode,
                                            decodeStrict, encode)
 import           Data.Bool                (bool)
 import           Data.ByteString          (ByteString)
 import           Data.ByteString.Lazy     (fromStrict, toStrict)
-import           Data.Maybe               (isNothing)
 import           Data.Text                (Text)
 import qualified Data.Text                as T
 import           Data.Text.Encoding       (decodeUtf8, encodeUtf8)
@@ -16,11 +14,9 @@ import           GHCJS.DOM.Types          (MonadDOM)
 import           GHCJS.DOM.Window         (getLocalStorage)
 import           Reflex.Dom
 import           Reflex.ScriptDependent   (widgetHoldUntilDefined)
-import           Servant.Reflex           (BaseUrl)
 
 
-import           Backend.Servant.Requests (getRelayUrl)
-import           Backend.Status           (Status (..), relayError)
+import           Backend.Status           (Status (..))
 import           ENCOINS.Common.Events
 import           JS.Website               (loadJSON)
 
@@ -69,26 +65,6 @@ walletError = do
     dWalletError <- elementResultJS "walletErrorElement" id
     let eWalletError = ffilter ("" /=) $ updated dWalletError
     return $ WalletError <$> eWalletError
-
--- relayStatus :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m) => m ()
--- relayStatus = do
---   relayStatusM =<< getRelayUrl
-
--- relayStatusM :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
---   => Maybe BaseUrl
---   -> m ()
--- relayStatusM mRelayUrl = do
-  -- when (isNothing mRelayUrl) $ do
-    -- ev <- newEvent
-    -- tellRelayStatus $ mRelayUrl <$ ev
-
--- tellRelayStatus :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
---   => Event t (Maybe BaseUrl)
---   -> m ()
--- tellRelayStatus emUrl = do
---   let eStatus = maybe (BackendError relayError) (const Ready) <$> emUrl
---   logEvent "tellRelayStatus: eStatus" eStatus
---   tellTxStatus "Relay status" eStatus
 
 tellTxStatus :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Text -- Category of the status. E.g. 'wallet mode'

@@ -26,7 +26,7 @@ import           Backend.Wallet            (Wallet (..), toJS)
 import           ENCOINS.App.Widgets.Basic (elementResultJS)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
-import           ENCOINS.Common.Events     (logDyn, logEvent, newEvent)
+import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils      (toText)
 
 
@@ -123,7 +123,7 @@ encoinsTxWalletMode
           eSubmitRelayDown,
           Submitted    <$ eSubmitted
           ]
-    -- logEvent "encoinsTxWalletMode: eStatus" eStatus
+    logEvent "encoinsTxWalletMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
 
 encoinsTxTransferMode :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
@@ -197,13 +197,16 @@ encoinsTxTransferMode
           eSubmitRelayDown,
           Submitted    <$ eSubmitted
           ]
-    -- logEvent "encoinsTxTransferMode: eStatus" eStatus
-
+    logEvent "encoinsTxTransferMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
   where
-    mkValue coins names = CSL.Value (toText $ minAdaTxOutInLedger * length coins) . Just . CSL.MultiAsset . Map.singleton
-      encoinsCurrencySymbol . Map.fromList . mapMaybe
-        (\s -> (,"1") <$> lookup s names) $ coins
+    mkValue coins names = CSL.Value (toText $ minAdaTxOutInLedger * length coins)
+      . Just
+      . CSL.MultiAsset
+      . Map.singleton encoinsCurrencySymbol
+      . Map.fromList
+      . mapMaybe (\s -> (,"1") <$> lookup s names)
+      $ coins
 
 encoinsTxLedgerMode :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Dynamic t Wallet
@@ -227,18 +230,14 @@ encoinsTxLedgerMode
 
     let eFallback = leftmost [() <$ eStatusRelayDown, () <$ eServerRelayDown]
     emUrl <- getRelayUrlE $ leftmost [ePb, eSend, eFallback]
-    logEvent "emUrl" emUrl
     dmUrl <- holdDyn Nothing emUrl
 
     eFireStatus <- delay 1 $ leftmost [ePb, void eTick, eFallback]
-    -- logEvent "eFireStatus" eFireStatus
 
     emStatus <- switchHold never <=< dyn $ dmUrl <&> \case
       Nothing  -> pure never
       Just url -> statusRequestWrapper url (pure LedgerEncoins) eFireStatus
     let (eStatusResp, eStatusRelayDown) = eventMaybe (BackendError relayError) emStatus
-    logEvent "eStatus ok" $ () <$ eStatusResp
-    logEvent "eStatus fetching failed" eStatusRelayDown
 
     let toLedgerUtxoResult (LedgerUtxoResult xs) = Just xs
         toLedgerUtxoResult _                     = Nothing
@@ -262,23 +261,15 @@ encoinsTxLedgerMode
           <*> current dMPs
           <*> bRandomness
 
-    -- logEvent "eSend" eSend
-    -- logEvent "eServerRelayDown" eServerRelayDown
     -- Constructing the final redeemer
     let eFireTx = leftmost [eSend, () <$ eServerRelayDown]
-    -- logEvent "eFireTx" eFireTx
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eFireTx
-    -- logDyn "dFinalRedeemer" dFinalRedeemer
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
-    logEvent "eFinalRedeemer" eFinalRedeemer
-    -- let eFireNotComplete = coincidence $ eFinalRedeemer <$ eStatusRelayDown
-    -- logEvent "Fire is still exist" eFireNotComplete
 
     -- Constructing a new transaction
     let dServerTxReqBody = zipDyn
           (fmap (\r -> InputRedeemer (fromJust r) LedgerMode) dFinalRedeemer) dInputs
     eFinalRedeemerReq <- delay 1 $ void $ tagPromptlyDyn dServerTxReqBody eFinalRedeemer
-    -- logEvent "eFinalRedeemer req body" eFinalRedeemerReq
     eeServerTx <- switchHold never <=< dyn $ dmUrl <&> \case
       Just url -> serverTxRequestWrapper url dServerTxReqBody eFinalRedeemerReq
       Nothing  -> pure never
@@ -286,9 +277,6 @@ encoinsTxLedgerMode
     let eeServerStatus = hasStatusZero <$> eServerStatus
     let (eServerRelayDown, eBackendErrorResp) =
           (filterLeft eeServerStatus, filterRight eeServerStatus)
-    logEvent "Server Ok" eServerOk
-    logEvent "Server failed with status" eServerRelayDown
-    logEvent "Server failed with status" eBackendErrorResp
 
     -- Tracking the pending transaction
     eConfirmed <- updated <$> holdUniqDyn dUTXOs
@@ -303,4 +291,5 @@ encoinsTxLedgerMode
           , (BackendError . toText) <$> eBackendErrorResp
           , (BackendError . toText) <$> eServerRelayDown
           ]
+    logEvent "encoinsTxLedgerMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus)
