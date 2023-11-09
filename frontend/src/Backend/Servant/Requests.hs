@@ -21,7 +21,6 @@ import           Witherable             (catMaybes)
 
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
--- import           Backend.Utility        (normalizePingUrl)
 import           ENCOINS.Common.Events
 import           JS.App                 (pingServer)
 
@@ -157,6 +156,15 @@ hasStatusZero :: Int -> Either Int Int
 hasStatusZero = \case
   0 -> Left 0
   n -> Right n
+
+fromQueryResponse :: Reflex t
+  => Event t (Either Int a)
+  -> (Event t Int, Event t Int, Event t a) -- Relay disconnected, failed or responded
+fromQueryResponse eeResp =
+  let (eStatus, eRespOk) = eventEither eeResp
+      eeStatus = hasStatusZero <$> eStatus
+      (eRelayDown, eRelayError) = (filterLeft eeStatus, filterRight eeStatus)
+  in (eRelayDown, eRelayError, eRespOk)
 
 -- | Randomly shuffle a list on event fires
 --   /O(N)/

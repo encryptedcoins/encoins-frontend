@@ -42,9 +42,6 @@ bodyContentWidget mpass = mdo
   (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet mpass
 
   (dStatusT, dIsDisableButtons) <- handleAppStatus dWallet evEvStatus
-
-  logDyn "status:" dStatusT
-
   notification dStatusT
 
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen

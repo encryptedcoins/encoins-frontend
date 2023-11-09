@@ -269,14 +269,16 @@ encoinsTxLedgerMode
     -- Constructing a new transaction
     let dServerTxReqBody = zipDyn
           (fmap (\r -> InputRedeemer (fromJust r) LedgerMode) dFinalRedeemer) dInputs
-    eFinalRedeemerReq <- delay 1 $ void $ tagPromptlyDyn dServerTxReqBody eFinalRedeemer
-    eeServerTx <- switchHold never <=< dyn $ dmUrl <&> \case
+    eFinalRedeemerReq <- delay 0.5 $ void $ tagPromptlyDyn dServerTxReqBody eFinalRedeemer
+    -- logEvent "eFinalRedeemer" eFinalRedeemerReq
+    eeServerTxResponse <- switchHold never <=< dyn $ dmUrl <&> \case
       Just url -> serverTxRequestWrapper url dServerTxReqBody eFinalRedeemerReq
       Nothing  -> pure never
-    let (eServerStatus, eServerOk) = eventEither eeServerTx
-    let eeServerStatus = hasStatusZero <$> eServerStatus
-    let (eServerRelayDown, eBackendErrorResp) =
-          (filterLeft eeServerStatus, filterRight eeServerStatus)
+    let (eServerRelayDown, eBackendErrorResp, eServerOk) =
+          fromQueryResponse eeServerTxResponse
+    -- logEvent "eServerRelayDown" eServerRelayDown
+    -- logEvent "eBackendErrorResp" eBackendErrorResp
+    -- logEvent "eServerOk" eServerOk
 
     -- Tracking the pending transaction
     eConfirmed <- updated <$> holdUniqDyn dUTXOs
