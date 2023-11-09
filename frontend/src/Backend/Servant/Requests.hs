@@ -29,11 +29,11 @@ newTxRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Dynamic t (InputOfEncoinsApi, TransactionInputs)
   -> Event t ()
-  -> m (Event t (Maybe (Text, Text)))
+  -> m (Event t (Either Int (Text, Text)))
 newTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- newTxRequest (Right <$> dReqBody) e
-  let eRespUnwrapped = makeResponse <$> eResp
+  let eRespUnwrapped = mkStatusOrResponse <$> eResp
   logEvent "newTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
   pure eRespUnwrapped
 
@@ -41,11 +41,13 @@ submitTxRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Dynamic t SubmitTxReqBody
   -> Event t ()
-  -> m (Event t (Maybe ()))
+  -> m (Event t (Either Int ()))
 submitTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
-  eResp <- fmap (void . makeResponse) <$> submitTxRequest (Right <$> dReqBody) e
-  return eResp
+  eResp <- submitTxRequest (Right <$> dReqBody) e
+  let eRespUnwrapped = (() <$) . mkStatusOrResponse <$> eResp
+  logEvent "submitTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
+  return eRespUnwrapped
 
 pingRequestWrapper :: MonadWidget t m
   => BaseUrl
@@ -67,9 +69,9 @@ serverTxRequestWrapper :: MonadWidget t m
 serverTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- serverTxRequest (Right <$> dReqBody) e
-  let eStatusResp = (() <$) . makeStatusOrResponse <$> eResp
-  logEvent "serverTxRequestWrapper: eStatusResp" eStatusResp
-  return eStatusResp
+  let eRespUnwrapped = (() <$) . mkStatusOrResponse <$> eResp
+  logEvent "serverTxRequestWrapper: eRespUnwrapped" eRespUnwrapped
+  return eRespUnwrapped
 
 statusRequestWrapper :: MonadWidget t m
   => BaseUrl
@@ -141,10 +143,10 @@ makeResponseEither (ResponseSuccess _ a _)   = Right a
 makeResponseEither (ResponseFailure _ txt _) = Left $ "ResponseFailure: " <> txt
 makeResponseEither (RequestFailure _ txt)    = Left $ "RequestFailure: " <> txt
 
-makeStatusOrResponse :: ReqResult tag a -> Either Int a
-makeStatusOrResponse (ResponseSuccess _ a _) = Right a
-makeStatusOrResponse (ResponseFailure _ _ xhr) = Left $ fromIntegral $ view xhrResponse_status xhr
-makeStatusOrResponse (RequestFailure _ _) = Left $ -1
+mkStatusOrResponse :: ReqResult tag a -> Either Int a
+mkStatusOrResponse (ResponseSuccess _ a _) = Right a
+mkStatusOrResponse (ResponseFailure _ _ xhr) = Left $ fromIntegral $ view xhrResponse_status xhr
+mkStatusOrResponse (RequestFailure _ _) = Left $ -1
 
 eventMaybe :: Reflex t => b -> Event t (Maybe a) -> (Event t a, Event t b)
 eventMaybe errValue ev = (catMaybes ev, errValue <$ ffilter isNothing ev)
@@ -157,10 +159,10 @@ hasStatusZero = \case
   0 -> Left 0
   n -> Right n
 
-fromQueryResponse :: Reflex t
+fromRelayResponse :: Reflex t
   => Event t (Either Int a)
   -> (Event t Int, Event t Int, Event t a) -- Relay disconnected, failed or responded
-fromQueryResponse eeResp =
+fromRelayResponse eeResp =
   let (eStatus, eRespOk) = eventEither eeResp
       eeStatus = hasStatusZero <$> eStatus
       (eRelayDown, eRelayError) = (filterLeft eeStatus, filterRight eeStatus)

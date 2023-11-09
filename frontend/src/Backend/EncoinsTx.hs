@@ -79,15 +79,14 @@ encoinsTxWalletMode
     let dNewTxReqBody = zipDyn
           (fmap (\r -> InputRedeemer (fromJust r) WalletMode) dFinalRedeemer)
           dInputs
-
-    emNewTxResponse <- switchHold never <=< dyn $ dmUrl <&> \case
+    eeNewTxResponse <- switchHold never <=< dyn $ dmUrl <&> \case
       Nothing -> pure never
       Just url -> newTxRequestWrapper
         url
         dNewTxReqBody
         eFinalRedeemer
-    let (eNewTxSuccess, eNewTxRelayDown) =
-          eventMaybe (BackendError relayError) emNewTxResponse
+    let (eNewTxRelayDown, eNewTxBackendError, eNewTxSuccess) =
+          fromRelayResponse eeNewTxResponse
 
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
@@ -101,27 +100,27 @@ encoinsTxWalletMode
 
     -- Submitting the transaction
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
-
-    emSubmitResponse <- switchHold never <=< dyn $ dmUrl <&> \case
+    eeSubmitResponse <- switchHold never <=< dyn $ dmUrl <&> \case
       Nothing  -> pure never
       Just url -> submitTxRequestWrapper url dSubmitReqBody eWalletSignature
-    let (eSubmitted, eSubmitRelayDown) =
-          eventMaybe (BackendError relayError) emSubmitResponse
+    let (eSubmitRelayDown, eSubmitBackendError, eSubmitted) =
+          fromRelayResponse eeSubmitResponse
 
     -- Tracking the pending transaction
     eConfirmed <- updated <$> holdUniqDyn dUTXOs
-
     let eAllRelayDown = filterLeft $ toEither () <$> emUrl
 
-    let eStatus = leftmost [
-          Ready        <$ eConfirmed,
-          NoRelay      <$ eAllRelayDown,
-          Constructing <$ eFinalRedeemer,
-          eNewTxRelayDown,
-          Signing      <$ eNewTxSuccess,
-          Submitting   <$ eWalletSignature,
-          eSubmitRelayDown,
-          Submitted    <$ eSubmitted
+    let eStatus = leftmost
+          [ Ready        <$ eConfirmed
+          , NoRelay      <$ eAllRelayDown
+          , Constructing <$ eFinalRedeemer
+          , (BackendError . toText) <$> eNewTxRelayDown
+          , Signing      <$ eNewTxSuccess
+          , Submitting   <$ eWalletSignature
+          , (BackendError . toText) <$> eSubmitRelayDown
+          , Submitted    <$ eSubmitted
+          , (BackendError . toText) <$>
+            leftmost [eNewTxBackendError, eSubmitBackendError]
           ]
     logEvent "encoinsTxWalletMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
@@ -156,14 +155,17 @@ encoinsTxTransferMode
         dAddr       = fromMaybe ledgerAddress <$> dmAddr
 
     -- Create transaction
-    emNewTxResponse <- switchHold never <=< dyn $ dmUrl <&> \case
+    let dNewTxReqBody = zipDyn
+          (InputSending <$> dAddr <*> zipDynWith mkValue dCoins dNames <*> dAddrWallet)
+          dInputs
+    eeNewTxResponse <- switchHold never <=< dyn $ dmUrl <&> \case
       Nothing -> pure never
       Just url -> newTxRequestWrapper
         url
-        (zipDyn (InputSending <$> dAddr <*> zipDynWith mkValue dCoins dNames <*> dAddrWallet) dInputs)
+        dNewTxReqBody
         eFireTx
-    let (eNewTxSuccess, eNewTxRelayDown) =
-            eventMaybe (BackendError relayError) emNewTxResponse
+    let (eNewTxRelayDown, eNewTxBackendError, eNewTxSuccess) =
+          fromRelayResponse eeNewTxResponse
 
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
@@ -176,26 +178,27 @@ encoinsTxTransferMode
 
     -- Submitting the transaction
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
-
-    emSubmitResponse <- switchHold never <=< dyn $ dmUrl <&> \case
+    eeSubmitResponse <- switchHold never <=< dyn $ dmUrl <&> \case
       Nothing  -> pure never
       Just url -> submitTxRequestWrapper url dSubmitReqBody eWalletSignature
-    let (eSubmitted, eSubmitRelayDown) =
-          eventMaybe (BackendError relayError) emSubmitResponse
+    let (eSubmitRelayDown, eSubmitBackendError, eSubmitted) =
+          fromRelayResponse eeSubmitResponse
 
     -- Tracking the pending transaction
     eConfirmed <- updated <$> holdUniqDyn dUTXOs
     let eAllRelayDown = filterLeft $ toEither () <$> emUrl
 
-    let eStatus = leftmost [
-          Ready        <$ eConfirmed,
-          NoRelay      <$ eAllRelayDown,
-          Constructing <$ eFireTx,
-          eNewTxRelayDown,
-          Signing      <$ eNewTxSuccess,
-          Submitting   <$ eWalletSignature,
-          eSubmitRelayDown,
-          Submitted    <$ eSubmitted
+    let eStatus = leftmost
+          [ Ready        <$ eConfirmed
+          , NoRelay      <$ eAllRelayDown
+          , Constructing <$ eFireTx
+          , (BackendError . toText) <$> eNewTxRelayDown
+          , Signing      <$ eNewTxSuccess
+          , Submitting   <$ eWalletSignature
+          , (BackendError . toText) <$> eSubmitRelayDown
+          , Submitted    <$ eSubmitted
+          , (BackendError . toText) <$>
+             leftmost [eNewTxBackendError, eSubmitBackendError]
           ]
     logEvent "encoinsTxTransferMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
@@ -275,7 +278,7 @@ encoinsTxLedgerMode
       Just url -> serverTxRequestWrapper url dServerTxReqBody eFinalRedeemerReq
       Nothing  -> pure never
     let (eServerRelayDown, eBackendErrorResp, eServerOk) =
-          fromQueryResponse eeServerTxResponse
+          fromRelayResponse eeServerTxResponse
     -- logEvent "eServerRelayDown" eServerRelayDown
     -- logEvent "eBackendErrorResp" eBackendErrorResp
     -- logEvent "eServerOk" eServerOk
