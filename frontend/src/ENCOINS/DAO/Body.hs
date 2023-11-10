@@ -13,7 +13,7 @@ import           Data.Time                          (getCurrentTime)
 import           Reflex.Dom
 
 import           Backend.Status                     (Status (..), isReady,
-                                                     isStatusBusy)
+                                                     isTxProcess)
 import           Backend.Wallet                     (NetworkConfig (..),
                                                      Wallet (..),
                                                      WalletName (..), fromJS,
@@ -160,8 +160,8 @@ handleStatus dWallet = do
   (dWalletNotConnectedB, dWalletNotConnectedT) <- handleWalletNone
 
   let dIsDisableButtons = foldDynamicAny
-        [ isStatusBusy <$> dDelegateStatus
-        , isStatusBusy <$> dVoteStatus
+        [ isTxProcess <$> dDelegateStatus
+        , isTxProcess <$> dVoteStatus
         , dUnexpectedNetworkB
         , dWalletNotConnectedB
         ]

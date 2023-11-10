@@ -8,7 +8,8 @@ import           Backend.Wallet                     (Wallet (..),
                                                      WalletName (..),
                                                      currentNetworkApp)
 import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw)
-import           ENCOINS.Common.Widgets.Basic       (btn, logo, space)
+import           ENCOINS.Common.Widgets.Basic       (btnWithBlock, logo,
+                                                     space)
 import           ENCOINS.Common.Widgets.Wallet      (walletIcon)
 
 connectText :: Wallet -> Text
@@ -18,9 +19,10 @@ connectText w = case w of
 
 navbarWidget :: MonadWidget t m
   => Dynamic t Wallet
+  -> Dynamic t Bool
   -> Maybe PasswordRaw
   -> m (Event t (), Event t ())
-navbarWidget w mPass = do
+navbarWidget w dIsBlockConnect mPass = do
   elAttr "div" ("data-animation" =: "default" <> "data-collapse" =: "none" <> "data-duration" =: "400" <> "id" =: "Navbar"
     <> "data-easing" =: "ease" <> "data-easing2" =: "ease" <> "role" =: "banner" <> "class" =: "navbar w-nav") $
     divClass "navbar-container w-container" $ do
@@ -34,7 +36,7 @@ navbarWidget w mPass = do
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do
                 elLocker <- lockerWidget mPass
                 eConnect <- divClass "menu-item-button-left" $
-                    btn "button-switching flex-center" "" $ do
+                    btnWithBlock "button-switching flex-center" "" dIsBlockConnect $ do
                         dyn_ $ fmap (walletIcon . walletName) w
                         dynText $ fmap connectText w
                 return (domEvent Click elLocker, eConnect)
