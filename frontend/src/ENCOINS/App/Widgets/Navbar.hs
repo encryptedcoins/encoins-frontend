@@ -1,5 +1,7 @@
 module ENCOINS.App.Widgets.Navbar (navbarWidget) where
 
+import           Data.Bool                          (bool)
+import           Data.Map                           (Map)
 import           Data.Text                          (Text, take, takeEnd)
 import           Prelude                            hiding (take)
 import           Reflex.Dom
@@ -8,8 +10,7 @@ import           Backend.Wallet                     (Wallet (..),
                                                      WalletName (..),
                                                      currentNetworkApp)
 import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw)
-import           ENCOINS.Common.Widgets.Basic       (btnWithBlock, logo,
-                                                     space)
+import           ENCOINS.Common.Widgets.Basic       (btnWithBlock, logo, space)
 import           ENCOINS.Common.Widgets.Wallet      (walletIcon)
 
 connectText :: Wallet -> Text
@@ -22,7 +23,7 @@ navbarWidget :: MonadWidget t m
   -> Dynamic t Bool
   -> Maybe PasswordRaw
   -> m (Event t (), Event t ())
-navbarWidget w dIsBlockConnect mPass = do
+navbarWidget w dIsBlock mPass = do
   elAttr "div" ("data-animation" =: "default" <> "data-collapse" =: "none" <> "data-duration" =: "400" <> "id" =: "Navbar"
     <> "data-easing" =: "ease" <> "data-easing2" =: "ease" <> "role" =: "banner" <> "class" =: "navbar w-nav") $
     divClass "navbar-container w-container" $ do
@@ -34,28 +35,31 @@ navbarWidget w dIsBlockConnect mPass = do
               $ text currentNetworkApp
             divClass "menu-div-empty" blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do
-                elLocker <- lockerWidget mPass
+                elLocker <- lockerWidget mPass dIsBlock
                 eConnect <- divClass "menu-item-button-left" $
-                    btnWithBlock "button-switching flex-center" "" dIsBlockConnect $ do
+                    btnWithBlock "button-switching flex-center" "" dIsBlock $ do
                         dyn_ $ fmap (walletIcon . walletName) w
                         dynText $ fmap connectText w
                 return (domEvent Click elLocker, eConnect)
 
 lockerWidget :: MonadWidget  t m
   => Maybe PasswordRaw
+  -> Dynamic t Bool
   -> m (Element EventResult (DomBuilderSpace m) t)
-lockerWidget mPass = do
+lockerWidget mPass dIsBlock = do
   let (iconClass, popupText) = case mPass of
         Nothing -> ("app-Nav_Locker-open", "isn't protected")
         Just _  -> ("app-Nav_Locker-close", "is protected")
-  lockerDiv iconClass popupText
+  let defaultClass = "menu-item app-Nav_LockerContainer" <> space <> iconClass
+  let dClass = bool defaultClass (defaultClass <> space <> "click-disabled") <$> dIsBlock
+  let dClassMap = (\cl -> "class" =: cl) <$> dClass
+  lockerDiv dClassMap popupText
 
 lockerDiv :: MonadWidget t m
-  => Text
+  => Dynamic t (Map Text Text)
   -> Text
   -> m (Element EventResult (DomBuilderSpace m) t)
-lockerDiv iconClass popupText
-  = fst <$> elClass' "div"
-    ("menu-item app-Nav_LockerContainer" <> space <> iconClass)
-    (divClass "app-Nav_CachePopup"
-      $ el "p" $ text $ "Cache" <> space <> popupText)
+lockerDiv dClassMap popupText
+  = fmap fst $ elDynAttr' "div" dClassMap
+      $ divClass "app-Nav_CachePopup"
+      $ el "p" $ text $ "Cache" <> space <> popupText
