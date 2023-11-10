@@ -3,8 +3,8 @@
 module Backend.Servant.Requests where
 
 import           Config.Config          (urlsBS)
-import           Control.Lens
-import           Control.Monad          (forM, void)
+import           Control.Lens           (view)
+import           Control.Monad          (forM)
 import           Control.Monad.IO.Class (MonadIO (..))
 import           CSL                    (TransactionInputs)
 import           Data.Aeson             (decode)
@@ -34,7 +34,7 @@ newTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- newTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = mkStatusOrResponse <$> eResp
-  logEvent "newTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
+  logEvent "newTx request" eRespUnwrapped
   pure eRespUnwrapped
 
 submitTxRequestWrapper :: MonadWidget t m
@@ -46,7 +46,7 @@ submitTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- submitTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = (() <$) . mkStatusOrResponse <$> eResp
-  logEvent "submitTxRequestWrapper: eRespUnwrapped:" eRespUnwrapped
+  logEvent "submitTx request" eRespUnwrapped
   return eRespUnwrapped
 
 pingRequestWrapper :: MonadWidget t m
@@ -70,19 +70,19 @@ serverTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- serverTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = (() <$) . mkStatusOrResponse <$> eResp
-  logEvent "serverTxRequestWrapper: eRespUnwrapped" eRespUnwrapped
+  logEvent "serverTx request" eRespUnwrapped
   return eRespUnwrapped
 
 statusRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Dynamic t EncoinsStatusReqBody
   -> Event t ()
-  -> m (Event t (Maybe EncoinsStatusResult))
+  -> m (Event t (Either Int EncoinsStatusResult))
 statusRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- statusRequest (Right <$> dReqBody) e
-  let eRespUnwrapped = makeResponse <$> eResp
-  logEvent "statusRequestWrapper: eRespUnwrapped:" $ fmap showStatus <$> eRespUnwrapped
+  let eRespUnwrapped = mkStatusOrResponse <$> eResp
+  logEvent "status request" $ fmap showStatus <$> eRespUnwrapped
   return eRespUnwrapped
 
 versionRequestWrapper :: MonadWidget t m

@@ -9,9 +9,9 @@ import           Reflex.Dom
 
 import           Backend.Protocol.TxValidity  (TxValidity (..), txValidity)
 import           Backend.Protocol.Types
-import           Backend.Servant.Requests     (eventMaybe, getRelayUrlE,
+import           Backend.Servant.Requests     (fromRelayResponse, getRelayUrlE,
                                                statusRequestWrapper)
-import           Backend.Status               (Status (..), relayError)
+import           Backend.Status               (Status (..))
 import           Backend.Utility              (toEither)
 import           Backend.Wallet               (Wallet (..))
 import           ENCOINS.Bulletproofs         (Secrets)
@@ -38,10 +38,10 @@ sendRequestButton mode dStatus dWallet dCoinsToBurn dCoinsToMint e = mdo
   eFireStatus <- delay 1 $ leftmost [e, () <$ eRelayDown]
 
   -- Getting current MaxAda
-  emStatus <- switchHold never <=< dyn $ dmUrl <&> \case
+  eeStatus <- switchHold never <=< dyn $ dmUrl <&> \case
     Nothing  -> pure never
     Just url -> statusRequestWrapper url (pure MaxAdaWithdraw) eFireStatus
-  let (eMaxAda, eRelayDown) = eventMaybe (BackendError relayError) emStatus
+  let (eRelayDown, _, eMaxAda) = fromRelayResponse eeStatus
 
   let getMaxAda (MaxAdaWithdrawResult n) = Just n
       getMaxAda _                        = Nothing

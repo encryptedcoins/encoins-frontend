@@ -20,7 +20,7 @@ import           Backend.Protocol.Setup    (encoinsCurrencySymbol,
 import           Backend.Protocol.Types
 import           Backend.Protocol.Utility  (getEncoinsInUtxos, mkRedeemer)
 import           Backend.Servant.Requests
-import           Backend.Status            (Status (..), relayError)
+import           Backend.Status            (Status (..))
 import           Backend.Utility           (toEither)
 import           Backend.Wallet            (Wallet (..), toJS)
 import           ENCOINS.App.Widgets.Basic (elementResultJS)
@@ -114,12 +114,12 @@ encoinsTxWalletMode
           [ Ready        <$ eConfirmed
           , NoRelay      <$ eAllRelayDown
           , Constructing <$ eFinalRedeemer
-          , (BackendError . toText) <$> eNewTxRelayDown
           , Signing      <$ eNewTxSuccess
           , Submitting   <$ eWalletSignature
-          , (BackendError . toText) <$> eSubmitRelayDown
           , Submitted    <$ eSubmitted
-          , (BackendError . toText) <$>
+          , (BackendError . ("Relay disconnected: " <>) . toText) <$>
+              leftmost [eNewTxRelayDown, eSubmitRelayDown]
+          , (BackendError . ("Relay returned error: " <>) . toText) <$>
             leftmost [eNewTxBackendError, eSubmitBackendError]
           ]
     logEvent "encoinsTxWalletMode: eStatus" eStatus
@@ -192,12 +192,12 @@ encoinsTxTransferMode
           [ Ready        <$ eConfirmed
           , NoRelay      <$ eAllRelayDown
           , Constructing <$ eFireTx
-          , (BackendError . toText) <$> eNewTxRelayDown
           , Signing      <$ eNewTxSuccess
           , Submitting   <$ eWalletSignature
-          , (BackendError . toText) <$> eSubmitRelayDown
           , Submitted    <$ eSubmitted
-          , (BackendError . toText) <$>
+          , (BackendError . ("Relay disconnected: " <>) . toText) <$>
+              leftmost [eNewTxRelayDown, eSubmitRelayDown]
+          , (BackendError . ("Relay returned error: " <>) . toText) <$>
              leftmost [eNewTxBackendError, eSubmitBackendError]
           ]
     logEvent "encoinsTxTransferMode: eStatus" eStatus
@@ -237,10 +237,11 @@ encoinsTxLedgerMode
 
     eFireStatus <- delay 1 $ leftmost [ePb, void eTick, eFallback]
 
-    emStatus <- switchHold never <=< dyn $ dmUrl <&> \case
+    eeStatus <- switchHold never <=< dyn $ dmUrl <&> \case
       Nothing  -> pure never
       Just url -> statusRequestWrapper url (pure LedgerEncoins) eFireStatus
-    let (eStatusResp, eStatusRelayDown) = eventMaybe (BackendError relayError) emStatus
+    let (eStatusRelayDown, eStatusBackendError, eStatusResp) =
+          fromRelayResponse eeStatus
 
     let toLedgerUtxoResult (LedgerUtxoResult xs) = Just xs
         toLedgerUtxoResult _                     = Nothing
@@ -265,23 +266,21 @@ encoinsTxLedgerMode
           <*> bRandomness
 
     -- Constructing the final redeemer
-    let eFireTx = leftmost [eSend, () <$ eServerRelayDown]
+    let eFireTx = leftmost [eSend, eFallback]
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eFireTx
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
 
     -- Constructing a new transaction
     let dServerTxReqBody = zipDyn
           (fmap (\r -> InputRedeemer (fromJust r) LedgerMode) dFinalRedeemer) dInputs
-    eFinalRedeemerReq <- delay 0.5 $ void $ tagPromptlyDyn dServerTxReqBody eFinalRedeemer
-    -- logEvent "eFinalRedeemer" eFinalRedeemerReq
+    eFinalRedeemerReq <- delay 1 $ void $ tagPromptlyDyn dServerTxReqBody eFinalRedeemer
+    logEvent "Fire ledger tx" eFinalRedeemerReq
+
     eeServerTxResponse <- switchHold never <=< dyn $ dmUrl <&> \case
       Just url -> serverTxRequestWrapper url dServerTxReqBody eFinalRedeemerReq
       Nothing  -> pure never
-    let (eServerRelayDown, eBackendErrorResp, eServerOk) =
+    let (eServerRelayDown, eServerBackendError, eServerOk) =
           fromRelayResponse eeServerTxResponse
-    -- logEvent "eServerRelayDown" eServerRelayDown
-    -- logEvent "eBackendErrorResp" eBackendErrorResp
-    -- logEvent "eServerOk" eServerOk
 
     -- Tracking the pending transaction
     eConfirmed <- updated <$> holdUniqDyn dUTXOs
@@ -290,11 +289,12 @@ encoinsTxLedgerMode
     let eStatus = leftmost
           [ Ready        <$ eConfirmed
           , NoRelay      <$ eAllRelayDown
-          , eStatusRelayDown
           , Constructing <$ eFinalRedeemer
           , Submitted    <$ eServerOk
-          , (BackendError . toText) <$> eBackendErrorResp
-          , (BackendError . toText) <$> eServerRelayDown
+          , (BackendError . ("Relay disconnected: " <>) . toText) <$>
+              leftmost [eStatusRelayDown, eServerRelayDown]
+          , (BackendError . ("Relay returned error: " <>) . toText) <$>
+              leftmost [eStatusBackendError, eServerBackendError]
           ]
     logEvent "encoinsTxLedgerMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus)
