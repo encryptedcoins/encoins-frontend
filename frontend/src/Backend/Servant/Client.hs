@@ -4,8 +4,7 @@ import           Data.Proxy             (Proxy (..))
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
 import           Servant.API
-import           Servant.Reflex         (BaseUrl, ReqResult (..),
-                                         client)
+import           Servant.Reflex         (BaseUrl, ReqResult (..), client)
 
 import           Backend.Protocol.Types
 import           CSL                    (TransactionInputs)

@@ -1,12 +1,12 @@
 module ENCOINS.Common.Widgets.SelectInput where
 
-import           Data.List                    (elemIndex)
-import           Data.Text                    (Text, unpack)
+import           Data.List            (elemIndex)
+import           Data.Text            (Text, unpack)
 import           Reflex.Dom
-import           Text.Read                    (readMaybe)
-import           Witherable                   (catMaybes)
+import           Text.Read            (readMaybe)
+import           Witherable           (catMaybes)
 
-import           ENCOINS.Common.Utils         (toText, safeIndex)
+import           ENCOINS.Common.Utils (safeIndex, toText)
 
 -- TODO: complete and move this to ENCOINS.App.Widgets
 -- Title of the input element along with a hint about the expected input

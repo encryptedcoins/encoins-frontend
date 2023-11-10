@@ -1,12 +1,12 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
+{-# LANGUAGE OverloadedStrings    #-}
 
 module Main where
 
-import Lucid
-import Lucid.Base
-import qualified Data.Text as T
-import Data.Text (Text)
+import           Data.Text  (Text)
+import qualified Data.Text  as T
+import           Lucid
+import           Lucid.Base
 
 main :: IO ()
 main = do

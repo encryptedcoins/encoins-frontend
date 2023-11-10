@@ -4,16 +4,17 @@
 
 module ENCOINS.App.Widgets.ISPO (calculator) where
 
-import           Data.Aeson                        (ToJSON, FromJSON, decode)
-import           Data.ByteString.Lazy              (fromStrict)
-import           Data.List                         (find)
-import           Data.Maybe                        (fromJust)
-import           Data.Text                         (Text, pack)
-import           GHC.Generics                      (Generic)
+import           Data.Aeson                   (FromJSON, ToJSON, decode)
+import           Data.ByteString.Lazy         (fromStrict)
+import           Data.List                    (find)
+import           Data.Maybe                   (fromJust)
+import           Data.Text                    (Text, pack)
+import           GHC.Generics                 (Generic)
 import           Reflex.Dom
 
-import           ENCOINS.Common.Widgets.Basic      (pClass)
-import           Config.Config                     (delegatorListBS)
+import           Config.Config                (delegatorListBS)
+import           ENCOINS.Common.Widgets.Basic (pClass)
+
 data DelegatorC = DelegatorC { addressC :: Text, rewardC :: Double }
   deriving (Show, Generic, ToJSON, FromJSON)
 type DelegatorsC = [DelegatorC]

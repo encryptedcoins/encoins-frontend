@@ -1,17 +1,16 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module Backend.Wallet where
 
-import           Data.Maybe                    (fromJust)
-import           Data.Text                     (Text)
-import           Data.ByteString.Lazy          (fromStrict)
-import qualified Data.Text as T
-import           GHC.Generics                  (Generic)
-import           Data.Aeson                    (FromJSON, decode)
+import           Data.Aeson             (FromJSON, decode)
+import           Data.ByteString.Lazy   (fromStrict)
+import           Data.Maybe             (fromJust)
+import           Data.Text              (Text)
+import qualified Data.Text              as T
+import           GHC.Generics           (Generic)
 
 import           Backend.Protocol.Types
-import           CSL                           (TransactionUnspentOutputs)
-
-import           Config.Config                 (networkConfigBS)
+import           Config.Config          (networkConfigBS)
+import           CSL                    (TransactionUnspentOutputs)
 
 data WalletName
   =
@@ -81,11 +80,11 @@ walletsSupportedInApp = case app networkConfig of
 
 data Wallet = Wallet
   {
-    walletName              :: WalletName,
-    walletNetworkId         :: NetworkId,
-    walletAddressBech32     :: Text,
-    walletChangeAddress     :: Address,
-    walletUTXOs             :: TransactionUnspentOutputs
+    walletName          :: WalletName,
+    walletNetworkId     :: NetworkId,
+    walletAddressBech32 :: Text,
+    walletChangeAddress :: Address,
+    walletUTXOs         :: TransactionUnspentOutputs
   }
   deriving (Show, Eq)
 

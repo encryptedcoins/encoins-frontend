@@ -5,7 +5,6 @@ module Backend.EncoinsTx where
 import           Control.Monad             (void)
 import           Control.Monad.IO.Class    (MonadIO (..))
 import qualified CSL
-import           Data.Functor              ((<&>))
 import qualified Data.Map                  as Map
 import           Data.Maybe                (fromJust, fromMaybe)
 import           Data.Text                 (Text)
@@ -21,7 +20,7 @@ import           Backend.Protocol.Types
 import           Backend.Protocol.Utility  (getEncoinsInUtxos, mkRedeemer)
 import           Backend.Servant.Requests
 import           Backend.Status            (Status (..))
-import           Backend.Utility           (toEither, switchHoldDyn)
+import           Backend.Utility           (switchHoldDyn, toEither)
 import           Backend.Wallet            (Wallet (..), toJS)
 import           ENCOINS.App.Widgets.Basic (elementResultJS)
 import           ENCOINS.BaseTypes
@@ -30,7 +29,7 @@ import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils      (toText)
 
 
-encoinsTxWalletMode :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+encoinsTxWalletMode :: MonadWidget t m
   => Dynamic t Wallet
   -> Dynamic t BulletproofParams
   -> Behavior t Randomness
@@ -125,7 +124,7 @@ encoinsTxWalletMode
     logEvent "encoinsTxWalletMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
 
-encoinsTxTransferMode :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+encoinsTxTransferMode :: MonadWidget t m
   => Dynamic t Wallet
   -> Dynamic t Secrets
   -> Dynamic t [(Secret, Text)]
@@ -211,7 +210,7 @@ encoinsTxTransferMode
       . mapMaybe (\s -> (,"1") <$> lookup s names)
       $ coins
 
-encoinsTxLedgerMode :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+encoinsTxLedgerMode :: MonadWidget t m
   => Dynamic t Wallet
   -> Dynamic t BulletproofParams
   -> Behavior t Randomness

@@ -1,11 +1,11 @@
 module ENCOINS.Website.Widgets.Resourses (ourResourses) where
 
-import           Control.Monad                 (void)
-import           Data.Text                     (Text)
-import qualified Data.Text                     as Text
+import           Control.Monad                (void)
+import           Data.Text                    (Text)
+import qualified Data.Text                    as Text
 import           Reflex.Dom
 
-import           ENCOINS.Common.Widgets.Basic  (image)
+import           ENCOINS.Common.Widgets.Basic (image)
 
 resourseButton :: MonadWidget t m => Text -> Text -> Text -> Text -> m ()
 resourseButton cls lnk file w = divClass "div-image-large" $

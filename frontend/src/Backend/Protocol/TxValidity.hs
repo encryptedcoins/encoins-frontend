@@ -11,8 +11,7 @@ import           Servant.Reflex               (BaseUrl)
 
 import           Backend.Protocol.Fees        (protocolFees)
 import           Backend.Protocol.Types
-import           Backend.Status               (Status (..),
-                                               isStatusBusy)
+import           Backend.Status               (Status (..), isStatusBusy)
 import           Backend.Wallet               (NetworkConfig (..), Wallet (..),
                                                WalletName (..),
                                                currentNetworkApp, networkConfig)

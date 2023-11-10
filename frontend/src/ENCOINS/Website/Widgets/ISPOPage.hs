@@ -1,9 +1,9 @@
 module ENCOINS.Website.Widgets.ISPOPage (ispoPage) where
 
-import           Control.Monad                     (void)
+import           Control.Monad                 (void)
 import           Reflex.Dom
 
-import           ENCOINS.App.Widgets.ISPO          (calculator)
+import           ENCOINS.App.Widgets.ISPO      (calculator)
 import           ENCOINS.Common.Widgets.Basic
 import           ENCOINS.Website.Widgets.Basic
 

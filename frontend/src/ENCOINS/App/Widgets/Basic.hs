@@ -1,24 +1,24 @@
 module ENCOINS.App.Widgets.Basic where
 
-import           Data.Aeson               (FromJSON, ToJSON, decode,
-                                           decodeStrict, encode)
-import           Data.Bool                (bool)
-import           Data.ByteString          (ByteString)
-import           Data.ByteString.Lazy     (fromStrict, toStrict)
-import           Data.Text                (Text)
-import qualified Data.Text                as T
-import           Data.Text.Encoding       (decodeUtf8, encodeUtf8)
-import           GHCJS.DOM                (currentWindowUnchecked)
-import           GHCJS.DOM.Storage        (getItem, setItem)
-import           GHCJS.DOM.Types          (MonadDOM)
-import           GHCJS.DOM.Window         (getLocalStorage)
+import           Data.Aeson             (FromJSON, ToJSON, decode, decodeStrict,
+                                         encode)
+import           Data.Bool              (bool)
+import           Data.ByteString        (ByteString)
+import           Data.ByteString.Lazy   (fromStrict, toStrict)
+import           Data.Text              (Text)
+import qualified Data.Text              as T
+import           Data.Text.Encoding     (decodeUtf8, encodeUtf8)
+import           GHCJS.DOM              (currentWindowUnchecked)
+import           GHCJS.DOM.Storage      (getItem, setItem)
+import           GHCJS.DOM.Types        (MonadDOM)
+import           GHCJS.DOM.Window       (getLocalStorage)
 import           Reflex.Dom
-import           Reflex.ScriptDependent   (widgetHoldUntilDefined)
+import           Reflex.ScriptDependent (widgetHoldUntilDefined)
 
 
-import           Backend.Status           (Status (..))
+import           Backend.Status         (Status (..))
 import           ENCOINS.Common.Events
-import           JS.Website               (loadJSON)
+import           JS.Website             (loadJSON)
 
 sectionApp :: MonadWidget t m => Text -> Text -> m a -> m a
 sectionApp elemId cls = elAttr "div" ("id" =: elemId <> "class" =: "section-app wf-section " `T.append` cls)
