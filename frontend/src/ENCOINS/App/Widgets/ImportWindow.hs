@@ -23,6 +23,7 @@ import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
 import           Backend.Protocol.Utility        (hexToSecret)
+import           Backend.Utility                 (switchHoldDyn)
 import           ENCOINS.Bulletproofs            (Secret)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn)
@@ -48,7 +49,7 @@ importFileWindow eImportOpen = mdo
       let conf    = def { _inputElementConfig_setValue = pure ("" <$ eImportOpen) } & (initialAttributes .~ ("class" =: "coin-new-input w-input" <> "type" =: "file"
               <> "style" =: "width: min(100%, 788px); margin-bottom: 15px; box-sizing: content-box;"))
       dFiles <- _inputElement_files <$> inputElement conf
-      emFileContent <- switchHold never <=< dyn $ dFiles <&> \case
+      emFileContent <- switchHoldDyn dFiles $ \case
         [file] -> readFileContent file
         _      -> pure never
       dContent <- holdDyn "" (catMaybes emFileContent)

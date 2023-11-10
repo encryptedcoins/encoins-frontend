@@ -2,11 +2,9 @@
 
 module ENCOINS.App.Body (bodyWidget) where
 
-import           Control.Monad                      ((<=<))
 import           Data.Aeson                         (encode)
 import           Data.Bifunctor                     (first)
 import           Data.ByteString.Lazy               (toStrict)
-import           Data.Functor                       ((<&>))
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
 import           Data.Text.Encoding                 (decodeUtf8)
@@ -15,6 +13,7 @@ import           Reflex.Dom
 import           Backend.Status                     (Status (..), isBlockError,
                                                      isReady,
                                                      isStatusBusyBackendNetwork)
+import           Backend.Utility                    (switchHoldDyn)
 import           Backend.Wallet                     (NetworkConfig (..),
                                                      Wallet (..), networkConfig,
                                                      walletsSupportedInApp)
@@ -27,7 +26,6 @@ import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWallet,
                                                      welcomeWindow,
                                                      welcomeWindowWalletStorageKey)
-import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils               (toText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           ENCOINS.Common.Widgets.Basic       (column, notification,
@@ -76,7 +74,7 @@ bodyWidget = waitForScripts blank $ mdo
       pure (Nothing <$ ePb, never)
   eCleanOk <- cleanCacheDialog eReset
   dmmPass <- holdDyn Nothing $ Just <$> leftmost [ePassOk, Nothing <$ eCleanOk, eNewPass]
-  eNewPass <- switchHold never <=< dyn $ dmmPass <&> \case
+  eNewPass <- switchHoldDyn dmmPass $ \case
     Nothing    -> pure never
     Just mpass -> bodyContentWidget mpass
 

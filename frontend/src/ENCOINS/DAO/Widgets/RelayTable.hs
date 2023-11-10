@@ -8,8 +8,7 @@ module ENCOINS.DAO.Widgets.RelayTable
   , fetchRelayTable
   ) where
 
-import           Control.Monad                (forM, (<=<))
-import           Data.Functor                 ((<&>))
+import           Control.Monad                (forM)
 import           Data.List                    (sortOn)
 import           Data.Map                     (Map)
 import qualified Data.Map                     as Map
@@ -19,6 +18,7 @@ import           Data.Text                    (Text)
 import           Numeric.Natural              (Natural)
 import           Reflex.Dom
 
+import           Backend.Utility              (switchHoldDyn)
 import           ENCOINS.Common.Utils         (toText)
 import           ENCOINS.Common.Widgets.Basic (btn)
 
@@ -31,7 +31,7 @@ relayAmountWidget dRelays = do
       el "thead" $ tr $
         mapM_ (\h -> th $ text h) ["Relay", "Amount", ""]
       el "tbody" $ do
-        switchHold never <=< dyn $ dRelays <&> \relays -> do
+        switchHoldDyn dRelays $ \relays -> do
           evs <- forM relays $ \(relay, amount) -> tr $ do
             tdRelay $ text relay
             tdAmount $ text $ toText amount

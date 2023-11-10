@@ -2,7 +2,7 @@
 
 module Backend.EncoinsTx where
 
-import           Control.Monad             (void, (<=<))
+import           Control.Monad             (void)
 import           Control.Monad.IO.Class    (MonadIO (..))
 import qualified CSL
 import           Data.Functor              ((<&>))
@@ -21,7 +21,7 @@ import           Backend.Protocol.Types
 import           Backend.Protocol.Utility  (getEncoinsInUtxos, mkRedeemer)
 import           Backend.Servant.Requests
 import           Backend.Status            (Status (..))
-import           Backend.Utility           (toEither)
+import           Backend.Utility           (toEither, switchHoldDyn)
 import           Backend.Wallet            (Wallet (..), toJS)
 import           ENCOINS.App.Widgets.Basic (elementResultJS)
 import           ENCOINS.BaseTypes
@@ -79,7 +79,7 @@ encoinsTxWalletMode
     let dNewTxReqBody = zipDyn
           (fmap (\r -> InputRedeemer (fromJust r) WalletMode) dFinalRedeemer)
           dInputs
-    eeNewTxResponse <- switchHold never <=< dyn $ dmUrl <&> \case
+    eeNewTxResponse <- switchHoldDyn dmUrl $ \case
       Nothing -> pure never
       Just url -> newTxRequestWrapper
         url
@@ -100,7 +100,7 @@ encoinsTxWalletMode
 
     -- Submitting the transaction
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
-    eeSubmitResponse <- switchHold never <=< dyn $ dmUrl <&> \case
+    eeSubmitResponse <- switchHoldDyn dmUrl $ \case
       Nothing  -> pure never
       Just url -> submitTxRequestWrapper url dSubmitReqBody eWalletSignature
     let (eSubmitRelayDown, eSubmitBackendError, eSubmitted) =
@@ -158,7 +158,7 @@ encoinsTxTransferMode
     let dNewTxReqBody = zipDyn
           (InputSending <$> dAddr <*> zipDynWith mkValue dCoins dNames <*> dAddrWallet)
           dInputs
-    eeNewTxResponse <- switchHold never <=< dyn $ dmUrl <&> \case
+    eeNewTxResponse <- switchHoldDyn dmUrl $ \case
       Nothing -> pure never
       Just url -> newTxRequestWrapper
         url
@@ -178,7 +178,7 @@ encoinsTxTransferMode
 
     -- Submitting the transaction
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
-    eeSubmitResponse <- switchHold never <=< dyn $ dmUrl <&> \case
+    eeSubmitResponse <- switchHoldDyn dmUrl $ \case
       Nothing  -> pure never
       Just url -> submitTxRequestWrapper url dSubmitReqBody eWalletSignature
     let (eSubmitRelayDown, eSubmitBackendError, eSubmitted) =
@@ -237,7 +237,7 @@ encoinsTxLedgerMode
 
     eFireStatus <- delay 1 $ leftmost [ePb, void eTick, eFallback]
 
-    eeStatus <- switchHold never <=< dyn $ dmUrl <&> \case
+    eeStatus <- switchHoldDyn dmUrl $ \case
       Nothing  -> pure never
       Just url -> statusRequestWrapper url (pure LedgerEncoins) eFireStatus
     let (eStatusRelayDown, eStatusBackendError, eStatusResp) =
@@ -276,7 +276,7 @@ encoinsTxLedgerMode
     eFinalRedeemerReq <- delay 1 $ void $ tagPromptlyDyn dServerTxReqBody eFinalRedeemer
     logEvent "Fire ledger tx" eFinalRedeemerReq
 
-    eeServerTxResponse <- switchHold never <=< dyn $ dmUrl <&> \case
+    eeServerTxResponse <- switchHoldDyn dmUrl $ \case
       Just url -> serverTxRequestWrapper url dServerTxReqBody eFinalRedeemerReq
       Nothing  -> pure never
     let (eServerRelayDown, eServerBackendError, eServerOk) =
