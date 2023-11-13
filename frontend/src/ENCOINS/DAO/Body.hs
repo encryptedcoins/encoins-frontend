@@ -42,7 +42,7 @@ bodyWidget = waitForScripts blank $ mdo
 
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = mdo
-  eDao <- navbarWidget dWallet dIsDisableButtons
+  eDao <- navbarWidget dWallet dIsDisableButtons dIsDisableButtonsConnect
 
   let eConnectOpen = void $ ffilter (==Connect) eDao
   dWallet <- connectWindow walletsSupportedInDAO eConnectOpen
@@ -52,7 +52,7 @@ bodyContentWidget = mdo
   dRelays <- holdDyn [] =<< fetchRelayTable eDelay
   delegateWindow eDelegate dWallet dRelays
 
-  (dIsDisableButtons, dNotification) <- handleStatus dWallet
+  (dIsDisableButtons, dIsDisableButtonsConnect, dNotification) <- handleStatus dWallet
   notification dNotification
 
   (archivedPolls, activePolls) <- poolsActiveAndArchived <$> liftIO getCurrentTime
@@ -75,7 +75,7 @@ voteStatus = do
   eConstruct <- updated <$> elementResultJS "VoteCreateNewTx" id
   eSign <- updated <$> elementResultJS "VoteSignTx" id
   eSubmit <- updated <$> elementResultJS "VoteSubmitTx" id
-  eSubmitted <- updated <$> elementResultJS "VoteSubmitedTx" id
+  eSubmitted <- updated <$> elementResultJS "VoteSubmittedTx" id
   eReady <- updated <$> elementResultJS "VoteReadyTx" id
   eErr <- updated <$> elementResultJS "VoteError" id
   eErrStatus <- otherStatus eErr
@@ -146,7 +146,7 @@ handleWalletNone = do
 
 handleStatus :: MonadWidget t m
   => Dynamic t Wallet
-  -> m (Dynamic t Bool, Dynamic t Text)
+  -> m (Dynamic t Bool, Dynamic t Bool, Dynamic t Text)
 handleStatus dWallet = do
   eVoteStatus <- voteStatus
   logEvent "Vote status" eVoteStatus
@@ -165,6 +165,11 @@ handleStatus dWallet = do
         , dUnexpectedNetworkB
         , dWalletNotConnectedB
         ]
+  let dIsDisableButtonsConnect = foldDynamicAny
+        [ isTxProcess <$> dDelegateStatus
+        , isTxProcess <$> dVoteStatus
+        , dUnexpectedNetworkB
+        ]
 
   let flatStatus t s = bool (t <> column <> space <> toText s) T.empty $ isReady s
 
@@ -175,7 +180,7 @@ handleStatus dWallet = do
     , updated dWalletNotConnectedT
     ]
 
-  pure (dIsDisableButtons, dNotification)
+  pure (dIsDisableButtons, dIsDisableButtonsConnect, dNotification)
 
 pollAttr :: Map Text Text
 pollAttr =

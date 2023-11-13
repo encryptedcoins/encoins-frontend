@@ -26,8 +26,9 @@ connectText w = case w of
 navbarWidget :: MonadWidget t m
   => Dynamic t Wallet
   -> Dynamic t Bool
+  -> Dynamic t Bool
   -> m (Event t Dao)
-navbarWidget w dIsBlocked = do
+navbarWidget w dIsBlocked dIsBlockedConnect = do
   elAttr "div" ("data-animation" =: "default" <> "data-collapse" =: "none" <> "data-duration" =: "400" <> "id" =: "Navbar"
     <> "data-easing" =: "ease" <> "data-easing2" =: "ease" <> "role" =: "banner" <> "class" =: "navbar w-nav") $
     divClass "navbar-container w-container" $ do
@@ -43,7 +44,7 @@ navbarWidget w dIsBlocked = do
             divClass "menu-div-empty" blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do
                 eConnect <- divClass "menu-item-button-left" $
-                    btnWithBlock "button-switching flex-center" "" dIsBlocked $ do
+                    btnWithBlock "button-switching flex-center" "" dIsBlockedConnect $ do
                         dyn_ $ fmap (walletIcon . walletName) w
                         dynText $ fmap connectText w
                 eDelegate <- divClass "menu-item-button-left" $ do
