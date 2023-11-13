@@ -426,6 +426,7 @@ async function daoPollVoteTx(n, apiKey, net, walletName, answer)
     const baseAddress      = CardanoWasm.BaseAddress.from_address(changeAddress);
     const stakeKeyHashCred = baseAddress.stake_cred();
     const stakeKeyHash     = stakeKeyHashCred.to_keyhash();
+    const utxos            = await api.getUtxos();
 
     const plc_lst = CardanoWasm.PlutusList.new();
     const tag1 = CardanoWasm.PlutusData.new_bytes(toUTF8Array("ENCOINS"));
@@ -516,7 +517,7 @@ async function daoDelegateTx(apiKey, net, walletName, url)
     plc_lst.add(tag4);
     const plc_msg = CardanoWasm.PlutusData.new_list(plc_lst);
 
-    setInputValue("DelegateCreateNewTx", "")
+    setInputValue("DelegateCreateNewTx", "");
 
     const tx = await lucid.newTx()
       .addSignerKey(toHexString(stakeKeyHash.to_bytes()))
