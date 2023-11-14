@@ -2,20 +2,20 @@
 
 module ENCOINS.App.Widgets.PasswordWindow where
 
-import           Control.Monad                   (void, (<=<))
+import           Control.Monad                   (void)
 import           Data.Aeson                      (encode)
 import           Data.Bool                       (bool)
 import           Data.ByteString.Lazy            (toStrict)
 import           Data.Char                       (isAsciiLower, isAsciiUpper,
                                                   isDigit, isLower, isUpper,
                                                   ord)
-import           Data.Functor                    ((<&>))
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import           Data.Text.Encoding              (decodeUtf8)
 import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
+import           Backend.Utility                 (switchHoldDyn)
 import           ENCOINS.Common.Events           (setFocusDelayOnEvent)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn, errDiv)
@@ -99,7 +99,7 @@ passwordSettingsWindow eOpen = do
   dmPassHash <- holdDyn Nothing emPassHash
   let windowStyle = "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px)"
   dialogWindow True eOpen never windowStyle "Protect cache of Encoins app" $ do
-    ePassOk <- switchHold never <=< dyn $ dmPassHash <&> \case
+    ePassOk <- switchHoldDyn dmPassHash $ \case
       Just passHash -> divClass "app-columns w-row" $ divClass "w-col w-col-12" $ do
         dmCurPass <- passwordInput "Current password:" False True (pure Nothing) eOpen
         eCheckedPass <- performEvent $ checkPass passHash <$> updated dmCurPass
@@ -116,10 +116,10 @@ passwordSettingsWindow eOpen = do
     dPassOk <- holdDyn False ePassOk
     (eReset, eClear, eSave) <- elAttr "div" ("class" =: "app-columns w-row app-PasswordSetting_ButtonContainer") $ do
       eSave' <- btn (mkSaveBtnCls <$> dmPassHash <*> dPassOk <*> dmNewPass) "" $ text "Save"
-      eClear' <- switchHold never <=< dyn $ dmPassHash <&> \case
+      eClear' <- switchHoldDyn dmPassHash $ \case
         Just _  -> btn (mkClearBtnCls <$> dPassOk) "" $ text "Reset password"
         Nothing -> pure never
-      eReset' <- switchHold never <=< dyn $ dmPassHash <&> \case
+      eReset' <- switchHoldDyn dmPassHash $ \case
         Just _  -> btn "button-switching flex-center" "" $ text "Clean cache"
         Nothing -> pure never
       return (eReset', eClear', eSave')

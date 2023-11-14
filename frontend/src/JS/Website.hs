@@ -1,16 +1,17 @@
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE JavaScriptFFI       #-}
+{-# LANGUAGE CPP           #-}
+{-# LANGUAGE JavaScriptFFI #-}
 
 {-# HLINT ignore "Use camelCase" #-}
 
 module JS.Website where
 
-import           Control.Monad.IO.Class      (MonadIO(..))
+import           Control.Monad.IO.Class      (MonadIO (..))
 import           Data.Text                   (Text)
 
 #ifdef __GHCJS__
 import           Data.Maybe                  (isJust)
-import           Language.Javascript.JSaddle (ToJSVal(..), JSVal, JSString, textToStr)
+import           Language.Javascript.JSaddle (JSString, JSVal, ToJSVal (..),
+                                              textToStr)
 #endif
 
 -- This script is executed on page load

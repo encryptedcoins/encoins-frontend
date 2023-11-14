@@ -2,12 +2,9 @@
 
 module ENCOINS.App.Body (bodyWidget) where
 
-import           Control.Monad                      ((<=<))
 import           Data.Aeson                         (encode)
 import           Data.Bifunctor                     (first)
-import           Data.Bool                          (bool)
 import           Data.ByteString.Lazy               (toStrict)
-import           Data.Functor                       ((<&>))
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
 import           Data.Text.Encoding                 (decodeUtf8)
@@ -16,6 +13,7 @@ import           Reflex.Dom
 import           Backend.Status                     (Status (..), isBlockError,
                                                      isReady,
                                                      isStatusBusyBackendNetwork)
+import           Backend.Utility                    (switchHoldDyn)
 import           Backend.Wallet                     (NetworkConfig (..),
                                                      Wallet (..), networkConfig,
                                                      walletsSupportedInApp)
@@ -42,7 +40,6 @@ bodyContentWidget mpass = mdo
   (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet mpass
 
   (dStatusT, dIsDisableButtons) <- handleAppStatus dWallet evEvStatus
-
   notification dStatusT
 
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen
@@ -77,7 +74,7 @@ bodyWidget = waitForScripts blank $ mdo
       pure (Nothing <$ ePb, never)
   eCleanOk <- cleanCacheDialog eReset
   dmmPass <- holdDyn Nothing $ Just <$> leftmost [ePassOk, Nothing <$ eCleanOk, eNewPass]
-  eNewPass <- switchHold never <=< dyn $ dmmPass <&> \case
+  eNewPass <- switchHoldDyn dmmPass $ \case
     Nothing    -> pure never
     Just mpass -> bodyContentWidget mpass
 
@@ -120,7 +117,10 @@ handleAppStatus dWallet evEvStatus = do
     (\ev (_, accS) -> if isBlockError accS then Nothing else Just ev)
     (T.empty, Ready) $ leftmost [eStatus, updated dWalletNetworkStatus]
 
-  let flatStatus (t, s) = bool (t <> column <> space <> T.pack (show s)) T.empty $ isReady s
+  let flatStatus (t, s)
+        | isReady s = T.empty
+        | T.null $ T.strip t = toText s
+        | otherwise = t <> column <> space <> toText s
 
   let dIsDisableButtons = (isStatusBusyBackendNetwork . snd) <$> dStatus
   let dStatusT = flatStatus <$> dStatus

@@ -2,16 +2,16 @@
 
 module Backend.Protocol.Setup where
 
-import           Data.Aeson                      (decode)
-import           Data.ByteString.Lazy            (fromStrict)
-import           Data.Maybe                      (fromJust)
-import           Data.Text                       (Text)
+import           Data.Aeson             (decode)
+import           Data.ByteString.Lazy   (fromStrict)
+import           Data.Maybe             (fromJust)
+import           Data.Text              (Text)
 import           PlutusTx.Builtins
-import           Text.Hex                        (decodeHex)
+import           Text.Hex               (decodeHex)
 
 import           Backend.Protocol.Types
+import           Config.Config          (bulletproofSetupBS)
 import           ENCOINS.Bulletproofs
-import           Config.Config                   (bulletproofSetupBS)
 
 bulletproofSetup :: BulletproofSetup
 bulletproofSetup = fromJust $ decode $ fromStrict bulletproofSetupBS

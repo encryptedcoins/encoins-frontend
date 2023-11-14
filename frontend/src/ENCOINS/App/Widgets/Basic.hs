@@ -1,28 +1,24 @@
 module ENCOINS.App.Widgets.Basic where
 
-import           Control.Monad            (when)
-import           Data.Aeson               (FromJSON, ToJSON, decode,
-                                           decodeStrict, encode)
-import           Data.Bool                (bool)
-import           Data.ByteString          (ByteString)
-import           Data.ByteString.Lazy     (fromStrict, toStrict)
-import           Data.Maybe               (isNothing)
-import           Data.Text                (Text)
-import qualified Data.Text                as T
-import           Data.Text.Encoding       (decodeUtf8, encodeUtf8)
-import           GHCJS.DOM                (currentWindowUnchecked)
-import           GHCJS.DOM.Storage        (getItem, setItem)
-import           GHCJS.DOM.Types          (MonadDOM)
-import           GHCJS.DOM.Window         (getLocalStorage)
+import           Data.Aeson             (FromJSON, ToJSON, decode, decodeStrict,
+                                         encode)
+import           Data.Bool              (bool)
+import           Data.ByteString        (ByteString)
+import           Data.ByteString.Lazy   (fromStrict, toStrict)
+import           Data.Text              (Text)
+import qualified Data.Text              as T
+import           Data.Text.Encoding     (decodeUtf8, encodeUtf8)
+import           GHCJS.DOM              (currentWindowUnchecked)
+import           GHCJS.DOM.Storage      (getItem, setItem)
+import           GHCJS.DOM.Types        (MonadDOM)
+import           GHCJS.DOM.Window       (getLocalStorage)
 import           Reflex.Dom
-import           Reflex.ScriptDependent   (widgetHoldUntilDefined)
-import           Servant.Reflex           (BaseUrl)
+import           Reflex.ScriptDependent (widgetHoldUntilDefined)
 
 
-import           Backend.Servant.Requests (getRelayUrl)
-import           Backend.Status           (Status (..), relayError)
-import           ENCOINS.Common.Events    (newEvent, newEventWithDelay)
-import           JS.Website               (loadJSON)
+import           Backend.Status         (Status (..))
+import           ENCOINS.Common.Events
+import           JS.Website             (loadJSON)
 
 sectionApp :: MonadWidget t m => Text -> Text -> m a -> m a
 sectionApp elemId cls = elAttr "div" ("id" =: elemId <> "class" =: "section-app wf-section " `T.append` cls)
@@ -70,33 +66,10 @@ walletError = do
     let eWalletError = ffilter ("" /=) $ updated dWalletError
     return $ WalletError <$> eWalletError
 
-relayStatus :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m) => m ()
-relayStatus = do
-  relayStatusM =<< getRelayUrl
-
-relayStatusM :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
-  => Maybe BaseUrl
-  -> m ()
-relayStatusM mRelayUrl = do
-  when (isNothing mRelayUrl) $ do
-    ev <- newEvent
-    tellRelayStatus
-      "Relay status"
-      (BackendError relayError)
-      ev
-
-tellRelayStatus :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
-  => Text
-  -> Status
-  -> Event t ()
-  -> m ()
-tellRelayStatus title status ev = tellEvent $ [(title, status) <$ ev] <$ ev
-
 tellTxStatus :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
-  => Text
-  -> Status
+  => Text -- Category of the status. E.g. 'wallet mode'
   -> Event t Status
   -> m ()
-tellTxStatus title status ev =
+tellTxStatus title ev =
   tellEvent $
-      [(\x -> bool (title, x) (T.empty, status) $ x == status) <$> ev] <$ ev
+      [(\x -> bool (title, x) (T.empty, Ready) $ x == Ready) <$> ev] <$ ev

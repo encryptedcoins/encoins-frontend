@@ -1,21 +1,25 @@
 module Backend.Protocol.Utility where
 
-import           Data.Bool                       (bool)
-import qualified Data.Map                        as Map
-import           Data.Maybe                      (fromJust, mapMaybe)
-import           Data.Text                       (Text)
-import qualified Data.Text                       as Text
+import           Data.Bool                 (bool)
+import qualified Data.Map                  as Map
+import           Data.Maybe                (fromJust, mapMaybe)
+import           Data.Text                 (Text)
+import qualified Data.Text                 as Text
 import           PlutusTx.Builtins
-import           Text.Hex                        (encodeHex, decodeHex)
+import           Text.Hex                  (decodeHex, encodeHex)
 
-import           Backend.Protocol.Fees           (protocolFees)
-import           Backend.Protocol.Setup          (bulletproofSetup, encoinsCurrencySymbol, ledgerAddress)
+import           Backend.Protocol.Fees     (protocolFees)
+import           Backend.Protocol.Setup    (bulletproofSetup,
+                                            encoinsCurrencySymbol,
+                                            ledgerAddress)
 import           Backend.Protocol.Types
 import qualified CSL
-import           ENCOINS.Crypto.Field            (fromFieldElement, toFieldElement)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
-import           PlutusTx.Extra.ByteString       (ToBuiltinByteString(..), byteStringToInteger)
+import           ENCOINS.Crypto.Field      (fromFieldElement, toFieldElement)
+import           PlutusTx.Extra.ByteString (ToBuiltinByteString (..),
+                                            byteStringToInteger)
+
 
 getEncoinsInUtxos :: CSL.TransactionUnspentOutputs -> [Text]
 getEncoinsInUtxos utxos = Map.keys assets

@@ -1,7 +1,7 @@
 module ENCOINS.Website.Widgets.Basic where
 
-import           Data.Text              (Text)
-import qualified Data.Text              as Text
+import           Data.Text  (Text)
+import qualified Data.Text  as Text
 import           Reflex.Dom
 
 section :: MonadWidget t m => Text -> Text -> m a -> m a

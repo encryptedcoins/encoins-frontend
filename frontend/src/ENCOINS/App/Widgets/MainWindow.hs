@@ -2,16 +2,15 @@
 
 module ENCOINS.App.Widgets.MainWindow where
 
-import           Control.Monad                      ((<=<))
 import           Data.Aeson                         (encode)
 import           Data.Bool                          (bool)
 import           Data.ByteString.Lazy               (toStrict)
-import           Data.Functor                       ((<&>))
 import           Data.Text                          (Text)
 import           Data.Text.Encoding                 (decodeUtf8)
 import           Reflex.Dom
 
 import           Backend.Status                     (Status (..))
+import           Backend.Utility                    (switchHoldDyn)
 import           Backend.Wallet                     (Wallet (..))
 import           ENCOINS.App.Widgets.Basic          (elementResultJS,
                                                      loadAppData, tellTxStatus)
@@ -32,7 +31,7 @@ mainWindow :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
 mainWindow mPass dWallet dIsDisableButtons = mdo
     eTab <- tabsSection dTab dIsDisableButtons
     dTab <- holdDyn WalletTab eTab
-    eSecretsWithName <- switchHold never <=< dyn $ dTab <&> \tab -> mdo
+    eSecretsWithName <- switchHoldDyn dTab $ \tab -> mdo
       dOldSecretsWithName <- loadAppData (getPassRaw <$> mPass) "encoins-with-name" id []
 
       updateCache mPass dOldSecretsWithName
@@ -69,7 +68,7 @@ loadCache mPass = do
         (CustomStatus "Cache structure is updating. Please wait.")
         Ready
         <$> eSecretsIsEmpty
-  tellTxStatus "App status" Ready statusEvent
+  tellTxStatus "App status" statusEvent
 
 
   -- Convert "encoins" cache when it is not empty
@@ -85,5 +84,5 @@ loadCache mPass = do
   -- Ask user to reload when cache structure is updated
   let eSecretsIsEmptyLog = () <$ ffilter id eSecretsIsEmpty
   eSaved <- updated <$> elementResultJS "encoins-with-name" (const ())
-  tellTxStatus "App status" Ready $
+  tellTxStatus "App status" $
     CustomStatus "Please reload the page" <$ leftmost [eSecretsIsEmptyLog, eSaved]

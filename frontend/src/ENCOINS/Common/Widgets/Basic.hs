@@ -1,12 +1,12 @@
 module ENCOINS.Common.Widgets.Basic where
 
-import           Control.Monad                   (void)
-import           Data.Bool                       (bool)
-import           Data.Text                       (Text, unpack)
-import qualified Data.Text                       as T
+import           Control.Monad  (void)
+import           Data.Bool      (bool)
+import           Data.Text      (Text, unpack)
+import qualified Data.Text      as T
 import           Reflex.Dom
 
-import           Backend.Status                  (Status (..))
+import           Backend.Status (Status (..))
 
 h1 :: MonadWidget t m => Text -> m ()
 h1 = elClass "h1" "h1" . text

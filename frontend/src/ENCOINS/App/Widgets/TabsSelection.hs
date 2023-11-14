@@ -1,10 +1,10 @@
 module ENCOINS.App.Widgets.TabsSelection where
 
-import           Data.Bool                              (bool)
+import           Data.Bool                    (bool)
 import           Reflex.Dom
 
-import           ENCOINS.App.Widgets.Basic              (containerApp, sectionApp)
-import           ENCOINS.Common.Widgets.Basic           (divClassId, btnWithBlock)
+import           ENCOINS.App.Widgets.Basic    (containerApp, sectionApp)
+import           ENCOINS.Common.Widgets.Basic (btnWithBlock, divClassId)
 
 data AppTab = WalletTab | TransferTab | LedgerTab deriving (Eq, Show)
 
