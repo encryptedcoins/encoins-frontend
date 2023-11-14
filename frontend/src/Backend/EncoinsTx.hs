@@ -211,19 +211,17 @@ encoinsTxTransferMode
       $ coins
 
 encoinsTxLedgerMode :: MonadWidget t m
-  => Dynamic t Wallet
-  -> Dynamic t BulletproofParams
+  => Dynamic t BulletproofParams
   -> Behavior t Randomness
-  -> Dynamic t (Maybe Address)
+  -> Dynamic t Address
   -> Dynamic t Secrets
   -> Dynamic t Secrets
   -> Event t ()
   -> m (Dynamic t [Text], Event t Status)
 encoinsTxLedgerMode
-  dWallet
   dBulletproofParams
   bRandomness
-  dmChangeAddr
+  dChangeAddr
   dCoinsBurn
   dCoinsMint
   eSend = mdo
@@ -247,9 +245,6 @@ encoinsTxLedgerMode
         eLedgerUtxoResult = mapMaybe toLedgerUtxoResult eStatusResp
     dUTXOs <- holdDyn [] eLedgerUtxoResult
     let dInputs = map CSL.input <$> dUTXOs
-
-    let dAddrWallet = fmap walletChangeAddress dWallet
-        dChangeAddr = zipDynWith fromMaybe dAddrWallet dmChangeAddr
 
     -- Obtaining Secrets and [MintingPolarity]
     let dLst = unzip <$> zipDynWith (++) (fmap (map (, Burn)) dCoinsBurn) (fmap (map (, Mint)) dCoinsMint)

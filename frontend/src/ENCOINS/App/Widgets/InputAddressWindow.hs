@@ -6,6 +6,7 @@ import           Control.Monad                   (void)
 import           Data.Text                       (Text)
 import           Reflex.Dom
 import           Witherable                      (catMaybes)
+import           Data.Maybe (isNothing)
 
 import           Backend.Protocol.Types
 import           Backend.Wallet                  (NetworkConfig (..),
@@ -13,7 +14,7 @@ import           Backend.Wallet                  (NetworkConfig (..),
 import           ENCOINS.App.Widgets.Basic       (elementResultJS)
 import           ENCOINS.Common.Events           (setFocusDelayOnEvent)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
-import           ENCOINS.Common.Widgets.Basic    (btn, errDiv)
+import           ENCOINS.Common.Widgets.Basic    (errDiv, btnWithBlock)
 import           JS.App                          (addrLoad)
 
 inputAddressWindow :: MonadWidget t m => Event t () -> m (Event t Address, Dynamic t (Maybe Address))
@@ -33,8 +34,6 @@ inputAddressWindow eOpen = mdo
           & inputElementConfig_setValue .~ ("" <$ eOpen)
         setFocusDelayOnEvent inp eOpen
         return (value inp)
-      btnOk <- btn (mkBtnAttrs <$> dmAddr)
-        "width:30%;display:inline-block;margin-right:5px;" $ text "Ok"
       performEvent_ (addrLoad <$> updated dAddrInp)
       dPubKeyHash <- elementResultJS "addrPubKeyHashElement" id
       dStakeKeyHash <- elementResultJS "addrStakeKeyHashElement" id
@@ -43,12 +42,16 @@ inputAddressWindow eOpen = mdo
           (traceDyn "dPubKeyHash" $ checkEmptyText <$> dPubKeyHash)
           (traceDyn "dStakeKeyHash" $ checkEmptyText <$> dStakeKeyHash)
         emRes = traceEvent "emRes" $ tagPromptlyDyn dmAddr btnOk
+      btnOk <- btnWithBlock
+        btnAttrs
+        "width:30%;display:inline-block;margin-right:5px;"
+        (isNothing <$> dmAddr)
+        (text "Ok")
       widgetHold_ blank $ leftmost [maybe err (const blank) <$> emRes, blank <$ eOpen]
       return (catMaybes emRes, dmAddr)
   return (eOk, dmAddress)
   where
     btnAttrs = "button-switching inverted flex-center"
-    mkBtnAttrs maddr = btnAttrs <> maybe " button-disabled" (const "") maddr
     mkAddr Nothing _       = Nothing
     mkAddr (Just pkh) mskh = Just $ mkAddressFromPubKeys pkh mskh
     err = elAttr "div" ("class" =: "app-columns w-row" <>

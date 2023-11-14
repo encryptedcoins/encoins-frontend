@@ -7,6 +7,7 @@ import           Data.Aeson                             (encode)
 import           Data.Bool                              (bool)
 import           Data.ByteString.Lazy                   (toStrict)
 import           Data.List                              (nub)
+import           Data.Maybe                             (fromMaybe)
 import           Data.Text                              (Text)
 import           Data.Text.Encoding                     (decodeUtf8)
 import           Reflex.Dom
@@ -16,6 +17,7 @@ import           Backend.EncoinsTx                      (encoinsTxLedgerMode,
                                                          encoinsTxTransferMode,
                                                          encoinsTxWalletMode)
 import           Backend.Environment                    (getEnvironment)
+import           Backend.Protocol.Setup                 (ledgerAddress)
 import           Backend.Protocol.TxValidity            (getDeposit)
 import           Backend.Protocol.Types
 import           Backend.Status                         (Status (..),
@@ -39,7 +41,8 @@ import           ENCOINS.App.Widgets.ImportWindow       (exportWindow,
                                                          importWindow)
 import           ENCOINS.App.Widgets.InputAddressWindow (inputAddressWindow)
 import           ENCOINS.App.Widgets.PasswordWindow     (PasswordRaw (..))
-import           ENCOINS.App.Widgets.SendRequestButton  (sendRequestButton)
+import           ENCOINS.App.Widgets.SendRequestButton  (sendRequestButtonLedger,
+                                                         sendRequestButtonWallet)
 import           ENCOINS.App.Widgets.SendToWalletWindow (sendToWalletWindow)
 import           ENCOINS.App.Widgets.TransactionBalance (transactionBalanceWidget)
 import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeLedger,
@@ -63,8 +66,11 @@ walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   -> Dynamic t [(Secret, Text)]
   -> m ()
 walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
-    (dBalance, dFees, dBulletproofParams, bRandomness) <-
-        getEnvironment WalletMode dWallet (pure Nothing) dToBurn dToMint
+    (dBalance, dFees, dBulletproofParams, bRandomness) <- getEnvironment
+        WalletMode
+        (fmap walletChangeAddress dWallet)
+        dToBurn
+        dToMint
     dTotalBalance <- holdUniqDyn $ zipDynWith (-) (negate <$> dBalance) dFees
     containerApp "" $ transactionBalanceWidget dTotalBalance dFees ""
     (dToBurn, dToMint, eStatusUpdate) <- containerApp "" $
@@ -103,7 +109,7 @@ walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
                       ]
                     eNewSecret <- coinNewWidget
                     return dCoinsToMint''
-                (eSendStatus, eValidTx) <- sendRequestButton
+                (eSendStatus, eValidTx) <- sendRequestButtonWallet
                   WalletMode
                   dStatus
                   dWallet
@@ -209,13 +215,12 @@ transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
 
 ledgerTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
-  -> Dynamic t Wallet
   -> Dynamic t [(Secret, Text)]
   -> m ()
-ledgerTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
+ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowLedgerStorageKey welcomeLedger
     (dBalance, dFees, dBulletproofParams, bRandomness) <-
-        getEnvironment LedgerMode dWallet dAddr dToBurn dToMint
+        getEnvironment LedgerMode dAddr dToBurn dToMint
 
     dDepositBalance <- holdUniqDyn $
       zipDynWith (-) (getDeposit <$> dToMint) (getDeposit <$> dToBurn)
@@ -256,10 +261,9 @@ ledgerTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
                       ]
                     eNewSecret     <- coinNewWidget
                     return dCoinsToMint''
-                (eSendStatus, eSend') <- sendRequestButton
+                (eSendStatus, eSend') <- sendRequestButtonLedger
                   LedgerMode
                   dStatus
-                  dWallet
                   dCoinsToBurn
                   dCoinsToMint
                   (void $ updated dBalance)
@@ -267,12 +271,13 @@ ledgerTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
                     eSendZeroBalance = gate ((==0) <$> current dTotalBalance) eSend'
                     eSendNonZeroBalance = gate ((/=0) <$> current dTotalBalance) eSend'
                 eAddChange <- coinNewButtonWidget dV never (addChangeButton dTotalBalance)
-                (eAddrOk, dmAddr) <- inputAddressWindow eSendNonZeroBalance
-                dAddr'          <- holdDyn Nothing (leftmost [updated dmAddr, Nothing <$ eSendZeroBalance])
+                (eAddrOk, _) <- inputAddressWindow eSendNonZeroBalance
+                dmAddr <- holdDyn Nothing $
+                  leftmost [Just <$> eAddrOk, Nothing <$ eSendZeroBalance]
+                let dAddr' = fromMaybe ledgerAddress <$> dmAddr
                 pure (eSendStatus, dCoinsToMint', leftmost [void eAddrOk, eSendZeroBalance], dAddr')
 
             (dAssetNamesInTheWallet, eStatusUpdate) <- encoinsTxLedgerMode
-              dWallet
               dBulletproofParams
               bRandomness
               dChangeAddr
