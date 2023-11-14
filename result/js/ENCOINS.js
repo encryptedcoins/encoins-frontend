@@ -415,7 +415,7 @@ async function daoPollVoteTx(n, apiKey, net, walletName, answer)
   const lucid = await lucidLoader.Lucid.new(
     new lucidLoader.Blockfrost(blockfrostAddress, apiKey),
     net,
-    )
+    );
 
   try {
     //loading wallet
@@ -446,7 +446,7 @@ async function daoPollVoteTx(n, apiKey, net, walletName, answer)
       .payToAddressWithData(changeAddress.to_bech32(), { inline: toHexString(plc_msg.to_bytes()) }, { lovelace: 1500000n })
       .complete();
 
-      setInputValue("VoteSignTx", tx);
+    setInputValue("VoteSignTx", tx);
 
     const signedTx = await tx.sign().complete();
 
@@ -492,7 +492,7 @@ async function daoDelegateTx(apiKey, net, walletName, url)
     // TODO: check url below
     new lucidLoader.Blockfrost(blockfrostAddress, apiKey),
     net,
-    )
+    );
 
   try {
     //loading wallet
