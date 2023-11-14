@@ -2,7 +2,7 @@ module Backend.Environment where
 
 import           Control.Monad               (void)
 import           Control.Monad.IO.Class      (MonadIO (..))
-import           Data.Maybe                  (fromJust, fromMaybe)
+import           Data.Maybe                  (fromJust)
 import qualified Data.Text                   as Text
 import           PlutusTx.Builtins
 import           Reflex.Dom                  hiding (Input)
@@ -13,7 +13,6 @@ import           Backend.Protocol.Fees       (protocolFees)
 import           Backend.Protocol.Setup      (ledgerAddress)
 import           Backend.Protocol.TxValidity (getAda)
 import           Backend.Protocol.Types
-import           Backend.Wallet              (Wallet (..))
 import           ENCOINS.App.Widgets.Basic   (elementResultJS)
 import           ENCOINS.Bulletproofs
 import           ENCOINS.Crypto.Field        (Field (..))
@@ -29,14 +28,12 @@ getBalance dCoinsBurn dCoinsMint =
   holdUniqDyn $ zipDynWith (-) (getAda <$> dCoinsMint) (getAda <$> dCoinsBurn)
 
 getBulletproofParams :: MonadWidget t m
-  => Dynamic t Wallet
-  -> Dynamic t (Maybe Address)
+  => Dynamic t Address
   -> Dynamic t Integer
   -> m (Dynamic t BulletproofParams)
-getBulletproofParams dWallet dmAddress dFees = do
-    let dAddrWallet = zipDynWith fromMaybe (fmap walletChangeAddress dWallet) dmAddress
-        f aL aC fees = addressToBytes aL `Text.append` addressToBytes aC `Text.append` encodeHex (fromBuiltin $ toBytes fees)
-        dPar = zipDynWith (f ledgerAddress) dAddrWallet dFees
+getBulletproofParams dAddress dFees = do
+    let f aL aC fees = addressToBytes aL `Text.append` addressToBytes aC `Text.append` encodeHex (fromBuiltin $ toBytes fees)
+        dPar = zipDynWith (f ledgerAddress) dAddress dFees
     performEvent_ (flip sha2_256 "bulletproofParamsElement" <$> updated dPar)
     elementResultJS "bulletproofParamsElement" (parseBulletproofParams . toBuiltin . fromJust . decodeHex)
 
@@ -47,8 +44,7 @@ getRandomness e = do
 
 getEnvironment :: MonadWidget t m
   => EncoinsMode
-  -> Dynamic t Wallet
-  -> Dynamic t (Maybe Address)
+  -> Dynamic t Address
   -> Dynamic t Secrets
   -> Dynamic t Secrets
   -> m ( Dynamic t Integer
@@ -56,9 +52,9 @@ getEnvironment :: MonadWidget t m
        , Dynamic t BulletproofParams
        , Behavior t Randomness
        )
-getEnvironment mode dWallet dmChangeAddr dCoinsBurn dCoinsMint = do
+getEnvironment mode dChangeAddr dCoinsBurn dCoinsMint = do
   dBalance <- getBalance dCoinsBurn dCoinsMint
   let dFees = fmap (protocolFees mode) dBalance
-  dBulletproofParams <- getBulletproofParams dWallet dmChangeAddr dFees
+  dBulletproofParams <- getBulletproofParams dChangeAddr dFees
   bRandomness        <- getRandomness $ void $ updated dBulletproofParams
   return (dBalance, dFees, dBulletproofParams, bRandomness)
