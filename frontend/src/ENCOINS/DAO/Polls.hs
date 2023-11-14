@@ -9,8 +9,8 @@ import           Data.Time                    (LocalTime (LocalTime), UTCTime,
                                                makeTimeOfDayValid, utc)
 import           Reflex.Dom
 
-import           ENCOINS.Common.Utils         (toText)
 import           ENCOINS.Common.Widgets.Basic (br, column, lnkInline, space)
+import           ENCOINS.Common.Utils         (toText)
 
 data Poll m = Poll {
         pollNumber   :: Int,
@@ -28,7 +28,30 @@ polls = fromList $ zip [1..]
   , poll3 3
   , poll4 4
   , poll5 5
+  , poll6 6
   ]
+
+poll6 :: MonadWidget t m => Int -> Poll m
+poll6 n = Poll n
+    (text $ pollNum n <> "Do you approve performing a Collective Zap-In from the treasury for a total of 150k $ADA, including rewards?")
+    (do
+    text
+        "In the first instance, allocating 600k $ENCS to hold a CZI on Minswap generated a lot of controversy in our community. \
+        \ An idea that was well accepted was to do the CZI with Minswap but with a smaller allocation: 150k $ENCS."
+    br
+    br
+    text
+        "With the current price of 1 $ENCS = 1.73 $ADA our Minswap pool is approximately 280k $ADA + 163k ENCS. We propose to \
+        \allocate 120k $ENCS (more than 70% of the current liquidity) to make a smaller CZI, and 30k $ENCS as special rewards \
+        \for an exclusive pool only for those CZI participants, where they will be able to get higher rewards than the original pool."
+    br
+    br
+    text
+        "It is important to note that these funds being requested to the DAO will continue to be held by the DAO in the form of $ENCS/$ADA LP tokens."
+    )
+    [("Yes", "85.0%")
+    , ("No", "15.0%")]
+    $ endTime22x00 2023 11 17
 
 poll5 :: MonadWidget t m => Int -> Poll m
 poll5 n = Poll n
@@ -46,36 +69,37 @@ poll5 n = Poll n
     , ("No", "0%")]
     $ endTime22x00 2023 9 4
 
+
 poll4 :: MonadWidget t m => Int -> Poll m
 poll4 n = Poll n
-    (text $ pollNum n <> "Spend up to 100k ENCS from the treasury on the VyFi partnership?")
+    (text $ pollNum n <> "Spend up to 100k $ENCS from the treasury on the VyFi partnership?")
     (do
         el "strong" $ text "Encoins partnership with VyFi"
         br
         br
-        text "Total allocation for the program: 100,000 ENCS."
+        text "Total allocation for the program: 100,000 $ENCS."
         br
         br
         el "strong" $ text "Farming Incentives"
         br
-        text "Allocation: 70,000 ENCS."
+        text "Allocation: 70,000 $ENCS."
         br
-        text "The amount of ENCS starts at low quantities and increase as liquidity increases. With 70,000 ENCS we will have enough \
+        text "The amount of $ENCS starts at low quantities and increase as liquidity increases. With 70,000 $ENCS we will have enough \
             \ tokens for more than 1 year of farming rewards, bootstrapping a high liquidity."
         br
         br
-        el "strong" $ text "Stake ENCS, earn ENCS + VYFI"
+        el "strong" $ text "Stake $ENCS, earn $ENCS + VYFI"
         br
-        text "Allocation: 20,000 ENCS."
+        text "Allocation: 20,000 $ENCS."
         br
         text "This program aims to compensate our holders. It will end when the available tokens are distributed, or when the protocol \
             \ is launched on mainnet, whichever comes first. In addition, the VYFI team also gives us a certain number of tokens to \
             \ distribute among all those who participate in this program."
         br
         br
-        el "strong" $ text "Stake VYFI, earn ENCS"
+        el "strong" $ text "Stake $VYFI, earn $ENCS"
         br
-        text "Allocation: 10,000 ENCS."
+        text "Allocation: 10,000 $ENCS."
         br
         text "This program aims to unite both communities, trying to attract users from VYFI to Encoins. Just as they will give us \
             \ VYFI for the aforementioned program, it is fair that we give something to their community..."
@@ -92,11 +116,11 @@ poll4 n = Poll n
 
 poll3 :: MonadWidget t m => Int ->  Poll m
 poll3 n = Poll n
-    (text $ pollNum n <> "Spend 250k ENCS from the treasury on the ENCOINS v1 protocol audit?")
+    (text $ pollNum n <> "Spend 250k $ENCS from the treasury on the ENCOINS v1 protocol audit?")
     (do
     text
-        "The protocol audit will be performed by Anastasia Labs. The 250k ENCS will be put into the two-year linear vesting \
-        \ contract with monthly payments of 10415 ENCS. For more information on the proposal, visit our "
+        "The protocol audit will be performed by Anastasia Labs. The 250k $ENCS will be put into the two-year linear vesting \
+        \ contract with monthly payments of 10415 $ENCS. For more information on the proposal, visit our "
     lnkInline "https://discord.com/channels/930855339501445151/1120801429112762448" "Discord server"
     text "."
     )
@@ -107,16 +131,16 @@ poll3 n = Poll n
 
 poll2 :: MonadWidget t m => Int -> Poll m
 poll2 n = Poll n
-    (text $ pollNum n <> "Spend 50k ENCS from the treasury as rewards for incentivized farming on MinSwap?")
+    (text $ pollNum n <> "Spend 50k $ENCS from the treasury as rewards for incentivized farming on MinSwap?")
     (do
     text
-        "This proposal is to set up an incentivized farm for the ENCS/ADA liquidity pool on MinSwap. \
+        "This proposal is to set up an incentivized farm for the $ENCS/$ADA liquidity pool on MinSwap. \
         \ Once all MinSwap's conditions are satisfied, the farm can be activated (read MinSwap docs "
     lnkInline "https://docs.minswap.org/faq/token-launching-and-farming/4.-farming-for-projects" "here"
     text
         "). \
-        \ Liquidity providers of the ENCS/ADA pool will receive both ENCS and MIN as extra rewards. \
-        \ The aim of this proposal is to boost ENCS liquidity by increasing incentives to the liquidity providers. "
+        \ Liquidity providers of the $ENCS/$ADA pool will receive both $ENCS and MIN as extra rewards. \
+        \ The aim of this proposal is to boost $ENCS liquidity by increasing incentives to the liquidity providers. "
     )
     [("Yes", "97.97%")
     , ("No", "2.03%")]
@@ -125,12 +149,12 @@ poll2 n = Poll n
 
 poll1 :: MonadWidget t m => Int -> Poll m
 poll1 n = Poll n
-    (text $ pollNum n <> "Do you support the proposal to use 50k ENCS from the treasury to provide liquidity to the ENCS/ADA pool on MinSwap?")
+    (text $ pollNum n <> "Do you support the proposal to use 50k $ENCS from the treasury to provide liquidity to the $ENCS/$ADA pool on MinSwap?")
     (text
-        "The ENCS/ADA liquidity pool on MinSwap has about 120k ENCS in it (as of June 9, 2023). \
-        \ Adding additional 50k ENCS from the treasury should improve the price stability of ENCS. \
-        \ The total treasury holdings are currently at 3m ENCS. In case the decision is later reversed, \
-        \ the corresponding combination of ADA and ENCS will be returned to the treasury."
+        "The $ENCS/$ADA liquidity pool on MinSwap has about 120k $ENCS in it (as of June 9, 2023). \
+        \ Adding additional 50k $ENCS from the treasury should improve the price stability of $ENCS. \
+        \ The total treasury holdings are currently at 3m $ENCS. In case the decision is later reversed, \
+        \ the corresponding combination of $ADA and $ENCS will be returned to the treasury."
     )
     [("Yes", "95.9%"), ("No", "4.1%")]
     $ endTime22x00 2023 6 13
