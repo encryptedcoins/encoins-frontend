@@ -10,9 +10,9 @@ import qualified Data.Text                          as T
 import           Data.Text.Encoding                 (decodeUtf8)
 import           Reflex.Dom
 
-import           Backend.Status                     (Status (..), isBlockError,
+import           Backend.Status                     (Status (..), isNoRelay,
                                                      isReady,
-                                                     isStatusBusyBackendNetwork)
+                                                     isTxProcessOrCriticalError)
 import           Backend.Utility                    (switchHoldDyn)
 import           Backend.Wallet                     (NetworkConfig (..),
                                                      Wallet (..), networkConfig,
@@ -37,7 +37,7 @@ import           JS.Website                         (saveJSON)
 
 bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mpass = mdo
-  (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet mpass
+  (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet dIsDisableButtons mpass
 
   (dStatusT, dIsDisableButtons) <- handleAppStatus dWallet evEvStatus
   notification dStatusT
@@ -113,8 +113,8 @@ handleAppStatus dWallet evEvStatus = do
   dWalletNetworkStatus <- fetchWalletNetworkStatus dWallet
 
   dStatus <- foldDynMaybe
-    -- Hold BackendError status once it fired until page reloading.
-    (\ev (_, accS) -> if isBlockError accS then Nothing else Just ev)
+    -- Hold NoRelay status once it fired until page reloading.
+    (\ev (_, accS) -> if isNoRelay accS then Nothing else Just ev)
     (T.empty, Ready) $ leftmost [eStatus, updated dWalletNetworkStatus]
 
   let flatStatus (t, s)
@@ -122,7 +122,7 @@ handleAppStatus dWallet evEvStatus = do
         | T.null $ T.strip t = toText s
         | otherwise = t <> column <> space <> toText s
 
-  let dIsDisableButtons = (isStatusBusyBackendNetwork . snd) <$> dStatus
+  let dIsDisableButtons = (isTxProcessOrCriticalError . snd) <$> dStatus
   let dStatusT = flatStatus <$> dStatus
 
   pure (dStatusT, dIsDisableButtons)

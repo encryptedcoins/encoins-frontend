@@ -11,7 +11,7 @@ import           Servant.Reflex               (BaseUrl)
 
 import           Backend.Protocol.Fees        (protocolFees)
 import           Backend.Protocol.Types
-import           Backend.Status               (Status (..), isStatusBusy)
+import           Backend.Status               (Status (..), isTxProcess)
 import           Backend.Wallet               (NetworkConfig (..), Wallet (..),
                                                WalletName (..),
                                                currentNetworkApp, networkConfig)
@@ -57,7 +57,7 @@ txValidity mode mbaseUrl maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
         cond3 = mode == LedgerMode ||
           (balance + fees + 5) * 1_000_000 <
               sum (map (fromJust . decodeText . coin . amount . output) walletUTXOs)
-        cond4 = not $ isStatusBusy s
+        cond4 = not $ isTxProcess s
         cond5 = not $ null toMint
         cond6 = length coins >= 2
         cond7 = length coins <= 5 || mode == LedgerMode

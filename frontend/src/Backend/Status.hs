@@ -30,17 +30,16 @@ instance Show Status where
 
 -- Check if status is the performant one.
 -- Performant status fires when background operations are processing.
-isStatusBusy :: Status -> Bool
-isStatusBusy status = status `elem` [Constructing, Signing, Submitting, Submitted]
+isTxProcess :: Status -> Bool
+isTxProcess status = status `elem` [Constructing, Signing, Submitting, Submitted]
 
-isStatusBusyBackendNetwork :: Status -> Bool
-isStatusBusyBackendNetwork = \case
+isTxProcessOrCriticalError :: Status -> Bool
+isTxProcessOrCriticalError = \case
   Constructing         -> True
   Signing              -> True
   Submitting           -> True
   Submitted            -> True
   NoRelay              -> True
-  BackendError _       -> True
   WalletNetworkError _ -> True
   _                    -> False
 
@@ -51,9 +50,9 @@ isReady :: Status -> Bool
 isReady Ready = True
 isReady _     = False
 
-isBlockError :: Status -> Bool
-isBlockError NoRelay = True
-isBlockError _       = False
+isNoRelay :: Status -> Bool
+isNoRelay NoRelay = True
+isNoRelay _       = False
 
 data UrlStatus
     = UrlEmpty

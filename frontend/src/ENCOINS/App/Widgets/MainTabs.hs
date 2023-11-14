@@ -19,7 +19,7 @@ import           Backend.Environment                    (getEnvironment)
 import           Backend.Protocol.TxValidity            (getDeposit)
 import           Backend.Protocol.Types
 import           Backend.Status                         (Status (..),
-                                                         isStatusBusyBackendNetwork)
+                                                         isTxProcessOrCriticalError)
 import           Backend.Wallet                         (Wallet (..))
 import           ENCOINS.App.Widgets.Basic              (containerApp,
                                                          elementResultJS,
@@ -163,13 +163,13 @@ transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
             (zipDynWith
               (&&)
               (fmap (not . null) dCoinsToBurn)
-              (fmap (not . isStatusBusyBackendNetwork) dStatus)
+              (fmap (not . isTxProcessOrCriticalError) dStatus)
             ) "" " Send to Wallet"
           eLedger <- sendButton
             (zipDynWith
               (&&)
               (fmap (not . null) dCoinsToBurn)
-              (fmap (not . isStatusBusyBackendNetwork) dStatus)
+              (fmap (not . isTxProcessOrCriticalError) dStatus)
             ) "margin-top: 20px" " Send to Ledger"
           eWalletOk    <- sendToWalletWindow eWallet dCoinsToBurn
           (eAddrOk, _) <- inputAddressWindow eWalletOk

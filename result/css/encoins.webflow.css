@@ -978,13 +978,6 @@ body {
   pointer-events: none;
 }
 
-.button-disabled-independent {
-  -webkit-filter: brightness(35%);
-  filter: brightness(35%);
-  cursor: default;
-  pointer-events: none;
-}
-
 .container-app {
   margin-top: 10px;
   margin-bottom: 10px;
@@ -1575,6 +1568,13 @@ body {
   line-height: 32px;
   color: grey;
   text-align: center;
+}
+
+.click-disabled {
+  -webkit-filter: brightness(35%);
+  filter: brightness(35%);
+  cursor: default;
+  pointer-events: none;
 }
 
 .app-Nav_Locker-close {
