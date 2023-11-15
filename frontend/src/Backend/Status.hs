@@ -50,6 +50,10 @@ isReady :: Status -> Bool
 isReady Ready = True
 isReady _     = False
 
+isWalletError :: Status -> Bool
+isWalletError (WalletError _) = True
+isWalletError _               = False
+
 isNoRelay :: Status -> Bool
 isNoRelay NoRelay = True
 isNoRelay _       = False
