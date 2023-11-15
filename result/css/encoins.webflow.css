@@ -1848,3 +1848,18 @@ body {
   margin-right: 30px;
   margin-bottom: 20px;
 }
+
+.app-Formula_Popup {
+  width: fit-content;
+}
+
+.app-Formula_Tooltip_wrapper {
+  display: flex;
+  flex-direction: column;
+  position: static;
+}
+
+.app-Formula_Tooltip-legend {
+  text-align: left;
+  margin-left: 40px;
+}

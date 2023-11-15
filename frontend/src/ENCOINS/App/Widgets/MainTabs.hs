@@ -72,7 +72,7 @@ walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
         dToBurn
         dToMint
     dTotalBalance <- holdUniqDyn $ zipDynWith (-) (negate <$> dBalance) dFees
-    containerApp "" $ transactionBalanceWidget dTotalBalance dFees ""
+    containerApp "" $ transactionBalanceWidget dTotalBalance dFees (Just WalletMode) ""
     (dToBurn, dToMint, eStatusUpdate) <- containerApp "" $
         divClass "app-columns w-row" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
@@ -145,8 +145,9 @@ transferTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
 transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
     dDepositBalance <- holdUniqDyn $ negate . getDeposit <$> dCoins
-    containerApp "" $ transactionBalanceWidget (pure 0) (pure 0) " (to Wallet)"
-    containerApp "" $ transactionBalanceWidget dDepositBalance (pure 0) " (to Ledger)"
+    containerApp "" $ transactionBalanceWidget (pure 0) (pure 0) Nothing " (to Wallet)"
+    containerApp "" $ transactionBalanceWidget
+      dDepositBalance (pure 0) (Just TransferMode) " (to Ledger)"
     (dCoins, eSendToLedger, eAddr, dSecretsName) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         let dSecretsWithNames = nub <$> zipDynWith (++) dOldSecretsWithNames (map coinWithName <$> dImportedSecrets)
@@ -226,7 +227,8 @@ ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
       zipDynWith (-) (getDeposit <$> dToMint) (getDeposit <$> dToBurn)
     dEncoinsDepositBalance <- holdUniqDyn $ zipDynWith (+) dBalance dDepositBalance
     dTotalBalance <- holdUniqDyn $ zipDynWith (+) dEncoinsDepositBalance dFees
-    containerApp "" $ transactionBalanceWidget (negate <$> dTotalBalance) dFees ""
+    containerApp "" $ transactionBalanceWidget
+      (negate <$> dTotalBalance) dFees (Just LedgerMode) ""
 
     (dToBurn, dToMint, dAddr, eStatusUpdate) <- containerApp "" $
         divClassId "app-columns w-row" "welcome-ledger" $ mdo
