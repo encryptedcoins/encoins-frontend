@@ -1,5 +1,6 @@
 module ENCOINS.App.Widgets.TransactionBalance where
 
+import           Control.Monad                   (void)
 import           Data.Bool                       (bool)
 import           Data.Text                       (Text)
 import           Reflex.Dom
@@ -36,25 +37,24 @@ transactionBalanceWidget formula mMode txt = do
         <> balanceSign bal
         <> toText (abs bal)
         <> " ADA"
-      -- feeADA f =
-      --   let r = toText f
-      --   in bool blank (divClass "app-text-semibold" $ text $ "Fee: " <> r <> " ADA") (r /= "0")
-  (elTxt,_) <- withTooltip
-    (divClassId "transaction-balance-div" "welcome-tx-balance" $ elClass' "div" "app-text-semibold" $ do
-          dynText $ fmap balanceADA $ total formula
-          -- dyn_ $ fmap feeADA dFees
-    ) mempty 0 0 $ do
-        elAttr "div" ("class" =: "app-text-semibold app-Formula_Popup") $ text "Formula"
-  dTooltipVis <- toggle False (domEvent Click elTxt)
-  dyn_ $ bool blank (formulaTooltip formula mMode) <$> dTooltipVis
+  let txBalance =
+        divClassId "transaction-balance-div" "welcome-tx-balance" $
+          elClass' "div" "app-text-semibold" $ dynText $ fmap balanceADA $ total formula
+  case mMode of
+    Nothing -> void txBalance
+    Just mode -> do
+      (elTxt,_) <- withTooltip txBalance mempty 0 0 $ do
+          elAttr "div" ("class" =: "app-text-semibold app-Formula_Popup") $ text "Formula"
+      dTooltipVis <- toggle False (domEvent Click elTxt)
+      dyn_ $ bool blank (formulaTooltip formula mode) <$> dTooltipVis
 
-formulaTooltip :: MonadWidget t m => Formula t -> Maybe EncoinsMode -> m ()
+formulaTooltip :: MonadWidget t m => Formula t -> EncoinsMode -> m ()
 formulaTooltip Formula{..} mode = elAttr "div"
   ( "class" =: "div-tooltip div-tooltip-always-visible"
   <> "style" =: "border-top-left-radius: 0px; border-top-right-radius: 0px"
   ) $ do
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "font-size:16px;overflow-wrap: anywhere;") $ case mode of
-        Just WalletMode -> divClass "app-Formula_TooltipWrapper" $ do
+        WalletMode -> divClass "app-Formula_TooltipWrapper" $ do
             dynText $ mconcat
               [ (toText <$> total)
               , " = ("
@@ -72,8 +72,7 @@ formulaTooltip Formula{..} mode = elAttr "div"
                     , "mAda - sum Ada in minting encoins"
                     , "fee - commission of relay"
                     ]
-        Just TransferMode -> divClass "app-Formula_TooltipWrapper" $ do
-            -- dynText$ zipDynWithSign "= -4 *" (toText <$> total) (toText <$> bEncoins)
+        TransferMode -> divClass "app-Formula_TooltipWrapper" $ do
             dynText $ mconcat
               [ (toText <$> total)
               , " = - ("
@@ -85,7 +84,7 @@ formulaTooltip Formula{..} mode = elAttr "div"
                 mapM_ (el "li" . text)
                     [ "nEncoins - number of transferring encoins"
                     ]
-        Just LedgerMode -> divClass "app-Formula_TooltipWrapper" $ do
+        LedgerMode -> divClass "app-Formula_TooltipWrapper" $ do
             dynText $ mconcat
               [ (toText <$> total)
               , " = ("
@@ -109,4 +108,3 @@ formulaTooltip Formula{..} mode = elAttr "div"
                     , "mEncoins - number of minting encoins"
                     , "fee - commission of relay"
                     ]
-        Nothing -> blank
