@@ -1853,13 +1853,15 @@ body {
   width: fit-content;
 }
 
-.app-Formula_Tooltip_wrapper {
+.app-Formula_TooltipWrapper {
   display: flex;
   flex-direction: column;
   position: static;
+  font-weight: bold;
 }
 
 .app-Formula_Tooltip-legend {
   text-align: left;
-  margin-left: 40px;
+  font-weight: normal;
+  /* margin-left: 40px; */
 }
