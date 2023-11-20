@@ -114,7 +114,7 @@ walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
                     dCoinsToMint'' <- coinMintCollectionWidget $ leftmost
                       [ fmap AddCoin eNewSecret
-                      , ClearCoins <$ ffilter (== Submitted) eStatusUpdate
+                      , ClearCoins <$ ffilter (== Ready) eStatusUpdate
                       ]
                     eNewSecret <- coinNewWidget
                     return dCoinsToMint''
