@@ -143,8 +143,26 @@ handleWalletNone = do
     foldDyn (\w _ -> if w == None then (True, "Wallet is not connected!") else (False, ""))
     (False, "")
     eWalletName
-  let (dWalletNotConnectedB, dWalletNotConnectedT) = splitDynPure dWalletMessage
-  pure (dWalletNotConnectedB, dWalletNotConnectedT)
+  dWalletMessageUniq <- holdUniqDyn dWalletMessage
+  pure $ splitDynPure dWalletMessageUniq
+
+handleEncToken :: MonadWidget t m
+  => Dynamic t Wallet
+  -> m (Dynamic t Bool, Event t Status)
+handleEncToken dWallet = do
+  let (_, _, encSymbol, encToken) = lucidConfigDao
+  eWalletDelayed <- delay 0.2 $ updated dWallet
+  logEvent "eWalletDelayed" eWalletDelayed
+  let eWalletConnected = ffilter (\w -> walletName w /= None) eWalletDelayed
+  logEvent "eWalletConnected" eWalletConnected
+  let eHasNotToken = not . hasToken encSymbol encToken <$> eWalletConnected
+  logEvent "eHasNotToken" eHasNotToken
+  let eHasNotTokenStatus = bool
+        Ready (WalletError "No ENCS tokens to delegate!") <$> eHasNotToken
+  logEvent "eHasNotTokenStatus" eHasNotTokenStatus
+  dHasNotToken <- holdDyn False eHasNotToken
+  logDyn "dHasNotToken" dHasNotToken
+  pure (dHasNotToken, eHasNotTokenStatus)
 
 handleStatus :: MonadWidget t m
   => Dynamic t Wallet
@@ -162,12 +180,7 @@ handleStatus dWallet = do
   (dWalletNotConnectedB, dWalletNotConnectedT) <- handleWalletNone
   eWalletError <- walletError
   dWalletError <- holdDyn False $ isWalletError <$> eWalletError
-  let (_, _, encSymbol, encToken) = lucidConfigDao
-  let dHasNotToken = not . hasToken encSymbol encToken <$> dWallet
-  logDyn "dHasNotToken" dHasNotToken
-  let eHasNotTokenStatus = updated $
-        bool Ready (WalletError "No ENCS tokens to delegate!") <$> dHasNotToken
-  logEvent "eHasNotTokenStatus" eHasNotTokenStatus
+  (dHasNotToken, eHasNotTokenStatus) <- handleEncToken dWallet
 
   let dIsDisableButtons = foldDynamicAny
         [ isTxProcess <$> dDelegateStatus
@@ -191,9 +204,8 @@ handleStatus dWallet = do
         , updated dUnexpectedNetworkT
         , updated dWalletNotConnectedT
         , flatStatus "Wallet" <$> eWalletError
-        , flatStatus "Delegate status" <$> eHasNotTokenStatus
+        , flatStatus "Wallet" <$> eHasNotTokenStatus
         ]
-  logEvent "currentStatus" currentStatus
   dNotification <- holdDyn T.empty currentStatus
 
   pure (dIsDisableButtons, dIsDisableConnectButton, dNotification)

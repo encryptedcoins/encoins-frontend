@@ -67,7 +67,7 @@ function loadJSON(key, resId, decr, pass) {
 
 function setWalletNone() {
   setInputValue("walletNameElement", "None");
-  setInputValue("daoWalletNameNotConnected", "none");
+  setInputValue("daoWalletNameNotConnected", "None");
   setInputValue("changeAddressBech32Element", "");
   setInputValue("pubKeyHashElement", "");
   setInputValue("stakeKeyHashElement", "");
