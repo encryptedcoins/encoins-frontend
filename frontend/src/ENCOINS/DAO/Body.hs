@@ -13,14 +13,15 @@ import           Data.Time                          (getCurrentTime)
 import           Reflex.Dom
 
 import           Backend.Status                     (Status (..), isReady,
-                                                     isTxProcess)
+                                                     isTxProcess, isWalletError)
 import           Backend.Wallet                     (NetworkConfig (..),
                                                      Wallet (..),
                                                      WalletName (..), fromJS,
                                                      networkConfig,
                                                      walletsSupportedInDAO)
 import           ENCOINS.App.Widgets.Basic          (elementResultJS,
-                                                     waitForScripts)
+                                                     waitForScripts,
+                                                     walletError)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils               (toText)
@@ -158,12 +159,15 @@ handleStatus dWallet = do
 
   (dUnexpectedNetworkB, dUnexpectedNetworkT) <- handleInvalidNetwork dWallet
   (dWalletNotConnectedB, dWalletNotConnectedT) <- handleWalletNone
+  eWalletError <- walletError
+  dWalletError <- holdDyn False $ isWalletError <$> eWalletError
 
   let dIsDisableButtons = foldDynamicAny
         [ isTxProcess <$> dDelegateStatus
         , isTxProcess <$> dVoteStatus
         , dUnexpectedNetworkB
         , dWalletNotConnectedB
+        , dWalletError
         ]
   let dIsDisableButtonsConnect = foldDynamicAny
         [ isTxProcess <$> dDelegateStatus
@@ -178,6 +182,7 @@ handleStatus dWallet = do
     , flatStatus "Delegate status" <$> eDelegateStatus
     , updated dUnexpectedNetworkT
     , updated dWalletNotConnectedT
+    , flatStatus "Wallet" <$> eWalletError
     ]
 
   pure (dIsDisableButtons, dIsDisableButtonsConnect, dNotification)
