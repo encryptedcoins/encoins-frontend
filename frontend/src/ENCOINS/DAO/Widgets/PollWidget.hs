@@ -29,9 +29,9 @@ pollWidget dWallet dIsBlocked (Poll n question summary answers' endTime) = do
         dIsBlocked . text
       ) answers
     let e = leftmost $ zipWith (<$) answers es
-
+    let (apiKey, networkId, _, _) = lucidConfigDao
     performEvent_
-      $ daoPollVoteTx n lucidConfigDao
+      $ daoPollVoteTx n apiKey networkId
       <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) e
 
     dMsg <- elementResultJS ("elementPoll" <> toText n) id

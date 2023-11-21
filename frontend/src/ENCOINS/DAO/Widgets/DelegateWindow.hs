@@ -69,8 +69,9 @@ delegateWindow eOpen dWallet dRelays = mdo
 
           let eUrl = leftmost [eUrlTable, eUrlButton]
           logEvent "eUrl" eUrl
+          let (apiKey, networkId, _, _) = lucidConfigDao
           performEvent_ $
-            JS.daoDelegateTx lucidConfigDao
+            JS.daoDelegateTx apiKey networkId
             <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
 
           return eUrl

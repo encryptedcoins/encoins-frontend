@@ -17,6 +17,7 @@ import           Backend.Status                     (Status (..), isReady,
 import           Backend.Wallet                     (NetworkConfig (..),
                                                      Wallet (..),
                                                      WalletName (..), fromJS,
+                                                     hasToken, lucidConfigDao,
                                                      networkConfig,
                                                      walletsSupportedInDAO)
 import           ENCOINS.App.Widgets.Basic          (elementResultJS,
@@ -43,7 +44,7 @@ bodyWidget = waitForScripts blank $ mdo
 
 bodyContentWidget :: MonadWidget t m => m ()
 bodyContentWidget = mdo
-  eDao <- navbarWidget dWallet dIsDisableButtons dIsDisableButtonsConnect
+  eDao <- navbarWidget dWallet dIsDisableButtons dIsDisableConnectButton
 
   let eConnectOpen = void $ ffilter (==Connect) eDao
   dWallet <- connectWindow walletsSupportedInDAO eConnectOpen
@@ -53,7 +54,7 @@ bodyContentWidget = mdo
   dRelays <- holdDyn [] =<< fetchRelayTable eDelay
   delegateWindow eDelegate dWallet dRelays
 
-  (dIsDisableButtons, dIsDisableButtonsConnect, dNotification) <- handleStatus dWallet
+  (dIsDisableButtons, dIsDisableConnectButton, dNotification) <- handleStatus dWallet
   notification dNotification
 
   (archivedPolls, activePolls) <- poolsActiveAndArchived <$> liftIO getCurrentTime
@@ -161,6 +162,12 @@ handleStatus dWallet = do
   (dWalletNotConnectedB, dWalletNotConnectedT) <- handleWalletNone
   eWalletError <- walletError
   dWalletError <- holdDyn False $ isWalletError <$> eWalletError
+  let (_, _, encSymbol, encToken) = lucidConfigDao
+  let dHasNotToken = not . hasToken encSymbol encToken <$> dWallet
+  logDyn "dHasNotToken" dHasNotToken
+  let eHasNotTokenStatus = updated $
+        bool Ready (WalletError "No ENCS tokens to delegate!") <$> dHasNotToken
+  logEvent "eHasNotTokenStatus" eHasNotTokenStatus
 
   let dIsDisableButtons = foldDynamicAny
         [ isTxProcess <$> dDelegateStatus
@@ -168,8 +175,9 @@ handleStatus dWallet = do
         , dUnexpectedNetworkB
         , dWalletNotConnectedB
         , dWalletError
+        , dHasNotToken
         ]
-  let dIsDisableButtonsConnect = foldDynamicAny
+  let dIsDisableConnectButton = foldDynamicAny
         [ isTxProcess <$> dDelegateStatus
         , isTxProcess <$> dVoteStatus
         , dUnexpectedNetworkB
@@ -177,15 +185,18 @@ handleStatus dWallet = do
 
   let flatStatus t s = bool (t <> column <> space <> toText s) T.empty $ isReady s
 
-  dNotification <- holdDyn T.empty $ leftmost
-    [ flatStatus "Vote status" <$> eVoteStatus
-    , flatStatus "Delegate status" <$> eDelegateStatus
-    , updated dUnexpectedNetworkT
-    , updated dWalletNotConnectedT
-    , flatStatus "Wallet" <$> eWalletError
-    ]
+  let currentStatus = leftmost
+        [ flatStatus "Vote status" <$> eVoteStatus
+        , flatStatus "Delegate status" <$> eDelegateStatus
+        , updated dUnexpectedNetworkT
+        , updated dWalletNotConnectedT
+        , flatStatus "Wallet" <$> eWalletError
+        , flatStatus "Delegate status" <$> eHasNotTokenStatus
+        ]
+  logEvent "currentStatus" currentStatus
+  dNotification <- holdDyn T.empty currentStatus
 
-  pure (dIsDisableButtons, dIsDisableButtonsConnect, dNotification)
+  pure (dIsDisableButtons, dIsDisableConnectButton, dNotification)
 
 pollAttr :: Map Text Text
 pollAttr =

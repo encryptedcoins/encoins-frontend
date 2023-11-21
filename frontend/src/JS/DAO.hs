@@ -20,8 +20,8 @@ foreign import javascript unsafe
   "daoPollVoteTx($1, $2, $3, $4, $5);"
   daoPollVoteTx_js :: JSVal -> JSVal -> JSVal -> JSVal -> JSVal -> IO ()
 
-daoPollVoteTx :: MonadIO m => Int -> (Text, Text) -> (Text, Text) -> m ()
-daoPollVoteTx n (apiKey, net) (walletName, answer) = liftIO $ do
+daoPollVoteTx :: MonadIO m => Int -> Text -> Text -> (Text, Text) -> m ()
+daoPollVoteTx n apiKey net (walletName, answer) = liftIO $ do
   n_js          <- toJSVal $ (fromIntegral n :: Int)
   apiKey_js     <- toJSVal apiKey
   net_js        <- toJSVal net
@@ -29,7 +29,7 @@ daoPollVoteTx n (apiKey, net) (walletName, answer) = liftIO $ do
   answer_js     <- toJSVal answer
   daoPollVoteTx_js n_js apiKey_js net_js walletName_js answer_js
 #else
-daoPollVoteTx :: MonadIO m => Int -> (Text, Text) -> (Text, Text) -> m ()
+daoPollVoteTx :: MonadIO m => Int -> Text -> Text -> (Text, Text) -> m ()
 daoPollVoteTx = const $ error "GHCJS is required!"
 #endif
 
@@ -40,15 +40,15 @@ foreign import javascript unsafe
   "daoDelegateTx($1, $2, $3, $4);"
   daoDelegateTx_js :: JSVal -> JSVal -> JSVal -> JSVal -> IO ()
 
-daoDelegateTx :: MonadIO m => (Text, Text) -> (Text, Text) -> m ()
-daoDelegateTx (apiKey, net) (walletName, url) = liftIO $ do
+daoDelegateTx :: MonadIO m => Text -> Text -> (Text, Text) -> m ()
+daoDelegateTx apiKey net (walletName, url) = liftIO $ do
   apiKey_js     <- toJSVal apiKey
   net_js        <- toJSVal net
   walletName_js <- toJSVal walletName
   url_js        <- toJSVal url
   daoDelegateTx_js apiKey_js net_js walletName_js url_js
 #else
-daoDelegateTx :: MonadIO m => (Text, Text) -> (Text, Text) -> m ()
+daoDelegateTx :: MonadIO m => Text -> Text -> (Text, Text) -> m ()
 daoDelegateTx = const $ error "GHCJS is required!"
 #endif
 

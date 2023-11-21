@@ -505,6 +505,7 @@ async function daoDelegateTx(apiKey, net, walletName, url)
     const stakeKeyHashCred = baseAddress.stake_cred();
     const stakeKeyHash     = stakeKeyHashCred.to_keyhash();
     const utxos            = await api.getUtxos();
+    console.log("delegate utxos", utxos)
 
     const plc_lst = CardanoWasm.PlutusList.new();
     const tag1 = CardanoWasm.PlutusData.new_bytes(toUTF8Array("ENCOINS"));
@@ -570,7 +571,10 @@ async function checkUrl(str) {
 
 async function check_utxos_changed (elementId, api, utxosOld, { wait, retries }) {
   await setTimeout(wait)
+  console.log("check_utxos_changed utxos", utxosOld)
+
   const utxosNew = await api.getUtxos();
+  console.log("check_utxos_changed utxos", utxosNew)
 
   if (utxosOld !== utxosNew) {
     console.log("The utxos of the wallet have been changed")
