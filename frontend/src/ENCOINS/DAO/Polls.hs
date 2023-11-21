@@ -49,8 +49,8 @@ poll6 n = Poll n
     text
         "It is important to note that these funds being requested to the DAO will continue to be held by the DAO in the form of $ENCS/$ADA LP tokens."
     )
-    [("Yes", "85.0%")
-    , ("No", "15.0%")]
+    [("Yes", "78.35%")
+    , ("No", "21.65%")]
     $ endTime22x00 2023 11 17
 
 poll5 :: MonadWidget t m => Int -> Poll m
