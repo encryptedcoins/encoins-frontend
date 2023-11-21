@@ -95,8 +95,9 @@ walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do
                   mainWindowColumnHeader "Coins in the Wallet"
-                  dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesInTheWallet
-                  coinBurnCollectionWidget dSecretsWithNamesInTheWallet
+                  dSecretsWithNamesUniq <- holdUniqDyn dSecretsWithNamesInTheWallet
+                  dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesUniq
+                  coinBurnCollectionWidget dSecretsWithNamesUniq
                 eImp <- divClassId "" "welcome-import-export" $ do
                     (eImport, eImportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Import" <*> menuButton " Import All"
                     (eExport, eExportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Export" <*> menuButton " Export All"
@@ -113,7 +114,7 @@ walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
                     dCoinsToMint'' <- coinMintCollectionWidget $ leftmost
                       [ fmap AddCoin eNewSecret
-                      , ClearCoins <$ ffilter (== Submitted) eStatusUpdate
+                      , ClearCoins <$ ffilter (== Ready) eStatusUpdate
                       ]
                     eNewSecret <- coinNewWidget
                     return dCoinsToMint''
