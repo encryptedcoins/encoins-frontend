@@ -67,9 +67,9 @@ formulaTooltip Formula{..} mode = elAttr "div"
             text "txBalance = (bAda - mAda) - fee"
             elAttr "ul" ("role" =: "list" <> "class" =: "app-Formula_TooltipLegend ") $ do
                 mapM_ (el "li" . text)
-                    [ "bAda - sum Ada in burning encoins"
-                    , "mAda - sum Ada in minting encoins"
-                    , "fee - commission of relay"
+                    [ "bAda = sum of Ada in the encoins being burned"
+                    , "mAda = sum of Ada in the encoins being minted"
+                    , "fee = commission of the relay"
                     ]
         TransferMode -> divClass "app-Formula_TooltipFormula" $ do
             dynText $ mconcat
@@ -81,7 +81,7 @@ formulaTooltip Formula{..} mode = elAttr "div"
             text "txBalance = - (nEncoins * 4)"
             elAttr "ul" ("role" =: "list" <> "class" =: "app-Formula_TooltipLegend ") $ do
                 mapM_ (el "li" . text)
-                    [ "nEncoins - number of transferring encoins"
+                    [ "nEncoins = number of the encoins being transferred"
                     ]
         LedgerMode -> divClass "app-Formula_TooltipFormula" $ do
             dynText $ mconcat
@@ -98,12 +98,12 @@ formulaTooltip Formula{..} mode = elAttr "div"
               , (toText <$> fee)
               ]
             br
-            text "txBalance = (bAda - mAda) + (bEncoins - mEncoins) - fee"
+            text "txBalance = (bAda - mAda) + (bEncoins * 4 - mEncoins * 4) - fee"
             elAttr "ul" ("role" =: "list" <> "class" =: "app-Formula_TooltipLegend ") $ do
                 mapM_ (el "li" . text)
-                    [ "bAda - sum Ada in burning encoins"
-                    , "mAda - sum Ada in minting encoins"
-                    , "bEncoins - number of burning encoins"
-                    , "mEncoins - number of minting encoins"
-                    , "fee - commission of relay"
+                    [ "bAda = sum of Ada in the encoins being burned"
+                    , "mAda = sum of Ada in the encoins being minted"
+                    , "bEncoins = number of the encoints being burned"
+                    , "mEncoins = number of the encoins being minted"
+                    , "fee = commission of the relay"
                     ]
