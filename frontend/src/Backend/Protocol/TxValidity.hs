@@ -122,4 +122,7 @@ getAda :: Secrets -> Integer
 getAda = sum . map (fromFieldElement . secretV)
 
 getDeposit :: Secrets -> Integer
-getDeposit = (*4) . fromIntegral . length
+getDeposit = (*4) . getCoinNumber
+
+getCoinNumber :: Secrets -> Integer
+getCoinNumber = fromIntegral . length
