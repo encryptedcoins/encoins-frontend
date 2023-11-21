@@ -113,20 +113,22 @@ networkConfig :: NetworkConfig
 networkConfig =
   fromJust $ decode $ fromStrict networkConfigBS
 
--- (apiKey of blockfrost, networkId, Enc CurrencySymbol, Enc TokenName)
-lucidConfigDao :: (Text, Text, Text, Text)
+-- (apiKey of blockfrost, networkId, Enc CurrencySymbol, Enc TokenName, Enc Fingerprint)
+lucidConfigDao :: (Text, Text, Text, Text, Text)
 lucidConfigDao = case dao networkConfig of
   Mainnet ->
     ( "mainnetK4sRBCTDwqzK1KRuFxnpuxPbKF4ZQrnl"
     , "Mainnet"
     , "9abf0afd2f236a19f2842d502d0450cbcd9c79f123a9708f96fd9b96"
     , "454e4353"
+    , "asset1pam03hg6ht8lffxrvksl5epnk7kg6jw9trsveq"
     )
   Testnet ->
     ( "preprodCMZ4wTbLIsLRncviikOkicVgYXyfYrga"
     , "Preprod"
     , "2912c4707b5695db33e60e89467125bda41fecd62c7f8e56cd854247"
     , "454e4353"
+    , "asset1cqj32d5mjm4lk7c7mrhzg70n3up385ye35djyf"
     )
 
 currentNetworkApp :: Text

@@ -150,18 +150,13 @@ handleEncToken :: MonadWidget t m
   => Dynamic t Wallet
   -> m (Dynamic t Bool, Event t Status)
 handleEncToken dWallet = do
-  let (_, _, encSymbol, encToken) = lucidConfigDao
+  let (_, _, encSymbol, encToken, _) = lucidConfigDao
   eWalletDelayed <- delay 0.2 $ updated dWallet
-  logEvent "eWalletDelayed" eWalletDelayed
   let eWalletConnected = ffilter (\w -> walletName w /= None) eWalletDelayed
-  logEvent "eWalletConnected" eWalletConnected
   let eHasNotToken = not . hasToken encSymbol encToken <$> eWalletConnected
-  logEvent "eHasNotToken" eHasNotToken
   let eHasNotTokenStatus = bool
         Ready (WalletError "No ENCS tokens to delegate!") <$> eHasNotToken
-  logEvent "eHasNotTokenStatus" eHasNotTokenStatus
   dHasNotToken <- holdDyn False eHasNotToken
-  logDyn "dHasNotToken" dHasNotToken
   pure (dHasNotToken, eHasNotTokenStatus)
 
 handleStatus :: MonadWidget t m
@@ -169,11 +164,9 @@ handleStatus :: MonadWidget t m
   -> m (Dynamic t Bool, Dynamic t Bool, Dynamic t Text)
 handleStatus dWallet = do
   eVoteStatus <- voteStatus
-  logEvent "Vote status" eVoteStatus
   dVoteStatus <- holdDyn Ready eVoteStatus
 
   eDelegateStatus <- delegateStatus
-  logEvent "Delegate Status" eDelegateStatus
   dDelegateStatus <- holdDyn Ready eDelegateStatus
 
   (dUnexpectedNetworkB, dUnexpectedNetworkT) <- handleInvalidNetwork dWallet
@@ -206,6 +199,7 @@ handleStatus dWallet = do
         , flatStatus "Wallet" <$> eWalletError
         , flatStatus "Wallet" <$> eHasNotTokenStatus
         ]
+  logEvent "Current status" currentStatus
   dNotification <- holdDyn T.empty currentStatus
 
   pure (dIsDisableButtons, dIsDisableConnectButton, dNotification)
