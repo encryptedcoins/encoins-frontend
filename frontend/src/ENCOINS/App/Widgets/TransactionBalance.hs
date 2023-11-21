@@ -103,7 +103,7 @@ formulaTooltip Formula{..} mode = elAttr "div"
                 mapM_ (el "li" . text)
                     [ "bAda = sum of Ada in the encoins being burned"
                     , "mAda = sum of Ada in the encoins being minted"
-                    , "bEncoins = number of the encoints being burned"
+                    , "bEncoins = number of the encoins being burned"
                     , "mEncoins = number of the encoins being minted"
                     , "fee = commission of the relay"
                     ]
