@@ -9,7 +9,6 @@ module ENCOINS.App.Widgets.ImportWindow
 import           Control.Monad                   (void, (<=<))
 import           Data.Aeson                      (decode, encode)
 import           Data.ByteString.Lazy            (fromStrict, toStrict)
-import           Data.Functor                    ((<&>))
 import           Data.Maybe                      (fromMaybe)
 import           Data.Text                       (Text)
 import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)

@@ -18,7 +18,7 @@ import           Backend.EncoinsTx                      (encoinsTxLedgerMode,
                                                          encoinsTxWalletMode)
 import           Backend.Environment                    (getEnvironment)
 import           Backend.Protocol.Setup                 (ledgerAddress)
-import           Backend.Protocol.TxValidity            (getDeposit)
+import           Backend.Protocol.TxValidity            (getDeposit, getAda)
 import           Backend.Protocol.Types
 import           Backend.Status                         (Status (..),
                                                          isTxProcessOrCriticalError)
@@ -44,7 +44,8 @@ import           ENCOINS.App.Widgets.PasswordWindow     (PasswordRaw (..))
 import           ENCOINS.App.Widgets.SendRequestButton  (sendRequestButtonLedger,
                                                          sendRequestButtonWallet)
 import           ENCOINS.App.Widgets.SendToWalletWindow (sendToWalletWindow)
-import           ENCOINS.App.Widgets.TransactionBalance (transactionBalanceWidget)
+import           ENCOINS.App.Widgets.TransactionBalance (Formula (..),
+                                                         transactionBalanceWidget)
 import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeLedger,
                                                          welcomeTransfer,
                                                          welcomeWindow,
@@ -72,7 +73,14 @@ walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
         dToBurn
         dToMint
     dTotalBalance <- holdUniqDyn $ zipDynWith (-) (negate <$> dBalance) dFees
-    containerApp "" $ transactionBalanceWidget dTotalBalance dFees ""
+    let formula = Formula
+          dTotalBalance
+          dFees
+          (getAda <$> dToBurn)
+          (getAda <$> dToMint)
+          0
+          0
+    containerApp "" $ transactionBalanceWidget formula (Just WalletMode) ""
     (dToBurn, dToMint, eStatusUpdate) <- containerApp "" $
         divClass "app-columns w-row" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
@@ -145,8 +153,9 @@ transferTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
 transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
     dDepositBalance <- holdUniqDyn $ negate . getDeposit <$> dCoins
-    containerApp "" $ transactionBalanceWidget (pure 0) (pure 0) " (to Wallet)"
-    containerApp "" $ transactionBalanceWidget dDepositBalance (pure 0) " (to Ledger)"
+    containerApp "" $ transactionBalanceWidget (Formula 0 0 0 0 0 0) Nothing " (to Wallet)"
+    let formula = Formula dDepositBalance 0 0 0 (fromIntegral . length <$> dCoins) 0
+    containerApp "" $ transactionBalanceWidget formula (Just TransferMode) " (to Ledger)"
     (dCoins, eSendToLedger, eAddr, dSecretsName) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         let dSecretsWithNames = nub <$> zipDynWith (++) dOldSecretsWithNames (map coinWithName <$> dImportedSecrets)
@@ -226,7 +235,14 @@ ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
       zipDynWith (-) (getDeposit <$> dToMint) (getDeposit <$> dToBurn)
     dEncoinsDepositBalance <- holdUniqDyn $ zipDynWith (+) dBalance dDepositBalance
     dTotalBalance <- holdUniqDyn $ zipDynWith (+) dEncoinsDepositBalance dFees
-    containerApp "" $ transactionBalanceWidget (negate <$> dTotalBalance) dFees ""
+    let formula = Formula
+          (negate <$> dTotalBalance)
+          dFees
+          (getAda <$> dToBurn)
+          (getAda <$> dToMint)
+          (getDeposit <$> dToBurn)
+          (getDeposit <$> dToMint)
+    containerApp "" $ transactionBalanceWidget formula (Just LedgerMode) ""
 
     (dToBurn, dToMint, dAddr, eStatusUpdate) <- containerApp "" $
         divClassId "app-columns w-row" "welcome-ledger" $ mdo

@@ -756,7 +756,7 @@ body {
   min-height: 150px;
 }
 
-.transaction-balance-div {
+.app-TransactionBalance {
   display: -webkit-box;
   display: -webkit-flex;
   display: -ms-flexbox;
@@ -769,15 +769,15 @@ body {
   -webkit-justify-content: center;
   -ms-flex-pack: center;
   justify-content: center;
-  grid-column-gap: 30px;
-  grid-row-gap: 30px;
+  grid-column-gap: 10px;
+  grid-row-gap: 10px;
   background-color: #fff;
   color: #000;
   min-width: 210px;
 }
 
 @media screen and (min-width: 767px) {
-  .transaction-balance-div {
+  .app-TransactionBalance {
     margin-left: 0px;
     margin-right: 0px;
   }
@@ -1847,4 +1847,38 @@ body {
   margin-left: 30px;
   margin-right: 30px;
   margin-bottom: 20px;
+}
+
+.app-Formula_InfoIcon {
+  cursor: pointer;
+}
+
+.app-Formula_TooltipWrapper {
+  position: absolute;
+  z-index: 500;
+  padding: 10px 40px;
+  border-radius: 6px;
+  background-color: #fff;
+  -webkit-filter: brightness(75%);
+  filter: brightness(75%);
+  color: #000;
+  position: static;
+  display: block;
+}
+
+@media screen and (max-width: 767px) {
+  .app-Formula_TooltipWrapper {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+}
+
+.app-Formula_TooltipFormula {
+  position: static;
+  font-weight: bold;
+}
+
+.app-Formula_TooltipLegend {
+  text-align: left;
+  font-weight: normal;
 }

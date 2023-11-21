@@ -1,33 +1,109 @@
 module ENCOINS.App.Widgets.TransactionBalance where
 
-import           Data.Bool                    (bool)
-import           Data.Text                    (Text)
+import           Data.Bool                       (bool)
+import           Data.Text                       (Text)
 import           Reflex.Dom
 
-import           ENCOINS.Common.Utils         (toText)
-import           ENCOINS.Common.Widgets.Basic (column, divClassId, space)
+import           Backend.Protocol.Types          (EncoinsMode (..))
+import           ENCOINS.Common.Utils            (toText)
+import           ENCOINS.Common.Widgets.Basic    (br, column, divClassId, image,
+                                                  space)
+
+data Formula t = Formula
+  { total    :: Dynamic t Integer
+  , fee      :: Dynamic t Integer
+  , bAda     :: Dynamic t Integer
+  , mAda     :: Dynamic t Integer
+  , bEncoins :: Dynamic t Integer
+  , mEncoins :: Dynamic t Integer
+  }
 
 transactionBalanceWidget :: MonadWidget t m
-  => Dynamic t Integer
-  -> Dynamic t Integer
+  => Formula t
+  -> Maybe EncoinsMode
   -> Text
   -> m ()
-transactionBalanceWidget dBalance dFees txt = do
-    let balanceSign bal
-          | bal > 0 = "+"
-          | bal < 0 = "-"
-          | otherwise = ""
-        balanceADA bal =
-          "Transaction balance"
-          <> txt
-          <> column
-          <> space
-          <> balanceSign bal
-          <> toText (abs bal)
-          <> " ADA"
-        feeADA f =
-          let r = toText f
-          in bool blank (divClass "app-text-semibold" $ text $ "Fee: " <> r <> " ADA") (r /= "0")
-    divClassId "transaction-balance-div" "welcome-tx-balance" $ do
-        divClass "app-text-semibold" $ dynText $ fmap balanceADA dBalance
-        dyn_ $ fmap feeADA dFees
+transactionBalanceWidget formula mMode txt = do
+  let balanceSign bal
+        | bal > 0 = "+"
+        | bal < 0 = "-"
+        | otherwise = ""
+      balanceADA bal =
+        "Transaction balance"
+        <> txt
+        <> column
+        <> space
+        <> balanceSign bal
+        <> toText (abs bal)
+        <> " ADA"
+  case mMode of
+    Nothing -> divClassId "app-TransactionBalance" "welcome-tx-balance" $
+      divClass "app-text-semibold" $ dynText $ fmap balanceADA $ total formula
+    Just mode -> do
+      ev <- divClassId "app-TransactionBalance" "welcome-tx-balance" $ do
+          ev <- image "info.svg" "app-Formula_InfoIcon" ""
+          divClass "app-text-semibold" $ dynText $ fmap balanceADA $ total formula
+          pure ev
+      dTooltipVis <- toggle False ev
+      dyn_ $ bool blank (formulaTooltip formula mode) <$> dTooltipVis
+
+formulaTooltip :: MonadWidget t m => Formula t -> EncoinsMode -> m ()
+formulaTooltip Formula{..} mode = elAttr "div"
+  ( "class" =: "app-Formula_TooltipWrapper"
+  <> "style" =: "border-top-left-radius: 0px; border-top-right-radius: 0px"
+  ) $ do
+      elAttr "div" ("class" =: "app-text-normal" <> "style" =: "font-size:16px;overflow-wrap: anywhere;") $ case mode of
+        WalletMode -> divClass "app-Formula_TooltipFormula" $ do
+            dynText $ mconcat
+              [ (toText <$> total)
+              , " = ("
+              , (toText <$> bAda)
+              , " - "
+              , (toText <$> mAda)
+              , ") - "
+              , (toText <$> fee)
+              ]
+            br
+            text "txBalance = (bAda - mAda) - fee"
+            elAttr "ul" ("role" =: "list" <> "class" =: "app-Formula_TooltipLegend ") $ do
+                mapM_ (el "li" . text)
+                    [ "bAda = sum of Ada in the encoins being burned"
+                    , "mAda = sum of Ada in the encoins being minted"
+                    , "fee = commission of the relay"
+                    ]
+        TransferMode -> divClass "app-Formula_TooltipFormula" $ do
+            dynText $ mconcat
+              [ (toText <$> total)
+              , " = - ("
+              , (toText <$> bEncoins)
+              , " * 4)"]
+            br
+            text "txBalance = - (nEncoins * 4)"
+            elAttr "ul" ("role" =: "list" <> "class" =: "app-Formula_TooltipLegend ") $ do
+                mapM_ (el "li" . text)
+                    [ "nEncoins = number of the encoins being transferred"
+                    ]
+        LedgerMode -> divClass "app-Formula_TooltipFormula" $ do
+            dynText $ mconcat
+              [ (toText <$> total)
+              , " = ("
+              , (toText <$> bAda)
+              , " - "
+              , (toText <$> mAda)
+              , ") + ("
+              , (toText <$> bEncoins)
+              , " - "
+              , (toText <$> mEncoins)
+              , ") - "
+              , (toText <$> fee)
+              ]
+            br
+            text "txBalance = (bAda - mAda) + (bEncoins * 4 - mEncoins * 4) - fee"
+            elAttr "ul" ("role" =: "list" <> "class" =: "app-Formula_TooltipLegend ") $ do
+                mapM_ (el "li" . text)
+                    [ "bAda = sum of Ada in the encoins being burned"
+                    , "mAda = sum of Ada in the encoins being minted"
+                    , "bEncoins = number of the encoints being burned"
+                    , "mEncoins = number of the encoins being minted"
+                    , "fee = commission of the relay"
+                    ]
