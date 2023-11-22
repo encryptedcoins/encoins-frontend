@@ -14,7 +14,8 @@ import           Reflex.Dom
 
 import           Backend.Status                     (Status (..), isReady,
                                                      isTxProcess, isWalletError)
-import           Backend.Wallet                     (NetworkConfig (..),
+import           Backend.Wallet                     (LucidConfig (..),
+                                                     NetworkConfig (..),
                                                      Wallet (..),
                                                      WalletName (..), fromJS,
                                                      hasToken, lucidConfigDao,
@@ -150,7 +151,7 @@ handleEncToken :: MonadWidget t m
   => Dynamic t Wallet
   -> m (Dynamic t Bool, Event t Status)
 handleEncToken dWallet = do
-  let (_, _, encSymbol, encToken, _) = lucidConfigDao
+  let LucidConfig _ _ encSymbol encToken _ = lucidConfigDao
   let eWalletConnected = ffilter (\w -> walletName w /= None) $ updated dWallet
   let eHasNotToken = not . hasToken encSymbol encToken <$> eWalletConnected
   let eHasNotTokenStatus = bool

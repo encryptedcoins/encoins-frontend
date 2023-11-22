@@ -83,7 +83,7 @@ formulaTooltip Formula{..} mode = elAttr "div"
             elAttr "ul" ("role" =: "list" <> "class" =: "app-Formula_TooltipLegend ") $ do
                 mapM_ (el "li" . text)
                     [ "nEncoins = number of the encoins being transferred"
-                    , "deposit = returnable deposit for placing your encoins into ledger (4 Ada)"
+                    , "deposit = returnable deposit for placing your encoins into the ledger (4 Ada)"
                     ]
         LedgerMode -> divClass "app-Formula_TooltipFormula" $ do
             dynText $ mconcat

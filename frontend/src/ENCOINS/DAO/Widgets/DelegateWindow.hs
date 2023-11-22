@@ -12,8 +12,8 @@ import qualified Data.Text                       as T
 import           Reflex.Dom
 
 import           Backend.Status                  (UrlStatus (..), isNotValidUrl)
-import           Backend.Wallet                  (Wallet (..), lucidConfigDao,
-                                                  toJS)
+import           Backend.Wallet                  (LucidConfig (..), Wallet (..),
+                                                  lucidConfigDao, toJS)
 import           ENCOINS.App.Widgets.Basic       (containerApp, elementResultJS)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (toText)
@@ -69,7 +69,7 @@ delegateWindow eOpen dWallet dRelays = mdo
 
           let eUrl = leftmost [eUrlTable, eUrlButton]
           logEvent "eUrl" eUrl
-          let (apiKey, networkId, _, _, asset) = lucidConfigDao
+          let LucidConfig apiKey networkId _ _ asset = lucidConfigDao
           performEvent_ $
             JS.daoDelegateTx apiKey networkId asset
             <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
