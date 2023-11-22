@@ -107,6 +107,6 @@ formulaTooltip Formula{..} mode = elAttr "div"
                     , "mAda = sum of Ada in the encoins being minted"
                     , "bEncoins = number of the encoins being burned"
                     , "mEncoins = number of the encoins being minted"
-                    , "deposit - returnable deposit for placing your encoins into the ledger (4 Ada)"
+                    , "deposit = returnable deposit for placing your encoins into the ledger (4 Ada)"
                     , "fee = commission of the relay"
                     ]
