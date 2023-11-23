@@ -76,12 +76,14 @@ formulaTooltip Formula{..} mode = elAttr "div"
               [ (toText <$> total)
               , " = - ("
               , (toText <$> bEncoins)
-              , " * 4)"]
+              , " * 4)"
+              ]
             br
-            text "txBalance = - (nEncoins * 4)"
+            text "txBalance = - (nEncoins * deposit)"
             elAttr "ul" ("role" =: "list" <> "class" =: "app-Formula_TooltipLegend ") $ do
                 mapM_ (el "li" . text)
                     [ "nEncoins = number of the encoins being transferred"
+                    , "deposit = returnable deposit for placing your encoins into the ledger (4 Ada)"
                     ]
         LedgerMode -> divClass "app-Formula_TooltipFormula" $ do
             dynText $ mconcat
@@ -94,16 +96,17 @@ formulaTooltip Formula{..} mode = elAttr "div"
               , (toText <$> bEncoins)
               , " - "
               , (toText <$> mEncoins)
-              , ") - "
+              , ") * 4 - "
               , (toText <$> fee)
               ]
             br
-            text "txBalance = (bAda - mAda) + (bEncoins * 4 - mEncoins * 4) - fee"
+            text "txBalance = (bAda - mAda) + (bEncoins - mEncoins) * deposit - fee"
             elAttr "ul" ("role" =: "list" <> "class" =: "app-Formula_TooltipLegend ") $ do
                 mapM_ (el "li" . text)
                     [ "bAda = sum of Ada in the encoins being burned"
                     , "mAda = sum of Ada in the encoins being minted"
                     , "bEncoins = number of the encoins being burned"
                     , "mEncoins = number of the encoins being minted"
+                    , "deposit = returnable deposit for placing your encoins into the ledger (4 Ada)"
                     , "fee = commission of the relay"
                     ]

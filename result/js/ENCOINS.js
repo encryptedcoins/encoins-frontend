@@ -67,7 +67,7 @@ function loadJSON(key, resId, decr, pass) {
 
 function setWalletNone() {
   setInputValue("walletNameElement", "None");
-  setInputValue("daoWalletNameNotConnected", "none");
+  setInputValue("daoWalletNameNotConnected", "None");
   setInputValue("changeAddressBech32Element", "");
   setInputValue("pubKeyHashElement", "");
   setInputValue("stakeKeyHashElement", "");
@@ -405,7 +405,7 @@ function toUTF8Array(str) {
   return utf8;
 }
 
-async function daoPollVoteTx(n, apiKey, net, walletName, answer)
+async function daoPollVoteTx(n, apiKey, net, walletName, answer, asset)
 {
   // loading CardanoWasm
   await loader.load();
@@ -433,10 +433,12 @@ async function daoPollVoteTx(n, apiKey, net, walletName, answer)
     const tag2 = CardanoWasm.PlutusData.new_bytes(toUTF8Array("Poll #" + n));
     const tag3 = CardanoWasm.PlutusData.new_bytes(stakeKeyHash.to_bytes());
     const tag4 = CardanoWasm.PlutusData.new_bytes(toUTF8Array(answer));
+    const tag5 = CardanoWasm.PlutusData.new_bytes(toUTF8Array(asset));
     plc_lst.add(tag1);
     plc_lst.add(tag2);
     plc_lst.add(tag3);
     plc_lst.add(tag4);
+    plc_lst.add(tag5);
     const plc_msg = CardanoWasm.PlutusData.new_list(plc_lst);
 
     setInputValue("VoteCreateNewTx", "");
@@ -472,6 +474,7 @@ async function daoPollVoteTx(n, apiKey, net, walletName, answer)
     tag2.free();
     tag3.free();
     tag4.free();
+    tag5.free();
     plc_msg.free();
   } catch (e) {
     console.log("Error: " + e.message);
@@ -480,7 +483,7 @@ async function daoPollVoteTx(n, apiKey, net, walletName, answer)
   }
 };
 
-async function daoDelegateTx(apiKey, net, walletName, url)
+async function daoDelegateTx(apiKey, net, walletName, url, asset)
 {
   // loading CardanoWasm
   await loader.load();
@@ -511,10 +514,12 @@ async function daoDelegateTx(apiKey, net, walletName, url)
     const tag2 = CardanoWasm.PlutusData.new_bytes(toUTF8Array("Delegate"));
     const tag3 = CardanoWasm.PlutusData.new_bytes(stakeKeyHash.to_bytes());
     const tag4 = CardanoWasm.PlutusData.new_bytes(toUTF8Array(url));
+    const tag5 = CardanoWasm.PlutusData.new_bytes(toUTF8Array(asset));
     plc_lst.add(tag1);
     plc_lst.add(tag2);
     plc_lst.add(tag3);
     plc_lst.add(tag4);
+    plc_lst.add(tag5);
     const plc_msg = CardanoWasm.PlutusData.new_list(plc_lst);
 
     setInputValue("DelegateCreateNewTx", "");
@@ -547,6 +552,7 @@ async function daoDelegateTx(apiKey, net, walletName, url)
     tag2.free();
     tag3.free();
     tag4.free();
+    tag5.free();
     plc_msg.free();
   } catch (e) {
     console.log("Error: " + e.message);
