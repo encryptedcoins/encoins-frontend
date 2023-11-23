@@ -106,6 +106,10 @@ library
   if impl(ghcjs)
     build-depends:
       ghcjs-base               ^>=0.2.1.0
+  if flag(pre_dao)
+    cpp-options: -DPRE_DAO
+  if flag(pre_app)
+    cpp-options: -DPRE_APP
   default-extensions:
     AllowAmbiguousTypes,
     BangPatterns,
@@ -185,3 +189,11 @@ executable encoins-dao
   if impl(ghcjs)
     build-depends:
       ghcjs-base                ^>=0.2.1.0
+
+Flag pre_dao
+  Description:   Configure dao in test preprod mode
+  Default:       False
+
+Flag pre_app
+  Description:   Configure app in test preprod mode
+  Default:       False

@@ -8,9 +8,9 @@ import           Data.Text                     (Text, take, takeEnd)
 import           Prelude                       hiding (take)
 import           Reflex.Dom
 
-import           Backend.Wallet                (NetworkConfig (dao),
-                                                NetworkId (..), Wallet (..),
-                                                WalletName (..), networkConfig)
+import           Backend.Wallet                (Wallet (..), WalletName (..))
+import           Config.Config                 (NetworkConfig (dao),
+                                                NetworkId (..), networkConfig)
 import           ENCOINS.Common.Widgets.Basic  (btnWithBlock, logo)
 import           ENCOINS.Common.Widgets.Wallet (walletIcon)
 

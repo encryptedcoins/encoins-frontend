@@ -14,9 +14,10 @@ import           Backend.Status                     (Status (..), isNoRelay,
                                                      isReady,
                                                      isTxProcessOrCriticalError)
 import           Backend.Utility                    (switchHoldDyn)
-import           Backend.Wallet                     (NetworkConfig (..),
-                                                     Wallet (..), networkConfig,
+import           Backend.Wallet                     (Wallet (..),
                                                      walletsSupportedInApp)
+import           Config.Config                      (NetworkConfig (..),
+                                                     networkConfig)
 import           ENCOINS.App.Widgets.Basic          (elementResultJS,
                                                      waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
@@ -33,7 +34,6 @@ import           ENCOINS.Common.Widgets.Basic       (column, notification,
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
-
 
 bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mpass = mdo

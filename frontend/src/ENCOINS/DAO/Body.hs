@@ -15,12 +15,12 @@ import           Reflex.Dom
 import           Backend.Status                     (Status (..), isReady,
                                                      isTxProcess, isWalletError)
 import           Backend.Wallet                     (LucidConfig (..),
-                                                     NetworkConfig (..),
                                                      Wallet (..),
                                                      WalletName (..), fromJS,
                                                      hasToken, lucidConfigDao,
-                                                     networkConfig,
                                                      walletsSupportedInDAO)
+import           Config.Config                      (NetworkConfig (dao),
+                                                     networkConfig)
 import           ENCOINS.App.Widgets.Basic          (elementResultJS,
                                                      waitForScripts,
                                                      walletError)

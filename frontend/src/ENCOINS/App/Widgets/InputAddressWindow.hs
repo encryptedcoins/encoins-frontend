@@ -3,18 +3,18 @@
 module ENCOINS.App.Widgets.InputAddressWindow where
 
 import           Control.Monad                   (void)
+import           Data.Maybe                      (isNothing)
 import           Data.Text                       (Text)
 import           Reflex.Dom
 import           Witherable                      (catMaybes)
-import           Data.Maybe (isNothing)
 
 import           Backend.Protocol.Types
-import           Backend.Wallet                  (NetworkConfig (..),
+import           Config.Config                   (NetworkConfig (..),
                                                   NetworkId (..), networkConfig)
 import           ENCOINS.App.Widgets.Basic       (elementResultJS)
 import           ENCOINS.Common.Events           (setFocusDelayOnEvent)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
-import           ENCOINS.Common.Widgets.Basic    (errDiv, btnWithBlock)
+import           ENCOINS.Common.Widgets.Basic    (btnWithBlock, errDiv)
 import           JS.App                          (addrLoad)
 
 inputAddressWindow :: MonadWidget t m => Event t () -> m (Event t Address, Dynamic t (Maybe Address))

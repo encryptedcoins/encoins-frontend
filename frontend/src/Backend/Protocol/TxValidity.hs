@@ -12,9 +12,10 @@ import           Servant.Reflex               (BaseUrl)
 import           Backend.Protocol.Fees        (protocolFees)
 import           Backend.Protocol.Types
 import           Backend.Status               (Status (..), isTxProcess)
-import           Backend.Wallet               (NetworkConfig (..), Wallet (..),
-                                               WalletName (..),
-                                               currentNetworkApp, networkConfig)
+import           Backend.Wallet               (Wallet (..), WalletName (..),
+                                               currentNetworkApp)
+import           Config.Config                (NetworkConfig (..),
+                                               networkConfig)
 import           CSL                          (TransactionUnspentOutput (..),
                                                amount, coin)
 import           ENCOINS.Bulletproofs         (Secret (..), Secrets)

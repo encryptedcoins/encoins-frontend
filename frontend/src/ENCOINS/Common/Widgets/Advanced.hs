@@ -12,10 +12,9 @@ import           GHCJS.DOM.Node                (contains)
 import qualified GHCJS.DOM.Types               as DOM
 import           Reflex.Dom
 
-import           Backend.Wallet                (NetworkId)
+import           Config.Config                 (NetworkId)
 import           ENCOINS.Common.Utils          (toText)
 import           JS.Website                    (setElementStyle)
-
 
 copyEvent :: MonadWidget t m => Event t () -> m (Dynamic t Bool)
 copyEvent e = do

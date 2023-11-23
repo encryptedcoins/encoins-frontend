@@ -1,16 +1,13 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module Backend.Wallet where
 
-import           Data.Aeson             (FromJSON, decode)
-import           Data.ByteString.Lazy   (fromStrict)
-import           Data.Maybe             (fromJust, fromMaybe)
+import           Data.Maybe             (fromMaybe)
 import           Data.Text              (Text)
-import qualified Data.Text              as T
-import           GHC.Generics           (Generic)
 
 import           Backend.Protocol.Types
 import           Backend.Utility        (isMultiAssetOf)
-import           Config.Config          (networkConfigBS)
+import           Config.Config          (NetworkConfig (..), NetworkId (..),
+                                         networkConfig)
 import           CSL                    (TransactionUnspentOutputs)
 import qualified CSL
 
@@ -97,27 +94,11 @@ data WalletError = WalletError
   }
   deriving (Show, Eq)
 
-data NetworkId = Testnet | Mainnet
-  deriving (Eq, Show, Generic, FromJSON, Enum)
-
-toNetworkId :: Text -> NetworkId
-toNetworkId = toEnum . read @Int . T.unpack
-
-data NetworkConfig = NetworkConfig
-  { dao :: NetworkId
-  , app :: NetworkId
-  }
-  deriving (Eq, Show, Generic, FromJSON)
-
-networkConfig :: NetworkConfig
-networkConfig =
-  fromJust $ decode $ fromStrict networkConfigBS
-
 data LucidConfig = LucidConfig
-  { apiKey :: Text
-  , networkId :: Text
-  , encSymbol :: Text
-  , encToken :: Text
+  { apiKey         :: Text
+  , networkId      :: Text
+  , encSymbol      :: Text
+  , encToken       :: Text
   , encFingerprint :: Text
   }
 -- (apiKey of blockfrost, networkId, Enc CurrencySymbol, Enc TokenName, Enc Fingerprint)
