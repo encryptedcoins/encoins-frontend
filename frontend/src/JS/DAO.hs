@@ -9,8 +9,7 @@ import           Control.Monad.IO.Class      (MonadIO (..))
 import           Data.Text                   (Text)
 
 #ifdef __GHCJS__
-import           Language.Javascript.JSaddle (JSString, JSVal, ToJSVal (..),
-                                              textToStr)
+import           Language.Javascript.JSaddle (JSVal, ToJSVal (..))
 #endif
 
 -----------------------------------------------------------------
@@ -52,32 +51,4 @@ daoDelegateTx apiKey net asset (walletName, url) = liftIO $ do
 #else
 daoDelegateTx :: MonadIO m => Text -> Text -> Text -> (Text, Text) -> m ()
 daoDelegateTx = const $ error "GHCJS is required!"
-#endif
-
------------------------------------------------------------------
-
--- #ifdef __GHCJS__
--- foreign import javascript unsafe
---   "checkUrl($1);"
---   checkUrl_js :: JSString -> JSM JSVal
-
--- checkUrl :: MonadIO m => Text -> m (Maybe Bool)
--- checkUrl url = liftIO $ do
---   res_js <- checkUrl_js (textToStr url)
---   fromJSVal res_js :: IO (Maybe Bool)
--- #else
--- checkUrl :: MonadIO m => Text -> m (Maybe Bool)
--- checkUrl _ = error "GHCJS is required!"
--- #endif
-
-#ifdef __GHCJS__
-foreign import javascript unsafe
-  "checkUrl($1);"
-  checkUrl_js :: JSString -> IO ()
-
-checkUrl :: MonadIO m => Text -> m ()
-checkUrl url = liftIO $ checkUrl_js (textToStr url)
-#else
-checkUrl :: MonadIO m => Text -> m ()
-checkUrl _ = error "GHCJS is required!"
 #endif

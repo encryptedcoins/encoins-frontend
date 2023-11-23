@@ -126,14 +126,6 @@ getRelayUrlE ev = performEvent $ ev $> go urls
         then return $ Just $ BasePath url
         else go (delete url l)
 
-checkUrl :: MonadWidget t m
-  => BaseUrl
-  -> Event t ()
-  -> m (Event t BaseUrl)
-checkUrl url ev = mdo
-  ePing <- pingRequestWrapper url ev
-  pure $ fmapMaybe id ePing
-
 makeResponse :: ReqResult tag a -> Maybe a
 makeResponse (ResponseSuccess _ a _) = Just a
 makeResponse _                       = Nothing
