@@ -33,14 +33,14 @@ data NetworkConfig = NetworkConfig
   deriving (Eq, Show)
 
 daoNetwork :: NetworkId
-#ifdef PRE_DAO
+#ifdef PREDAO
 daoNetwork = Testnet
 #else
 daoNetwork = Mainnet
 #endif
 
 appNetwork :: NetworkId
-#ifdef PRE_APP
+#ifdef PREAPP
 appNetwork = Testnet
 #else
 appNetwork = Mainnet

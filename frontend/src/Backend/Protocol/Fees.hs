@@ -26,8 +26,9 @@ protocolFeeLedgerMode v
 
 protocolFee :: EncoinsMode -> Integer -> Integer
 protocolFee mode v = case mode of
-    WalletMode -> protocolFeeWalletMode v
-    LedgerMode -> protocolFeeLedgerMode v
+    WalletMode   -> protocolFeeWalletMode v
+    LedgerMode   -> protocolFeeLedgerMode v
+    TransferMode -> 0
 
 protocolFees :: EncoinsMode -> Integer -> Integer
 protocolFees mode = (*2) . protocolFee mode
