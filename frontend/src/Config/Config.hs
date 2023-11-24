@@ -11,9 +11,6 @@ import qualified Data.Text as T
 urlsBS :: ByteString
 urlsBS = $(embedFile "config/backend_url.json")
 
--- networkConfigBS :: ByteString
--- networkConfigBS = $(embedFile "config/network_id_config.json")
-
 bulletproofSetupBS :: ByteString
 bulletproofSetupBS = $(embedFile "config/bulletproof_setup.json")
 
