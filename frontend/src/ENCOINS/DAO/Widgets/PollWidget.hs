@@ -1,12 +1,15 @@
 module ENCOINS.DAO.Widgets.PollWidget where
 
+import           Data.Text                     (Text, pack)
 import           Reflex.Dom
+import           Text.Printf
 
 import           Backend.Wallet                (LucidConfig (..), Wallet (..),
                                                 lucidConfigDao, toJS)
 import           ENCOINS.App.Widgets.Basic     (elementResultJS)
-import           ENCOINS.Common.Utils          (toText)
+import           ENCOINS.Common.Utils          (downloadVotes, toText)
 import           ENCOINS.Common.Widgets.Basic  (btn, btnWithBlock)
+import           ENCOINS.DAO.PollResults
 import           ENCOINS.DAO.Polls             (Poll (..), formatPollTime)
 import           ENCOINS.Website.Widgets.Basic (container)
 import           JS.DAO                        (daoPollVoteTx)
@@ -20,7 +23,7 @@ pollWidget :: MonadWidget t m
 pollWidget dWallet dIsBlocked (Poll n question summary answers' endTime) = do
   explainer question summary
 
-  let answers = fmap fst answers'
+  let answers = fmap fst $ mkVoteList answers'
   container "" $ do
     es <- mapM
       (btnWithBlock
@@ -44,7 +47,7 @@ pollWidget dWallet dIsBlocked (Poll n question summary answers' endTime) = do
       divClass "app-text-small" $ text $ "The vote ends on " <> formatPollTime endTime <> "."
 
 pollCompletedWidget :: MonadWidget t m => Poll m -> m ()
-pollCompletedWidget (Poll _ question summary answers' endTime) = do
+pollCompletedWidget (Poll _ question summary voteResults endTime) = do
   explainer question summary
 
   container "" $
@@ -52,10 +55,22 @@ pollCompletedWidget (Poll _ question summary answers' endTime) = do
       text a
       elAttr "div" ("style" =: "margin-right: 10px; margin-left: 10px;") blank
       text r
-      ) answers'
+      ) $ mkVoteList voteResults
+  -- section "" "" $ do
+  container ""
+    $ elAttr "div" ("class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);") $ text "Download poll results"
+  container "" $
+    divClass "dao-VoteDownload" $ do
+      eDownload <- btn "button-switching flex-center" "" $ text "download"
+      downloadVotes (toJsonResult voteResults) (number voteResults) eDownload
   where
     -- TODO: make this a widget
     explainer tagsTitle tagsExplainer = container "" $ divClass "div-explainer" $ do
       elAttr "h4" ("class" =: "h4" <> "style" =: "margin-bottom: 30px;") tagsTitle
       elAttr "p" ("class" =: "p-explainer" <> "style" =: "text-align: justify;") tagsExplainer
       divClass "app-text-small" $ text $ "The vote ended on " <> formatPollTime endTime <> "."
+
+mkVoteList :: VoteResult -> [(Text, Text)]
+mkVoteList (VoteResult _ yes no) =
+  [ ("Yes", pack $ printf "%.2f%%" yes)
+  , ("No", pack $ printf "%.2f%%" no)]
