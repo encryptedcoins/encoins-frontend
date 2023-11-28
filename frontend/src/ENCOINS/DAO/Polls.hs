@@ -14,28 +14,27 @@ import           ENCOINS.Common.Widgets.Basic (br, column, lnkInline, space)
 import           ENCOINS.DAO.PollResults
 
 data Poll m = Poll
-  { pollNumber   :: Int
-  , pollQuestion :: m ()
-  , pollSummary  :: m ()
-  , pollAnswers  :: VoteResult
-  , pollEnds     :: UTCTime
+  { pollNumber      :: Int
+  , pollQuestion    :: m ()
+  , pollSummary     :: m ()
+  , pollAnswers     :: VoteResult
+  , pollFullResults :: Text
+  , pollEnds        :: UTCTime
   }
 
 polls :: MonadWidget t m => IntMap (Poll m)
 polls = fromList $ zip [1..]
   [
-    poll1 result1
-  , poll2 result2
-  , poll3 result3
-  , poll4 result4
-  , poll5 result5
-  , poll6 result6
+    poll1 1 result1 resultFull1
+  , poll2 2 result2 resultFull2
+  , poll3 3 result3 resultFull3
+  , poll4 4 result4 resultFull4
+  , poll5 5 result5 resultFull5
+  , poll6 6 result6 resultFull6
   ]
 
-poll6 :: MonadWidget t m => VoteResult -> Poll m
-poll6 voteRes =
-  let n = number voteRes
-  in Poll n
+poll6 :: MonadWidget t m => Int -> VoteResult -> Text -> Poll m
+poll6 n voteRes voteFullRes = Poll n
     (text $ pollNum n <> "Do you approve performing a Collective Zap-In from the treasury for a total of 150k $ADA, including rewards?")
     (do
     text
@@ -53,12 +52,11 @@ poll6 voteRes =
         "It is important to note that these funds being requested to the DAO will continue to be held by the DAO in the form of $ENCS/$ADA LP tokens."
     )
     voteRes
+    voteFullRes
     (endTime22x00 2023 11 17)
 
-poll5 :: MonadWidget t m => VoteResult -> Poll m
-poll5 voteRes =
-  let n = number voteRes
-  in Poll n
+poll5 :: MonadWidget t m => Int -> VoteResult -> Text -> Poll m
+poll5 n voteRes voteFullRes = Poll n
     (text $ pollNum n <> "Do you approve the Treasury Allocation and Sustainable Development Plan proposed by the ENCOINS team?")
     (do
     text
@@ -70,13 +68,12 @@ poll5 voteRes =
     text "."
     )
     voteRes
+    voteFullRes
     (endTime22x00 2023 9 4)
 
 
-poll4 :: MonadWidget t m => VoteResult -> Poll m
-poll4 voteRes =
-  let n = number voteRes
-  in Poll n
+poll4 :: MonadWidget t m => Int -> VoteResult -> Text -> Poll m
+poll4 n voteRes voteFullRes = Poll n
     (text $ pollNum n <> "Spend up to 100k $ENCS from the treasury on the VyFi partnership?")
     (do
         el "strong" $ text "Encoins partnership with VyFi"
@@ -115,13 +112,12 @@ poll4 voteRes =
         text "."
     )
     voteRes
+    voteFullRes
     (endTime22x00 2023 8 13)
 
 
-poll3 :: MonadWidget t m => VoteResult -> Poll m
-poll3 voteRes =
-  let n = number voteRes
-  in Poll n
+poll3 :: MonadWidget t m => Int -> VoteResult -> Text -> Poll m
+poll3 n voteRes voteFullRes = Poll n
     (text $ pollNum n <> "Spend 250k $ENCS from the treasury on the ENCOINS v1 protocol audit?")
     (do
     text
@@ -131,13 +127,12 @@ poll3 voteRes =
     text "."
     )
     voteRes
+    voteFullRes
     (endTime22x00 2023 7 7)
 
 
-poll2 :: MonadWidget t m => VoteResult -> Poll m
-poll2 voteRes =
-  let n = number voteRes
-  in Poll n
+poll2 :: MonadWidget t m => Int -> VoteResult -> Text -> Poll m
+poll2 n voteRes voteFullRes = Poll n
     (text $ pollNum n <> "Spend 50k $ENCS from the treasury as rewards for incentivized farming on MinSwap?")
     (do
     text
@@ -150,13 +145,12 @@ poll2 voteRes =
         \ The aim of this proposal is to boost $ENCS liquidity by increasing incentives to the liquidity providers. "
     )
     voteRes
+    voteFullRes
     (endTime22x00 2023 6 25)
 
 
-poll1 :: MonadWidget t m => VoteResult -> Poll m
-poll1 voteRes =
-  let n = number voteRes
-  in Poll n
+poll1 :: MonadWidget t m => Int -> VoteResult -> Text -> Poll m
+poll1 n voteRes voteFullRes = Poll n
     (text $ pollNum n <> "Do you support the proposal to use 50k $ENCS from the treasury to provide liquidity to the $ENCS/$ADA pool on MinSwap?")
     (text
         "The $ENCS/$ADA liquidity pool on MinSwap has about 120k $ENCS in it (as of June 9, 2023). \
@@ -165,6 +159,7 @@ poll1 voteRes =
         \ the corresponding combination of $ADA and $ENCS will be returned to the treasury."
     )
     voteRes
+    voteFullRes
     (endTime22x00 2023 6 13)
 
 -- Help functions for polls

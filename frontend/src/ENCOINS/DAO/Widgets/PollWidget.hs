@@ -1,6 +1,7 @@
 module ENCOINS.DAO.Widgets.PollWidget where
 
 import           Data.Text                     (Text, pack)
+import           Data.Text.Encoding (encodeUtf8)
 import           Reflex.Dom
 import           Text.Printf
 
@@ -20,7 +21,7 @@ pollWidget :: MonadWidget t m
   -> Dynamic t Bool
   -> Poll m
   -> m ()
-pollWidget dWallet dIsBlocked (Poll n question summary answers' endTime) = do
+pollWidget dWallet dIsBlocked (Poll n question summary answers' _ endTime) = do
   explainer question summary
 
   let answers = fmap fst $ mkVoteList answers'
@@ -47,7 +48,7 @@ pollWidget dWallet dIsBlocked (Poll n question summary answers' endTime) = do
       divClass "app-text-small" $ text $ "The vote ends on " <> formatPollTime endTime <> "."
 
 pollCompletedWidget :: MonadWidget t m => Poll m -> m ()
-pollCompletedWidget (Poll _ question summary voteResults endTime) = do
+pollCompletedWidget (Poll n question summary voteResults fullAnswers endTime) = do
   explainer question summary
 
   container "" $
@@ -56,13 +57,13 @@ pollCompletedWidget (Poll _ question summary voteResults endTime) = do
       elAttr "div" ("style" =: "margin-right: 10px; margin-left: 10px;") blank
       text r
       ) $ mkVoteList voteResults
-  -- section "" "" $ do
   container ""
     $ elAttr "div" ("class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);") $ text "Download poll results"
   container "" $
     divClass "dao-VoteDownload" $ do
       eDownload <- btn "button-switching flex-center" "" $ text "download"
-      downloadVotes (toJsonResult voteResults) (number voteResults) eDownload
+      downloadVotes (toJsonResult voteResults) "result" n eDownload
+      downloadVotes (encodeUtf8 fullAnswers) "result_full" n eDownload
   where
     -- TODO: make this a widget
     explainer tagsTitle tagsExplainer = container "" $ divClass "div-explainer" $ do
@@ -71,6 +72,6 @@ pollCompletedWidget (Poll _ question summary voteResults endTime) = do
       divClass "app-text-small" $ text $ "The vote ended on " <> formatPollTime endTime <> "."
 
 mkVoteList :: VoteResult -> [(Text, Text)]
-mkVoteList (VoteResult _ yes no) =
+mkVoteList (VoteResult yes no) =
   [ ("Yes", pack $ printf "%.2f%%" yes)
   , ("No", pack $ printf "%.2f%%" no)]

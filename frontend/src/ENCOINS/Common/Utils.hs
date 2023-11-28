@@ -78,11 +78,8 @@ triggerDownload doc mime filename s = do
   DOMHtml.click $ DOMHtml.HTMLElement $ unElement a
   revokeObjectURL url
 
-downloadVotes :: MonadWidget t m => ByteString -> Int -> Event t () -> m ()
-downloadVotes txt num e = do
+downloadVotes :: MonadWidget t m => ByteString -> Text -> Int -> Event t () -> m ()
+downloadVotes txt name num e = do
   doc <- askDocument
   performEvent_ $ ffor e $ \_ ->
-    triggerDownload doc "application/json" ("result" <> toText num <> ".json") txt
-
-json :: Text
-json = [r|{"Yes":95.88470922943088,"No":4.1152907705691115}|]
+    triggerDownload doc "application/json" (name <> toText num <> ".json") txt
