@@ -6,6 +6,7 @@ module ENCOINS.DAO.Widgets.RelayTable
   (
     relayAmountWidget
   , fetchRelayTable
+  , fetchRelayTable2
   ) where
 
 import           Control.Monad                (forM)
@@ -18,9 +19,12 @@ import           Data.Text                    (Text)
 import           Numeric.Natural              (Natural)
 import           Reflex.Dom
 
+import           Backend.Servant.Requests     (delegateServersRequestWrapper)
 import           Backend.Utility              (switchHoldDyn)
+import           Config.Config                (NetworkId (..), daoNetwork)
 import           ENCOINS.Common.Utils         (toText)
 import           ENCOINS.Common.Widgets.Basic (btn)
+import           Servant.Reflex               (BaseUrl (..))
 
 relayAmountWidget :: MonadWidget t m
   => Dynamic t [(Text, Integer)]
@@ -61,3 +65,21 @@ fetchRelayTable :: MonadWidget t m
 fetchRelayTable eOpen = do
   let eUrl = "https://encoins.io/delegations.json" <$ eOpen
   fmap sortRelayAmounts <$> getAndDecode eUrl
+
+fetchRelayTable2 :: MonadWidget t m
+  => Event t ()
+  -> m (Event t [(Text, Integer)])
+fetchRelayTable2 eOpen = do
+  eServers <- delegateServersRequestWrapper delegateServerUrl eOpen
+  -- TODO: handle error in interface?
+  let eError = filterLeft eServers
+  logEvent "Fetching relay table failed" eError
+  -- TODO: update snd part of tuple after result of endpoint will be fixed
+  let res = fmap (\x -> (x,0)) <$> filterRight eServers
+  pure res
+
+delegateServerUrl :: BaseUrl
+delegateServerUrl = case daoNetwork of
+  -- TODO: fix url of delegate server
+  Mainnet -> BasePath "https://delegateServer.com"
+  Testnet -> BasePath "http://localhost:3002/"
