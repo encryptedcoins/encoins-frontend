@@ -61,7 +61,7 @@ pollCompletedWidget (Poll n question summary voteResults fullAnswers endTime) = 
     $ elAttr "div" ("class" =: "h5" <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);") $ text "Download poll results"
   container "" $
     divClass "dao-VoteDownload" $ do
-      eDownload <- btn "button-switching flex-center" "" $ text "download"
+      eDownload <- btn "button-switching flex-center" "" $ text "DOWNLOAD"
       downloadVotes (toJsonResult voteResults) "result" n eDownload
       downloadVotes (encodeUtf8 fullAnswers) "result_full" n eDownload
   where
