@@ -95,6 +95,28 @@ versionRequestWrapper baseUrl e = do
   logEvent "Version" eVersionRes
   return eVersionRes
 
+serversRequestWrapper :: MonadWidget t m
+  => BaseUrl
+  -> Event t ()
+  -> m (Event t (Either Int [Text]))
+serversRequestWrapper baseUrl e = do
+  let ApiClient{..} = mkApiClient baseUrl
+  eResp <- serversRequest e
+  let eRespUnwrapped = mkStatusOrResponse <$> eResp
+  logEvent "servers request" eRespUnwrapped
+  return eRespUnwrapped
+
+delegateServersRequestWrapper :: MonadWidget t m
+  => BaseUrl
+  -> Event t ()
+  -> m (Event t (Either Int [Text]))
+delegateServersRequestWrapper baseUrl e = do
+  let ApiClient{..} = mkApiClient baseUrl
+  eResp <- delegateServersRequest e
+  let eRespUnwrapped = mkStatusOrResponse <$> eResp
+  logEvent "delegate servers request" eRespUnwrapped
+  return eRespUnwrapped
+
 ---------------------------------------------- Utilities ----------------------------------------
 
 urls :: [Text]
