@@ -12,6 +12,7 @@ import           Data.Array.IO
 import           Data.ByteString.Lazy   (fromStrict)
 import           Data.Functor           (($>))
 import           Data.List              (delete)
+import           Data.Map               (Map)
 import           Data.Maybe             (fromJust, isNothing)
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
@@ -95,10 +96,11 @@ versionRequestWrapper baseUrl e = do
   logEvent "Version" eVersionRes
   return eVersionRes
 
+-- Fetch servers that are selected for delegation
 serversRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Event t ()
-  -> m (Event t (Either Int [Text]))
+  -> m (Event t (Either Int (Map Text Integer)))
 serversRequestWrapper baseUrl e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- serversRequest e
@@ -106,13 +108,14 @@ serversRequestWrapper baseUrl e = do
   logEvent "servers request" eRespUnwrapped
   return eRespUnwrapped
 
-delegateServersRequestWrapper :: MonadWidget t m
+-- Fetch available servers for app
+currentRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Event t ()
   -> m (Event t (Either Int [Text]))
-delegateServersRequestWrapper baseUrl e = do
+currentRequestWrapper baseUrl e = do
   let ApiClient{..} = mkApiClient baseUrl
-  eResp <- delegateServersRequest e
+  eResp <- currentRequest e
   let eRespUnwrapped = mkStatusOrResponse <$> eResp
   logEvent "delegate servers request" eRespUnwrapped
   return eRespUnwrapped
