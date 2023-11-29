@@ -1,5 +1,6 @@
 module Backend.Servant.Client where
 
+import           Data.Map               (Map)
 import           Data.Proxy             (Proxy (..))
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
@@ -19,7 +20,7 @@ type API =   "newTx"        :> ReqBody '[JSON] (InputOfEncoinsApi, TransactionIn
         :<|> "status"       :> ReqBody '[JSON] EncoinsStatusReqBody
                             :> Post '[JSON] EncoinsStatusResult
         :<|> "version"      :> Get '[JSON] ServerVersion
-        :<|> "servers"      :> Get '[JSON] [Text]
+        :<|> "servers"      :> Get '[JSON] (Map Text Integer)
         :<|> "current"      :> Get '[JSON] [Text]
 
 type RespEvent t a      = Event t (ReqResult () a)
@@ -34,8 +35,8 @@ data ApiClient t m = ApiClient
   , serverTxRequest        :: ReqRes t m (InputOfEncoinsApi, TransactionInputs) NoContent
   , statusRequest          :: ReqRes t m EncoinsStatusReqBody EncoinsStatusResult
   , versionRequest         :: Res t m ServerVersion
-  , serversRequest         :: Res t m [Text]
-  , delegateServersRequest :: Res t m [Text]
+  , serversRequest         :: Res t m (Map Text Integer)
+  , currentRequest         :: Res t m [Text]
   }
 
 mkApiClient :: forall t m . MonadWidget t m => BaseUrl -> ApiClient t m
@@ -48,4 +49,4 @@ mkApiClient host = ApiClient{..}
       statusRequest :<|>
       versionRequest :<|>
       serversRequest :<|>
-      delegateServersRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
+      currentRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
