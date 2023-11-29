@@ -21,11 +21,10 @@ import           Reflex.Dom
 
 import           Backend.Servant.Requests     (serversRequestWrapper)
 import           Backend.Utility              (switchHoldDyn)
-import           Config.Config                (NetworkId (..), daoNetwork)
+import           Config.Config                (delegateServerUrl)
+import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils         (toText)
 import           ENCOINS.Common.Widgets.Basic (btn)
-import           Servant.Reflex               (BaseUrl (..))
-import           ENCOINS.Common.Events
 
 relayAmountWidget :: MonadWidget t m
   => Dynamic t [(Text, Integer)]
@@ -77,8 +76,3 @@ fetchRelayTable eOpen = do
   logEvent "Fetching relay table failed" eError
   let res = sortOn (Down . snd) . Map.toList <$> filterRight eServers
   pure res
-
-delegateServerUrl :: BaseUrl
-delegateServerUrl = case daoNetwork of
-  Mainnet -> BasePath "http://3.67.180.227:3002/"
-  Testnet -> BasePath "http://localhost:3002/"

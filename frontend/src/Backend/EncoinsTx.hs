@@ -36,6 +36,7 @@ encoinsTxWalletMode :: MonadWidget t m
   -> Dynamic t Secrets
   -> Dynamic t Secrets
   -> Event t ()
+  -> Dynamic t [Text]
   -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
 encoinsTxWalletMode
   dWallet
@@ -43,10 +44,11 @@ encoinsTxWalletMode
   bRandomness
   dCoinsBurn
   dCoinsMint
-  eSend = mdo
+  eSend
+  dUrls = mdo
 
     let eFallback = leftmost [() <$ eNewTxRelayDown, () <$ eSubmitRelayDown]
-    emUrl <- getRelayUrlE $ leftmost [eSend, eFallback]
+    emUrl <- getRelayUrlE dUrls $ leftmost [eSend, eFallback]
     dmUrl <- holdDyn Nothing emUrl
 
     let dUTXOs      = fmap walletUTXOs dWallet
@@ -131,6 +133,7 @@ encoinsTxTransferMode :: MonadWidget t m
   -> Dynamic t (Maybe Address)
   -> Event t ()
   -> Dynamic t [(Text, Text)]
+  -> Dynamic t [Text]
   -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
 encoinsTxTransferMode
   dWallet
@@ -138,10 +141,11 @@ encoinsTxTransferMode
   dNames
   dmAddr
   eSend
-  dWalletSignature = mdo
+  dWalletSignature
+  dUrls = mdo
 
     let eFallback = leftmost [() <$ eNewTxRelayDown, () <$ eSubmitRelayDown]
-    emUrl <- getRelayUrlE $ leftmost [eSend, eFallback]
+    emUrl <- getRelayUrlE dUrls $ leftmost [eSend, eFallback]
     dmUrl <- holdDyn Nothing emUrl
 
     eFireTx <- delay 1 $ leftmost [eSend, () <$ eFallback]
@@ -217,6 +221,7 @@ encoinsTxLedgerMode :: MonadWidget t m
   -> Dynamic t Secrets
   -> Dynamic t Secrets
   -> Event t ()
+  -> Dynamic t [Text]
   -> m (Dynamic t [Text], Event t Status)
 encoinsTxLedgerMode
   dBulletproofParams
@@ -224,12 +229,13 @@ encoinsTxLedgerMode
   dChangeAddr
   dCoinsBurn
   dCoinsMint
-  eSend = mdo
+  eSend
+  dUrls = mdo
     ePb   <- getPostBuild
     eTick <- tickLossyFromPostBuildTime 12
 
     let eFallback = leftmost [() <$ eStatusRelayDown, () <$ eServerRelayDown]
-    emUrl <- getRelayUrlE $ leftmost [ePb, eSend, eFallback]
+    emUrl <- getRelayUrlE dUrls $ leftmost [ePb, eSend, eFallback]
     dmUrl <- holdDyn Nothing emUrl
 
     eFireStatus <- delay 1 $ leftmost [ePb, void eTick, eFallback]
