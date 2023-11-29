@@ -138,9 +138,12 @@ getRelayUrl = go urls
         else go (delete url l)
 
 getRelayUrlE :: MonadWidget t m
-  => Event t ()
+  => Dynamic t [Text]
+  -> Event t ()
   -> m (Event t (Maybe BaseUrl))
-getRelayUrlE ev = performEvent $ ev $> go urls
+getRelayUrlE dUrls ev =do
+  let eUrls = tagPromptlyDyn dUrls ev
+  performEvent $ go <$> eUrls
   where
     go [] = pure Nothing
     go l = do
