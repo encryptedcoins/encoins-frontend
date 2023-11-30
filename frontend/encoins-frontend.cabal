@@ -55,6 +55,7 @@ library
     ENCOINS.DAO.Polls
     ENCOINS.DAO.PollResults
     ENCOINS.DAO.Widgets.DelegateWindow
+    ENCOINS.DAO.Widgets.DelegateWindow.RelayNames
     ENCOINS.DAO.Widgets.Navbar
     ENCOINS.DAO.Widgets.PollWidget
     ENCOINS.DAO.Widgets.RelayTable
