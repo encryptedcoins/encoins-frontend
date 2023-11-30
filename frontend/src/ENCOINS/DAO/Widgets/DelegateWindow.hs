@@ -8,6 +8,8 @@ module ENCOINS.DAO.Widgets.DelegateWindow
 
 import           Control.Monad                   (void)
 import           Data.Bool                       (bool)
+import qualified Data.Map                        as Map
+import           Data.Maybe                      (fromMaybe)
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import           Reflex.Dom
@@ -20,6 +22,7 @@ import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (checkUrl, toText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btnWithBlock, divClassId)
+import           ENCOINS.DAO.Widgets.DelegateWindow.RelayNames (relayNames)
 import           ENCOINS.DAO.Widgets.RelayTable  (relayAmountWidget)
 import qualified JS.DAO                          as JS
 
@@ -36,7 +39,8 @@ delegateWindow eOpen dWallet dRelays = mdo
     "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
     "Delegate Encoins" $ mdo
 
-          eUrlTable <- relayAmountWidget dRelays
+          let dNames = map (\(ip, n) -> (fromMaybe ip (ip `Map.lookup` relayNames), n)) <$> dRelays
+          eUrlTable <- relayAmountWidget dNames
 
           divClass "dao-DelegateWindow_EnterUrl" $ text "Enter relay url:"
 
