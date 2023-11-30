@@ -7,16 +7,17 @@ module ENCOINS.DAO.Widgets.DelegateWindow
   ) where
 
 import           Control.Monad                   (void)
+import           Data.Bool                       (bool)
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import           Reflex.Dom
 
 import           Backend.Status                  (UrlStatus (..), isNotValidUrl)
-import           Backend.Wallet                  (Wallet (..), lucidConfigDao,
-                                                  toJS)
-import           ENCOINS.App.Widgets.Basic       (containerApp, elementResultJS)
+import           Backend.Wallet                  (LucidConfig (..), Wallet (..),
+                                                  lucidConfigDao, toJS)
+import           ENCOINS.App.Widgets.Basic       (containerApp)
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils            (toText)
+import           ENCOINS.Common.Utils            (checkUrl, toText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btnWithBlock, divClassId)
 import           ENCOINS.DAO.Widgets.RelayTable  (relayAmountWidget)
@@ -45,18 +46,13 @@ delegateWindow eOpen dWallet dRelays = mdo
           let eNonEmptyUrl = ffilter (not . T.null) eInputText
           let eEmptyUrl = ffilter T.null eInputText
 
-          -- Check url when it is ONLY not empty
-          performEvent_ (JS.checkUrl <$> eNonEmptyUrl)
-          eValidUrl <- updated <$> elementResultJS "ValidUrl" id
-          eInvalidUrl <- updated <$> elementResultJS "InvalidUrl" id
-
           -- ePing <- pingRequestWrapper (BasePath . normalizePingUrl <$> dInputText) $ () <$ eValidUrl
 
           let eUrlStatus = leftmost
                 [
                   UrlEmpty   <$ eEmptyUrl
-                , UrlInvalid <$ eInvalidUrl
-                , UrlValid   <$ eValidUrl
+                -- Check url when it is ONLY not empty
+                , bool UrlInvalid UrlValid . checkUrl <$> eNonEmptyUrl
                 -- , maybe UrlPingFail (const UrlPingSuccess) <$> ePing
                 ]
 
@@ -69,8 +65,9 @@ delegateWindow eOpen dWallet dRelays = mdo
 
           let eUrl = leftmost [eUrlTable, eUrlButton]
           logEvent "eUrl" eUrl
+          let LucidConfig apiKey networkId _ _ asset = lucidConfigDao
           performEvent_ $
-            JS.daoDelegateTx lucidConfigDao
+            JS.daoDelegateTx apiKey networkId asset
             <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
 
           return eUrl

@@ -2,8 +2,8 @@ module ENCOINS.DAO.Widgets.PollWidget where
 
 import           Reflex.Dom
 
-import           Backend.Wallet                (Wallet (..), lucidConfigDao,
-                                                toJS)
+import           Backend.Wallet                (LucidConfig (..), Wallet (..),
+                                                lucidConfigDao, toJS)
 import           ENCOINS.App.Widgets.Basic     (elementResultJS)
 import           ENCOINS.Common.Utils          (toText)
 import           ENCOINS.Common.Widgets.Basic  (btn, btnWithBlock)
@@ -29,9 +29,9 @@ pollWidget dWallet dIsBlocked (Poll n question summary answers' endTime) = do
         dIsBlocked . text
       ) answers
     let e = leftmost $ zipWith (<$) answers es
-
+    let LucidConfig apiKey networkId _ _ asset = lucidConfigDao
     performEvent_
-      $ daoPollVoteTx n lucidConfigDao
+      $ daoPollVoteTx n apiKey networkId asset
       <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) e
 
     dMsg <- elementResultJS ("elementPoll" <> toText n) id
