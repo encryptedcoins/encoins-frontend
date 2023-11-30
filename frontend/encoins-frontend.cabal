@@ -1,199 +1,206 @@
-cabal-version:       3.0
+cabal-version: 3.0
+name:          encoins-frontend
+version:       0.1.0.0
+build-type:    Simple
+author:
+  Vladimir Sinyakov
+  Catherine Galkina
 
-name:                encoins-frontend
-version:             0.1.0.0
-build-type:          Simple
-
-author:              Vladimir Sinyakov
-                     Catherine Galkina
-maintainer:          team@encoins.io
+maintainer:    team@encoins.io
 
 library
   default-language:   Haskell2010
   ghc-options:        -Wall -Wno-unrecognised-pragmas
   exposed-modules:
-    Backend.EncoinsTx,
-    Backend.Environment,
-    Backend.Protocol.Fees,
-    Backend.Protocol.Setup,
-    Backend.Protocol.TxValidity,
-    Backend.Protocol.Types,
-    Backend.Protocol.Utility,
-    Backend.Servant.Client,
-    Backend.Servant.Requests,
-    Backend.Status,
-    Backend.Utility,
-    Backend.Wallet,
-    Config.Config,
-    ENCOINS.App,
-    ENCOINS.App.Body,
-    ENCOINS.App.Widgets.Basic,
-    ENCOINS.App.Widgets.Coin,
-    ENCOINS.App.Widgets.ConnectWindow,
-    ENCOINS.App.Widgets.ImportWindow,
-    ENCOINS.App.Widgets.InputAddressWindow,
-    ENCOINS.App.Widgets.ISPO,
-    ENCOINS.App.Widgets.MainTabs,
-    ENCOINS.App.Widgets.MainWindow,
-    ENCOINS.App.Widgets.Navbar,
-    ENCOINS.App.Widgets.PasswordWindow,
-    ENCOINS.App.Widgets.SendRequestButton,
-    ENCOINS.App.Widgets.SendToWalletWindow,
-    ENCOINS.App.Widgets.TabsSelection,
-    ENCOINS.App.Widgets.TransactionBalance,
-    ENCOINS.App.Widgets.WelcomeWindow,
-    ENCOINS.Common.Widgets.Advanced,
-    ENCOINS.Common.Widgets.Basic,
-    ENCOINS.Common.Widgets.JQuery,
-    ENCOINS.Common.Widgets.SelectInput,
-    ENCOINS.Common.Widgets.Wallet,
-    ENCOINS.Common.Events,
-    ENCOINS.Common.Language,
-    ENCOINS.Common.Utils,
-    ENCOINS.DAO,
-    ENCOINS.DAO.Body,
-    ENCOINS.DAO.Polls,
-    ENCOINS.DAO.Widgets.DelegateWindow,
-    ENCOINS.DAO.Widgets.Navbar,
-    ENCOINS.DAO.Widgets.PollWidget,
-    ENCOINS.DAO.Widgets.RelayTable,
-    ENCOINS.Website,
-    ENCOINS.Website.Body,
-    ENCOINS.Website.Head,
-    ENCOINS.Website.Widgets.Basic,
-    ENCOINS.Website.Widgets.Footer,
-    ENCOINS.Website.Widgets.ISPOPage,
-    ENCOINS.Website.Widgets.LandingPage,
-    ENCOINS.Website.Widgets.Navbar,
-    ENCOINS.Website.Widgets.Resourses,
-    JS.App,
-    JS.DAO,
-    JS.Website,
+    Backend.EncoinsTx
+    Backend.Environment
+    Backend.Protocol.Fees
+    Backend.Protocol.Setup
+    Backend.Protocol.TxValidity
+    Backend.Protocol.Types
+    Backend.Protocol.Utility
+    Backend.Servant.Client
+    Backend.Servant.Requests
+    Backend.Status
+    Backend.Utility
+    Backend.Wallet
+    Config.Config
+    ENCOINS.App
+    ENCOINS.App.Body
+    ENCOINS.App.Widgets.Basic
+    ENCOINS.App.Widgets.Coin
+    ENCOINS.App.Widgets.ConnectWindow
+    ENCOINS.App.Widgets.ImportWindow
+    ENCOINS.App.Widgets.InputAddressWindow
+    ENCOINS.App.Widgets.ISPO
+    ENCOINS.App.Widgets.MainTabs
+    ENCOINS.App.Widgets.MainWindow
+    ENCOINS.App.Widgets.Navbar
+    ENCOINS.App.Widgets.PasswordWindow
+    ENCOINS.App.Widgets.SendRequestButton
+    ENCOINS.App.Widgets.SendToWalletWindow
+    ENCOINS.App.Widgets.TabsSelection
+    ENCOINS.App.Widgets.TransactionBalance
+    ENCOINS.App.Widgets.WelcomeWindow
+    ENCOINS.Common.Events
+    ENCOINS.Common.Language
+    ENCOINS.Common.Utils
+    ENCOINS.Common.Widgets.Advanced
+    ENCOINS.Common.Widgets.Basic
+    ENCOINS.Common.Widgets.JQuery
+    ENCOINS.Common.Widgets.SelectInput
+    ENCOINS.Common.Widgets.Wallet
+    ENCOINS.DAO
+    ENCOINS.DAO.Body
+    ENCOINS.DAO.Polls
+    ENCOINS.DAO.PollResults
+    ENCOINS.DAO.Widgets.DelegateWindow
+    ENCOINS.DAO.Widgets.Navbar
+    ENCOINS.DAO.Widgets.PollWidget
+    ENCOINS.DAO.Widgets.RelayTable
+    ENCOINS.Website
+    ENCOINS.Website.Body
+    ENCOINS.Website.Head
+    ENCOINS.Website.Widgets.Basic
+    ENCOINS.Website.Widgets.Footer
+    ENCOINS.Website.Widgets.ISPOPage
+    ENCOINS.Website.Widgets.LandingPage
+    ENCOINS.Website.Widgets.Navbar
+    ENCOINS.Website.Widgets.Resourses
+    JS.App
+    JS.DAO
+    JS.Website
     Reflex.ScriptDependent
+
   build-depends:
-    base                       ^>=4.12.0.0,
-    array,
-    aeson                      ^>=1.5.6.0,
-    base16-bytestring          ^>=1.0.2.0,
-    bytestring                 ^>=0.10.8.2,
-    containers                 ^>=0.6.0.1,
-    csl-types                  -any,
-    encoins-bulletproofs       -any,
-    extra                      ^>=1.7.14,
-    file-embed                 ^>=0.0.15.0,
-    ghcjs-dom                  ^>=0.9.5.0,
-    hex-text                   ^>=0.1.0.7,
-    http-api-data              ^>=0.4.3,
-    ilist                      ^>=0.4.0.1,
-    jsaddle                    ^>=0.9.8.2,
-    lens,
-    plutus-tx-extra            -any,
-    plutus-tx-js               -any,
-    random                     ^>=1.2.1.1,
-    raw-strings-qq,
-    reflex-dom                 ==0.6.1.1,
-    reflex-dom-core            ^>=0.7.0.3,
-    regex-tdfa,
-    servant                    ^>=0.18.3,
-    servant-checked-exceptions ^>=2.2.0.1,
-    servant-reflex             ^>=0.4.0,
-    stm                        ^>=2.5.1.0,
-    text                       ^>=1.2.3.1,
-    time                       ^>=1.8.0.2,
-    tuple                      ^>=0.3.0.2,
-    uuid                       ^>=1.3.15,
-    witherable                 ^>=0.4.2
+    , aeson                       ^>=1.5.6.0
+    , array
+    , base                        ^>=4.12.0.0
+    , base16-bytestring           ^>=1.0.2.0
+    , bytestring                  ^>=0.10.8.2
+    , containers                  ^>=0.6.0.1
+    , csl-types
+    , encoins-bulletproofs
+    , extra                       ^>=1.7.14
+    , file-embed                  ^>=0.0.15.0
+    , ghcjs-dom                   ^>=0.9.5.0
+    , hex-text                    ^>=0.1.0.7
+    , http-api-data               ^>=0.4.3
+    , ilist                       ^>=0.4.0.1
+    , jsaddle                     ^>=0.9.8.2
+    , jsaddle-dom                 ^>=0.9.5.0
+    , lens
+    , plutus-tx-extra
+    , plutus-tx-js
+    , random                      ^>=1.2.1.1
+    , raw-strings-qq
+    , reflex-dom                  ==0.6.1.1
+    , reflex-dom-core             ^>=0.7.0.3
+    , regex-tdfa
+    , servant                     ^>=0.18.3
+    , servant-checked-exceptions  ^>=2.2.0.1
+    , servant-reflex              ^>=0.4.0
+    , stm                         ^>=2.5.1.0
+    , text                        ^>=1.2.3.1
+    , time                        ^>=1.8.0.2
+    , tuple                       ^>=0.3.0.2
+    , uuid                        ^>=1.3.15
+    , witherable                  ^>=0.4.2
+
   if impl(ghcjs)
-    build-depends:
-      ghcjs-base               ^>=0.2.1.0
+    build-depends: ghcjs-base ^>=0.2.1.0
+
   if flag(predao)
     cpp-options: -DPREDAO
+
   if flag(preapp)
     cpp-options: -DPREAPP
+
   default-extensions:
-    AllowAmbiguousTypes,
-    BangPatterns,
-    BlockArguments,
-    ConstraintKinds,
-    DataKinds,
-    DeriveGeneric,
-    DerivingStrategies,
-    DuplicateRecordFields,
-    FlexibleContexts,
-    FlexibleInstances,
-    FunctionalDependencies,
-    GADTs,
-    GeneralizedNewtypeDeriving,
-    LambdaCase,
-    NamedFieldPuns,
-    OverloadedLabels,
-    OverloadedStrings,
-    PolyKinds,
-    QuasiQuotes,
-    RankNTypes,
-    RecordWildCards,
-    ScopedTypeVariables,
-    TemplateHaskell,
-    TupleSections,
-    TypeApplications,
-    TypeFamilies,
-    TypeOperators,
-    UndecidableInstances,
+    AllowAmbiguousTypes
+    BangPatterns
+    BlockArguments
+    ConstraintKinds
+    DataKinds
+    DeriveGeneric
+    DerivingStrategies
+    DuplicateRecordFields
+    FlexibleContexts
+    FlexibleInstances
+    FunctionalDependencies
+    GADTs
+    GeneralizedNewtypeDeriving
+    LambdaCase
+    NamedFieldPuns
+    OverloadedLabels
+    OverloadedStrings
+    PolyKinds
+    QuasiQuotes
+    RankNTypes
+    RecordWildCards
+    ScopedTypeVariables
+    TemplateHaskell
+    TupleSections
+    TypeApplications
+    TypeFamilies
+    TypeOperators
+    UndecidableInstances
     ViewPatterns
-  hs-source-dirs:      src
+
+  hs-source-dirs:     src
 
 executable encoins-website
-  main-is:             Website.hs
-  hs-source-dirs:      apps
-
-  default-language:   Haskell2010
-  ghc-options:        -Wall -Wno-unrecognised-pragmas
+  main-is:          Website.hs
+  hs-source-dirs:   apps
+  default-language: Haskell2010
+  ghc-options:      -Wall -Wno-unrecognised-pragmas
 
   if impl(ghcjs)
-    ghc-options:      -dedupe
+    ghc-options: -dedupe
+
   build-depends:
-    base                       ^>=4.12.0.0,
-    encoins-frontend            -any
+    , base              ^>=4.12.0.0
+    , encoins-frontend
+
   if impl(ghcjs)
-    build-depends:
-      ghcjs-base                ^>=0.2.1.0
+    build-depends: ghcjs-base ^>=0.2.1.0
 
 executable encoins-app
-  main-is:             App.hs
-  hs-source-dirs:      apps
-
-  default-language:   Haskell2010
-  ghc-options:        -Wall -Wno-unrecognised-pragmas
+  main-is:          App.hs
+  hs-source-dirs:   apps
+  default-language: Haskell2010
+  ghc-options:      -Wall -Wno-unrecognised-pragmas
 
   if impl(ghcjs)
-    ghc-options:      -dedupe
+    ghc-options: -dedupe
+
   build-depends:
-    base                       ^>=4.12.0.0,
-    encoins-frontend            -any
+    , base              ^>=4.12.0.0
+    , encoins-frontend
+
   if impl(ghcjs)
-    build-depends:
-      ghcjs-base                ^>=0.2.1.0
+    build-depends: ghcjs-base ^>=0.2.1.0
 
 executable encoins-dao
-  main-is:             DAO.hs
-  hs-source-dirs:      apps
-
-  default-language:   Haskell2010
-  ghc-options:        -Wall -Wno-unrecognised-pragmas
+  main-is:          DAO.hs
+  hs-source-dirs:   apps
+  default-language: Haskell2010
+  ghc-options:      -Wall -Wno-unrecognised-pragmas
 
   if impl(ghcjs)
-    ghc-options:      -dedupe
+    ghc-options: -dedupe
+
   build-depends:
-    base                       ^>=4.12.0.0,
-    encoins-frontend            -any
+    , base              ^>=4.12.0.0
+    , encoins-frontend
+
   if impl(ghcjs)
-    build-depends:
-      ghcjs-base                ^>=0.2.1.0
+    build-depends: ghcjs-base ^>=0.2.1.0
 
-Flag predao
-  Description:   Configure dao in test preprod mode
-  Default:       False
+flag predao
+  description: Configure dao in test preprod mode
+  default:     False
 
-Flag preapp
-  Description:   Configure app in test preprod mode
-  Default:       False
+flag preapp
+  description: Configure app in test preprod mode
+  default:     False
