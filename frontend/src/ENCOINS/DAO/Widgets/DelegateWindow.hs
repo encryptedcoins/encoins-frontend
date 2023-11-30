@@ -65,9 +65,9 @@ delegateWindow eOpen dWallet dRelays = mdo
 
           let eUrl = leftmost [eUrlTable, eUrlButton]
           logEvent "eUrl" eUrl
-          let LucidConfig apiKey networkId _ _ asset = lucidConfigDao
+          let LucidConfig apiKey networkId policyId assetName = lucidConfigDao
           performEvent_ $
-            JS.daoDelegateTx apiKey networkId asset
+            JS.daoDelegateTx apiKey networkId policyId assetName
             <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
 
           return eUrl
@@ -95,7 +95,7 @@ buttonWidget dUrlStatus =
     eButton <- btnWithBlock
         "button-switching inverted flex-center"
         ""
-        (isNotValidUrl <$> dUrlStatus)
+        (isNotValidUrl <$> (UrlValid <$ dUrlStatus)) -- TODO: roll back it after debug
         (text "Delegate")
     divClass "menu-item-button-right" $ do
       containerApp ""

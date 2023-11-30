@@ -15,8 +15,8 @@ import           Backend.Status               (Status (..))
 import           Backend.Utility              (switchHoldDyn, toEither)
 import           Backend.Wallet               (Wallet (..))
 import           ENCOINS.Bulletproofs         (Secrets)
-import           ENCOINS.Common.Events        (newEvent)
 import           ENCOINS.Common.Widgets.Basic (btn, divClassId)
+-- import           ENCOINS.Common.Events
 
 sendRequestButtonWallet :: MonadWidget t m
   => EncoinsMode
@@ -38,8 +38,9 @@ sendRequestButtonWallet
 
     -- TODO: choose url every time by 'e' fires
     -- or every time user enters the tab.
-    eInit <- newEvent
-    emUrl <- getRelayUrlE dUrls $ leftmost [eInit, () <$ eRelayDown]
+    let eUrls = updated dUrls
+    -- eInit <- newEvent
+    emUrl <- getRelayUrlE dUrls $ leftmost [() <$ eUrls, () <$ eRelayDown]
     let eAllRelayDown = filterLeft $ toEither () <$> emUrl
     dmUrl <- holdDyn Nothing emUrl
 
@@ -92,8 +93,10 @@ sendRequestButtonLedger mode dStatus dCoinsToBurn dCoinsToMint e dUrls = mdo
 
   -- TODO: choose url every time by 'e' fires
   -- or every time user enters the tab.
-  eInit <- newEvent
-  emUrl <- getRelayUrlE dUrls $ leftmost [eInit, () <$ eRelayDown]
+  -- eInit <- newEvent
+  let eUrls = updated dUrls
+
+  emUrl <- getRelayUrlE dUrls $ leftmost [() <$ eUrls, () <$ eRelayDown]
   let eAllRelayDown = filterLeft $ toEither () <$> emUrl
   dmUrl <- holdDyn Nothing emUrl
 

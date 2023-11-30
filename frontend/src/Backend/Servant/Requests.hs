@@ -22,9 +22,9 @@ import           Witherable             (catMaybes)
 
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
+import           Backend.Utility        (normalizePingUrl)
 import           ENCOINS.Common.Events
 import           JS.App                 (pingServer)
-
 
 newTxRequestWrapper :: MonadWidget t m
   => BaseUrl
@@ -117,7 +117,7 @@ currentRequestWrapper baseUrl e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- currentRequest e
   let eRespUnwrapped = mkStatusOrResponse <$> eResp
-  logEvent "delegate servers request" eRespUnwrapped
+  logEvent "current servers request" eRespUnwrapped
   return eRespUnwrapped
 
 ---------------------------------------------- Utilities ----------------------------------------
@@ -141,7 +141,7 @@ getRelayUrlE :: MonadWidget t m
   => Dynamic t [Text]
   -> Event t ()
   -> m (Event t (Maybe BaseUrl))
-getRelayUrlE dUrls ev =do
+getRelayUrlE dUrls ev = do
   let eUrls = tagPromptlyDyn dUrls ev
   performEvent $ go <$> eUrls
   where
@@ -149,7 +149,7 @@ getRelayUrlE dUrls ev =do
     go l = do
       idx <- randomRIO (0, length l - 1)
       let url = l !! idx
-      pingOk <- pingServer url
+      pingOk <- pingServer $ normalizePingUrl url
       if pingOk
         then return $ Just $ BasePath url
         else go (delete url l)
