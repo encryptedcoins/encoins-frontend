@@ -8,8 +8,10 @@ import           Data.Text     (Text)
 import qualified Data.Text     as T
 import           Reflex.Dom
 
+-- normalizePingUrl :: Text -> Text
+-- normalizePingUrl t = T.append (T.dropWhileEnd (== '/') t) "//"
 normalizePingUrl :: Text -> Text
-normalizePingUrl t = T.append (T.dropWhileEnd (== '/') t) "//"
+normalizePingUrl = T.dropWhileEnd (== '/')
 
 toEither :: e -> Maybe a -> Either e a
 toEither err Nothing = Left err

@@ -151,9 +151,9 @@ handleEncToken :: MonadWidget t m
   => Dynamic t Wallet
   -> m (Dynamic t Bool, Event t Status)
 handleEncToken dWallet = do
-  let LucidConfig _ _ encSymbol encToken _ = lucidConfigDao
+  let LucidConfig _ _ encPolicy encName = lucidConfigDao
   let eWalletConnected = ffilter (\w -> walletName w /= None) $ updated dWallet
-  let eHasNotToken = not . hasToken encSymbol encToken <$> eWalletConnected
+  let eHasNotToken = not . hasToken encPolicy encName <$> eWalletConnected
   let eHasNotTokenStatus = bool
         Ready (WalletError "No ENCS tokens to delegate!") <$> eHasNotToken
   dHasNotToken <- holdDyn False eHasNotToken
