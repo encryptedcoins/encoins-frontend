@@ -35,7 +35,6 @@ import           ENCOINS.DAO.Polls
 import           ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
 import           ENCOINS.DAO.Widgets.Navbar         (Dao (..), navbarWidget)
 import           ENCOINS.DAO.Widgets.PollWidget
-import           ENCOINS.DAO.Widgets.RelayTable     (fetchRelayTable)
 import           ENCOINS.Website.Widgets.Basic      (container, section)
 
 bodyWidget :: MonadWidget t m => m ()
@@ -51,9 +50,7 @@ bodyContentWidget = mdo
   dWallet <- connectWindow walletsSupportedInDAO eConnectOpen
 
   let eDelegate = void $ ffilter (==Delegate) eDao
-  eDelay <- postDelay 0.05
-  dRelays <- holdDyn [] =<< fetchRelayTable eDelay
-  delegateWindow eDelegate dWallet dRelays
+  delegateWindow eDelegate dWallet
 
   (dIsDisableButtons, dIsDisableConnectButton, dNotification) <- handleStatus dWallet
   notification dNotification

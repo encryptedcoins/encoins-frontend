@@ -20,15 +20,18 @@ import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (checkUrl, toText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btnWithBlock, divClassId)
-import           ENCOINS.DAO.Widgets.RelayTable  (relayAmountWidget)
+import           ENCOINS.DAO.Widgets.RelayTable  (fetchRelayTable,
+                                                  relayAmountWidget)
 import qualified JS.DAO                          as JS
+
 
 delegateWindow :: MonadWidget t m
   => Event t ()
   -> Dynamic t Wallet
-  -> Dynamic t [(Text, Integer)]
   -> m ()
-delegateWindow eOpen dWallet dRelays = mdo
+delegateWindow eOpen dWallet = mdo
+  eDelay <- delay 0.05 eOpen
+  dRelays <- holdDyn [] =<< fetchRelayTable eDelay
   eUrlOk <- dialogWindow
     True
     eOpen
@@ -59,10 +62,7 @@ delegateWindow eOpen dWallet dRelays = mdo
           btnOk <- buttonWidget dIsInvalidUrl
 
           let eUrlButton = tagPromptlyDyn dInputText btnOk
-          logEvent "eUrlButton" eUrlButton
-
           let eUrl = leftmost [eUrlTable, eUrlButton]
-          logEvent "eUrl" eUrl
           let LucidConfig apiKey networkId policyId assetName = lucidConfigDao
           performEvent_ $
             JS.daoDelegateTx apiKey networkId policyId assetName
