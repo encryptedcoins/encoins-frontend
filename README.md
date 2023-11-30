@@ -26,7 +26,7 @@ They generate html files to `result/` folder.
 
 2. For building just the `frontend` part of the project use commands:
 
-```
+```bash
 cabal new-build --ghcjs frontend
 ```
 to build all webpages. Copy `all.js` files to the respective files in `result/`.
@@ -35,6 +35,19 @@ Alternatively, simply run
 ```
 ./build-frontend.sh
 ```
+It will compile frontend and copy required files to `result/`.
+
+1. Flags. By default (without any flags) frontend compiling for Mainnet networkId. Add flag `predao` or/and `preapp` to build frontend for functioning within Testnet networkId.
+
+```bash
+cabal new-build -f preapp -f predao --ghcjs frontend
+```
+or simply run
+
+```
+./build-frontend-dev.sh
+```
+It will compile frontend in dev mode and copy required files to `result/`.
 
 ## Setup for local development
 

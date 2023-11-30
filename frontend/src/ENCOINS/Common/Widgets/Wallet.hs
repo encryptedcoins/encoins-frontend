@@ -12,6 +12,7 @@ import           Reflex.Dom                   hiding (Input)
 import           Backend.Protocol.Types       (checkEmptyText,
                                                mkAddressFromPubKeys)
 import           Backend.Wallet
+import           Config.Config                (NetworkId (..), toNetworkId)
 import           CSL                          (TransactionUnspentOutputs)
 import           ENCOINS.App.Widgets.Basic    (elementResultJS)
 import           ENCOINS.Common.Widgets.Basic (image)
