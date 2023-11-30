@@ -13,7 +13,7 @@ import           Control.Monad                (forM)
 import           Data.List                    (sortOn)
 import           Data.Map                     (Map)
 import qualified Data.Map                     as Map
-import           Data.Maybe                   (fromJust)
+import           Data.Maybe                   (fromJust, fromMaybe)
 import           Data.Ord                     (Down (..))
 import           Data.Text                    (Text)
 import           Numeric.Natural              (Natural)
@@ -25,6 +25,7 @@ import           Config.Config                (delegateServerUrl)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils         (toText)
 import           ENCOINS.Common.Widgets.Basic (btn)
+import           ENCOINS.DAO.Widgets.DelegateWindow.RelayNames (relayNames)
 
 relayAmountWidget :: MonadWidget t m
   => Dynamic t [(Text, Integer)]
@@ -37,7 +38,7 @@ relayAmountWidget dRelays = do
       el "tbody" $ do
         switchHoldDyn dRelays $ \relays -> do
           evs <- forM relays $ \(relay, amount) -> tr $ do
-            tdRelay $ text relay
+            tdRelay $ text $ fromMaybe relay (relay `Map.lookup` relayNames)
             tdAmount $ text $ toText amount
             eClick <- tdButton $ btn "button-switching inverted" "" $ text "Delegate"
             pure $ relay <$ eClick
