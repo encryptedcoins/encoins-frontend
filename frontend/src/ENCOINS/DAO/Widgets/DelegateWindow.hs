@@ -37,7 +37,7 @@ delegateWindow eOpen dWallet = mdo
     eOpen
     (leftmost [void eUrlOk])
     "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
-    "Delegate Encoins" $ mdo
+    "Delegate ENCS" $ mdo
           eUrlTable <- relayAmountWidget dRelays
           divClass "dao-DelegateWindow_EnterUrl" $ text "Enter relay url:"
 

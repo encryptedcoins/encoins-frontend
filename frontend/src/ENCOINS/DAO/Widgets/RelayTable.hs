@@ -34,12 +34,12 @@ relayAmountWidget dRelays = do
   article $ tableWrapper $
     table $ do
       el "thead" $ tr $
-        mapM_ (\h -> th $ text h) ["Relay", "Amount", ""]
+        mapM_ (\h -> th $ text h) ["Relay", "Delegated", ""]
       el "tbody" $ do
         switchHoldDyn dRelays $ \relays -> do
           evs <- forM relays $ \(relay, amount) -> tr $ do
             tdRelay $ text $ fromMaybe relay (relay `Map.lookup` relayNames)
-            tdAmount $ text $ toText amount
+            tdAmount $ text $ toText (floor @Double $ fromIntegral amount / 1000000) <> " ENCS"
             eClick <- tdButton $ btn "button-switching inverted" "" $ text "Delegate"
             pure $ relay <$ eClick
           pure $ leftmost evs

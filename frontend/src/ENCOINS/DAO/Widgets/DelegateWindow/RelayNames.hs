@@ -17,10 +17,10 @@ relayNames = fromList
     ("http://136.243.152.100", "[CHIL] Chile Stake pool"),
     ("http://216.152.65.248", "$conrad"),
     ("http://146.190.63.130", "Peter Bui"),
-    ("http://5.189.164.41", "Markus"),
+    ("https://5.189.164.41", "Markus"),
     ("http://82.165.230.141", "OYSTR"),
     ("http://146.190.34.49", "Kodjo AKPONDEOU"),
     ("http://encoins-relay.cardanistas.io", "Cardanistas Stake Pool"),
-    ("http://encoins.reservoir.network:3000", "Tom - BURN pool"),
+    ("http://encoins.reservoir.network", "Tom - BURN pool"),
     ("http://144.91.80.26", "Toby Relayer")
   ]
