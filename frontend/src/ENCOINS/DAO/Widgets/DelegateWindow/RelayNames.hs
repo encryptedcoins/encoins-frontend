@@ -14,7 +14,7 @@ relayNames = fromList
     ("http://61.77.248.249", "KTOP SPO"),
     ("http://128.199.195.27", "Waffle"),
     ("https://136.243.152.100", "[CHIL] Chile Stake pool"),
-    ("http://encoins.bladepool.com", "$conrad"),
+    ("http://encoins.bladepool.com", "BLADE"),
     ("http://146.190.63.130", "Peter Bui"),
     ("https://5.189.164.41", "Southtyrol Pool"),
     ("http://82.165.230.141", "OYSTR"),
