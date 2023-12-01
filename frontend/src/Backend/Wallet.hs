@@ -113,7 +113,7 @@ lucidConfigDao = case dao networkConfig of
   Testnet -> LucidConfig
     { apiKey = "preprodCMZ4wTbLIsLRncviikOkicVgYXyfYrga"
     , networkId = "Preprod"
-    , encPolicyId = "2912c4707b5695db33e60e89467125bda41fecd62c7f8e56cd854247"
+    , encPolicyId = "3f5c890bd432d76b7d2fef7076a0205a02d78be99901c3c37f447dce"
     , encAssetName = "454e4353"
     }
 
