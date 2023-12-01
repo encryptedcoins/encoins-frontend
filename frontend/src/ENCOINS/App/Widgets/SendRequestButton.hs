@@ -39,7 +39,6 @@ sendRequestButtonWallet
     -- TODO: choose url every time by 'e' fires
     -- or every time user enters the tab.
     let eUrls = updated dUrls
-    -- eInit <- newEvent
     emUrl <- getRelayUrlE dUrls $ leftmost [() <$ eUrls, () <$ eRelayDown]
     let eAllRelayDown = filterLeft $ toEither () <$> emUrl
     dmUrl <- holdDyn Nothing emUrl
@@ -91,11 +90,9 @@ sendRequestButtonLedger :: MonadWidget t m
   -> m (Event t Status, Event t ())
 sendRequestButtonLedger mode dStatus dCoinsToBurn dCoinsToMint e dUrls = mdo
 
+  let eUrls = updated dUrls
   -- TODO: choose url every time by 'e' fires
   -- or every time user enters the tab.
-  -- eInit <- newEvent
-  let eUrls = updated dUrls
-
   emUrl <- getRelayUrlE dUrls $ leftmost [() <$ eUrls, () <$ eRelayDown]
   let eAllRelayDown = filterLeft $ toEither () <$> emUrl
   dmUrl <- holdDyn Nothing emUrl
