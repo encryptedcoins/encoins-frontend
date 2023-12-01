@@ -6,7 +6,6 @@ module ENCOINS.DAO.Widgets.RelayTable
   (
     relayAmountWidget
   , fetchRelayTable
-  , fetchRelayTableFile
   ) where
 
 import           Control.Monad                (forM)
@@ -31,7 +30,7 @@ relayAmountWidget :: MonadWidget t m
   => Dynamic t [(Text, Integer)]
   -> m (Event t Text)
 relayAmountWidget dRelays = do
-  article $ tableWrapper $
+  article $
     table $ do
       el "thead" $ tr $
         mapM_ (\h -> th $ text h) ["Relay", "Delegated", ""]
@@ -46,9 +45,8 @@ relayAmountWidget dRelays = do
             pure $ relay <$ eClick
           pure $ leftmost evs
   where
-    tableWrapper = elAttr "div" ("class" =: "dao-DelegateWindow_TableWrapper")
+    article = elAttr "article" ("class" =: "dao-DelegateWindow_TableWrapper")
     table = elAttr "table" ("class" =: "dao-DelegateWindow_Table")
-    article = elAttr "article" ("class" =: "dao-DelegateWindow_RelayAmount")
     tr = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow")
     th = elAttr "th" ("class" =: "dao-DelegateWindow_TableHeader")
     tdRelay = elAttr "td" ("class" =: "dao-DelegateWindow_TableRelay")
@@ -62,12 +60,12 @@ sortRelayAmounts =
   . Map.map (floor @Double . (\x -> fromIntegral x / 1000000) . read @Natural )
   . fromJust
 
-fetchRelayTableFile :: MonadWidget t m
-  => Event t ()
-  -> m (Event t [(Text, Integer)])
-fetchRelayTableFile eOpen = do
-  let eUrl = "https://encoins.io/delegations.json" <$ eOpen
-  fmap sortRelayAmounts <$> getAndDecode eUrl
+-- fetchRelayTable :: MonadWidget t m
+--   => Event t ()
+--   -> m (Event t [(Text, Integer)])
+-- fetchRelayTable eOpen = do
+--   let eUrl = "https://encoins.io/delegations.json" <$ eOpen
+--   fmap sortRelayAmounts <$> getAndDecode eUrl
 
 fetchRelayTable :: MonadWidget t m
   => Event t ()
