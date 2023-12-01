@@ -21,9 +21,11 @@ import           Backend.Protocol.Setup                 (ledgerAddress)
 import           Backend.Protocol.TxValidity            (getAda, getCoinNumber,
                                                          getDeposit)
 import           Backend.Protocol.Types
+import           Backend.Servant.Requests               (currentRequestWrapper)
 import           Backend.Status                         (Status (..),
                                                          isTxProcessOrCriticalError)
 import           Backend.Wallet                         (Wallet (..))
+import           Config.Config                          (delegateServerUrl)
 import           ENCOINS.App.Widgets.Basic              (containerApp,
                                                          elementResultJS,
                                                          sectionApp,
@@ -53,9 +55,9 @@ import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeLedger,
                                                          welcomeWindowLedgerStorageKey,
                                                          welcomeWindowTransferStorageKey)
 import           ENCOINS.Bulletproofs                   (Secret)
+import           ENCOINS.Common.Events
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
 import           JS.Website                             (saveJSON)
-
 
 mainWindowColumnHeader :: MonadWidget t m => Text -> m ()
 mainWindowColumnHeader title =
@@ -66,9 +68,13 @@ walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t [(Secret, Text)]
-  -> Dynamic t [Text]
   -> m ()
-walletTab mpass dWallet dOldSecretsWithNames dUrls = sectionApp "" "" $ mdo
+walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
+    eFetchUrls <- newEvent
+    eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
+    let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
+    dUrls <- holdDyn [] eUrls
+
     (dBalance, dFees, dBulletproofParams, bRandomness) <- getEnvironment
         WalletMode
         (fmap walletChangeAddress dWallet)
@@ -154,9 +160,13 @@ transferTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t [(Secret, Text)]
-  -> Dynamic t [Text]
   -> m ()
-transferTab mpass dWallet dOldSecretsWithNames dUrls = sectionApp "" "" $ mdo
+transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
+    eFetchUrls <- newEvent
+    eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
+    let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
+    dUrls <- holdDyn [] eUrls
+
     welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
     dDepositBalance <- holdUniqDyn $ negate . getDeposit <$> dCoins
     containerApp "" $ transactionBalanceWidget (Formula 0 0 0 0 0 0) Nothing " (to Wallet)"
@@ -233,9 +243,13 @@ transferTab mpass dWallet dOldSecretsWithNames dUrls = sectionApp "" "" $ mdo
 ledgerTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t [(Secret, Text)]
-  -> Dynamic t [Text]
   -> m ()
-ledgerTab mpass dOldSecretsWithNames dUrls = sectionApp "" "" $ mdo
+ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
+    eFetchUrls <- newEvent
+    eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
+    let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
+    dUrls <- holdDyn [] eUrls
+
     welcomeWindow welcomeWindowLedgerStorageKey welcomeLedger
     (dBalance, dFees, dBulletproofParams, bRandomness) <-
         getEnvironment LedgerMode dAddr dToBurn dToMint

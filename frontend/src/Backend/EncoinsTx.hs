@@ -231,14 +231,14 @@ encoinsTxLedgerMode
   dCoinsMint
   eSend
   dUrls = mdo
-    ePb   <- getPostBuild
-    eTick <- tickLossyFromPostBuildTime 12
+    eInit   <- delay 1 =<< newEvent
 
     let eFallback = leftmost [() <$ eStatusRelayDown, () <$ eServerRelayDown]
-    emUrl <- getRelayUrlE dUrls $ leftmost [ePb, eSend, eFallback]
+    emUrl <- getRelayUrlE dUrls $ leftmost [eInit, eSend, eFallback]
     dmUrl <- holdDyn Nothing emUrl
 
-    eFireStatus <- delay 1 $ leftmost [ePb, void eTick, eFallback]
+    eTick <- tickLossyFromPostBuildTime 12
+    eFireStatus <- delay 1 $ leftmost [eInit, void eTick, eFallback]
 
     eeStatus <- switchHoldDyn dmUrl $ \case
       Nothing  -> pure never
