@@ -66,7 +66,9 @@ dialogWindow close eOpen eClose style title tags = mdo
   eClickOuside <- if close
       then clickOutside (_element_raw e)
       else pure never
-  let eEscape = keydown Escape e
+  let eEscape = if close
+      then keydown Escape e
+      else never
   -- Delay prevents from closing because eClickOuside fires
   eOpenDelayed <- delay 0.1 eOpen
   let
@@ -75,7 +77,8 @@ dialogWindow close eOpen eClose style title tags = mdo
   dWindowIsOpen <- holdDyn False $ leftmost [True <$ eOpenDelayed, False <$ eClose']
   (e, (ret, eCross)) <- elDynAttr "div" (fmap mkClass dWindowIsOpen) $
       elAttr' "div" ("class" =: "dialog-window" <> "style" =: style) $ do
-        crossClick <- divClass "dialog-window-title" $ do
+        let titleCls = if close then "dialog-window-title" else "dialog-window-title-without-cross"
+        crossClick <- divClass titleCls $ do
           elAttr "div" ("style" =: "width: 20px;") blank
           divClass "app-text-semibold" $ text title
           if close

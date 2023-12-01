@@ -1015,6 +1015,10 @@ body {
   justify-content: space-between;
 }
 
+.dialog-window-title-without-cross {
+  align-items: center;
+}
+
 .dialog-window-wrapper {
   position: fixed;
   left: 0%;
@@ -1788,25 +1792,11 @@ body {
     }
   }
 
-.dao-DelegateWindow_RelayAmount {
+.dao-DelegateWindow_TableWrapper {
     margin-top: 20px;
     margin-bottom: 20px;
     max-height: 300px;
     overflow: auto;
-}
-
-.dao-DelegateWindow_DelegateTable {
-  max-width: 100%;
-  background:
-  linear-gradient(to right, white 30%, rgba(255,255,255,0)),
-  linear-gradient(to right, rgba(255,255,255,0), white 70%) 0 100%,
-    radial-gradient(farthest-side at 0% 50%, rgba(0,0,0,.2), rgba(0,0,0,0)),
-    radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.2), rgba(0,0,0,0)) 0 100%;
-    background-repeat: no-repeat;
-    background-color: white;
-  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
-  background-position: 0 0, 100%, 0 0, 100%;
-  background-attachment: local, local, scroll, scroll;
 }
 
 .dao-DelegateWindow_Table {
@@ -1896,3 +1886,32 @@ body {
   -webkit-filter: brightness(65%);
   filter: brightness(65%);
 }
+
+.app-WelcomeBody {
+  font-family: Poppins, sans-serif;
+  font-size: 16px;
+  line-height: 32px;
+  font-weight: 400;
+  text-align: justify;
+  margin-bottom: 15px;
+  letter-spacing: 0.01em;
+}
+
+
+.app-WelcomeBody_ButtonOkContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content:center;
+  gap: 10px;
+  margin-left: 5%;
+  margin-right: 5%;
+}
+
+@media screen and (min-width: 767px) {
+  .app-WelcomeBody_ButtonOkContainer {
+    display:flex;
+    flex-direction: row;
+    margin-left: 0%;
+    margin-right: 0%;
+    }
+  }

@@ -4,12 +4,8 @@ module ENCOINS.Common.Utils where
 
 import           Control.Lens                ((^.))
 import           Control.Monad               (guard)
-import           Control.Monad.IO.Class      (liftIO)
 import           Data.ByteString             (ByteString)
-import qualified Data.ByteString.Lazy        as BL
 import           Data.Text                   (Text, pack)
-import qualified Data.Text                   as T
-import qualified Data.Text.Encoding          as TE
 import qualified Foreign.JavaScript.Utils    as Utils
 import           GHCJS.DOM.Blob
 import qualified GHCJS.DOM.Document          as D
