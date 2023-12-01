@@ -60,20 +60,20 @@ sortRelayAmounts =
   . Map.map (floor @Double . (\x -> fromIntegral x / 1000000) . read @Natural )
   . fromJust
 
-fetchRelayTable :: MonadWidget t m
-  => Event t ()
-  -> m (Event t [(Text, Integer)])
-fetchRelayTable eOpen = do
-  let eUrl = "https://encoins.io/delegations.json" <$ eOpen
-  fmap sortRelayAmounts <$> getAndDecode eUrl
-
 -- fetchRelayTable :: MonadWidget t m
 --   => Event t ()
 --   -> m (Event t [(Text, Integer)])
 -- fetchRelayTable eOpen = do
---   eServers <- serversRequestWrapper delegateServerUrl eOpen
---   -- TODO: handle error in interface?
---   let eError = filterLeft eServers
---   logEvent "Fetching relay table failed" eError
---   let res = sortOn (Down . snd) . Map.toList <$> filterRight eServers
---   pure res
+--   let eUrl = "https://encoins.io/delegations.json" <$ eOpen
+--   fmap sortRelayAmounts <$> getAndDecode eUrl
+
+fetchRelayTable :: MonadWidget t m
+  => Event t ()
+  -> m (Event t [(Text, Integer)])
+fetchRelayTable eOpen = do
+  eServers <- serversRequestWrapper delegateServerUrl eOpen
+  -- TODO: handle error in interface?
+  let eError = filterLeft eServers
+  logEvent "Fetching relay table failed" eError
+  let res = sortOn (Down . snd) . Map.toList <$> filterRight eServers
+  pure res
