@@ -66,8 +66,9 @@ walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t [(Secret, Text)]
+  -> Dynamic t [Text]
   -> m ()
-walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
+walletTab mpass dWallet dOldSecretsWithNames dUrls = sectionApp "" "" $ mdo
     (dBalance, dFees, dBulletproofParams, bRandomness) <- getEnvironment
         WalletMode
         (fmap walletChangeAddress dWallet)
@@ -126,6 +127,7 @@ walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
                   dCoinsToBurn
                   dCoinsToMint
                   (void $ updated dBalance)
+                  dUrls
                 return (dCoinsToMint', eValidTx, eSendStatus)
             (dAssetNamesInTheWallet, eStatusUpdate, _) <-
                 encoinsTxWalletMode
@@ -135,6 +137,7 @@ walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
                   dCoinsToBurn
                   dCoinsToMint
                   eSend
+                  dUrls
             let dSecretsWithNamesInTheWallet =
                   zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
             pure (dCoinsToBurn, dCoinsToMint, leftmost [eStatusUpdate, eSendStatus])
@@ -151,8 +154,9 @@ transferTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t [(Secret, Text)]
+  -> Dynamic t [Text]
   -> m ()
-transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
+transferTab mpass dWallet dOldSecretsWithNames dUrls = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
     dDepositBalance <- holdUniqDyn $ negate . getDeposit <$> dCoins
     containerApp "" $ transactionBalanceWidget (Formula 0 0 0 0 0 0) Nothing " (to Wallet)"
@@ -201,6 +205,7 @@ transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
         dAddr
         (void eAddr)
         dWalletSignature
+        dUrls
 
     let dSecretsWithNamesInTheWallet =
           zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsName
@@ -212,6 +217,7 @@ transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
         (pure Nothing)
         eSendToLedger
         dWalletSignature
+        dUrls
 
     eWalletError <- walletError
     let eStatus = leftmost [eWalletError, eStatusUpdate1, eStatusUpdate2]
@@ -227,8 +233,9 @@ transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
 ledgerTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t [(Secret, Text)]
+  -> Dynamic t [Text]
   -> m ()
-ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
+ledgerTab mpass dOldSecretsWithNames dUrls = sectionApp "" "" $ mdo
     welcomeWindow welcomeWindowLedgerStorageKey welcomeLedger
     (dBalance, dFees, dBulletproofParams, bRandomness) <-
         getEnvironment LedgerMode dAddr dToBurn dToMint
@@ -285,6 +292,7 @@ ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
                   dCoinsToBurn
                   dCoinsToMint
                   (void $ updated dBalance)
+                  dUrls
                 let dV = fmap calculateChange dTotalBalance
                     eSendZeroBalance = gate ((==0) <$> current dTotalBalance) eSend'
                     eSendNonZeroBalance = gate ((/=0) <$> current dTotalBalance) eSend'
@@ -302,6 +310,7 @@ ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
               dCoinsToBurn
               dCoinsToMint
               eSend
+              dUrls
             let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
             pure (dCoinsToBurn, dCoinsToMint, dChangeAddr, leftmost [eStatusUpdate, eSendStatus])
     eWalletError <- walletError

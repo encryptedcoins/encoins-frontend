@@ -1,5 +1,6 @@
 module Backend.Servant.Client where
 
+import           Data.Map               (Map)
 import           Data.Proxy             (Proxy (..))
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
@@ -19,6 +20,8 @@ type API =   "newTx"        :> ReqBody '[JSON] (InputOfEncoinsApi, TransactionIn
         :<|> "status"       :> ReqBody '[JSON] EncoinsStatusReqBody
                             :> Post '[JSON] EncoinsStatusResult
         :<|> "version"      :> Get '[JSON] ServerVersion
+        :<|> "servers"      :> Get '[JSON] (Map Text Integer)
+        :<|> "current"      :> Get '[JSON] [Text]
 
 type RespEvent t a      = Event t (ReqResult () a)
 type Res t m res        = Event t () -> m (RespEvent t res)
@@ -26,12 +29,14 @@ type DynReqBody t a     = Dynamic t (Either Text a)
 type ReqRes t m req res = DynReqBody t req -> Res t m res
 
 data ApiClient t m = ApiClient
-  { newTxRequest        :: ReqRes t m (InputOfEncoinsApi, TransactionInputs) (Text, Text)
-  , submitTxRequest     :: ReqRes t m SubmitTxReqBody NoContent
-  , pingRequest         :: Res t m NoContent
-  , serverTxRequest     :: ReqRes t m (InputOfEncoinsApi, TransactionInputs) NoContent
-  , statusRequest       :: ReqRes t m EncoinsStatusReqBody EncoinsStatusResult
-  , versionRequest      :: Res t m ServerVersion
+  { newTxRequest           :: ReqRes t m (InputOfEncoinsApi, TransactionInputs) (Text, Text)
+  , submitTxRequest        :: ReqRes t m SubmitTxReqBody NoContent
+  , pingRequest            :: Res t m NoContent
+  , serverTxRequest        :: ReqRes t m (InputOfEncoinsApi, TransactionInputs) NoContent
+  , statusRequest          :: ReqRes t m EncoinsStatusReqBody EncoinsStatusResult
+  , versionRequest         :: Res t m ServerVersion
+  , serversRequest         :: Res t m (Map Text Integer)
+  , currentRequest         :: Res t m [Text]
   }
 
 mkApiClient :: forall t m . MonadWidget t m => BaseUrl -> ApiClient t m
@@ -42,4 +47,6 @@ mkApiClient host = ApiClient{..}
       pingRequest :<|>
       serverTxRequest :<|>
       statusRequest :<|>
-      versionRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
+      versionRequest :<|>
+      serversRequest :<|>
+      currentRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)

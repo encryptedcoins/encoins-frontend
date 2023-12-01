@@ -1778,11 +1778,13 @@ body {
   margin-right: 5%;
 }
 
-@media screen and (min-width: 550px) {
+@media screen and (min-width: 767px) {
   .dao-DelegateWindow_ButtonStatusContainer {
     display:flex;
     flex-direction: row;
-    justify-content:left;
+    justify-content:space-between;
+    margin-left: 0%;
+    margin-right: 0%;
     }
   }
 

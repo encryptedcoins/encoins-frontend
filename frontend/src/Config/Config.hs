@@ -6,6 +6,7 @@ import           Data.FileEmbed               (embedFile)
 import           Data.ByteString              (ByteString)
 import           Data.Text (Text)
 import qualified Data.Text as T
+import           Servant.Reflex               (BaseUrl (..))
 
 
 urlsBS :: ByteString
@@ -48,3 +49,8 @@ networkConfig = NetworkConfig
   { dao = daoNetwork
   , app = appNetwork
   }
+
+delegateServerUrl :: BaseUrl
+delegateServerUrl = case daoNetwork of
+  Mainnet -> BasePath "https://ljudhi1nbe.execute-api.eu-central-1.amazonaws.com"
+  Testnet -> BasePath "http://localhost:3002/"

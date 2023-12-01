@@ -2,6 +2,7 @@
 
 module ENCOINS.App.Widgets.SendRequestButton where
 
+import           Data.Text                    (Text)
 import           Reflex.Dom
 
 import           Backend.Protocol.TxValidity  (TxValidity (..),
@@ -14,8 +15,8 @@ import           Backend.Status               (Status (..))
 import           Backend.Utility              (switchHoldDyn, toEither)
 import           Backend.Wallet               (Wallet (..))
 import           ENCOINS.Bulletproofs         (Secrets)
-import           ENCOINS.Common.Events        (newEvent)
 import           ENCOINS.Common.Widgets.Basic (btn, divClassId)
+-- import           ENCOINS.Common.Events
 
 sendRequestButtonWallet :: MonadWidget t m
   => EncoinsMode
@@ -24,6 +25,7 @@ sendRequestButtonWallet :: MonadWidget t m
   -> Dynamic t Secrets
   -> Dynamic t Secrets
   -> Event t ()
+  -> Dynamic t [Text]
   -> m (Event t Status, Event t ())
 sendRequestButtonWallet
   mode
@@ -31,12 +33,13 @@ sendRequestButtonWallet
   dWallet
   dCoinsToBurn
   dCoinsToMint
-  e = mdo
+  e
+  dUrls = mdo
 
     -- TODO: choose url every time by 'e' fires
     -- or every time user enters the tab.
-    eInit <- newEvent
-    emUrl <- getRelayUrlE $ leftmost [eInit, () <$ eRelayDown]
+    let eUrls = updated dUrls
+    emUrl <- getRelayUrlE dUrls $ leftmost [() <$ eUrls, () <$ eRelayDown]
     let eAllRelayDown = filterLeft $ toEither () <$> emUrl
     dmUrl <- holdDyn Nothing emUrl
 
@@ -83,13 +86,14 @@ sendRequestButtonLedger :: MonadWidget t m
   -> Dynamic t Secrets
   -> Dynamic t Secrets
   -> Event t ()
+  -> Dynamic t [Text]
   -> m (Event t Status, Event t ())
-sendRequestButtonLedger mode dStatus dCoinsToBurn dCoinsToMint e = mdo
+sendRequestButtonLedger mode dStatus dCoinsToBurn dCoinsToMint e dUrls = mdo
 
+  let eUrls = updated dUrls
   -- TODO: choose url every time by 'e' fires
   -- or every time user enters the tab.
-  eInit <- newEvent
-  emUrl <- getRelayUrlE $ leftmost [eInit, () <$ eRelayDown]
+  emUrl <- getRelayUrlE dUrls $ leftmost [() <$ eUrls, () <$ eRelayDown]
   let eAllRelayDown = filterLeft $ toEither () <$> emUrl
   dmUrl <- holdDyn Nothing emUrl
 

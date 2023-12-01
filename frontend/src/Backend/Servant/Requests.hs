@@ -12,6 +12,7 @@ import           Data.Array.IO
 import           Data.ByteString.Lazy   (fromStrict)
 import           Data.Functor           (($>))
 import           Data.List              (delete)
+import           Data.Map               (Map)
 import           Data.Maybe             (fromJust, isNothing)
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
@@ -21,9 +22,9 @@ import           Witherable             (catMaybes)
 
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
+import           Backend.Utility        (normalizePingUrl)
 import           ENCOINS.Common.Events
 import           JS.App                 (pingServer)
-
 
 newTxRequestWrapper :: MonadWidget t m
   => BaseUrl
@@ -95,6 +96,30 @@ versionRequestWrapper baseUrl e = do
   logEvent "Version" eVersionRes
   return eVersionRes
 
+-- Fetch servers that are selected for delegation
+serversRequestWrapper :: MonadWidget t m
+  => BaseUrl
+  -> Event t ()
+  -> m (Event t (Either Int (Map Text Integer)))
+serversRequestWrapper baseUrl e = do
+  let ApiClient{..} = mkApiClient baseUrl
+  eResp <- serversRequest e
+  let eRespUnwrapped = mkStatusOrResponse <$> eResp
+  logEvent "servers request" eRespUnwrapped
+  return eRespUnwrapped
+
+-- Fetch available servers for app
+currentRequestWrapper :: MonadWidget t m
+  => BaseUrl
+  -> Event t ()
+  -> m (Event t (Either Int [Text]))
+currentRequestWrapper baseUrl e = do
+  let ApiClient{..} = mkApiClient baseUrl
+  eResp <- currentRequest e
+  let eRespUnwrapped = mkStatusOrResponse <$> eResp
+  logEvent "current servers request" eRespUnwrapped
+  return eRespUnwrapped
+
 ---------------------------------------------- Utilities ----------------------------------------
 
 urls :: [Text]
@@ -113,15 +138,18 @@ getRelayUrl = go urls
         else go (delete url l)
 
 getRelayUrlE :: MonadWidget t m
-  => Event t ()
+  => Dynamic t [Text]
+  -> Event t ()
   -> m (Event t (Maybe BaseUrl))
-getRelayUrlE ev = performEvent $ ev $> go urls
+getRelayUrlE dUrls ev = do
+  let eUrls = tagPromptlyDyn dUrls ev
+  performEvent $ go <$> eUrls
   where
     go [] = pure Nothing
     go l = do
       idx <- randomRIO (0, length l - 1)
       let url = l !! idx
-      pingOk <- pingServer url
+      pingOk <- pingServer $ normalizePingUrl url
       if pingOk
         then return $ Just $ BasePath url
         else go (delete url l)

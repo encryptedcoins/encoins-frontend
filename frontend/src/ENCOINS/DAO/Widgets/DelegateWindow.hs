@@ -19,25 +19,26 @@ import           ENCOINS.App.Widgets.Basic       (containerApp)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (checkUrl, toText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
-import           ENCOINS.Common.Widgets.Basic    (btnWithBlock, divClassId)
-import           ENCOINS.DAO.Widgets.RelayTable  (relayAmountWidget)
+import           ENCOINS.Common.Widgets.Basic    (btn, btnWithBlock, divClassId)
+import           ENCOINS.DAO.Widgets.RelayTable  (fetchRelayTable,
+                                                  relayAmountWidget)
 import qualified JS.DAO                          as JS
+
 
 delegateWindow :: MonadWidget t m
   => Event t ()
   -> Dynamic t Wallet
-  -> Dynamic t [(Text, Integer)]
   -> m ()
-delegateWindow eOpen dWallet dRelays = mdo
+delegateWindow eOpen dWallet = mdo
+  eDelay <- delay 0.05 eOpen
+  dRelays <- holdDyn [] =<< fetchRelayTable eDelay
   eUrlOk <- dialogWindow
     True
     eOpen
     (leftmost [void eUrlOk])
     "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
-    "Delegate Encoins" $ mdo
-
+    "Delegate ENCS" $ mdo
           eUrlTable <- relayAmountWidget dRelays
-
           divClass "dao-DelegateWindow_EnterUrl" $ text "Enter relay url:"
 
           dInputText <- inputWidget eOpen
@@ -57,17 +58,14 @@ delegateWindow eOpen dWallet dRelays = mdo
                 ]
 
           dIsInvalidUrl <- holdDyn UrlEmpty eUrlStatus
-          -- The button disable with invalid url and performant status.
-          btnOk <- buttonWidget dIsInvalidUrl
+          (eStake, eUnstake) <- stakingButtonWidget dIsInvalidUrl
 
-          let eUrlButton = tagPromptlyDyn dInputText btnOk
-          logEvent "eUrlButton" eUrlButton
-
-          let eUrl = leftmost [eUrlTable, eUrlButton]
-          logEvent "eUrl" eUrl
-          let LucidConfig apiKey networkId _ _ asset = lucidConfigDao
+          let eUrlStake = tagPromptlyDyn dInputText eStake
+          let eUrlUnstake = "https://encoins.io" <$ eUnstake
+          let eUrl = leftmost [eUrlTable, eUrlStake, eUrlUnstake]
+          let LucidConfig apiKey networkId policyId assetName = lucidConfigDao
           performEvent_ $
-            JS.daoDelegateTx apiKey networkId asset
+            JS.daoDelegateTx apiKey networkId policyId assetName
             <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
 
           return eUrl
@@ -87,12 +85,13 @@ inputWidget eOpen = divClass "w-row" $ do
     setFocusDelayOnEvent inp eOpen
     return $ value inp
 
-buttonWidget :: MonadWidget t m
+stakingButtonWidget :: MonadWidget t m
   => Dynamic t UrlStatus
-  -> m (Event t ())
-buttonWidget dUrlStatus =
+  -> m (Event t (), Event t ())
+stakingButtonWidget dUrlStatus =
   divClass "dao-DelegateWindow_ButtonStatusContainer" $ do
-    eButton <- btnWithBlock
+    -- The Stake button disable with invalid url and performant status.
+    eStake <- btnWithBlock
         "button-switching inverted flex-center"
         ""
         (isNotValidUrl <$> dUrlStatus)
@@ -102,4 +101,5 @@ buttonWidget dUrlStatus =
         $ divClassId "app-text-small" ""
         $ dynText
         $ toText <$> dUrlStatus
-    pure eButton
+    eUnstake <- btn "button-switching inverted flex-center" "" (text "Unstake")
+    pure (eStake, eUnstake)
