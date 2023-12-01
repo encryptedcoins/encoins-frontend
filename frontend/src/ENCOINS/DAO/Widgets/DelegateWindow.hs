@@ -19,7 +19,7 @@ import           ENCOINS.App.Widgets.Basic       (containerApp)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (checkUrl, toText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
-import           ENCOINS.Common.Widgets.Basic    (btnWithBlock, divClassId)
+import           ENCOINS.Common.Widgets.Basic    (btn, btnWithBlock, divClassId)
 import           ENCOINS.DAO.Widgets.RelayTable  (fetchRelayTable,
                                                   relayAmountWidget)
 import qualified JS.DAO                          as JS
@@ -58,11 +58,11 @@ delegateWindow eOpen dWallet = mdo
                 ]
 
           dIsInvalidUrl <- holdDyn UrlEmpty eUrlStatus
-          -- The button disable with invalid url and performant status.
-          btnOk <- buttonWidget dIsInvalidUrl
+          (eStake, eUnstake) <- stakingButtonWidget dIsInvalidUrl
 
-          let eUrlButton = tagPromptlyDyn dInputText btnOk
-          let eUrl = leftmost [eUrlTable, eUrlButton]
+          let eUrlStake = tagPromptlyDyn dInputText eStake
+          let eUrlUnstake = "https://encoins.io" <$ eUnstake
+          let eUrl = leftmost [eUrlTable, eUrlStake, eUrlUnstake]
           let LucidConfig apiKey networkId policyId assetName = lucidConfigDao
           performEvent_ $
             JS.daoDelegateTx apiKey networkId policyId assetName
@@ -85,19 +85,21 @@ inputWidget eOpen = divClass "w-row" $ do
     setFocusDelayOnEvent inp eOpen
     return $ value inp
 
-buttonWidget :: MonadWidget t m
+stakingButtonWidget :: MonadWidget t m
   => Dynamic t UrlStatus
-  -> m (Event t ())
-buttonWidget dUrlStatus =
+  -> m (Event t (), Event t ())
+stakingButtonWidget dUrlStatus =
   divClass "dao-DelegateWindow_ButtonStatusContainer" $ do
-    eButton <- btnWithBlock
+    -- The Stake button disable with invalid url and performant status.
+    eStake <- btnWithBlock
         "button-switching inverted flex-center"
         ""
-        (isNotValidUrl <$> (UrlValid <$ dUrlStatus)) -- TODO: roll back it after debug
+        (isNotValidUrl <$> dUrlStatus)
         (text "Delegate")
     divClass "menu-item-button-right" $ do
       containerApp ""
         $ divClassId "app-text-small" ""
         $ dynText
         $ toText <$> dUrlStatus
-    pure eButton
+    eUnstake <- btn "button-switching inverted flex-center" "" (text "Unstake")
+    pure (eStake, eUnstake)

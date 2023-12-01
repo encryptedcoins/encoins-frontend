@@ -9,6 +9,7 @@ data Status =
     | Signing           -- ^ Transaction is sent to the wallet for signing
     | Submitting        -- ^ Transaction is sent to the backend for submission
     | Submitted         -- ^ Transaction is submitted to the blockchain
+    | NoError           -- ^ All errors are gone
     | NoRelay           -- ^ All relay are down
     | BackendError Text
     | WalletNetworkError Text
@@ -23,6 +24,7 @@ instance Show Status where
     show Submitting             = "Submitting..."
     show Submitted              = "Submitted. Pending the confirmation..."
     show NoRelay                = "All available relay are down!"
+    show NoError                = ""
     show (BackendError e)       = "Error: " <> unpack e
     show (WalletNetworkError e) = "Error: " <> unpack e
     show (WalletError e)        = "Error: " <> unpack e
@@ -49,6 +51,16 @@ relayError = "Relay returned an error!"
 isReady :: Status -> Bool
 isReady Ready = True
 isReady _     = False
+
+isBuffer :: Status -> Bool
+isBuffer Ready           = True
+isBuffer (WalletError _) = True
+isBuffer _               = False
+
+isReadyOrNoError :: Status -> Bool
+isReadyOrNoError Ready   = True
+isReadyOrNoError NoError = True
+isReadyOrNoError _       = False
 
 isWalletError :: Status -> Bool
 isWalletError (WalletError _) = True
