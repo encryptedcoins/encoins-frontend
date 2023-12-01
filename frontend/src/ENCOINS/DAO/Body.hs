@@ -12,7 +12,7 @@ import qualified Data.Text                          as T
 import           Data.Time                          (getCurrentTime)
 import           Reflex.Dom
 
-import           Backend.Status                     (Status (..), isReady,
+import           Backend.Status                     (Status (..), isBuffer,
                                                      isReadyOrNoError,
                                                      isTxProcess,
                                                      isTxProcessOrCriticalError,
@@ -102,9 +102,8 @@ delegateStatus = do
   -- Wait one minute until the changes take place.
   eReadyDelayed <- delay 60 eReady
   eErr <- updated <$> elementResultJS "DelegateError" id
-  eErrStatus <- otherStatus eErr
   pure $ leftmost [
-          eErrStatus
+          WalletError <$> eErr
         , Ready                            <$ eReadyDelayed
         , Constructing                     <$ eConstruct
         , Signing                          <$ eSign
@@ -132,9 +131,9 @@ handleInvalidNetwork dWallet = do
   dUnexpectedNetworkB <- holdDyn False eUnexpectedNetworkB
   let mkNetworkMessage isInvalidNetwork message =
         case (isInvalidNetwork, message) of
-          (True,_)         -> Just $ WalletNetworkError unexpectedNetwork
-          (False, NoError) -> Nothing
-          (False, _)       -> Just NoError
+          (True,_)       -> Just $ WalletNetworkError unexpectedNetwork
+          (False, Ready) -> Nothing
+          (False, _)     -> Just Ready
   dUnexpectedNetworkS <- foldDynMaybe mkNetworkMessage Ready eUnexpectedNetworkB
   pure (dUnexpectedNetworkB, dUnexpectedNetworkS)
 
@@ -216,7 +215,7 @@ pollAttr =
 processStatus :: (Text, Status) -> (Text, Status) -> (Text, Status)
 processStatus new old =
   case ( isTxProcessOrCriticalError $ snd old
-       , isTxProcessOrCriticalError (snd new) || isReady (snd new)
+       , isTxProcessOrCriticalError (snd new) || isBuffer (snd new)
        ) of
     (True, False) -> old
     _             -> new

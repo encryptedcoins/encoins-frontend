@@ -553,8 +553,8 @@ async function daoDelegateTx(apiKey, net, walletName, url, policyId, assetName) 
     tag4.free();
     plc_msg.free();
   } catch (e) {
-    console.log("Error: " + e.message);
     setInputValue("DelegateError", e.message);
+    console.log("Error: " + e.message);
     return;
   }
 };

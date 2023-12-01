@@ -52,10 +52,15 @@ isReady :: Status -> Bool
 isReady Ready = True
 isReady _     = False
 
+isBuffer :: Status -> Bool
+isBuffer Ready           = True
+isBuffer (WalletError _) = True
+isBuffer _               = False
+
 isReadyOrNoError :: Status -> Bool
-isReadyOrNoError Ready = True
+isReadyOrNoError Ready   = True
 isReadyOrNoError NoError = True
-isReadyOrNoError _     = False
+isReadyOrNoError _       = False
 
 isWalletError :: Status -> Bool
 isWalletError (WalletError _) = True
