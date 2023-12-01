@@ -9,9 +9,8 @@ import           Data.Text                       (Text)
 relayNames :: Map Text Text
 relayNames = fromList
   [
-    ("http://156.232.53.23:3000/", "ENCOINS Test Relay"),
     ("http://73.23.36.140", "PetLoverStake"),
-    ("http://167.71.10.20", "Waterboiler"),
+    ("http://available", ""),
     ("http://61.77.248.249", "KTOP SPO"),
     ("http://128.199.195.27", "Waffle"),
     ("https://136.243.152.100", "[CHIL] Chile Stake pool"),
