@@ -103,8 +103,3 @@ stakingButtonWidget dUrlStatus =
         $ toText <$> dUrlStatus
     eUnstake <- btn "button-switching inverted flex-center" "" (text "Unstake")
     pure (eStake, eUnstake)
-
--- unStakeButtonWidget :: MonadWidget t m => m (Event t ())
--- unStakeButtonWidget =
---   divClass "dao-DelegateWindow_ButtonStatusContainer" $
---     btn "button-switching inverted flex-center" "" (text "Unstake")
