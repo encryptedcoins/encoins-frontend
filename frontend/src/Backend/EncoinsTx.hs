@@ -231,7 +231,7 @@ encoinsTxLedgerMode
   dCoinsMint
   eSend
   dUrls = mdo
-    eInit   <- delay 1 =<< newEvent
+    eInit <- delay 1 =<< newEvent
 
     let eFallback = leftmost [() <$ eStatusRelayDown, () <$ eServerRelayDown]
     emUrl <- getRelayUrlE dUrls $ leftmost [eInit, eSend, eFallback]
