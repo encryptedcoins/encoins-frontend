@@ -53,12 +53,12 @@ relayAmountWidget dRelays = do
     tdAmount = elAttr "td" ("class" =: "dao-DelegateWindow_TableAmount")
     tdButton = elAttr "td" ("class" =: "dao-DelegateWindow_TableButton")
 
-sortRelayAmounts :: Maybe (Map Text String) -> [(Text, Integer)]
-sortRelayAmounts =
-    sortOn (Down . snd)
-  . Map.toList
-  . Map.map (floor @Double . (\x -> fromIntegral x / 1000000) . read @Natural )
-  . fromJust
+-- sortRelayAmounts :: Maybe (Map Text String) -> [(Text, Integer)]
+-- sortRelayAmounts =
+--     sortOn (Down . snd)
+--   . Map.toList
+--   . Map.map (floor @Double . (\x -> fromIntegral x / 1000000) . read @Natural )
+--   . fromJust
 
 -- fetchRelayTable :: MonadWidget t m
 --   => Event t ()

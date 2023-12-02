@@ -22,7 +22,6 @@ import           Witherable             (catMaybes)
 
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
-import           Backend.Utility        (normalizePingUrl)
 import           ENCOINS.Common.Events
 import           JS.App                 (pingServer)
 

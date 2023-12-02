@@ -16,7 +16,7 @@ import           Backend.Utility              (switchHoldDyn, toEither)
 import           Backend.Wallet               (Wallet (..))
 import           ENCOINS.Bulletproofs         (Secrets)
 import           ENCOINS.Common.Widgets.Basic (btn, divClassId)
-import           ENCOINS.Common.Events
+-- import           ENCOINS.Common.Events
 
 sendRequestButtonWallet :: MonadWidget t m
   => EncoinsMode
