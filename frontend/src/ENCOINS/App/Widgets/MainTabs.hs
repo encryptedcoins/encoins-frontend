@@ -307,7 +307,8 @@ ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
                   dCoinsToMint
                   (void $ updated dBalance)
                   dUrls
-                let dV = fmap calculateChange dTotalBalance
+                -- NOTE: When we add change both the fees and the deposit payments are changed. Previously the calculations were not correct.
+                let dV = fmap calculateChange dEncoinsDepositBalance
                     eSendZeroBalance = gate ((==0) <$> current dTotalBalance) eSend'
                     eSendNonZeroBalance = gate ((/=0) <$> current dTotalBalance) eSend'
                 eAddChange <- coinNewButtonWidget dV never (addChangeButton dTotalBalance)
@@ -335,7 +336,7 @@ ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
     menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
-    calculateChange bal = negate bal - 4
+    calculateChange bal = negate bal - 8
     f v = if v < 0
       then "button-switching flex-center"
       else "button-not-selected button-disabled flex-center"

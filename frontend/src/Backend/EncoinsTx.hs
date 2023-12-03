@@ -266,7 +266,7 @@ encoinsTxLedgerMode
           <*> bRandomness
 
     -- Constructing the final redeemer
-    let eFireTx = leftmost [eSend, eFallback]
+    eFireTx <- delay 0.1 $ leftmost [eSend, eFallback] -- NOTE: The delay is needed here to wait for change address to be updated
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eFireTx
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
 
