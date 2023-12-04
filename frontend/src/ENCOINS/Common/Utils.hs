@@ -49,7 +49,7 @@ regexPosixOpt rPattern input = matchTest rOpt input
       rPattern
 
 urlRegexPosixPattern :: Text
-urlRegexPosixPattern = [r|^https?://((([1-9][[:digit:]]?|1[[:digit:]][[:digit:]]|2[01][[:digit:]]|22[0-3])(\.(1?[[:digit:]]{1,2}|2[0-4][[:digit:]]|25[0-5])){2}(\.([1-9][[:digit:]]?|1[[:digit:]][[:digit:]]|2[0-4]|25[0-4])))|((([[:alnum:]]-[[:alnum:]]{0,62})?[[:alnum:]]+\.)+([[:alpha:]]{2,})))(:[[:digit:]]{2,5})?(/[0-9a-zA-Z$-_.+!*'(),%?&=:@/;~#]*)?$|]
+urlRegexPosixPattern = [r|^https?://((25[0-5]|2[0-4][[:digit:]]|[01]?[[:digit:]][[:digit:]]?)\.(25[0-5]|2[0-4][[:digit:]]|[01]?[[:digit:]][[:digit:]]?)\.(25[0-5]|2[0-4][[:digit:]]|[01]?[[:digit:]][[:digit:]]?)\.(25[0-5]|2[0-4][[:digit:]]|[01]?[[:digit:]][[:digit:]]?)|((([[:alnum:]]-[[:alnum:]]{0,62})?[[:alnum:]]+\.)+([[:alpha:]]{2,})))(:[[:digit:]]{2,5})?(/[0-9a-zA-Z$-_.+!*'(),%?&=:@/;~#]*)?$|]
 
 triggerDownload
   :: MonadJSM m
