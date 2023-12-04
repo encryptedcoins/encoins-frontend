@@ -16,7 +16,7 @@ relayNames = fromList
     ("https://136.243.152.100", "[CHIL] Chile Stake pool"),
     ("http://encoins.bladepool.com", "BLADE"),
     ("http://146.190.63.130", "Peter Bui"),
-    ("https://5.189.164.41", "Southtyrol Pool"),
+    ("https://5.189.164.41", "SUDTI Pool"),
     ("http://82.165.230.141", "OYSTR"),
     ("http://146.190.34.49", "LABA-RELAY"),
     ("http://encoins-relay.cardanistas.io", "Cardanistas Stake Pool"),
@@ -36,5 +36,9 @@ relayNames = fromList
     ("http://154.38.171.77", "Toby 3 Relayer"),
     ("http://81.56.175.1", "SUDTI Pool 3"),
     ("http://2.59.156.182", "Toby 2 Relayer"),
-    ("http://encoins02.bladepool.com", "BLADE02")
+    ("http://encoins02.bladepool.com", "BLADE02"),
+    ("http://75.119.155.25", "SUDTI Pool 2"),
+    ("http://213.136.92.202", "Tomo Relayer"),
+    ("http://117.50.199.89", "BAIDU"),
+    ("http://172.205.248.34", "Waffle #2")
   ]
