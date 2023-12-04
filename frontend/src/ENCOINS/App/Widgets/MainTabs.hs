@@ -21,9 +21,11 @@ import           Backend.Protocol.Setup                 (ledgerAddress)
 import           Backend.Protocol.TxValidity            (getAda, getCoinNumber,
                                                          getDeposit)
 import           Backend.Protocol.Types
+import           Backend.Servant.Requests               (currentRequestWrapper)
 import           Backend.Status                         (Status (..),
                                                          isTxProcessOrCriticalError)
 import           Backend.Wallet                         (Wallet (..))
+import           Config.Config                          (delegateServerUrl)
 import           ENCOINS.App.Widgets.Basic              (containerApp,
                                                          elementResultJS,
                                                          sectionApp,
@@ -53,9 +55,9 @@ import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeLedger,
                                                          welcomeWindowLedgerStorageKey,
                                                          welcomeWindowTransferStorageKey)
 import           ENCOINS.Bulletproofs                   (Secret)
+import           ENCOINS.Common.Events
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
 import           JS.Website                             (saveJSON)
-
 
 mainWindowColumnHeader :: MonadWidget t m => Text -> m ()
 mainWindowColumnHeader title =
@@ -66,9 +68,13 @@ walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t [(Secret, Text)]
-  -> Dynamic t [Text]
   -> m ()
-walletTab mpass dWallet dOldSecretsWithNames dUrls = sectionApp "" "" $ mdo
+walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
+    eFetchUrls <- newEvent
+    eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
+    let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
+    dUrls <- holdDyn [] eUrls
+
     (dBalance, dFees, dBulletproofParams, bRandomness) <- getEnvironment
         WalletMode
         (fmap walletChangeAddress dWallet)
@@ -154,9 +160,13 @@ transferTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t [(Secret, Text)]
-  -> Dynamic t [Text]
   -> m ()
-transferTab mpass dWallet dOldSecretsWithNames dUrls = sectionApp "" "" $ mdo
+transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
+    eFetchUrls <- newEvent
+    eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
+    let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
+    dUrls <- holdDyn [] eUrls
+
     welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
     dDepositBalance <- holdUniqDyn $ negate . getDeposit <$> dCoins
     containerApp "" $ transactionBalanceWidget (Formula 0 0 0 0 0 0) Nothing " (to Wallet)"
@@ -233,9 +243,13 @@ transferTab mpass dWallet dOldSecretsWithNames dUrls = sectionApp "" "" $ mdo
 ledgerTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t [(Secret, Text)]
-  -> Dynamic t [Text]
   -> m ()
-ledgerTab mpass dOldSecretsWithNames dUrls = sectionApp "" "" $ mdo
+ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
+    eFetchUrls <- newEvent
+    eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
+    let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
+    dUrls <- holdDyn [] eUrls
+
     welcomeWindow welcomeWindowLedgerStorageKey welcomeLedger
     (dBalance, dFees, dBulletproofParams, bRandomness) <-
         getEnvironment LedgerMode dAddr dToBurn dToMint
@@ -293,7 +307,8 @@ ledgerTab mpass dOldSecretsWithNames dUrls = sectionApp "" "" $ mdo
                   dCoinsToMint
                   (void $ updated dBalance)
                   dUrls
-                let dV = fmap calculateChange dTotalBalance
+                -- NOTE: When we add change both the fees and the deposit payments are changed. Previously the calculations were not correct.
+                let dV = fmap calculateChange dEncoinsDepositBalance
                     eSendZeroBalance = gate ((==0) <$> current dTotalBalance) eSend'
                     eSendNonZeroBalance = gate ((/=0) <$> current dTotalBalance) eSend'
                 eAddChange <- coinNewButtonWidget dV never (addChangeButton dTotalBalance)
@@ -321,7 +336,7 @@ ledgerTab mpass dOldSecretsWithNames dUrls = sectionApp "" "" $ mdo
     menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
-    calculateChange bal = negate bal - 4
+    calculateChange bal = negate bal - 8
     f v = if v < 0
       then "button-switching flex-center"
       else "button-not-selected button-disabled flex-center"

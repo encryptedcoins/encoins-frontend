@@ -231,14 +231,14 @@ encoinsTxLedgerMode
   dCoinsMint
   eSend
   dUrls = mdo
-    ePb   <- getPostBuild
-    eTick <- tickLossyFromPostBuildTime 12
+    eInit <- delay 1 =<< newEvent
 
     let eFallback = leftmost [() <$ eStatusRelayDown, () <$ eServerRelayDown]
-    emUrl <- getRelayUrlE dUrls $ leftmost [ePb, eSend, eFallback]
+    emUrl <- getRelayUrlE dUrls $ leftmost [eInit, eSend, eFallback]
     dmUrl <- holdDyn Nothing emUrl
 
-    eFireStatus <- delay 1 $ leftmost [ePb, void eTick, eFallback]
+    eTick <- tickLossyFromPostBuildTime 12
+    eFireStatus <- delay 1 $ leftmost [eInit, void eTick, eFallback]
 
     eeStatus <- switchHoldDyn dmUrl $ \case
       Nothing  -> pure never
@@ -266,7 +266,7 @@ encoinsTxLedgerMode
           <*> bRandomness
 
     -- Constructing the final redeemer
-    let eFireTx = leftmost [eSend, eFallback]
+    eFireTx <- delay 0.1 $ leftmost [eSend, eFallback] -- NOTE: The delay is needed here to wait for change address to be updated
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eFireTx
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
 

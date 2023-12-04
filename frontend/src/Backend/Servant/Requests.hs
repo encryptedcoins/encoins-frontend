@@ -22,7 +22,6 @@ import           Witherable             (catMaybes)
 
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
-import           Backend.Utility        (normalizePingUrl)
 import           ENCOINS.Common.Events
 import           JS.App                 (pingServer)
 
@@ -149,7 +148,7 @@ getRelayUrlE dUrls ev = do
     go l = do
       idx <- randomRIO (0, length l - 1)
       let url = l !! idx
-      pingOk <- pingServer $ normalizePingUrl url
+      pingOk <- pingServer url
       if pingOk
         then return $ Just $ BasePath url
         else go (delete url l)

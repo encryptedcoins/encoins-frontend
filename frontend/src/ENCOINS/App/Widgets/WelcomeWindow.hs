@@ -27,7 +27,8 @@ data WelcomeItem = WelcomeItem
 
 welcomeWallet :: [WelcomeItem]
 welcomeWallet =
-  [ WelcomeItem "welcome-tabs" False "Tabs" [(wTabs, "", "")]
+  [ WelcomeItem "welcome-disclaimer" False "Disclaimer" [(wDisclaimerText, "", "")]
+  , WelcomeItem "welcome-tabs" False "Tabs" [(wTabs, "", "")]
   , WelcomeItem "welcome-wallet-coins" True "Coins in the Wallet" [( wCoinsInWallet, "", "")]
   , WelcomeItem "welcome-coins-mint" True "Coins to mint" [( wCoinsToMint, "", "")]
   , WelcomeItem "welcome-tx-balance" False "Transaction balance" [( wTxBalance, "", "")]
@@ -39,7 +40,6 @@ welcomeWallet =
     , (". Stay up to date with the project's news on Twitter at ", "https://twitter.com/ENCOINS1", "twitter.com/ENCOINS1")
     , (".","","")
     ]
-  , WelcomeItem "welcome-disclaimer" False "Disclaimer" [(wDisclaimerText, "", "")]
   ]
 
 welcomeTransfer :: [WelcomeItem]

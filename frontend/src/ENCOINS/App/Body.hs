@@ -10,7 +10,6 @@ import qualified Data.Text                          as T
 import           Data.Text.Encoding                 (decodeUtf8)
 import           Reflex.Dom
 
-import           Backend.Servant.Requests           (currentRequestWrapper)
 import           Backend.Status                     (Status (..), isNoRelay,
                                                      isReady,
                                                      isTxProcessOrCriticalError)
@@ -18,7 +17,6 @@ import           Backend.Utility                    (switchHoldDyn)
 import           Backend.Wallet                     (Wallet (..),
                                                      walletsSupportedInApp)
 import           Config.Config                      (NetworkConfig (..),
-                                                     delegateServerUrl,
                                                      networkConfig)
 import           ENCOINS.App.Widgets.Basic          (elementResultJS,
                                                      waitForScripts)
@@ -29,7 +27,6 @@ import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWallet,
                                                      welcomeWindow,
                                                      welcomeWindowWalletStorageKey)
-import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils               (toText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           ENCOINS.Common.Widgets.Basic       (column, notification,
@@ -38,6 +35,7 @@ import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
 
+-- import           ENCOINS.Common.Events
 
 bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mpass = mdo
@@ -55,12 +53,7 @@ bodyContentWidget mpass = mdo
 
   divClass "section-app section-app-empty wf-section" blank
 
-  eFetchUrls <- newEvent
-  eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
-  let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
-  dUrls <- holdDyn [] eUrls
-
-  (dSecrets, evEvStatus) <- runEventWriterT $ mainWindow mpass dWallet dIsDisableButtons dUrls
+  (dSecrets, evEvStatus) <- runEventWriterT $ mainWindow mpass dWallet dIsDisableButtons
 
   performEvent_ (reEncryptEncoins <$> attachPromptlyDyn dSecrets (leftmost
     [eNewPass, Nothing <$ eCleanOk]))
