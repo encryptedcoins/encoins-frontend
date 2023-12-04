@@ -149,8 +149,7 @@ getRelayUrlE dUrls ev = do
     go l = do
       idx <- randomRIO (0, length l - 1)
       let url = l !! idx
-      -- NOTE: normalizedPingUrl does not work for AWS API Gateway (need //ping)
-      pingOk <- pingServer url -- $ normalizePingUrl url
+      pingOk <- pingServer url
       if pingOk
         then return $ Just $ BasePath url
         else go (delete url l)
