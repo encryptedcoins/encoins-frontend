@@ -204,7 +204,6 @@ handleStatus dWallet = do
         ]
   logEvent "Current status" currentStatus
   dNotification <- foldDyn processStatus ("", Ready) currentStatus
-  logDyn "dNotification" dNotification
 
   pure (dIsDisableButtons, dIsDisableConnectButton, flatStatus <$> dNotification)
 

@@ -25,23 +25,27 @@ import           ENCOINS.Common.Widgets.Basic (btn)
 import           ENCOINS.DAO.Widgets.DelegateWindow.RelayNames (relayNames)
 
 relayAmountWidget :: MonadWidget t m
-  => Dynamic t [(Text, Integer)]
+  => Event t (Either Int [(Text, Integer)])
   -> m (Event t Text)
-relayAmountWidget dRelays = do
-  article $
-    table $ do
+relayAmountWidget eeRelays = do
+  deRelays <- holdDyn (Right []) eeRelays
+  switchHoldDyn deRelays $ \case
+    Left err -> do
+      article $
+        divClass "" $ text $ "Fetching delegate relays are failed with status: " <> toText err
+      pure never
+    Right relays -> article $ table $ do
       el "thead" $ tr $
         mapM_ (\h -> th $ text h) ["Relay", "Delegated", ""]
       el "tbody" $ do
-        switchHoldDyn dRelays $ \relays -> do
-          evs <- forM relays $ \(relay, amount) -> tr $ do
-            tdRelay $ text $ fromMaybe relay (relay `Map.lookup` relayNames)
-            tdAmount
-              $ text
-              $ toText (floor @Double $ fromIntegral amount / 1000000 :: Integer) <> " ENCS"
-            eClick <- tdButton $ btn "button-switching inverted" "" $ text "Delegate"
-            pure $ relay <$ eClick
-          pure $ leftmost evs
+        evs <- forM relays $ \(relay, amount) -> tr $ do
+          tdRelay $ text $ fromMaybe relay (relay `Map.lookup` relayNames)
+          tdAmount
+            $ text
+            $ toText (floor @Double $ fromIntegral amount / 1000000 :: Integer) <> " ENCS"
+          eClick <- tdButton $ btn "button-switching inverted" "" $ text "Delegate"
+          pure $ relay <$ eClick
+        pure $ leftmost evs
   where
     article = elAttr "article" ("class" =: "dao-DelegateWindow_TableWrapper")
     table = elAttr "table" ("class" =: "dao-DelegateWindow_Table")
@@ -67,11 +71,9 @@ relayAmountWidget dRelays = do
 
 fetchRelayTable :: MonadWidget t m
   => Event t ()
-  -> m (Event t [(Text, Integer)])
+  -> m (Event t (Either Int [(Text, Integer)]))
 fetchRelayTable eOpen = do
   eServers <- serversRequestWrapper delegateServerUrl eOpen
-  -- TODO: handle error in interface?
-  let eError = filterLeft eServers
-  logEvent "Fetching relay table failed" eError
-  let res = sortOn (Down . snd) . Map.toList <$> filterRight eServers
+  let res = fmap (sortOn (Down . snd) . Map.toList) <$> eServers
   pure res
+  -- pure $ Left 0 <$ eServers

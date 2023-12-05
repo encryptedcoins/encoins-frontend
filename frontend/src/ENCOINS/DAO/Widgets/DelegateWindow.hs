@@ -31,14 +31,14 @@ delegateWindow :: MonadWidget t m
   -> m ()
 delegateWindow eOpen dWallet = mdo
   eDelay <- delay 0.05 eOpen
-  dRelays <- holdDyn [] =<< fetchRelayTable eDelay
+  relays <- fetchRelayTable eDelay
   eUrlOk <- dialogWindow
     True
     eOpen
     (leftmost [void eUrlOk])
     "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
     "Delegate ENCS" $ mdo
-          eUrlTable <- relayAmountWidget dRelays
+          eUrlTable <- relayAmountWidget relays
           divClass "dao-DelegateWindow_EnterUrl" $ text "Enter relay url:"
 
           dInputText <- inputWidget eOpen
@@ -46,15 +46,11 @@ delegateWindow eOpen dWallet = mdo
 
           let eNonEmptyUrl = ffilter (not . T.null) eInputText
           let eEmptyUrl = ffilter T.null eInputText
-
-          -- ePing <- pingRequestWrapper (BasePath . normalizePingUrl <$> dInputText) $ () <$ eValidUrl
-
           let eUrlStatus = leftmost
                 [
                   UrlEmpty   <$ eEmptyUrl
                 -- Check url when it is ONLY not empty
                 , bool UrlInvalid UrlValid . checkUrl <$> eNonEmptyUrl
-                -- , maybe UrlPingFail (const UrlPingSuccess) <$> ePing
                 ]
 
           dIsInvalidUrl <- holdDyn UrlEmpty eUrlStatus
