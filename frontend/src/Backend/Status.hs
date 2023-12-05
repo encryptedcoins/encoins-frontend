@@ -23,7 +23,7 @@ instance Show Status where
     show Signing                = "Please sign the transaction."
     show Submitting             = "Submitting..."
     show Submitted              = "Submitted. Pending the confirmation..."
-    show NoRelay                = "All available relay are down!"
+    show NoRelay                = "All available relays are down!"
     show NoError                = ""
     show (BackendError e)       = "Error: " <> unpack e
     show (WalletNetworkError e) = "Error: " <> unpack e
