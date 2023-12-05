@@ -307,7 +307,7 @@ function setElementStyle(elId, prop, val) {
 
 function pingServer(baseUrl) {
   const request = new XMLHttpRequest();
-  request.open('GET', baseUrl + 'ping', false);  // `false` makes the request synchronous
+  request.open('GET', baseUrl + '/ping', false);  // `false` makes the request synchronous
   try {
     request.send(null);
   } catch(e) {
