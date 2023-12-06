@@ -8,20 +8,20 @@ module ENCOINS.DAO.Widgets.RelayTable
   , fetchRelayTable
   ) where
 
-import           Control.Monad                (forM)
-import           Data.List                    (sortOn)
-import qualified Data.Map                     as Map
-import           Data.Maybe                   (fromMaybe)
-import           Data.Ord                     (Down (..))
-import           Data.Text                    (Text)
+import           Control.Monad                                 (forM)
+import           Data.List                                     (sortOn)
+import qualified Data.Map                                      as Map
+import           Data.Maybe                                    (fromMaybe)
+import           Data.Ord                                      (Down (..))
+import           Data.Text                                     (Text)
 import           Reflex.Dom
 
-import           Backend.Servant.Requests     (serversRequestWrapper)
-import           Backend.Utility              (switchHoldDyn)
-import           Config.Config                (delegateServerUrl)
+import           Backend.Servant.Requests                      (serversRequestWrapper)
+import           Backend.Utility                               (switchHoldDyn)
+import           Config.Config                                 (delegateServerUrl)
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils         (toText)
-import           ENCOINS.Common.Widgets.Basic (btn)
+import           ENCOINS.Common.Utils                          (toText)
+import           ENCOINS.Common.Widgets.Basic                  (btn)
 import           ENCOINS.DAO.Widgets.DelegateWindow.RelayNames (relayNames)
 
 relayAmountWidget :: MonadWidget t m
@@ -76,4 +76,3 @@ fetchRelayTable eOpen = do
   eServers <- serversRequestWrapper delegateServerUrl eOpen
   let eeRes = fmap (sortOn (Down . snd) . Map.toList) <$> eServers
   pure eeRes
-  -- pure $ Left 0 <$ eServers
