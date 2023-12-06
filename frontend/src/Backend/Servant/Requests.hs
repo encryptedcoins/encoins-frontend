@@ -148,8 +148,8 @@ getRelayUrlE dUrls ev = do
     go [] = pure Nothing
     go l = do
       idx <- randomRIO (0, length l - 1)
-      let url = normalizePingUrl $ l !! idx
-      pingOk <- pingServer url
+      let url = l !! idx
+      pingOk <- pingServer $ normalizePingUrl url
       if pingOk
         then return $ Just $ BasePath url
         else go (delete url l)
