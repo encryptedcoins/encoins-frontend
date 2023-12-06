@@ -476,8 +476,8 @@ async function daoPollVoteTx(n, apiKey, net, walletName, answer, policyId, asset
     tag4.free();
     plc_msg.free();
   } catch (e) {
-    console.log("Error: " + e.message);
-    setInputValue("VoteError", e.message);
+    console.log("Error: " + e.info);
+    setInputValue("VoteError", e.info);
     return;
   }
 };
@@ -553,8 +553,8 @@ async function daoDelegateTx(apiKey, net, walletName, url, policyId, assetName) 
     tag4.free();
     plc_msg.free();
   } catch (e) {
-    setInputValue("DelegateError", e.message);
-    console.log("Error: " + e.message);
+    setInputValue("DelegateError", e.info);
+    console.log("Error: " + e.info);
     return;
   }
 };
