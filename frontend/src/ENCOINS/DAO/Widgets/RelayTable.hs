@@ -24,7 +24,7 @@ import           Backend.Utility                               (switchHoldDyn)
 import           Config.Config                                 (delegateServerUrl)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils                          (toText)
-import           ENCOINS.Common.Widgets.Basic                  (btn)
+import           ENCOINS.Common.Widgets.Basic                  (btnWithBlock)
 import           ENCOINS.DAO.Widgets.DelegateWindow.RelayNames (relayNames)
 
 relayAmountWidget :: MonadWidget t m
@@ -41,13 +41,16 @@ relayAmountWidget eeRelays emDelegated = do
       pure never
     Right relays -> article $ table $ do
       el "thead" $ tr $
-        mapM_ (\h -> th $ text h) ["Relay", "Total", "Delegated", ""]
+        mapM_ (\h -> th $ text h) ["Relay", "Total", ""]
       el "tbody" $ do
         evs <- forM relays $ \(relay, amount) -> tr $ do
           tdRelay $ text $ fromMaybe relay (relay `Map.lookup` relayNames)
           tdAmount $ text $ mkAmount amount
-          tdAmount $ dynText $ mkDelegated relay <$> dmDelegated
-          eClick <- tdButton $ btn "button-switching inverted" "" $ text "Delegate"
+          eClick <- tdButton $ btnWithBlock
+            "button-switching inverted"
+            ""
+            (isDelegated relay <$> dmDelegated)
+            (dynText $ mkDelegateButton relay <$> dmDelegated)
           pure $ relay <$ eClick
         pure $ leftmost evs
   where
@@ -78,9 +81,14 @@ mkAmount :: Integer -> Text
 mkAmount amount =
   toText (floor @Double $ fromIntegral amount / 1000000 :: Integer) <> " ENCS"
 
-mkDelegated :: Text -> Maybe (Text, Integer) -> Text
-mkDelegated relay =
-  maybe "" (\(r,n) -> bool "" (mkAmount n) (r == relay))
+mkDelegateButton :: Text -> Maybe (Text, Integer) -> Text
+mkDelegateButton relay =
+  maybe "" (\(r,n) -> bool "Delegate" (mkAmount n) (r == relay))
+
+isDelegated :: Text -> Maybe (Text, Integer) -> Bool
+isDelegated relay = \case
+  Nothing -> False
+  Just (r,_) -> r == relay
 
 -- sortRelayAmounts :: Maybe (Map Text String) -> [(Text, Integer)]
 -- sortRelayAmounts =

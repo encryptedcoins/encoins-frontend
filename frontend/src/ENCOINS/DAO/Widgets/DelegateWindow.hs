@@ -50,7 +50,7 @@ delegateWindow eOpen dWallet = mdo
       let eUrlStatus = leftmost
             [
               UrlEmpty   <$ eEmptyUrl
-            -- Check url when it is ONLY not empty
+            -- Check url ONLY when it is not empty
             , bool UrlInvalid UrlValid . checkUrl <$> eNonEmptyUrl
             ]
 

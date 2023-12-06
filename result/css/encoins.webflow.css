@@ -1780,6 +1780,8 @@ body {
   gap: 10px;
   margin-left: 5%;
   margin-right: 5%;
+  padding-left: 1em;
+  padding-right: 1em;
 }
 
 @media screen and (min-width: 767px) {
