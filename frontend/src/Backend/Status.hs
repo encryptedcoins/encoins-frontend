@@ -5,6 +5,7 @@ import           Data.Text (Text, unpack)
 
 data Status =
       Ready             -- ^ The default status
+    | Success           -- ^ Transaction is passed successfully
     | Constructing      -- ^ Transaction is sent to the backend for constructing and balancing
     | Signing           -- ^ Transaction is sent to the wallet for signing
     | Submitting        -- ^ Transaction is sent to the backend for submission
@@ -19,6 +20,7 @@ data Status =
 
 instance Show Status where
     show Ready                  = ""
+    show Success                = "Transaction finished successfully"
     show Constructing           = "Constructing the transaction..."
     show Signing                = "Please sign the transaction."
     show Submitting             = "Submitting..."
@@ -52,8 +54,12 @@ isReady :: Status -> Bool
 isReady Ready = True
 isReady _     = False
 
+-- Used to hold status (processing status or with critical error)
+-- until Buffer statuses occur.
+-- After they fired any status can be shown.
 isBuffer :: Status -> Bool
 isBuffer Ready           = True
+isBuffer Success         = True
 isBuffer (WalletError _) = True
 isBuffer _               = False
 

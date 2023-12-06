@@ -74,6 +74,6 @@ fetchRelayTable :: MonadWidget t m
   -> m (Event t (Either Int [(Text, Integer)]))
 fetchRelayTable eOpen = do
   eServers <- serversRequestWrapper delegateServerUrl eOpen
-  let res = fmap (sortOn (Down . snd) . Map.toList) <$> eServers
-  pure res
+  let eeRes = fmap (sortOn (Down . snd) . Map.toList) <$> eServers
+  pure eeRes
   -- pure $ Left 0 <$ eServers

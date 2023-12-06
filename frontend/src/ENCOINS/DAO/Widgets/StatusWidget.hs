@@ -18,7 +18,7 @@ import           ENCOINS.App.Widgets.Basic       (elementResultJS, walletError)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (toText)
 import           ENCOINS.Common.Widgets.Advanced (foldDynamicAny)
-import           ENCOINS.Common.Widgets.Basic    (column, otherStatus, space)
+import           ENCOINS.Common.Widgets.Basic    (column, space)
 
 handleStatus :: MonadWidget t m
   => Dynamic t Wallet
@@ -75,14 +75,13 @@ voteStatus = do
   eSubmitted <- updated <$> elementResultJS "VoteSubmittedTx" id
   eReady <- updated <$> elementResultJS "VoteReadyTx" id
   eErr <- updated <$> elementResultJS "VoteError" id
-  eErrStatus <- otherStatus eErr
   pure $ leftmost [
-          eErrStatus
-        , Ready                            <$ eReady
-        , Constructing                     <$ eConstruct
-        , Signing                          <$ eSign
-        , Submitting                       <$ eSubmit
-        , Submitted                        <$ eSubmitted
+          WalletError  <$> eErr
+        , Submitted    <$ eSubmitted
+        , Submitting   <$ eSubmit
+        , Signing      <$ eSign
+        , Constructing <$ eConstruct
+        , Ready        <$ eReady
         ]
 
 delegateStatus :: MonadWidget t m
@@ -92,17 +91,25 @@ delegateStatus = do
   eSign <- updated <$> elementResultJS "DelegateSignTx" id
   eSubmit <- updated <$> elementResultJS "DelegateSubmitTx" id
   eSubmitted <- updated <$> elementResultJS "DelegateSubmittedTx" id
+  eSuccess <- updated <$> elementResultJS "DelegateSuccessTx" id
+  -- eSuccess and eReady fire at the same time usually
+  -- Show eSubmitted status for waitConfirmationTime for waiting tx submitted
+  -- Usually it is enough 60 seconds to submit it.
+  let waitConfirmationTime = 60
+  let showSuccessTime = 20
+  eSuccessDelayed <- delay waitConfirmationTime eSuccess
+  -- Show eSuccess status for showSuccessTime seconds
   eReady <- updated <$> elementResultJS "DelegateReadyTx" id
-  -- Wait one minute until the changes take place.
-  eReadyDelayed <- delay 60 eReady
+  eReadyDelayed <- delay (waitConfirmationTime + showSuccessTime) eReady
   eErr <- updated <$> elementResultJS "DelegateError" id
   pure $ leftmost [
-          WalletError <$> eErr
-        , Ready                            <$ eReadyDelayed
-        , Constructing                     <$ eConstruct
-        , Signing                          <$ eSign
-        , Submitting                       <$ eSubmit
-        , Submitted                        <$ eSubmitted
+          WalletError  <$> eErr
+        , Submitted    <$ eSubmitted
+        , Submitting   <$ eSubmit
+        , Signing      <$ eSign
+        , Constructing <$ eConstruct
+        , Success      <$ eSuccessDelayed
+        , Ready        <$ eReadyDelayed
         ]
 
 handleInvalidNetwork :: MonadWidget t m
