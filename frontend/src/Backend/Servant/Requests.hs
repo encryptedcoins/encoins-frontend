@@ -120,6 +120,19 @@ currentRequestWrapper baseUrl e = do
   logEvent "current servers request" eRespUnwrapped
   return eRespUnwrapped
 
+-- Fetch how much encoins and which relay the particular wallet delegated.
+infoRequestWrapper :: MonadWidget t m
+  => BaseUrl
+  -> Dynamic t Address
+  -> Event t ()
+  -> m (Event t (Either Int (Text, Integer)))
+infoRequestWrapper baseUrl addr e = do
+  let ApiClient{..} = mkApiClient baseUrl
+  eResp <- infoRequest (Right <$> addr) e
+  let eRespUnwrapped = mkStatusOrResponse <$> eResp
+  logEvent "info request" eRespUnwrapped
+  return eRespUnwrapped
+
 ---------------------------------------------- Utilities ----------------------------------------
 
 urls :: [Text]

@@ -22,6 +22,8 @@ type API =   "newTx"        :> ReqBody '[JSON] (InputOfEncoinsApi, TransactionIn
         :<|> "version"      :> Get '[JSON] ServerVersion
         :<|> "servers"      :> Get '[JSON] (Map Text Integer)
         :<|> "current"      :> Get '[JSON] [Text]
+        :<|> "info"         :> ReqBody '[JSON] Address
+                            :> Get '[JSON] (Text, Integer)
 
 type RespEvent t a      = Event t (ReqResult () a)
 type Res t m res        = Event t () -> m (RespEvent t res)
@@ -37,6 +39,7 @@ data ApiClient t m = ApiClient
   , versionRequest         :: Res t m ServerVersion
   , serversRequest         :: Res t m (Map Text Integer)
   , currentRequest         :: Res t m [Text]
+  , infoRequest            :: ReqRes t m Address (Text, Integer)
   }
 
 mkApiClient :: forall t m . MonadWidget t m => BaseUrl -> ApiClient t m
@@ -49,4 +52,5 @@ mkApiClient host = ApiClient{..}
       statusRequest :<|>
       versionRequest :<|>
       serversRequest :<|>
-      currentRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
+      currentRequest :<|>
+      infoRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)

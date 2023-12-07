@@ -20,7 +20,8 @@ import           Data.Text                                     (Text)
 import           Reflex.Dom
 
 import           Backend.Protocol.Types
-import           Backend.Servant.Requests                      (serversRequestWrapper)
+import           Backend.Servant.Requests                      (infoRequestWrapper,
+                                                                serversRequestWrapper)
 import           Backend.Utility                               (switchHoldDyn)
 import           Config.Config                                 (delegateServerUrl)
 import           ENCOINS.Common.Events
@@ -80,8 +81,9 @@ fetchDelegatedByAddress :: MonadWidget t m
   -> Event t ()
   -> m (Event t (Maybe (Text, Integer)))
 fetchDelegatedByAddress dAddr eFire = do
-  -- TODO: Update when 4th endpoint is done
-  pure $ Just (unStakeUrl, 1000000) <$ eFire
+  eeInfo <- infoRequestWrapper delegateServerUrl dAddr eFire
+  let meInfo = either (const Nothing) Just <$> eeInfo
+  pure meInfo
 
 mkAmount :: Integer -> Text
 mkAmount amount =
@@ -93,7 +95,7 @@ mkDelegateButton relay =
 
 isDelegated :: Text -> Maybe (Text, Integer) -> Bool
 isDelegated relay = \case
-  Nothing -> False
+  Nothing    -> False
   Just (r,_) -> r == relay
 
 unStakeUrl :: Text
