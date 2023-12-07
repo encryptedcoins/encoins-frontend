@@ -20,8 +20,9 @@ import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (checkUrl, toText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn, btnWithBlock, divClassId)
-import           ENCOINS.DAO.Widgets.RelayTable  (fetchRelayTable,
-                                                  relayAmountWidget, fetchDelegatedByAddress)
+import           ENCOINS.DAO.Widgets.RelayTable  (fetchDelegatedByAddress,
+                                                  fetchRelayTable,
+                                                  relayAmountWidget, unStakeUrl)
 import qualified JS.DAO                          as JS
 
 
@@ -58,7 +59,7 @@ delegateWindow eOpen dWallet = mdo
       (eStake, eUnstake) <- stakingButtonWidget dIsInvalidUrl
 
       let eUrlStake = tagPromptlyDyn dInputText eStake
-      let eUrlUnstake = "https://encoins.io" <$ eUnstake
+      let eUrlUnstake = unStakeUrl <$ eUnstake
       let eUrl = leftmost [eUrlTable, eUrlStake, eUrlUnstake]
       let LucidConfig apiKey networkId policyId assetName = lucidConfigDao
       performEvent_ $

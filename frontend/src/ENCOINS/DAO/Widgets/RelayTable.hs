@@ -7,6 +7,7 @@ module ENCOINS.DAO.Widgets.RelayTable
     relayAmountWidget
   , fetchRelayTable
   , fetchDelegatedByAddress
+  , unStakeUrl
   ) where
 
 import           Control.Monad                                 (forM)
@@ -43,15 +44,19 @@ relayAmountWidget eeRelays emDelegated = do
       el "thead" $ tr $
         mapM_ (\h -> th $ text h) ["Relay", "Total", ""]
       el "tbody" $ do
-        evs <- forM relays $ \(relay, amount) -> tr $ do
-          tdRelay $ text $ fromMaybe relay (relay `Map.lookup` relayNames)
-          tdAmount $ text $ mkAmount amount
-          eClick <- tdButton $ btnWithBlock
-            "button-switching inverted"
-            ""
-            (isDelegated relay <$> dmDelegated)
-            (dynText $ mkDelegateButton relay <$> dmDelegated)
-          pure $ relay <$ eClick
+        evs <- forM relays $ \(relay, amount) -> if unStakeUrl == relay
+          then do
+            blank
+            pure never
+          else tr $ do
+            tdRelay $ text $ fromMaybe relay (relay `Map.lookup` relayNames)
+            tdAmount $ text $ mkAmount amount
+            eClick <- tdButton $ btnWithBlock
+              "button-switching inverted"
+              ""
+              (isDelegated relay <$> dmDelegated)
+              (dynText $ mkDelegateButton relay <$> dmDelegated)
+            pure $ relay <$ eClick
         pure $ leftmost evs
   where
     article = elAttr "article" ("class" =: "dao-DelegateWindow_TableWrapper")
@@ -75,7 +80,8 @@ fetchDelegatedByAddress :: MonadWidget t m
   -> Event t ()
   -> m (Event t (Maybe (Text, Integer)))
 fetchDelegatedByAddress dAddr eFire = do
-  pure $ Just ("https://encoins.io", 1000000) <$ eFire
+  -- TODO: Update when 4th endpoint is done
+  pure $ Just (unStakeUrl, 1000000) <$ eFire
 
 mkAmount :: Integer -> Text
 mkAmount amount =
@@ -89,6 +95,9 @@ isDelegated :: Text -> Maybe (Text, Integer) -> Bool
 isDelegated relay = \case
   Nothing -> False
   Just (r,_) -> r == relay
+
+unStakeUrl :: Text
+unStakeUrl = "https://encoins.io"
 
 -- sortRelayAmounts :: Maybe (Map Text String) -> [(Text, Integer)]
 -- sortRelayAmounts =
