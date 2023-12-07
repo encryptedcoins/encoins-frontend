@@ -59,6 +59,7 @@ library
     ENCOINS.DAO.Widgets.Navbar
     ENCOINS.DAO.Widgets.PollWidget
     ENCOINS.DAO.Widgets.RelayTable
+    ENCOINS.DAO.Widgets.StatusWidget
     ENCOINS.Website
     ENCOINS.Website.Body
     ENCOINS.Website.Head

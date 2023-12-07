@@ -476,8 +476,8 @@ async function daoPollVoteTx(n, apiKey, net, walletName, answer, policyId, asset
     tag4.free();
     plc_msg.free();
   } catch (e) {
-    console.log("Error: " + e.message);
-    setInputValue("VoteError", e.message);
+    console.log("Error: " + e.info);
+    setInputValue("VoteError", e.info);
     return;
   }
 };
@@ -538,8 +538,8 @@ async function daoDelegateTx(apiKey, net, walletName, url, policyId, assetName) 
 
     setInputValue("DelegateSubmittedTx", txHash);
 
-    // Check wallets's utxos are changed and then send DelegateReadyTx
-    await check_utxos_changed("DelegateReadyTx", api, utxos, { wait: 1000, retries: 20 })
+    // Check wallets's utxos are changed and then send DelegateSuccessTx
+    await check_utxos_changed("DelegateSuccessTx", api, utxos, { wait: 1000, retries: 20 })
 
     changeAddress.free();
     baseAddress.free();
@@ -552,9 +552,10 @@ async function daoDelegateTx(apiKey, net, walletName, url, policyId, assetName) 
     tag3.free();
     tag4.free();
     plc_msg.free();
+    setInputValue("DelegateReadyTx", "");
   } catch (e) {
-    setInputValue("DelegateError", e.message);
-    console.log("Error: " + e.message);
+    setInputValue("DelegateError", e.info);
+    console.log("Error: " + e.info);
     return;
   }
 };

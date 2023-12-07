@@ -148,7 +148,7 @@ walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
                   zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
             pure (dCoinsToBurn, dCoinsToMint, leftmost [eStatusUpdate, eSendStatus])
     eWalletError <- walletError
-    let eStatus = leftmost [eStatusUpdate, eWalletError]
+    let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Wallet mode" eStatus
   where
@@ -230,7 +230,8 @@ transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
         dUrls
 
     eWalletError <- walletError
-    let eStatus = leftmost [eWalletError, eStatusUpdate1, eStatusUpdate2]
+    let eStatus = leftmost
+          [eWalletError, eStatusUpdate1, eStatusUpdate2, NoRelay <$ eUrlError]
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Transfer mode" eStatus
   where
@@ -329,7 +330,7 @@ ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
             let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
             pure (dCoinsToBurn, dCoinsToMint, dChangeAddr, leftmost [eStatusUpdate, eSendStatus])
     eWalletError <- walletError
-    let eStatus = leftmost [eStatusUpdate, eWalletError]
+    let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Ledger status" eStatus
   where

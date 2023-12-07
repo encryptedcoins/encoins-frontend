@@ -37,7 +37,7 @@ Alternatively, simply run
 ```
 It will compile frontend and copy required files to `result/`.
 
-1. Flags. By default (without any flags) frontend compiling for Mainnet networkId. Add flag `predao` or/and `preapp` to build frontend for functioning within Testnet networkId.
+1. Flags. By default (without any flags) frontend compiling for Mainnet networkId. Add flag `predao` or/and `preapp` to build frontend for functioning within Testnet Preprod networkId.
 
 ```bash
 cabal new-build -f preapp -f predao --ghcjs frontend
