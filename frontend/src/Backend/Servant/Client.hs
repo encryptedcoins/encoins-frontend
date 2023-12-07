@@ -23,7 +23,7 @@ type API =   "newTx"        :> ReqBody '[JSON] (InputOfEncoinsApi, TransactionIn
         :<|> "servers"      :> Get '[JSON] (Map Text Integer)
         :<|> "current"      :> Get '[JSON] [Text]
         :<|> "info"         :> ReqBody '[JSON] Address
-                            :> Get '[JSON] (Text, Integer)
+                            :> Post '[JSON] (Text, Integer)
 
 type RespEvent t a      = Event t (ReqResult () a)
 type Res t m res        = Event t () -> m (RespEvent t res)
