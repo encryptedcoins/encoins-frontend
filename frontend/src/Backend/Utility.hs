@@ -11,8 +11,10 @@ import qualified Data.Text     as T
 import           Reflex.Dom
 
 normalizePingUrl :: Text -> Text
-normalizePingUrl t = T.append (T.dropWhileEnd (== '/') t) $ case appNetwork of
-  Mainnet -> "//"
+normalizePingUrl url = T.append (T.dropWhileEnd (== '/') url) $ case appNetwork of
+  Mainnet -> if T.isInfixOf url "execute-api.eu-central-1.amazonaws.com"
+    then "//"
+    else "/"
   Testnet -> "/"
 
 toEither :: e -> Maybe a -> Either e a
