@@ -32,7 +32,7 @@ relayAmountWidget eeRelays = do
   switchHoldDyn deRelays $ \case
     Left err -> do
       article $
-        divClass "" $ text $ "Fetching delegate relays are failed with status: " <> toText err
+        divClass "" $ text $ "Fetching delegate relays has failed with status: " <> toText err
       pure never
     Right relays -> article $ table $ do
       el "thead" $ tr $
