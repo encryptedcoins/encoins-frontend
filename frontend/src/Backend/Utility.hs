@@ -1,5 +1,7 @@
 module Backend.Utility where
 
+import           Config.Config (appNetwork, NetworkId(..))
+
 import           Control.Monad ((<=<))
 import qualified CSL
 import           Data.Functor  ((<&>))
@@ -9,7 +11,9 @@ import qualified Data.Text     as T
 import           Reflex.Dom
 
 normalizePingUrl :: Text -> Text
-normalizePingUrl t = T.append (T.dropWhileEnd (== '/') t) ""
+normalizePingUrl t = T.append (T.dropWhileEnd (== '/') t) $ case appNetwork of
+  Mainnet -> "//"
+  Testnet -> "/"
 
 toEither :: e -> Maybe a -> Either e a
 toEither err Nothing = Left err

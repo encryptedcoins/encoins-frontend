@@ -43,6 +43,7 @@ validUrls =
   , "http://142.42.1.1:8080/"
   , "http://213.136.92.202"
   , "http://encoins-maria-relay.cardanistas.io"
+
   -- , "ftp://foo.bar/baz"
   -- , "http://foo.com/unicode_(✪)_in_parens"
   -- , "http://➡.ws/䨹"
@@ -101,6 +102,7 @@ invalidUrls =
   , "http://.www.foo.bar./"
   , "http://203.23.12.14.12"
   , "http://203.23.12"
+
   -- , "http://0.0.0.0"
   -- , "http://10.1.1.1"
   -- , "http://10.1.1.0"

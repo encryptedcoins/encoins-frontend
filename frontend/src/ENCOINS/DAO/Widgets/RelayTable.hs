@@ -10,12 +10,10 @@ module ENCOINS.DAO.Widgets.RelayTable
 
 import           Control.Monad                (forM)
 import           Data.List                    (sortOn)
-import           Data.Map                     (Map)
 import qualified Data.Map                     as Map
-import           Data.Maybe                   (fromJust, fromMaybe)
+import           Data.Maybe                   (fromMaybe)
 import           Data.Ord                     (Down (..))
 import           Data.Text                    (Text)
-import           Numeric.Natural              (Natural)
 import           Reflex.Dom
 
 import           Backend.Servant.Requests     (serversRequestWrapper)
