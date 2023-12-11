@@ -41,7 +41,7 @@ delegateWindow eOpen dWallet = mdo
     delegateWindowStyle
     "Delegate ENCS" $ mdo
       eUrlTable <- relayAmountWidget eeRelays emDelegated
-      divClass "dao-DelegateWindow_EnterUrl" $ text "Choose relay URL above or enter new one below:"
+      divClass "dao-DelegateWindow_EnterUrl" $ text "Choose a relay URL above or enter a new one below:"
 
       dInputText <- inputWidget eOpen
       let eInputText = updated dInputText
