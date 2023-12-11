@@ -17,7 +17,7 @@ import           Backend.Wallet                  (LucidConfig (..), Wallet (..),
                                                   lucidConfigDao, toJS)
 import           ENCOINS.App.Widgets.Basic       (containerApp)
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils            (checkUrl, toText)
+import           ENCOINS.Common.Utils            (checkUrl, stripHostOrRelay, toText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn, btnWithBlock, divClassId)
 import           ENCOINS.DAO.Widgets.RelayTable  (fetchDelegatedByAddress,
@@ -60,7 +60,7 @@ delegateWindow eOpen dWallet = mdo
 
       let eUrlStake = tagPromptlyDyn dInputText eStake
       let eUrlUnstake = unStakeUrl <$ eUnstake
-      let eUrl = leftmost [eUrlTable, eUrlStake, eUrlUnstake]
+      let eUrl = stripHostOrRelay <$> leftmost [eUrlTable, eUrlStake, eUrlUnstake]
       let LucidConfig apiKey networkId policyId assetName = lucidConfigDao
       performEvent_ $
         JS.daoDelegateTx apiKey networkId policyId assetName

@@ -4,8 +4,14 @@ module ENCOINS.Common.Utils where
 
 import           Control.Lens                ((^.))
 import           Control.Monad               (guard)
+import           Data.Attoparsec.Text        (Parser, char, parseOnly, sepBy1,
+                                              takeWhile1, (<?>), choice)
+import qualified Data.Attoparsec.Text        as A
 import           Data.ByteString             (ByteString)
-import           Data.Text                   (Text, pack)
+import           Data.Text                   (Text)
+import qualified Data.Text                   as T
+import           Data.Vector                 (Vector)
+import qualified Data.Vector                 as V
 import qualified Foreign.JavaScript.Utils    as Utils
 import           GHCJS.DOM.Blob
 import qualified GHCJS.DOM.Document          as D
@@ -24,7 +30,7 @@ import           Text.Regex.TDFA             (CompOption (lastStarGreedy),
 import           Text.Regex.TDFA.Text        (compile)
 
 toText :: Show a => a -> Text
-toText = pack . show
+toText = T.pack . show
 
 safeIndex :: [a] -> Int -> Maybe a
 safeIndex zs n = guard (n >= 0) >> go zs n
@@ -76,3 +82,51 @@ downloadVotes txt name num e = do
   doc <- askDocument
   performEvent_ $ ffor e $ \_ ->
     triggerDownload doc "application/json" (name <> toText num <> ".json") txt
+
+--------------------------------------------------------------------------------
+-- Remove prefixes 'http(s):// and suffixes '/', ':' and further symbols rom URL
+--------------------------------------------------------------------------------
+
+-- As stripHost but return unstriped relay on stripping fails
+stripHostOrRelay :: Text -> Text
+stripHostOrRelay u = either (const u) id $ stripHost u
+
+stripHost :: Text -> Either String Text
+stripHost = fmap printHost . parseOnly stripFixes
+
+stripFixes :: Parser Host
+stripFixes = do
+  _ <- A.option "" $ choice [A.string "https://", A.string "http://"]
+  parseHost
+
+data Host
+  = Localhost
+  | N NormalHost
+
+data NormalHost = NormalHost
+      { uriHostName    :: !(Vector Text)
+      , urihHostSuffix :: !Text
+      }
+
+printHost :: Host -> Text
+printHost x = case x of
+      Localhost           -> "localhost"
+      N (NormalHost ns c) -> T.intercalate "." (V.toList (ns `V.snoc` c))
+
+parseHost :: Parser Host
+parseHost = do
+  let hostChunk = takeWhile1 (\c -> c `notElem` ['.',':','/','?','#']) <?> "host chunk"
+      hostChunks = hostChunk `sepBy1` char '.' <?> "host chunks"
+  xss@(x:xs) <- hostChunks
+  if null xs
+    then case () of
+          _ | x == "localhost" -> pure Localhost
+            | otherwise -> fail ("Only one term parsed: " ++ show xss)
+    else let xss' :: Vector Text
+             xss' = V.fromList xss
+             unsnoc :: Vector a -> (Vector a, a)
+             unsnoc x' =
+               let (fs,l) = V.splitAt (V.length x' - 1) x'
+               in  (fs, l V.! 0)
+             (ns,c) = unsnoc xss'
+         in  pure (N $ NormalHost ns c)

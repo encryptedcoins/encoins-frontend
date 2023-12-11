@@ -25,7 +25,8 @@ import           Backend.Servant.Requests                      (infoRequestWrapp
 import           Backend.Utility                               (switchHoldDyn)
 import           Config.Config                                 (delegateServerUrl)
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils                          (toText)
+import           ENCOINS.Common.Utils                          (stripHostOrRelay,
+                                                                toText)
 import           ENCOINS.Common.Widgets.Basic                  (btnWithBlock)
 import           ENCOINS.DAO.Widgets.DelegateWindow.RelayNames (relayNames)
 
@@ -42,10 +43,11 @@ relayAmountWidget eeRelays emDelegated = do
         divClass "" $ text $ "Fetching delegate relays has failed with status: " <> toText err
       pure never
     Right relays -> article $ table $ do
+      let stripedRelays = map (\(u,n) -> (stripHostOrRelay u, n)) relays
       el "thead" $ tr $
         mapM_ (\h -> th $ text h) ["Relay", "Total", ""]
       el "tbody" $ do
-        evs <- forM relays $ \(relay, amount) -> if unStakeUrl == relay
+        evs <- forM stripedRelays $ \(relay, amount) -> if unStakeUrl == relay
           then do
             blank
             pure never
@@ -99,7 +101,7 @@ isDelegated relay = \case
   Just (r,_) -> r == relay
 
 unStakeUrl :: Text
-unStakeUrl = "https://encoins.io"
+unStakeUrl = "encoins.io"
 
 -- sortRelayAmounts :: Maybe (Map Text String) -> [(Text, Integer)]
 -- sortRelayAmounts =
