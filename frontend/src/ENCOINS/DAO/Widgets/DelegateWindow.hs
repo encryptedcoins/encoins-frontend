@@ -20,8 +20,9 @@ import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (checkUrl, toText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn, btnWithBlock, divClassId)
-import           ENCOINS.DAO.Widgets.RelayTable  (fetchRelayTable,
-                                                  relayAmountWidget)
+import           ENCOINS.DAO.Widgets.RelayTable  (fetchDelegatedByAddress,
+                                                  fetchRelayTable,
+                                                  relayAmountWidget, unStakeUrl)
 import qualified JS.DAO                          as JS
 
 
@@ -31,41 +32,44 @@ delegateWindow :: MonadWidget t m
   -> m ()
 delegateWindow eOpen dWallet = mdo
   eDelay <- delay 0.05 eOpen
-  relays <- fetchRelayTable eDelay
+  eeRelays <- fetchRelayTable eDelay
+  emDelegated <- fetchDelegatedByAddress (walletChangeAddress <$> dWallet) eDelay
   eUrlOk <- dialogWindow
     True
     eOpen
     (leftmost [void eUrlOk])
-    "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
+    delegateWindowStyle
     "Delegate ENCS" $ mdo
-          eUrlTable <- relayAmountWidget relays
-          divClass "dao-DelegateWindow_EnterUrl" $ text "Enter relay url:"
+      eUrlTable <- relayAmountWidget eeRelays emDelegated
+      divClass "dao-DelegateWindow_EnterUrl" $ text "Choose relay URL above or enter new one below:"
 
-          dInputText <- inputWidget eOpen
-          let eInputText = updated dInputText
+      dInputText <- inputWidget eOpen
+      let eInputText = updated dInputText
 
-          let eNonEmptyUrl = ffilter (not . T.null) eInputText
-          let eEmptyUrl = ffilter T.null eInputText
-          let eUrlStatus = leftmost
-                [
-                  UrlEmpty   <$ eEmptyUrl
-                -- Check url when it is ONLY not empty
-                , bool UrlInvalid UrlValid . checkUrl <$> eNonEmptyUrl
-                ]
+      let eNonEmptyUrl = ffilter (not . T.null) eInputText
+      let eEmptyUrl = ffilter T.null eInputText
+      let eUrlStatus = leftmost
+            [
+              UrlEmpty   <$ eEmptyUrl
+            -- Check url ONLY when it is not empty
+            , bool UrlInvalid UrlValid . checkUrl <$> eNonEmptyUrl
+            ]
 
-          dIsInvalidUrl <- holdDyn UrlEmpty eUrlStatus
-          (eStake, eUnstake) <- stakingButtonWidget dIsInvalidUrl
+      dIsInvalidUrl <- holdDyn UrlEmpty eUrlStatus
+      (eStake, eUnstake) <- stakingButtonWidget dIsInvalidUrl
 
-          let eUrlStake = tagPromptlyDyn dInputText eStake
-          let eUrlUnstake = "https://encoins.io" <$ eUnstake
-          let eUrl = leftmost [eUrlTable, eUrlStake, eUrlUnstake]
-          let LucidConfig apiKey networkId policyId assetName = lucidConfigDao
-          performEvent_ $
-            JS.daoDelegateTx apiKey networkId policyId assetName
-            <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
-
-          return eUrl
+      let eUrlStake = tagPromptlyDyn dInputText eStake
+      let eUrlUnstake = unStakeUrl <$ eUnstake
+      let eUrl = leftmost [eUrlTable, eUrlStake, eUrlUnstake]
+      let LucidConfig apiKey networkId policyId assetName = lucidConfigDao
+      performEvent_ $
+        JS.daoDelegateTx apiKey networkId policyId assetName
+        <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
+      return eUrl
   pure ()
+
+delegateWindowStyle :: Text
+delegateWindowStyle = "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
 
 inputWidget :: MonadWidget t m
   => Event t ()
