@@ -91,7 +91,7 @@ mkAmount amount =
 
 mkDelegateButton :: Text -> Maybe (Text, Integer) -> Text
 mkDelegateButton relay =
-  maybe "" (\(r,n) -> bool "Delegate" (mkAmount n) (r == relay))
+  maybe "Delegate" (\(r,n) -> bool "Delegate" (mkAmount n) (r == relay))
 
 isDelegated :: Text -> Maybe (Text, Integer) -> Bool
 isDelegated relay = \case
