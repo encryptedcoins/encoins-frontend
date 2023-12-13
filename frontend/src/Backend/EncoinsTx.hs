@@ -2,41 +2,34 @@
 
 module Backend.EncoinsTx where
 
-import           Control.Monad             (void)
-import           Control.Monad.IO.Class    (MonadIO (..))
+import           Control.Monad                   (void)
+import           Control.Monad.IO.Class          (MonadIO (..))
 import qualified CSL
-import           Data.List                 ((\\))
-import qualified Data.Map                  as Map
-import           Data.Maybe                (fromJust, fromMaybe)
-import           Data.Text                 (Text)
-import           JS.App                    (walletSignTx)
-import           PlutusTx.Prelude          (length)
-import           Prelude                   hiding (length)
-import           Reflex.Dom                hiding (Input)
-import           Servant.Reflex            (BaseUrl (..))
-import           Witherable                (catMaybes)
+import qualified Data.Map                        as Map
+import           Data.Maybe                      (fromJust, fromMaybe)
+import           Data.Text                       (Text)
+import           JS.App                          (walletSignTx)
+import           PlutusTx.Prelude                (length)
+import           Prelude                         hiding (length)
+import           Reflex.Dom                      hiding (Input)
+import           Servant.Reflex                  (BaseUrl (..))
+import           Witherable                      (catMaybes)
 
-import           Backend.Protocol.Setup    (encoinsCurrencySymbol,
-                                            ledgerAddress, minAdaTxOutInLedger)
+import           Backend.Protocol.Setup          (encoinsCurrencySymbol,
+                                                  ledgerAddress,
+                                                  minAdaTxOutInLedger)
 import           Backend.Protocol.Types
-import           Backend.Protocol.Utility  (getEncoinsInUtxos, mkRedeemer)
+import           Backend.Protocol.Utility        (getEncoinsInUtxos, mkRedeemer)
 import           Backend.Servant.Requests
-import           Backend.Status            (Status (..))
-import           Backend.Utility           (switchHoldDyn, toEither)
-import           Backend.Wallet            (Wallet (..), toJS)
-import           ENCOINS.App.Widgets.Basic (elementResultJS)
+import           Backend.Status                  (Status (..))
+import           Backend.Utility                 (switchHoldDyn, toEither)
+import           Backend.Wallet                  (Wallet (..), toJS)
+import           ENCOINS.App.Widgets.Basic       (elementResultJS)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils      (toText)
-
-updateUrls :: MonadWidget t m
-  => Dynamic t [Text]
-  -> Event t (Maybe Text)
-  -> m (Dynamic t [Text])
-updateUrls dUrls eFailedUrl = do
-    dFailedUrls <- foldDyn (\mUrl acc -> maybe acc (\u -> u : acc) mUrl) [] eFailedUrl
-    pure $ zipDynWith (\\) dUrls dFailedUrls
+import           ENCOINS.Common.Utils            (toText)
+import           ENCOINS.Common.Widgets.Advanced (updateUrls)
 
 encoinsTxWalletMode :: MonadWidget t m
   => Dynamic t Wallet

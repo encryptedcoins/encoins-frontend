@@ -3,6 +3,7 @@
 module ENCOINS.Common.Widgets.Advanced where
 
 import           Data.Bool                     (bool)
+import           Data.List                     ((\\))
 import           Data.Text                     (Text)
 import           Data.Time                     (NominalDiffTime)
 import           GHCJS.DOM                     (currentDocumentUnchecked)
@@ -132,3 +133,11 @@ withTooltip mainW style delay1 delay2 innerW = mdo
 
 foldDynamicAny :: Reflex t => [Dynamic t Bool] -> Dynamic t Bool
 foldDynamicAny = foldr (zipDynWith (||)) (constDyn False)
+
+updateUrls :: MonadWidget t m
+  => Dynamic t [Text]
+  -> Event t (Maybe Text)
+  -> m (Dynamic t [Text])
+updateUrls dUrls eFailedUrl = do
+    dFailedUrls <- foldDyn (\mUrl acc -> maybe acc (\u -> u : acc) mUrl) [] eFailedUrl
+    pure $ zipDynWith (\\) dUrls dFailedUrls

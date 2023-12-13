@@ -36,7 +36,7 @@ newTxRequestWrapper baseUrl dReqBody e = do
   eResp <- newTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = mkStatusOrResponse <$> eResp
   logEvent "newTx request" $ () <$ eRespUnwrapped
-  pure $ Left 0 <$ eRespUnwrapped
+  pure eRespUnwrapped
 
 submitTxRequestWrapper :: MonadWidget t m
   => BaseUrl
