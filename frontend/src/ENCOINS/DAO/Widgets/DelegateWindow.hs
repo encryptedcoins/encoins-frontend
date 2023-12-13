@@ -8,6 +8,7 @@ module ENCOINS.DAO.Widgets.DelegateWindow
 
 import           Control.Monad                   (void)
 import           Data.Bool                       (bool)
+import           Data.Map                        (Map)
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import           Reflex.Dom
@@ -17,7 +18,8 @@ import           Backend.Wallet                  (LucidConfig (..), Wallet (..),
                                                   lucidConfigDao, toJS)
 import           ENCOINS.App.Widgets.Basic       (containerApp)
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils            (checkUrl, stripHostOrRelay, toText)
+import           ENCOINS.Common.Utils            (checkUrl, stripHostOrRelay,
+                                                  toText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn, btnWithBlock, divClassId)
 import           ENCOINS.DAO.Widgets.RelayTable  (fetchDelegatedByAddress,
@@ -29,8 +31,9 @@ import qualified JS.DAO                          as JS
 delegateWindow :: MonadWidget t m
   => Event t ()
   -> Dynamic t Wallet
+  -> Dynamic t (Map Text Text)
   -> m ()
-delegateWindow eOpen dWallet = mdo
+delegateWindow eOpen dWallet dRelayNames = mdo
   eDelay <- delay 0.05 eOpen
   eeRelays <- fetchRelayTable eDelay
   emDelegated <- fetchDelegatedByAddress (walletChangeAddress <$> dWallet) eDelay
@@ -40,7 +43,7 @@ delegateWindow eOpen dWallet = mdo
     (leftmost [void eUrlOk])
     delegateWindowStyle
     "Delegate ENCS" $ mdo
-      eUrlTable <- relayAmountWidget eeRelays emDelegated
+      eUrlTable <- relayAmountWidget eeRelays emDelegated dRelayNames
       divClass "dao-DelegateWindow_EnterUrl" $ text "Choose a relay URL above or enter a new one below:"
 
       dInputText <- inputWidget eOpen
