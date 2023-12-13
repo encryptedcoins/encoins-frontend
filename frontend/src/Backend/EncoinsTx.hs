@@ -240,8 +240,10 @@ encoinsTxLedgerMode
   dUrls = mdo
     eInit <- delay 1 =<< newEvent
 
-    let eFallback = leftmost [() <$ eStatusRelayDown, () <$ eServerRelayDown]
-    emUrl <- getRelayUrlE dUrls $ leftmost [eInit, eSend, eFallback]
+    let eFallback = leftmost [() <$ eStatusError, () <$ eServerError]
+    let emFailedUrl = leftmost [Nothing <$ eSend, Nothing <$ eInit, tagPromptlyDyn dmUrl eFallback]
+    dUpdatedUrls <- updateUrls dUrls emFailedUrl
+    emUrl <- getRelayUrlE dUpdatedUrls $ leftmost [eInit, eSend, eFallback]
     dmUrl <- holdDyn Nothing emUrl
 
     eTick <- tickLossyFromPostBuildTime 12
@@ -253,8 +255,7 @@ encoinsTxLedgerMode
         (BasePath url)
         (pure LedgerEncoins)
         eFireStatus
-    let (eStatusRelayDown, eStatusBackendError, eStatusResp) =
-          fromRelayResponse eeStatus
+    let (eStatusError, eStatusResp) = eventEither eeStatus
 
     let toLedgerUtxoResult (LedgerUtxoResult xs) = Just xs
         toLedgerUtxoResult _                     = Nothing
@@ -276,7 +277,7 @@ encoinsTxLedgerMode
           <*> bRandomness
 
     -- Constructing the final redeemer
-    eFireTx <- delay 0.1 $ leftmost [eSend, eFallback] -- NOTE: The delay is needed here to wait for change address to be updated
+    eFireTx <- delay 2 $ leftmost [eSend, eFallback] -- NOTE: The delay is needed here to wait for change address to be updated
     dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eFireTx
     let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
 
@@ -292,8 +293,7 @@ encoinsTxLedgerMode
         dServerTxReqBody
         eFinalRedeemerReq
       Nothing  -> pure never
-    let (eServerRelayDown, eServerBackendError, eServerOk) =
-          fromRelayResponse eeServerTxResponse
+    let (eServerError, eServerOk) = eventEither eeServerTxResponse
 
     -- Tracking the pending transaction
     eConfirmed <- updated <$> holdUniqDyn dUTXOs
@@ -304,10 +304,8 @@ encoinsTxLedgerMode
           , NoRelay      <$ eAllRelayDown
           , Constructing <$ eFinalRedeemer
           , Submitted    <$ eServerOk
-          , (BackendError . ("Relay disconnected: " <>) . toText) <$>
-              leftmost [eStatusRelayDown, eServerRelayDown]
           , (BackendError . ("Relay returned error: " <>) . toText) <$>
-              leftmost [eStatusBackendError, eServerBackendError]
+              leftmost [eStatusError, eServerError]
           ]
     logEvent "encoinsTxLedgerMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus)
