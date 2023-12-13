@@ -153,8 +153,10 @@ encoinsTxTransferMode
   dWalletSignature
   dUrls = mdo
 
-    let eFallback = leftmost [() <$ eNewTxRelayDown, () <$ eSubmitRelayDown]
-    emUrl <- getRelayUrlE dUrls $ leftmost [eSend, eFallback]
+    let eFallback = leftmost [() <$ eNewTxError, () <$ eSubmitError]
+    let emFailedUrl = leftmost [Nothing <$ eSend, tagPromptlyDyn dmUrl eFallback]
+    dUpdatedUrls <- updateUrls dUrls emFailedUrl
+    emUrl <- getRelayUrlE dUpdatedUrls $ leftmost [eSend, eFallback]
     dmUrl <- holdDyn Nothing emUrl
 
     eFireTx <- delay 1 $ leftmost [eSend, () <$ eFallback]
@@ -176,8 +178,7 @@ encoinsTxTransferMode
         (BasePath url)
         dNewTxReqBody
         eFireTx
-    let (eNewTxRelayDown, eNewTxBackendError, eNewTxSuccess) =
-          fromRelayResponse eeNewTxResponse
+    let (eNewTxError, eNewTxSuccess) = eventEither eeNewTxResponse
 
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
@@ -193,8 +194,7 @@ encoinsTxTransferMode
     eeSubmitResponse <- switchHoldDyn dmUrl $ \case
       Nothing  -> pure never
       Just url -> submitTxRequestWrapper (BasePath url) dSubmitReqBody eWalletSignature
-    let (eSubmitRelayDown, eSubmitBackendError, eSubmitted) =
-          fromRelayResponse eeSubmitResponse
+    let (eSubmitError, eSubmitted) = eventEither eeSubmitResponse
 
     -- Tracking the pending transaction
     eConfirmed <- updated <$> holdUniqDyn dUTXOs
@@ -207,10 +207,8 @@ encoinsTxTransferMode
           , Signing      <$ eNewTxSuccess
           , Submitting   <$ eWalletSignature
           , Submitted    <$ eSubmitted
-          , (BackendError . ("Relay disconnected: " <>) . toText) <$>
-              leftmost [eNewTxRelayDown, eSubmitRelayDown]
           , (BackendError . ("Relay returned error: " <>) . toText) <$>
-             leftmost [eNewTxBackendError, eSubmitBackendError]
+             leftmost [eNewTxError, eSubmitError]
           ]
     logEvent "encoinsTxTransferMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
