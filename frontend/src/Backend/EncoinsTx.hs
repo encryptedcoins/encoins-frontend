@@ -30,6 +30,14 @@ import           ENCOINS.Bulletproofs
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils      (toText)
 
+updateUrls :: MonadWidget t m
+  => Dynamic t [Text]
+  -> Event t (Maybe Text)
+  -> m (Dynamic t [Text])
+updateUrls dUrls eFailedUrl = do
+    dFailedUrls <- foldDyn (\mUrl acc -> maybe acc (\u -> u : acc) mUrl) [] eFailedUrl
+    pure $ zipDynWith (\\) dUrls dFailedUrls
+
 encoinsTxWalletMode :: MonadWidget t m
   => Dynamic t Wallet
   -> Dynamic t BulletproofParams
@@ -47,21 +55,11 @@ encoinsTxWalletMode
   dCoinsMint
   eSend
   dUrls = mdo
-    let eFallback = leftmost [() <$ eNewTxRelayDown, () <$ eSubmitRelayDown]
-    -- logEvent "encoinsTxWalletMode: eFallback" eFallback
-    let eFailedUrl = leftmost [Nothing <$ eSend, tagPromptlyDyn dmUrl eFallback]
-    -- logEvent "encoinsTxWalletMode: eFailedUrl" eFailedUrl
-
-    dFailedUrls <- foldDyn (\mUrl acc -> maybe acc (\u -> u : acc) mUrl) [] eFailedUrl
-    -- logDyn "encoinsTxWalletMode: dFailedUrls" dFailedUrls
-    let dUpdatedUrls = zipDynWith (\\) dUrls dFailedUrls
-    -- logDyn "encoinsTxWalletMode: dUpdatedUrls" dUpdatedUrls
-
-    -- eDelayGetUrl <- delay 1 $ leftmost [eSend, eFallback]
-
+    let eFallback = leftmost [() <$ eNewTxError, () <$ eSubmitError]
+    let emFailedUrl = leftmost [Nothing <$ eSend, tagPromptlyDyn dmUrl eFallback]
+    dUpdatedUrls <- updateUrls dUrls emFailedUrl
     emUrl <- getRelayUrlE dUpdatedUrls $ leftmost [eSend, eFallback]
     dmUrl <- holdDyn Nothing emUrl
-    -- logDyn "encoinsTxWalletMode: dmUrl" dmUrl
 
     let dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
@@ -98,8 +96,7 @@ encoinsTxWalletMode
         (BasePath url)
         dNewTxReqBody
         eFinalRedeemer
-    let (eNewTxRelayDown, eNewTxBackendError, eNewTxSuccess) =
-          fromRelayResponse eeNewTxResponse
+    let (eNewTxError, eNewTxSuccess) = eventEither eeNewTxResponse
 
     let eTxId = fmap fst eNewTxSuccess
         eTx   = fmap snd eNewTxSuccess
@@ -115,9 +112,11 @@ encoinsTxWalletMode
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
     eeSubmitResponse <- switchHoldDyn dmUrl $ \case
       Nothing  -> pure never
-      Just url -> submitTxRequestWrapper (BasePath url) dSubmitReqBody eWalletSignature
-    let (eSubmitRelayDown, eSubmitBackendError, eSubmitted) =
-          fromRelayResponse eeSubmitResponse
+      Just url -> submitTxRequestWrapper
+        (BasePath url)
+        dSubmitReqBody
+        eWalletSignature
+    let (eSubmitError, eSubmitted) = eventEither eeSubmitResponse
 
     -- Tracking the pending transaction
     eConfirmed <- updated <$> holdUniqDyn dUTXOs
@@ -130,10 +129,8 @@ encoinsTxWalletMode
           , Signing      <$ eNewTxSuccess
           , Submitting   <$ eWalletSignature
           , Submitted    <$ eSubmitted
-          , (BackendError . ("Relay disconnected: " <>) . toText) <$>
-              leftmost [eNewTxRelayDown, eSubmitRelayDown]
           , (BackendError . ("Relay returned error: " <>) . toText) <$>
-            leftmost [eNewTxBackendError, eSubmitBackendError]
+            leftmost [eNewTxError, eSubmitError]
           ]
     logEvent "encoinsTxWalletMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
