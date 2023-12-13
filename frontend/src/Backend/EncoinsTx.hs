@@ -5,6 +5,7 @@ module Backend.EncoinsTx where
 import           Control.Monad             (void)
 import           Control.Monad.IO.Class    (MonadIO (..))
 import qualified CSL
+import           Data.List                 ((\\))
 import qualified Data.Map                  as Map
 import           Data.Maybe                (fromJust, fromMaybe)
 import           Data.Text                 (Text)
@@ -12,6 +13,7 @@ import           JS.App                    (walletSignTx)
 import           PlutusTx.Prelude          (length)
 import           Prelude                   hiding (length)
 import           Reflex.Dom                hiding (Input)
+import           Servant.Reflex            (BaseUrl (..))
 import           Witherable                (catMaybes)
 
 import           Backend.Protocol.Setup    (encoinsCurrencySymbol,
@@ -27,7 +29,6 @@ import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils      (toText)
-
 
 encoinsTxWalletMode :: MonadWidget t m
   => Dynamic t Wallet
@@ -46,10 +47,21 @@ encoinsTxWalletMode
   dCoinsMint
   eSend
   dUrls = mdo
-
     let eFallback = leftmost [() <$ eNewTxRelayDown, () <$ eSubmitRelayDown]
-    emUrl <- getRelayUrlE dUrls $ leftmost [eSend, eFallback]
+    -- logEvent "encoinsTxWalletMode: eFallback" eFallback
+    let eFailedUrl = leftmost [Nothing <$ eSend, tagPromptlyDyn dmUrl eFallback]
+    -- logEvent "encoinsTxWalletMode: eFailedUrl" eFailedUrl
+
+    dFailedUrls <- foldDyn (\mUrl acc -> maybe acc (\u -> u : acc) mUrl) [] eFailedUrl
+    -- logDyn "encoinsTxWalletMode: dFailedUrls" dFailedUrls
+    let dUpdatedUrls = zipDynWith (\\) dUrls dFailedUrls
+    -- logDyn "encoinsTxWalletMode: dUpdatedUrls" dUpdatedUrls
+
+    -- eDelayGetUrl <- delay 1 $ leftmost [eSend, eFallback]
+
+    emUrl <- getRelayUrlE dUpdatedUrls $ leftmost [eSend, eFallback]
     dmUrl <- holdDyn Nothing emUrl
+    -- logDyn "encoinsTxWalletMode: dmUrl" dmUrl
 
     let dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
@@ -83,7 +95,7 @@ encoinsTxWalletMode
     eeNewTxResponse <- switchHoldDyn dmUrl $ \case
       Nothing -> pure never
       Just url -> newTxRequestWrapper
-        url
+        (BasePath url)
         dNewTxReqBody
         eFinalRedeemer
     let (eNewTxRelayDown, eNewTxBackendError, eNewTxSuccess) =
@@ -103,7 +115,7 @@ encoinsTxWalletMode
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
     eeSubmitResponse <- switchHoldDyn dmUrl $ \case
       Nothing  -> pure never
-      Just url -> submitTxRequestWrapper url dSubmitReqBody eWalletSignature
+      Just url -> submitTxRequestWrapper (BasePath url) dSubmitReqBody eWalletSignature
     let (eSubmitRelayDown, eSubmitBackendError, eSubmitted) =
           fromRelayResponse eeSubmitResponse
 
@@ -164,7 +176,7 @@ encoinsTxTransferMode
     eeNewTxResponse <- switchHoldDyn dmUrl $ \case
       Nothing -> pure never
       Just url -> newTxRequestWrapper
-        url
+        (BasePath url)
         dNewTxReqBody
         eFireTx
     let (eNewTxRelayDown, eNewTxBackendError, eNewTxSuccess) =
@@ -183,7 +195,7 @@ encoinsTxTransferMode
     let dSubmitReqBody = zipDynWith SubmitTxReqBody dTx dWalletSignature
     eeSubmitResponse <- switchHoldDyn dmUrl $ \case
       Nothing  -> pure never
-      Just url -> submitTxRequestWrapper url dSubmitReqBody eWalletSignature
+      Just url -> submitTxRequestWrapper (BasePath url) dSubmitReqBody eWalletSignature
     let (eSubmitRelayDown, eSubmitBackendError, eSubmitted) =
           fromRelayResponse eeSubmitResponse
 
@@ -242,7 +254,10 @@ encoinsTxLedgerMode
 
     eeStatus <- switchHoldDyn dmUrl $ \case
       Nothing  -> pure never
-      Just url -> statusRequestWrapper url (pure LedgerEncoins) eFireStatus
+      Just url -> statusRequestWrapper
+        (BasePath url)
+        (pure LedgerEncoins)
+        eFireStatus
     let (eStatusRelayDown, eStatusBackendError, eStatusResp) =
           fromRelayResponse eeStatus
 
@@ -277,7 +292,10 @@ encoinsTxLedgerMode
     logEvent "Fire ledger tx" eFinalRedeemerReq
 
     eeServerTxResponse <- switchHoldDyn dmUrl $ \case
-      Just url -> serverTxRequestWrapper url dServerTxReqBody eFinalRedeemerReq
+      Just url -> serverTxRequestWrapper
+        (BasePath url)
+        dServerTxReqBody
+        eFinalRedeemerReq
       Nothing  -> pure never
     let (eServerRelayDown, eServerBackendError, eServerOk) =
           fromRelayResponse eeServerTxResponse

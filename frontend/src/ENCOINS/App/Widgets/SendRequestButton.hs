@@ -4,6 +4,7 @@ module ENCOINS.App.Widgets.SendRequestButton where
 
 import           Data.Text                    (Text)
 import           Reflex.Dom
+import           Servant.Reflex               (BaseUrl (..))
 
 import           Backend.Protocol.TxValidity  (TxValidity (..),
                                                txValidityLedger,
@@ -16,6 +17,7 @@ import           Backend.Utility              (switchHoldDyn, toEither)
 import           Backend.Wallet               (Wallet (..))
 import           ENCOINS.Bulletproofs         (Secrets)
 import           ENCOINS.Common.Widgets.Basic (btn, divClassId)
+
 -- import           ENCOINS.Common.Events
 
 sendRequestButtonWallet :: MonadWidget t m
@@ -48,7 +50,10 @@ sendRequestButtonWallet
     -- Getting current MaxAda
     eeStatus <- switchHoldDyn dmUrl $ \case
       Nothing  -> pure never
-      Just url -> statusRequestWrapper url (pure MaxAdaWithdraw) eFireStatus
+      Just url -> statusRequestWrapper
+        (BasePath url)
+        (pure MaxAdaWithdraw)
+        eFireStatus
     let (eRelayDown, _, eMaxAda) = fromRelayResponse eeStatus
 
     let getMaxAda (MaxAdaWithdrawResult n) = Just n
@@ -102,7 +107,10 @@ sendRequestButtonLedger mode dStatus dCoinsToBurn dCoinsToMint e dUrls = mdo
   -- Getting current MaxAda
   eeStatus <- switchHoldDyn dmUrl $ \case
     Nothing  -> pure never
-    Just url -> statusRequestWrapper url (pure MaxAdaWithdraw) eFireStatus
+    Just url -> statusRequestWrapper
+      (BasePath url)
+      (pure MaxAdaWithdraw)
+      eFireStatus
   let (eRelayDown, _, eMaxAda) = fromRelayResponse eeStatus
 
   let getMaxAda (MaxAdaWithdrawResult n) = Just n

@@ -60,7 +60,9 @@ delegateWindow eOpen dWallet = mdo
 
       let eUrlStake = tagPromptlyDyn dInputText eStake
       let eUrlUnstake = unStakeUrl <$ eUnstake
+      -- TODO: use line with 'stripHostOrRelay' in prod
       let eUrl = stripHostOrRelay <$> leftmost [eUrlTable, eUrlStake, eUrlUnstake]
+      -- let eUrl = leftmost [eUrlTable, eUrlStake, eUrlUnstake]
       let LucidConfig apiKey networkId policyId assetName = lucidConfigDao
       performEvent_ $
         JS.daoDelegateTx apiKey networkId policyId assetName
