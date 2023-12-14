@@ -30,11 +30,11 @@ newTxRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Dynamic t (InputOfEncoinsApi, TransactionInputs)
   -> Event t ()
-  -> m (Event t (Either Int (Text, Text)))
+  -> m (Event t (Either Text (Text, Text)))
 newTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- newTxRequest (Right <$> dReqBody) e
-  let eRespUnwrapped = mkStatusOrResponse <$> eResp
+  let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "newTx request" $ () <$ eRespUnwrapped
   pure eRespUnwrapped
 
@@ -42,11 +42,11 @@ submitTxRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Dynamic t SubmitTxReqBody
   -> Event t ()
-  -> m (Event t (Either Int ()))
+  -> m (Event t (Either Text ()))
 submitTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- submitTxRequest (Right <$> dReqBody) e
-  let eRespUnwrapped = (() <$) . mkStatusOrResponse <$> eResp
+  let eRespUnwrapped = (() <$) . mkTextOrResponse <$> eResp
   logEvent "submitTx request" eRespUnwrapped
   return eRespUnwrapped
 
@@ -66,11 +66,11 @@ serverTxRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Dynamic t (InputOfEncoinsApi, TransactionInputs)
   -> Event t ()
-  -> m (Event t (Either Int ()))
+  -> m (Event t (Either Text ()))
 serverTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- serverTxRequest (Right <$> dReqBody) e
-  let eRespUnwrapped = (() <$) . mkStatusOrResponse <$> eResp
+  let eRespUnwrapped = (() <$) . mkTextOrResponse <$> eResp
   logEvent "serverTx request" eRespUnwrapped
   return eRespUnwrapped
 
@@ -78,11 +78,11 @@ statusRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Dynamic t EncoinsStatusReqBody
   -> Event t ()
-  -> m (Event t (Either Int EncoinsStatusResult))
+  -> m (Event t (Either Text EncoinsStatusResult))
 statusRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- statusRequest (Right <$> dReqBody) e
-  let eRespUnwrapped = mkStatusOrResponse <$> eResp
+  let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "status request" $ fmap showStatus <$> eRespUnwrapped
   return eRespUnwrapped
 
@@ -100,11 +100,11 @@ versionRequestWrapper baseUrl e = do
 serversRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Event t ()
-  -> m (Event t (Either Int (Map Text Integer)))
+  -> m (Event t (Either Text (Map Text Integer)))
 serversRequestWrapper baseUrl e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- serversRequest e
-  let eRespUnwrapped = mkStatusOrResponse <$> eResp
+  let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "servers request" eRespUnwrapped
   return eRespUnwrapped
 
@@ -112,11 +112,11 @@ serversRequestWrapper baseUrl e = do
 currentRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Event t ()
-  -> m (Event t (Either Int [Text]))
+  -> m (Event t (Either Text [Text]))
 currentRequestWrapper baseUrl e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- currentRequest e
-  let eRespUnwrapped = mkStatusOrResponse <$> eResp
+  let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "current servers request" eRespUnwrapped
   return eRespUnwrapped
 
@@ -125,11 +125,11 @@ infoRequestWrapper :: MonadWidget t m
   => BaseUrl
   -> Dynamic t Address
   -> Event t ()
-  -> m (Event t (Either Int (Text, Integer)))
+  -> m (Event t (Either Text (Text, Integer)))
 infoRequestWrapper baseUrl addr e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- infoRequest (Right <$> addr) e
-  let eRespUnwrapped = mkStatusOrResponse <$> eResp
+  let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "info request" eRespUnwrapped
   return eRespUnwrapped
 
@@ -171,10 +171,10 @@ makeResponse :: ReqResult tag a -> Maybe a
 makeResponse (ResponseSuccess _ a _) = Just a
 makeResponse _                       = Nothing
 
-makeResponseEither :: ReqResult tag a -> Either Text a
-makeResponseEither (ResponseSuccess _ a _)   = Right a
-makeResponseEither (ResponseFailure _ txt _) = Left $ "ResponseFailure: " <> txt
-makeResponseEither (RequestFailure _ txt)    = Left $ "RequestFailure: " <> txt
+mkTextOrResponse :: ReqResult tag a -> Either Text a
+mkTextOrResponse (ResponseSuccess _ a _)   = Right a
+mkTextOrResponse (ResponseFailure _ txt _) = Left $ "ResponseFailure: " <> txt
+mkTextOrResponse (RequestFailure _ txt)    = Left $ "RequestFailure: " <> txt
 
 mkStatusOrResponse :: ReqResult tag a -> Either Int a
 mkStatusOrResponse (ResponseSuccess _ a _) = Right a

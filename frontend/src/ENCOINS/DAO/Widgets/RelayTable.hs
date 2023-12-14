@@ -31,7 +31,7 @@ import           ENCOINS.Common.Utils         (stripHostOrRelay, toText)
 import           ENCOINS.Common.Widgets.Basic (btnWithBlock)
 
 relayAmountWidget :: MonadWidget t m
-  => Event t (Either Int [(Text, Integer)])
+  => Event t (Either Text [(Text, Integer)])
   -> Event t (Maybe (Text, Integer))
   -> Dynamic t (Map Text Text)
   -> m (Event t Text)
@@ -41,7 +41,7 @@ relayAmountWidget eeRelays emDelegated dRelayNames = do
   switchHoldDyn deRelays $ \case
     Left err -> do
       article $
-        divClass "" $ text $ "Fetching delegate relays has failed with status: " <> toText err
+        divClass "" $ text $ "Fetching delegate relays has failed with error: " <> err
       pure never
     Right relays -> article $ table $ do
       let stripedRelays = map (\(u,n) -> (stripHostOrRelay u, n)) relays
@@ -73,7 +73,7 @@ relayAmountWidget eeRelays emDelegated dRelayNames = do
 
 fetchRelayTable :: MonadWidget t m
   => Event t ()
-  -> m (Event t (Either Int [(Text, Integer)]))
+  -> m (Event t (Either Text [(Text, Integer)]))
 fetchRelayTable eOpen = do
   eServers <- serversRequestWrapper delegateServerUrl eOpen
   let eeRes = fmap (sortOn (Down . snd) . Map.toList) <$> eServers

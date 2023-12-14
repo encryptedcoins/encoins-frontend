@@ -122,7 +122,7 @@ encoinsTxWalletMode
           , Signing      <$ eNewTxSuccess
           , Submitting   <$ eWalletSignature
           , Submitted    <$ eSubmitted
-          , (BackendError . ("Relay returned error: " <>) . toText) <$>
+          , (BackendError . ("Relay returned error: " <>)) <$>
             leftmost [eNewTxError, eSubmitError]
           ]
     logEvent "encoinsTxWalletMode: eStatus" eStatus
@@ -200,7 +200,7 @@ encoinsTxTransferMode
           , Signing      <$ eNewTxSuccess
           , Submitting   <$ eWalletSignature
           , Submitted    <$ eSubmitted
-          , (BackendError . ("Relay returned error: " <>) . toText) <$>
+          , (BackendError . ("Relay returned error: " <>)) <$>
              leftmost [eNewTxError, eSubmitError]
           ]
     logEvent "encoinsTxTransferMode: eStatus" eStatus
@@ -297,7 +297,7 @@ encoinsTxLedgerMode
           , NoRelay      <$ eAllRelayDown
           , Constructing <$ eFinalRedeemer
           , Submitted    <$ eServerOk
-          , (BackendError . ("Relay returned error: " <>) . toText) <$>
+          , (BackendError . ("Relay returned error: " <>)) <$>
               leftmost [eStatusError, eServerError]
           ]
     logEvent "encoinsTxLedgerMode: eStatus" eStatus
