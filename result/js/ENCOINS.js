@@ -554,8 +554,7 @@ async function daoDelegateTx(apiKey, net, walletName, url, policyId, assetName) 
     plc_msg.free();
     setInputValue("DelegateReadyTx", "");
   } catch (e) {
-    setInputValue("DelegateError", e.info);
-    console.log("Error: " + e.info);
+    handle_dao_error(e);
     return;
   }
 };
@@ -573,4 +572,21 @@ async function check_utxos_changed (elementId, api, utxosOld, { wait, retries })
   return check_utxos_changed(elementId, api, utxosOld, {wait, retries: --retries })
 
   throw new Error('Retry attempts exhausted')
+}
+
+function handle_dao_error (e) {
+  switch (e) {
+    case "InputsExhaustedError":
+      setInputValue("DelegateError", "Not enough ADA");
+      console.log("Error in daoDelegateTx: " + e);
+      break;
+    default:
+      if (e.info === undefined) {
+          setInputValue("DelegateError", e);
+          console.log("Raw error in daoDelegateTx: " + e);
+      } else
+          setInputValue("DelegateError", e.info);
+          console.log("Error in daoDelegateTx: " + e.info);
+      break;
+  }
 }
