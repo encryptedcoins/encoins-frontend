@@ -42,12 +42,13 @@ relayNames = fromList
     ("http://172.205.248.34", "Waffle #2"),
     ("http://135.148.53.151", "Prism Relay"),
     ("http://161.97.88.36", "RUMOR"),
-    ("http://136.244.19.126", "Cipher Relay"),
+    ("https://136.244.19.126", "Cipher Relay"),
     ("http://23.105.171.80", "DC Private"),
     ("https://178.119.158.164", "KTOP SPO 4"),
     ("https://encoins.cardanode.com.au", "ADAOZ"),
     ("http://encoins.congeepool.com", "[CONGE] Conge Pool"),
     ("http://154.38.171.77", "Toby 4 Relay"),
     ("http://149.102.156.213", "Toby 5 Relay (Private)"),
-    ("http://176.57.184.115", "Toby 6 Relay")
+    ("http://176.57.184.115", "Toby 6 Relay"),
+    ("http://encoins.happystaking.io", "HAPPY Staking Pool")
   ]
