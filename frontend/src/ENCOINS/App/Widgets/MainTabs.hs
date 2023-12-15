@@ -7,7 +7,6 @@ import           Data.Aeson                             (encode)
 import           Data.Bool                              (bool)
 import           Data.ByteString.Lazy                   (toStrict)
 import           Data.List                              (nub)
-import           Data.Maybe                             (fromMaybe)
 import           Data.Text                              (Text)
 import           Data.Text.Encoding                     (decodeUtf8)
 import           Reflex.Dom
@@ -314,9 +313,8 @@ ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
                     eSendNonZeroBalance = gate ((/=0) <$> current dTotalBalance) eSend'
                 eAddChange <- coinNewButtonWidget dV never (addChangeButton dTotalBalance)
                 (eAddrOk, _) <- inputAddressWindow eSendNonZeroBalance
-                dmAddr <- holdDyn (Just defaultChangeAddress) $
-                  leftmost [Just <$> eAddrOk, Nothing <$ eSendZeroBalance]
-                let dAddr' = fromMaybe ledgerAddress <$> dmAddr
+                dAddr' <- holdDyn defaultChangeAddress $
+                  leftmost [eAddrOk, ledgerAddress <$ eSendZeroBalance]
                 pure (eSendStatus, dCoinsToMint', leftmost [void eAddrOk, eSendZeroBalance], dAddr')
 
             (dAssetNamesInTheWallet, eStatusUpdate) <- encoinsTxLedgerMode
