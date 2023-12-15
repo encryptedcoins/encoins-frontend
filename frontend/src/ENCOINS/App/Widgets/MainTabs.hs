@@ -17,7 +17,7 @@ import           Backend.EncoinsTx                      (encoinsTxLedgerMode,
                                                          encoinsTxTransferMode,
                                                          encoinsTxWalletMode)
 import           Backend.Environment                    (getEnvironment)
-import           Backend.Protocol.Setup                 (ledgerAddress)
+import           Backend.Protocol.Setup                 (ledgerAddress, defaultChangeAddress)
 import           Backend.Protocol.TxValidity            (getAda, getCoinNumber,
                                                          getDeposit)
 import           Backend.Protocol.Types
@@ -314,7 +314,7 @@ ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
                     eSendNonZeroBalance = gate ((/=0) <$> current dTotalBalance) eSend'
                 eAddChange <- coinNewButtonWidget dV never (addChangeButton dTotalBalance)
                 (eAddrOk, _) <- inputAddressWindow eSendNonZeroBalance
-                dmAddr <- holdDyn Nothing $
+                dmAddr <- holdDyn (Just defaultChangeAddress) $
                   leftmost [Just <$> eAddrOk, Nothing <$ eSendZeroBalance]
                 let dAddr' = fromMaybe ledgerAddress <$> dmAddr
                 pure (eSendStatus, dCoinsToMint', leftmost [void eAddrOk, eSendZeroBalance], dAddr')

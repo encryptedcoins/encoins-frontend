@@ -46,3 +46,25 @@ ledgerAddress = Address
     pubKeyHex = case app networkConfig of
       Mainnet -> "0bd016f8ba5857d2e2026da550e4b724a3e1e8d5598cbfab19ce756c"
       Testnet -> "0bd016f8ba5857d2e2026da550e4b724a3e1e8d5598cbfab19ce756c"
+
+defaultChangeAddress :: Address
+defaultChangeAddress = Address
+  (PubKeyCredential
+    $ PubKeyHash
+    $ toBuiltin
+    $ fromJust
+    $ decodeHex pubKeyHex)
+  (Just
+    $ StakingHash
+    $ PubKeyCredential
+    $ PubKeyHash
+    $ toBuiltin
+    $ fromJust
+    $ decodeHex stakeKeyHex)
+  where
+    pubKeyHex = case app networkConfig of
+      Mainnet -> "8037261546e47ad3d628dcf2c17241e0c2dd641b323d1f8c466eaa50"
+      Testnet -> "cfc1a6d381d58c108b56127c75262dd6201a69c3fc5a51b4e194bebb"
+    stakeKeyHex = case app networkConfig of
+      Mainnet -> "c1d7e99321128f9de0d21cd98b17de09056c1274cdd5c1af55ef622c"
+      Testnet -> "c1d7e99321128f9de0d21cd98b17de09056c1274cdd5c1af55ef622c"
