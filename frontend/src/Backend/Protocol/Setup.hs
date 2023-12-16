@@ -47,8 +47,8 @@ ledgerAddress = Address
       Mainnet -> "0bd016f8ba5857d2e2026da550e4b724a3e1e8d5598cbfab19ce756c"
       Testnet -> "0bd016f8ba5857d2e2026da550e4b724a3e1e8d5598cbfab19ce756c"
 
-defaultChangeAddress :: Address
-defaultChangeAddress = Address
+emergentChangeAddress :: Address
+emergentChangeAddress = Address
   (PubKeyCredential
     $ PubKeyHash
     $ toBuiltin

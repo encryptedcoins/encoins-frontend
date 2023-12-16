@@ -16,7 +16,7 @@ import           Backend.EncoinsTx                      (encoinsTxLedgerMode,
                                                          encoinsTxTransferMode,
                                                          encoinsTxWalletMode)
 import           Backend.Environment                    (getEnvironment)
-import           Backend.Protocol.Setup                 (ledgerAddress, defaultChangeAddress)
+import           Backend.Protocol.Setup                 (ledgerAddress, emergentChangeAddress)
 import           Backend.Protocol.TxValidity            (getAda, getCoinNumber,
                                                          getDeposit)
 import           Backend.Protocol.Types
@@ -313,9 +313,11 @@ ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
                     eSendNonZeroBalance = gate ((/=0) <$> current dTotalBalance) eSend'
                 eAddChange <- coinNewButtonWidget dV never (addChangeButton dTotalBalance)
                 (eAddrOk, _) <- inputAddressWindow eSendNonZeroBalance
-                dAddr' <- holdDyn defaultChangeAddress $
-                  leftmost [eAddrOk, ledgerAddress <$ eSendZeroBalance]
-                pure (eSendStatus, dCoinsToMint', leftmost [void eAddrOk, eSendZeroBalance], dAddr')
+                let eHasChangeAddress = leftmost [eAddrOk, ledgerAddress <$ eSendZeroBalance]
+                dAddr' <- holdDyn emergentChangeAddress eHasChangeAddress
+                -- wait until ChangeAddress is updated
+                eFireSend <- delay 0.1 $ () <$ eHasChangeAddress
+                pure (eSendStatus, dCoinsToMint', eFireSend, dAddr')
 
             (dAssetNamesInTheWallet, eStatusUpdate) <- encoinsTxLedgerMode
               dBulletproofParams
