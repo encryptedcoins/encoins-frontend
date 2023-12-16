@@ -358,10 +358,10 @@ async function addrLoad(addrInput)
     stakeKeyHashCred.free();
     const pubKeyHashHex = toHexString(pubKeyHash.to_bytes());
     const stakeKeyHashHex = toHexString(stakeKeyHash.to_bytes());
-    pubKeyHash.free();
-    stakeKeyHash.free();
     setInputValue("addrPubKeyHashElement", pubKeyHashHex);
     setInputValue("addrStakeKeyHashElement", stakeKeyHashHex);
+    pubKeyHash.free();
+    stakeKeyHash.free();
   } catch (e) {
     console.log(e.message);
     setInputValue("addrPubKeyHashElement", "");
