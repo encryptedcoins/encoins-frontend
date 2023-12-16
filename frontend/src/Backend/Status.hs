@@ -4,14 +4,15 @@ module Backend.Status where
 import           Data.Text (Text, unpack)
 
 data Status =
-      Ready             -- ^ The default status
-    | Success           -- ^ Transaction is passed successfully
-    | Constructing      -- ^ Transaction is sent to the backend for constructing and balancing
-    | Signing           -- ^ Transaction is sent to the wallet for signing
-    | Submitting        -- ^ Transaction is sent to the backend for submission
-    | Submitted         -- ^ Transaction is submitted to the blockchain
-    | NoError           -- ^ All errors are gone
-    | NoRelay           -- ^ All relay are down
+      Ready                -- ^ The default status
+    | Success              -- ^ Transaction is passed successfully
+    | Constructing         -- ^ Transaction is sent to the backend for constructing and balancing
+    | Signing              -- ^ Transaction is sent to the wallet for signing
+    | Submitting           -- ^ Transaction is sent to the backend for submission
+    | Submitted            -- ^ Transaction is submitted to the blockchain
+    | NoError              -- ^ All errors are gone
+    | NoRelay              -- ^ All relay are down
+    | InvalidChangeAddress -- ^ Change address is invalid in Ledger mode
     | BackendError Text
     | WalletNetworkError Text
     | WalletError Text
@@ -26,6 +27,7 @@ instance Show Status where
     show Submitting             = "Submitting..."
     show Submitted              = "Submitted. Pending the confirmation..."
     show NoRelay                = "All available relays are down!"
+    show InvalidChangeAddress   = "ChangeAddress is invalid"
     show NoError                = ""
     show (BackendError e)       = "Error: " <> unpack e
     show (WalletNetworkError e) = "Error: " <> unpack e
@@ -44,6 +46,7 @@ isTxProcessOrCriticalError = \case
   Submitting           -> True
   Submitted            -> True
   NoRelay              -> True
+  InvalidChangeAddress -> True
   WalletNetworkError _ -> True
   _                    -> False
 
