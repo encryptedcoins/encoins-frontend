@@ -7,7 +7,6 @@ import           Data.List                    (nub)
 import           Data.Maybe                   (fromJust, isJust)
 import           Data.Text                    (Text)
 import           Reflex.Dom
-import           Servant.Reflex               (BaseUrl)
 
 import           Backend.Protocol.Fees        (protocolFees)
 import           Backend.Protocol.Types
@@ -37,14 +36,14 @@ instance Monoid TxValidity where
     mempty = TxValid
 
 txValidityWallet :: EncoinsMode
-  -> Maybe BaseUrl
+  -> Maybe Text
   -> Integer
   -> Status
   -> Wallet
   -> Secrets
   -> Secrets
   -> TxValidity
-txValidityWallet mode mbaseUrl maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
+txValidityWallet mode mUrl maxAda s Wallet{..} toBurn toMint = mconcat $ zipWith f
         [e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12]
         [cond1, cond2, cond3, cond4, cond5, cond6, cond7, cond8, cond9, cond10, cond11, cond12]
     where
@@ -63,7 +62,7 @@ txValidityWallet mode mbaseUrl maxAda s Wallet{..} toBurn toMint = mconcat $ zip
         cond8 = mode == WalletMode
         cond9 = length coins == length (nub coins)
         cond10 = maxAda + balance >= 0
-        cond11 = isJust mbaseUrl
+        cond11 = isJust mUrl
         cond12 = mode == WalletMode
         e1    = "Connect ENCOINS to a wallet first."
         e2    = "Switch to the" <> space <> currentNetworkApp <> space <> "network in your wallet."
@@ -79,13 +78,13 @@ txValidityWallet mode mbaseUrl maxAda s Wallet{..} toBurn toMint = mconcat $ zip
         e12   = "Transaction balance should be greater or equal to fees in the Ledger Mode."
 
 txValidityLedger :: EncoinsMode
-  -> Maybe BaseUrl
+  -> Maybe Text
   -> Integer
   -> Status
   -> Secrets
   -> Secrets
   -> TxValidity
-txValidityLedger mode mbaseUrl maxAda s toBurn toMint = mconcat $ zipWith f
+txValidityLedger mode mUrl maxAda s toBurn toMint = mconcat $ zipWith f
         [e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12]
         [cond1, cond2, cond3, cond4, cond5, cond6, cond7, cond8, cond9, cond10, cond11, cond12]
     where
@@ -104,7 +103,7 @@ txValidityLedger mode mbaseUrl maxAda s toBurn toMint = mconcat $ zipWith f
         cond8 = length toMint <= 2 && length toBurn <= 2
         cond9 = length coins == length (nub coins)
         cond10 = maxAda + balance >= 0
-        cond11 = isJust mbaseUrl
+        cond11 = isJust mUrl
         cond12 = balance + deposit + fees <= 0
         e1    = "Connect ENCOINS to a wallet first."
         e2    = "Switch to the" <> space <> currentNetworkApp <> space <> "network in your wallet."

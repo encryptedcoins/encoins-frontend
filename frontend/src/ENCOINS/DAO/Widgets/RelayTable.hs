@@ -8,33 +8,34 @@ module ENCOINS.DAO.Widgets.RelayTable
   , fetchRelayTable
   , fetchDelegatedByAddress
   , unStakeUrl
+  , fetchRelayNames
   ) where
 
-import           Control.Monad                                 (forM)
-import           Data.Bool                                     (bool)
-import           Data.List                                     (sortOn)
-import qualified Data.Map                                      as Map
-import           Data.Maybe                                    (fromMaybe)
-import           Data.Ord                                      (Down (..))
-import           Data.Text                                     (Text)
+import           Control.Monad                (forM)
+import           Data.Bool                    (bool)
+import           Data.List                    (sortOn)
+import           Data.Map                     (Map)
+import qualified Data.Map                     as Map
+import           Data.Maybe                   (fromMaybe)
+import           Data.Ord                     (Down (..))
+import           Data.Text                    (Text)
 import           Reflex.Dom
 
 import           Backend.Protocol.Types
-import           Backend.Servant.Requests                      (infoRequestWrapper,
-                                                                serversRequestWrapper)
-import           Backend.Utility                               (switchHoldDyn)
-import           Config.Config                                 (delegateServerUrl)
+import           Backend.Servant.Requests     (infoRequestWrapper,
+                                               serversRequestWrapper)
+import           Backend.Utility              (switchHoldDyn)
+import           Config.Config                (delegateServerUrl)
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils                          (stripHostOrRelay,
-                                                                toText)
-import           ENCOINS.Common.Widgets.Basic                  (btnWithBlock)
-import           ENCOINS.DAO.Widgets.DelegateWindow.RelayNames (relayNames)
+import           ENCOINS.Common.Utils         (stripHostOrRelay, toText)
+import           ENCOINS.Common.Widgets.Basic (btnWithBlock)
 
 relayAmountWidget :: MonadWidget t m
   => Event t (Either Int [(Text, Integer)])
   -> Event t (Maybe (Text, Integer))
+  -> Dynamic t (Map Text Text)
   -> m (Event t Text)
-relayAmountWidget eeRelays emDelegated = do
+relayAmountWidget eeRelays emDelegated dRelayNames = do
   deRelays <- holdDyn (Right []) eeRelays
   dmDelegated <- holdDyn Nothing emDelegated
   switchHoldDyn deRelays $ \case
@@ -52,7 +53,7 @@ relayAmountWidget eeRelays emDelegated = do
             blank
             pure never
           else tr $ do
-            tdRelay $ text $ fromMaybe relay (relay `Map.lookup` relayNames)
+            tdRelay $ dynText $ fromMaybe relay . Map.lookup relay <$> dRelayNames
             tdAmount $ text $ mkAmount amount
             eClick <- tdButton $ btnWithBlock
               "button-switching inverted"
@@ -116,3 +117,19 @@ unStakeUrl = "encoins.io"
 -- fetchRelayTable eOpen = do
 --   let eUrl = "https://encoins.io/delegations.json" <$ eOpen
 --   fmap sortRelayAmounts <$> getAndDecode eUrl
+
+fetchRelayNames :: MonadWidget t m
+  => Event t ()
+  -> m (Dynamic t (Map Text Text))
+fetchRelayNames eOpen = do
+  let eUrl = "https://encoins.io/relay_names.json" <$ eOpen
+  (emNames :: Event t (Maybe (Map Text Text))) <- getAndDecode eUrl
+  dmNames <- holdDyn Nothing emNames
+  eNames <- switchHoldDyn dmNames $ \case
+    Nothing -> do
+      logEvent "Nothing fetched from url "  eUrl
+      pure never
+    Just names -> do
+      e <- newEvent
+      pure $ names <$ e
+  holdDyn Map.empty eNames

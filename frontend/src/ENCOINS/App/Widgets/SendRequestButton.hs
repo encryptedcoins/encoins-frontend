@@ -2,21 +2,24 @@
 
 module ENCOINS.App.Widgets.SendRequestButton where
 
-import           Data.Text                    (Text)
+import           Data.Text                       (Text)
 import           Reflex.Dom
+import           Servant.Reflex                  (BaseUrl (..))
 
-import           Backend.Protocol.TxValidity  (TxValidity (..),
-                                               txValidityLedger,
-                                               txValidityWallet)
+import           Backend.Protocol.TxValidity     (TxValidity (..),
+                                                  txValidityLedger,
+                                                  txValidityWallet)
 import           Backend.Protocol.Types
-import           Backend.Servant.Requests     (fromRelayResponse, getRelayUrlE,
-                                               statusRequestWrapper)
-import           Backend.Status               (Status (..))
-import           Backend.Utility              (switchHoldDyn, toEither)
-import           Backend.Wallet               (Wallet (..))
-import           ENCOINS.Bulletproofs         (Secrets)
-import           ENCOINS.Common.Widgets.Basic (btn, divClassId)
--- import           ENCOINS.Common.Events
+import           Backend.Servant.Requests        (eventEither, getRelayUrlE,
+                                                  statusRequestWrapper)
+import           Backend.Status                  (Status (..))
+import           Backend.Utility                 (switchHoldDyn, toEither)
+import           Backend.Wallet                  (Wallet (..))
+import           ENCOINS.Bulletproofs            (Secrets)
+import           ENCOINS.Common.Widgets.Advanced (updateUrls)
+import           ENCOINS.Common.Widgets.Basic    (btn, divClassId)
+
+import           ENCOINS.Common.Events
 
 sendRequestButtonWallet :: MonadWidget t m
   => EncoinsMode
@@ -35,11 +38,10 @@ sendRequestButtonWallet
   dCoinsToMint
   e
   dUrls = mdo
-
-    -- TODO: choose url every time by 'e' fires
-    -- or every time user enters the tab.
     let eUrls = updated dUrls
-    emUrl <- getRelayUrlE dUrls $ leftmost [() <$ eUrls, () <$ eRelayDown]
+    let emFailedUrl = leftmost [Nothing <$ e, tagPromptlyDyn dmUrl eRelayDown]
+    dUpdatedUrls <- updateUrls dUrls emFailedUrl
+    emUrl <- getRelayUrlE dUpdatedUrls $ leftmost [() <$ eUrls, () <$ eRelayDown]
     let eAllRelayDown = filterLeft $ toEither () <$> emUrl
     dmUrl <- holdDyn Nothing emUrl
 
@@ -48,8 +50,11 @@ sendRequestButtonWallet
     -- Getting current MaxAda
     eeStatus <- switchHoldDyn dmUrl $ \case
       Nothing  -> pure never
-      Just url -> statusRequestWrapper url (pure MaxAdaWithdraw) eFireStatus
-    let (eRelayDown, _, eMaxAda) = fromRelayResponse eeStatus
+      Just url -> statusRequestWrapper
+        (BasePath url)
+        (pure MaxAdaWithdraw)
+        eFireStatus
+    let (eRelayDown, eMaxAda) = eventEither eeStatus
 
     let getMaxAda (MaxAdaWithdrawResult n) = Just n
         getMaxAda _                        = Nothing
@@ -91,9 +96,9 @@ sendRequestButtonLedger :: MonadWidget t m
 sendRequestButtonLedger mode dStatus dCoinsToBurn dCoinsToMint e dUrls = mdo
 
   let eUrls = updated dUrls
-  -- TODO: choose url every time by 'e' fires
-  -- or every time user enters the tab.
-  emUrl <- getRelayUrlE dUrls $ leftmost [() <$ eUrls, () <$ eRelayDown]
+  let emFailedUrl = leftmost [Nothing <$ e, tagPromptlyDyn dmUrl eRelayDown]
+  dUpdatedUrls <- updateUrls dUrls emFailedUrl
+  emUrl <- getRelayUrlE dUpdatedUrls $ leftmost [() <$ eUrls, () <$ eRelayDown]
   let eAllRelayDown = filterLeft $ toEither () <$> emUrl
   dmUrl <- holdDyn Nothing emUrl
 
@@ -102,8 +107,11 @@ sendRequestButtonLedger mode dStatus dCoinsToBurn dCoinsToMint e dUrls = mdo
   -- Getting current MaxAda
   eeStatus <- switchHoldDyn dmUrl $ \case
     Nothing  -> pure never
-    Just url -> statusRequestWrapper url (pure MaxAdaWithdraw) eFireStatus
-  let (eRelayDown, _, eMaxAda) = fromRelayResponse eeStatus
+    Just url -> statusRequestWrapper
+      (BasePath url)
+      (pure MaxAdaWithdraw)
+      eFireStatus
+  let (eRelayDown, eMaxAda) = eventEither eeStatus
 
   let getMaxAda (MaxAdaWithdrawResult n) = Just n
       getMaxAda _                        = Nothing

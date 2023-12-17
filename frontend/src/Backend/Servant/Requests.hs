@@ -35,7 +35,7 @@ newTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- newTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = mkStatusOrResponse <$> eResp
-  logEvent "newTx request" eRespUnwrapped
+  logEvent "newTx request" $ () <$ eRespUnwrapped
   pure eRespUnwrapped
 
 submitTxRequestWrapper :: MonadWidget t m
@@ -153,7 +153,7 @@ getRelayUrl = go urls
 getRelayUrlE :: MonadWidget t m
   => Dynamic t [Text]
   -> Event t ()
-  -> m (Event t (Maybe BaseUrl))
+  -> m (Event t (Maybe Text))
 getRelayUrlE dUrls ev = do
   let eUrls = tagPromptlyDyn dUrls ev
   performEvent $ go <$> eUrls
@@ -164,7 +164,7 @@ getRelayUrlE dUrls ev = do
       let url = l !! idx
       pingOk <- pingServer $ normalizePingUrl url
       if pingOk
-        then return $ Just $ BasePath url
+        then return $ Just url
         else go (delete url l)
 
 makeResponse :: ReqResult tag a -> Maybe a
