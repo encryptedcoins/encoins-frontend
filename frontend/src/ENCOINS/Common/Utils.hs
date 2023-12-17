@@ -4,8 +4,8 @@ module ENCOINS.Common.Utils where
 
 import           Control.Lens                ((^.))
 import           Control.Monad               (guard)
-import           Data.Attoparsec.Text        (Parser, char, parseOnly, sepBy1,
-                                              takeWhile1, (<?>), choice)
+import           Data.Attoparsec.Text        (Parser, char, choice, parseOnly,
+                                              sepBy1, takeWhile1, (<?>))
 import qualified Data.Attoparsec.Text        as A
 import           Data.ByteString             (ByteString)
 import           Data.Text                   (Text)

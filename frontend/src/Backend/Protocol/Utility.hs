@@ -10,6 +10,7 @@ import           Text.Hex                  (decodeHex, encodeHex)
 
 import           Backend.Protocol.Fees     (protocolFees)
 import           Backend.Protocol.Setup    (bulletproofSetup,
+                                            emergentChangeAddress,
                                             encoinsCurrencySymbol,
                                             ledgerAddress)
 import           Backend.Protocol.Types
@@ -28,7 +29,7 @@ getEncoinsInUtxos utxos = Map.keys assets
           (mapMaybe (Map.lookup encoinsCurrencySymbol . getMultiAsset) $
           mapMaybe (CSL.multiasset . CSL.amount . CSL.output) utxos)
 
-mkRedeemer :: EncoinsMode
+mkWalletRedeemer :: EncoinsMode
   -> Address
   -> Address
   -> BulletproofParams
@@ -36,7 +37,24 @@ mkRedeemer :: EncoinsMode
   -> [MintingPolarity]
   -> Randomness
   -> EncoinsRedeemer
-mkRedeemer mode ledgerAddr changeAddr bp secrets mps rs = red
+mkWalletRedeemer mode ledgerAddr changeAddr bp secrets mps rs = red
+    where (_, inputs, proof) = bulletproof bulletproofSetup bp secrets mps rs
+          v = calculateV secrets mps
+          inputs' = map (\(Input g p) -> (fromGroupElement g, p)) inputs
+          sig = toBuiltin $ fromJust $
+            decodeHex ""
+          red = ((ledgerAddr, changeAddr, protocolFees mode v), (v, inputs'), proof, sig)
+
+mkLedgerRedeemer :: EncoinsMode
+  -> Address
+  -> BulletproofParams
+  -> Secrets
+  -> [MintingPolarity]
+  -> Randomness
+  -> Address
+  -> Maybe EncoinsRedeemer
+mkLedgerRedeemer mode ledgerAddr bp secrets mps rs changeAddr =
+  if changeAddr == emergentChangeAddress then Nothing else Just red
     where (_, inputs, proof) = bulletproof bulletproofSetup bp secrets mps rs
           v = calculateV secrets mps
           inputs' = map (\(Input g p) -> (fromGroupElement g, p)) inputs
