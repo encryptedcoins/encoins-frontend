@@ -181,8 +181,8 @@ mkStatusOrResponse (ResponseSuccess _ a _) = Right a
 mkStatusOrResponse (ResponseFailure _ _ xhr) = Left $ fromIntegral $ view xhrResponse_status xhr
 mkStatusOrResponse (RequestFailure _ _) = Left $ -1
 
-eventMaybe :: Reflex t => b -> Event t (Maybe a) -> (Event t a, Event t b)
-eventMaybe errValue ev = (catMaybes ev, errValue <$ ffilter isNothing ev)
+eventMaybe :: Reflex t => e -> Event t (Maybe a) -> (Event t e, Event t a)
+eventMaybe errValue ev = (errValue <$ ffilter isNothing ev, catMaybes ev)
 
 eventEither :: Reflex t => Event t (Either e a) -> (Event t e, Event t a)
 eventEither ev = (filterLeft ev, filterRight ev)

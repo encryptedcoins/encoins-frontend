@@ -19,7 +19,9 @@ import           Backend.Protocol.Setup          (encoinsCurrencySymbol,
                                                   ledgerAddress,
                                                   minAdaTxOutInLedger)
 import           Backend.Protocol.Types
-import           Backend.Protocol.Utility        (getEncoinsInUtxos, mkRedeemer)
+import           Backend.Protocol.Utility        (getEncoinsInUtxos,
+                                                  mkLedgerRedeemer,
+                                                  mkWalletRedeemer)
 import           Backend.Servant.Requests
 import           Backend.Status                  (Status (..))
 import           Backend.Utility                 (switchHoldDyn, toEither)
@@ -66,7 +68,7 @@ encoinsTxWalletMode
         dMPs     = fmap snd dLst
 
     -- Obtaining EncoinsRedeemer
-    let bRed = mkRedeemer WalletMode ledgerAddress
+    let bRed = mkWalletRedeemer WalletMode ledgerAddress
           <$> current dAddrWallet
           <*> current dBulletproofParams
           <*> current dSecrets
@@ -76,12 +78,12 @@ encoinsTxWalletMode
     eFireRedeemer <- delay 1 $ leftmost [eSend, () <$ eFallback]
 
     -- Constructing the final redeemer
-    dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eFireRedeemer
-    let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
+    dmFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eFireRedeemer
+    let eFinalRedeemer = void $ catMaybes (updated dmFinalRedeemer)
 
     -- Constructing a new transaction
     let dNewTxReqBody = zipDyn
-          (fmap (\r -> InputRedeemer (fromJust r) WalletMode) dFinalRedeemer)
+          (fmap (\r -> InputRedeemer (fromJust r) WalletMode) dmFinalRedeemer)
           dInputs
     eeNewTxResponse <- switchHoldDyn dmUrl $ \case
       Nothing -> pure never
@@ -118,7 +120,7 @@ encoinsTxWalletMode
     let eStatus = leftmost
           [ Ready        <$ eConfirmed
           , NoRelay      <$ eAllRelayDown
-          , Constructing <$ eFinalRedeemer
+          , Constructing <$ eFireRedeemer
           , Signing      <$ eNewTxSuccess
           , Submitting   <$ eWalletSignature
           , Submitted    <$ eSubmitted
@@ -231,16 +233,20 @@ encoinsTxLedgerMode
   dCoinsMint
   eSend
   dUrls = mdo
-    eInit <- delay 1 =<< newEvent
+    eInit <- delay 0.1 =<< newEvent
 
     let eFallback = leftmost [() <$ eStatusError, () <$ eServerError]
-    let emFailedUrl = leftmost [Nothing <$ eSend, Nothing <$ eInit, tagPromptlyDyn dmUrl eFallback]
+    let emFailedUrl = leftmost
+          [Nothing <$ eInit, Nothing <$ eSend, tagPromptlyDyn dmUrl eFallback]
     dUpdatedUrls <- updateUrls dUrls emFailedUrl
-    emUrl <- getRelayUrlE dUpdatedUrls $ leftmost [eInit, eSend, eFallback]
+    -- Wait 0.1 until urls are updated
+    eFireUrlCheckDelayed <- delay 0.1 $ () <$ emFailedUrl
+    emUrl <- getRelayUrlE dUpdatedUrls eFireUrlCheckDelayed
     dmUrl <- holdDyn Nothing emUrl
 
     eTick <- tickLossyFromPostBuildTime 12
-    eFireStatus <- delay 1 $ leftmost [eInit, void eTick, eFallback]
+    -- Wait 0.5 until pinging url is chosen
+    eFireStatus <- delay 0.5 $ leftmost [eInit, void eTick, eFallback]
 
     eeStatus <- switchHoldDyn dmUrl $ \case
       Nothing  -> pure never
@@ -262,21 +268,24 @@ encoinsTxLedgerMode
         dMPs     = fmap snd dLst
 
     -- Obtaining EncoinsRedeemer
-    let bRed = mkRedeemer LedgerMode ledgerAddress
-          <$> current dChangeAddr
-          <*> current dBulletproofParams
+    let bmRed = mkLedgerRedeemer LedgerMode ledgerAddress
+          <$> current dBulletproofParams
           <*> current dSecrets
           <*> current dMPs
           <*> bRandomness
+          <*> current dChangeAddr
 
     -- Constructing the final redeemer
-    eFireTx <- delay 2 $ leftmost [eSend, eFallback] -- NOTE: The delay is needed here to wait for change address to be updated
-    dFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eFireTx
-    let eFinalRedeemer = void $ catMaybes (updated dFinalRedeemer)
+    -- NOTE: The delay is needed here to wait for change address to be updated
+    -- Wait 2 secs until ChangeAddress is updated and Redeemer is made, and url is pinged
+    eFireTx <- delay 2 $ leftmost [eSend, eFallback]
+    dmFinalRedeemer <- holdDyn Nothing $ bmRed `tag` eFireTx
+    let (eInvalidChangeAddress, eFinalRedeemer) =
+          eventMaybe InvalidChangeAddress (updated dmFinalRedeemer)
 
     -- Constructing a new transaction
     let dServerTxReqBody = zipDyn
-          (fmap (\r -> InputRedeemer (fromJust r) LedgerMode) dFinalRedeemer) dInputs
+          (fmap (\r -> InputRedeemer (fromJust r) LedgerMode) dmFinalRedeemer) dInputs
     eFinalRedeemerReq <- delay 1 $ void $ tagPromptlyDyn dServerTxReqBody eFinalRedeemer
     logEvent "Fire ledger tx" eFinalRedeemerReq
 
@@ -295,7 +304,8 @@ encoinsTxLedgerMode
     let eStatus = leftmost
           [ Ready        <$ eConfirmed
           , NoRelay      <$ eAllRelayDown
-          , Constructing <$ eFinalRedeemer
+          , eInvalidChangeAddress
+          , Constructing <$ eFireTx
           , Submitted    <$ eServerOk
           , (BackendError . ("Relay returned error: " <>)) <$>
               leftmost [eStatusError, eServerError]

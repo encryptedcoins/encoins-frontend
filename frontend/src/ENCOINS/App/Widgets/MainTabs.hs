@@ -7,7 +7,6 @@ import           Data.Aeson                             (encode)
 import           Data.Bool                              (bool)
 import           Data.ByteString.Lazy                   (toStrict)
 import           Data.List                              (nub)
-import           Data.Maybe                             (fromMaybe)
 import           Data.Text                              (Text)
 import           Data.Text.Encoding                     (decodeUtf8)
 import           Reflex.Dom
@@ -17,7 +16,7 @@ import           Backend.EncoinsTx                      (encoinsTxLedgerMode,
                                                          encoinsTxTransferMode,
                                                          encoinsTxWalletMode)
 import           Backend.Environment                    (getEnvironment)
-import           Backend.Protocol.Setup                 (ledgerAddress)
+import           Backend.Protocol.Setup                 (ledgerAddress, emergentChangeAddress)
 import           Backend.Protocol.TxValidity            (getAda, getCoinNumber,
                                                          getDeposit)
 import           Backend.Protocol.Types
@@ -314,10 +313,11 @@ ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
                     eSendNonZeroBalance = gate ((/=0) <$> current dTotalBalance) eSend'
                 eAddChange <- coinNewButtonWidget dV never (addChangeButton dTotalBalance)
                 (eAddrOk, _) <- inputAddressWindow eSendNonZeroBalance
-                dmAddr <- holdDyn Nothing $
-                  leftmost [Just <$> eAddrOk, Nothing <$ eSendZeroBalance]
-                let dAddr' = fromMaybe ledgerAddress <$> dmAddr
-                pure (eSendStatus, dCoinsToMint', leftmost [void eAddrOk, eSendZeroBalance], dAddr')
+                let eHasChangeAddress = leftmost [eAddrOk, ledgerAddress <$ eSendZeroBalance]
+                dAddr' <- holdDyn emergentChangeAddress eHasChangeAddress
+                -- wait until ChangeAddress is updated
+                eFireSend <- delay 0.1 $ () <$ eHasChangeAddress
+                pure (eSendStatus, dCoinsToMint', eFireSend, dAddr')
 
             (dAssetNamesInTheWallet, eStatusUpdate) <- encoinsTxLedgerMode
               dBulletproofParams
