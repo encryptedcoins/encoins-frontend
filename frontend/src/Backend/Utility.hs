@@ -12,7 +12,7 @@ import           Reflex.Dom
 
 normalizePingUrl :: Text -> Text
 normalizePingUrl url = T.append (T.dropWhileEnd (== '/') url) $ case appNetwork of
-  Mainnet -> if T.isInfixOf url "execute-api.eu-central-1.amazonaws.com"
+  Mainnet -> if T.isInfixOf "execute-api.eu-central-1.amazonaws.com" url
     then "//"
     else "/"
   Testnet -> "/"
