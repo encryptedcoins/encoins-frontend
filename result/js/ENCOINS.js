@@ -340,6 +340,12 @@ async function addrLoad(addrInput)
   await loader.load();
   const CardanoWasm = loader.Cardano;
   try {
+    //Start Warm up CardanoWasm
+    // TODO: Remove it after moving to cardanp-adresses
+    const address = "addr_test1qr8cdsle3chjufssrg9wujvseypyj8fgxj2xg005cclyk0wu66jsm534qu9p759fexv8h2lpsdja54yrzgmzv4z83wmstcscqv";
+    CardanoWasm.Address.from_bech32(address);
+    //End Warm up CardanoWasm
+
     const addrBech32 = CardanoWasm.Address.from_bech32(addrInput);
     const baseAddress = CardanoWasm.BaseAddress.from_address(addrBech32);
     addrBech32.free();
@@ -363,7 +369,7 @@ async function addrLoad(addrInput)
     pubKeyHash.free();
     stakeKeyHash.free();
   } catch (e) {
-    console.log(e.message);
+    console.log(e);
     setInputValue("addrPubKeyHashElement", "");
     setInputValue("addrStakeKeyHashElement", "");
     return;

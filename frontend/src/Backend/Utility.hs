@@ -1,6 +1,6 @@
 module Backend.Utility where
 
-import           Config.Config (appNetwork, NetworkId(..))
+import           Config.Config (NetworkId (..), appNetwork)
 
 import           Control.Monad ((<=<))
 import qualified CSL
