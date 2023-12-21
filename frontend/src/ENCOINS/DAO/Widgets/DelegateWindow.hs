@@ -82,7 +82,7 @@ inputWidget eOpen = divClass "w-row" $ do
       & initialAttributes .~
           ( "class" =: "w-input"
           <> "style" =: "display: inline-block;"
-          <> "placeholder" =: "url"
+          <> "placeholder" =: "format of url: http(s)://address.of.relay/"
           )
       & inputElementConfig_setValue .~ ("" <$ eOpen)
     setFocusDelayOnEvent inp eOpen
