@@ -12,7 +12,7 @@ import           Backend.Protocol.Types
 import           Config.Config                   (NetworkConfig (..),
                                                   NetworkId (..), networkConfig)
 import           ENCOINS.App.Widgets.Basic       (elementResultJS)
-import           ENCOINS.Common.Events           (setFocusDelayOnEvent)
+import           ENCOINS.Common.Events
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btnWithBlock, errDiv)
 import           JS.App                          (addrLoad)
