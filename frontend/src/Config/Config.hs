@@ -52,5 +52,5 @@ networkConfig = NetworkConfig
 
 delegateServerUrl :: BaseUrl
 delegateServerUrl = case daoNetwork of
-  Mainnet -> BasePath "https://ljudhi1nbe.execute-api.eu-central-1.amazonaws.com"
+  Mainnet -> BasePath "https://l2y0u35vje.execute-api.eu-central-1.amazonaws.com"
   Testnet -> BasePath "http://localhost:3002/"
