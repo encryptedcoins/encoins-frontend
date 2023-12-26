@@ -6,6 +6,7 @@ import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
 import           Servant.API
 import           Servant.Reflex         (BaseUrl, ReqResult (..), client)
+-- import Servant.Multipart.API
 
 import           Backend.Protocol.Types
 import           CSL                    (TransactionInputs)
@@ -54,3 +55,21 @@ mkApiClient host = ApiClient{..}
       serversRequest :<|>
       currentRequest :<|>
       infoRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
+
+
+-- type IpfsAPI = "api"
+--     :> "v0"
+--     :> "ipfs"
+--     :> "add"
+--     -- :> Header "project_id" String
+--     :> MultipartForm Mem (MultipartData Mem)
+--     :> Post '[JSON] IpfsAdd
+
+-- data IpfsApiClient t m = IpfsApiClient
+--   { ipfsAddRequest :: ReqRes t m (MultipartForm Mem (MultipartData Mem)) IpfsAdd
+--   }
+
+-- mkIpfsApiClient :: forall t m . MonadWidget t m => BaseUrl -> IpfsApiClient t m
+-- mkIpfsApiClient host = IpfsApiClient{..}
+--   where
+--     ipfsAddRequest =  (Proxy @IpfsAPI) (Proxy @m) (Proxy @()) (pure host)client

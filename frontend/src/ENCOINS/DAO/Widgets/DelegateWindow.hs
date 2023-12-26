@@ -9,6 +9,7 @@ module ENCOINS.DAO.Widgets.DelegateWindow
 import           Control.Monad                   (void)
 import           Data.Bool                       (bool)
 import           Data.Map                        (Map)
+import qualified Data.Map                        as Map
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import           Reflex.Dom
@@ -26,6 +27,8 @@ import           ENCOINS.DAO.Widgets.RelayTable  (fetchDelegatedByAddress,
                                                   fetchRelayTable,
                                                   relayAmountWidget, unStakeUrl)
 import qualified JS.DAO                          as JS
+import Backend.Servant.Requests
+import GHCJS.DOM.Types (Blob)
 
 
 delegateWindow :: MonadWidget t m
@@ -35,6 +38,12 @@ delegateWindow :: MonadWidget t m
   -> m ()
 delegateWindow eOpen dWallet dRelayNames = mdo
   eDelay <- delay 0.05 eOpen
+  gatewayIpfs
+  let formData :: [(Map Text (FormValue Blob))] =
+        [Map.fromList [("value", FormValue_Text "HelloWorld")]]
+  logEvent "eOpen" eOpen
+  eRes <- ipfsAdd $ formData <$ eOpen
+  logEvent "delegateWindow: eRes" eRes
   eeRelays <- fetchRelayTable eDelay
   emDelegated <- fetchDelegatedByAddress (walletChangeAddress <$> dWallet) eDelay
   eUrlOk <- dialogWindow

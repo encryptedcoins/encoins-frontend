@@ -87,8 +87,10 @@ library
     , extra                       ^>=1.7.14
     , file-embed                  ^>=0.0.15.0
     , ghcjs-dom                   ^>=0.9.5.0
+    , ghcjs-fetch
     , hashing
     , hex-text                    ^>=0.1.0.7
+    , http-types
     , http-api-data               ^>=0.4.3
     , ilist                       ^>=0.4.0.1
     , jsaddle                     ^>=0.9.8.2

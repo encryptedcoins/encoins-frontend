@@ -12,7 +12,9 @@ import           Data.List              (delete)
 import           Data.Map               (Map)
 import           Data.Maybe             (isNothing)
 import           Data.Text              (Text)
-import           Reflex.Dom             hiding (Value)
+import           GHCJS.DOM.Types        (Blob)
+import           GHCJS.Fetch
+import           Reflex.Dom             hiding (Request, Value)
 import           Servant.Reflex         (BaseUrl (..), ReqResult (..))
 import           System.Random          (randomRIO)
 import           Witherable             (catMaybes)
@@ -22,6 +24,13 @@ import           Backend.Servant.Client
 import           Backend.Utility        (normalizeCurrentUrl, normalizePingUrl)
 import           ENCOINS.Common.Events
 import           JS.App                 (pingServer)
+
+-- import           GHCJS.Fetch
+-- import           GHCJS.Marshal
+import           GHCJS.Types
+import           Network.HTTP.Types
+import GHCJS.DOM.Types (JSString)
+import Debug.Trace
 
 newTxRequestWrapper :: MonadWidget t m
   => BaseUrl
@@ -198,3 +207,64 @@ shuffle ev xs = performEvent $ ev $> (liftIO $ do
     xsLength = length xs
     newArr :: Int -> [a] -> IO (IOArray Int a)
     newArr n ls =  newListArray (1,n) ls
+
+-- IPFS of Blockfrost
+
+key :: Text
+key = "QmQnEkXRJJ5AhLp1vWrqiQ7GbSX1iGTsfKEmuQFJGBbc58"
+
+fetchRequest :: RequestOptions
+fetchRequest = defaultRequestOptions
+
+httpBin :: MonadIO m => m ()
+httpBin = liftIO $ do
+  resp <- fetch (Request "https://httpbin.org/get" defaultRequestOptions)
+  val <- responseJSON resp
+  traceM $ show val
+  print val
+
+gatewayIpfs :: MonadIO m => m ()
+gatewayIpfs = liftIO $ do
+  let opts = defaultRequestOptions
+        { reqOptMethod = methodPost
+        , reqOptBody = Just (jsval ("value=helloWorld!" :: JSString))
+        -- , reqOptMode = NoCors
+        , reqOptHeaders =
+            [ ("project_id", "ipfsmVj2WTCYS87u8dTzQ5K2sW252y6ahskZ")
+            -- , ("Content-Type","multipart/form-data;")
+            ]
+        }
+  resp <- fetch (Request "https://ipfs.blockfrost.io/api/v0/ipfs/add" opts)
+  val <- responseJSON resp
+  traceM $ show val
+  print val
+
+-- With Reflex.Dom postForms
+--
+ipfsAdd :: MonadWidget t m
+  => Event t [(Map Text (FormValue Blob))]
+  -- -> m (Event t [XhrResponse])
+  -> m (Event t [Maybe Text])
+  -- => m (Event t [XhrResponse])
+ipfsAdd eFormData = do
+  -- ev <- newEvent
+
+  logEvent "ipfsAdd: eFormData" $ () <$ eFormData
+  logEvent "ipfsAdd: config" $ config <$ eFormData
+  logEvent "ipfsAdd: def" $ (def :: XhrRequestConfig ()) <$ eFormData
+  res <- postForms' url config eFormData
+
+  logEvent "ipfsAdd: res" $ () <$ res
+  pure $ fmap _xhrResponse_responseText <$> res
+  where
+    url = "https://ipfs.blockfrost.io/api/v0/ipfs/add"
+    -- config :: XhrRequestConfig () = def {_xhrRequestConfig_headers = Map.union token $ _xhrRequestConfig_headers def}
+    config = def
+      & xhrRequestConfig_headers .~ headers
+      & xhrRequestConfig_responseHeaders .~ AllHeaders
+    headers = "project_id" =: "ipfsmVj2WTCYS87u8dTzQ5K2sW252y6ahskZ"
+      -- <> "Access-Control-Allow-Origin" =: "*"
+
+{-
+config: XhrRequestConfig {_xhrRequestConfig_headers = fromList [("Access-Control-Allow-Origin","*"),("project_id","ipfsmVj2WTCYS87u8dTzQ5K2sW252y6ahskZ")], _xhrRequestConfig_user = Nothing, _xhrRequestConfig_password = Nothing, _xhrRequestConfig_responseType = Nothing, _xhrRequestConfig_sendData = (), _xhrRequestConfig_withCredentials = False, _xhrRequestConfig_responseHeaders = OnlyHeaders (fromList [])}
+-}

@@ -4,3 +4,4 @@ frontend/config/network_id_config.json
 result/app.js
 result/index.js
 result/dao.js
+cabal.log
