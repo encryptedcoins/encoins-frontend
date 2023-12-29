@@ -65,12 +65,30 @@ type IpfsAPI =
        "pinning" :> "pinJSONToIPFS" :> ReqBody '[JSON] Person :> Post '[JSON] Value
   :<|> "ipfs" :> Capture "cip" Text :> Get '[JSON] Value
   :<|> "data" :> "pinList" :> Get '[JSON] Value
+  :<|> "pinning" :> "unpin" :> Capture "cip" Text :> Delete '[PlainText] Text
 
 data IpfsApiClient t m = MkIpfsApiClient
   { pinJson      :: ReqRes t m Person Value
   , fetchByCip   :: Dynamic t (Either Text Text) -> Res t m Value
   , fetchMetaAll :: Res t m Value
+  , unpinByCip   :: Dynamic t (Either Text Text) -> Res t m Text
   }
+
+mkIpfsApiClient :: forall t m . MonadWidget t m
+  => BaseUrl
+  -> Maybe Text
+  -> IpfsApiClient t m
+mkIpfsApiClient host token = MkIpfsApiClient{..}
+  where
+    ( pinJson :<|>
+      fetchByCip :<|>
+      fetchMetaAll :<|>
+      unpinByCip) = clientWithOpts
+        (Proxy @IpfsAPI)
+        (Proxy @m)
+        (Proxy @())
+        (pure host)
+        (clientOpts token)
 
 clientOpts :: Maybe Text -> ClientOptions
 clientOpts mToken = ClientOptions tweakReq
@@ -81,18 +99,3 @@ clientOpts mToken = ClientOptions tweakReq
     Just token ->
       pure $ r & headerMod "authorization" .~ (Just $ "Bearer " <> token)
   headerMod d = xhrRequest_config . xhrRequestConfig_headers . at d
-
-mkIpfsApiClient :: forall t m . MonadWidget t m
-  => BaseUrl
-  -> Maybe Text
-  -> IpfsApiClient t m
-mkIpfsApiClient host token = MkIpfsApiClient{..}
-  where
-    ( pinJson :<|>
-      fetchByCip :<|>
-      fetchMetaAll) = clientWithOpts
-        (Proxy @IpfsAPI)
-        (Proxy @m)
-        (Proxy @())
-        (pure host)
-        (clientOpts token)

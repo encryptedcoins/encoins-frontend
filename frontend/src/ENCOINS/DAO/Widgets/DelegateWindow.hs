@@ -28,7 +28,7 @@ import           ENCOINS.DAO.Widgets.RelayTable  (fetchDelegatedByAddress,
                                                   relayAmountWidget, unStakeUrl)
 import qualified JS.DAO                          as JS
 import Backend.Servant.Requests
-
+import Backend.Protocol.Types
 
 delegateWindow :: MonadWidget t m
   => Event t ()
@@ -42,10 +42,11 @@ delegateWindow eOpen dWallet dRelayNames = mdo
   -- TODO: just for test. Remove it.
   -- dPayload <- holdDyn (Person "world" 200) $ Person "mundo" 100 <$ eDelay
   -- pinJsonWrapper dPayload eDelay
-  -- dCip <- holdDyn (Left "Cip not found") $
-  --   Right "QmWxsQXnhXG98y3rqNN468X2Vbaa7ezp9xNkAUXqpYbbMZ" <$ eDelay
-  -- fetchByCipWrapper dCip eDelay
-  fetchMetaAllWrapper eDelay
+  dCip <- holdDyn (Left "Cip not found") $
+    Right "QmekmNYdtTWa73G3cYxRmkTxowSNjB4C1Mv2BXXhrws86H" <$ eDelay
+  eFetched <- fetchByCipWrapper dCip eDelay
+  -- fetchMetaAllWrapper eDelay
+  unpinByCipWrapper dCip $ () <$ eFetched
 
   eeRelays <- fetchRelayTable eDelay
   emDelegated <- fetchDelegatedByAddress (walletChangeAddress <$> dWallet) eDelay

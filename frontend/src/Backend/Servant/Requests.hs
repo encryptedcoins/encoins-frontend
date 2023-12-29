@@ -203,11 +203,13 @@ shuffle ev xs = performEvent $ ev $> (liftIO $ do
 
 -- IPFS
 
-pinUrl :: BaseUrl
-pinUrl = BasePath "https://api.pinata.cloud"
-
+-- Used only to fetch value (files) itself through dedicated gateway
 fetchUrl :: BaseUrl
 fetchUrl = BasePath "https://coral-holy-gibbon-767.mypinata.cloud"
+
+-- Used for everything
+pinUrl :: BaseUrl
+pinUrl = BasePath "https://api.pinata.cloud"
 
 pinJsonWrapper :: MonadWidget t m
   => Dynamic t Person
@@ -239,4 +241,15 @@ fetchMetaAllWrapper e = do
   eResp <- fetchMetaAll e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "fetchMetaAll request" eRespUnwrapped
+  pure eRespUnwrapped
+
+unpinByCipWrapper :: MonadWidget t m
+  => Dynamic t (Either Text Text)
+  -> Event t ()
+  -> m (Event t (Either Text Text))
+unpinByCipWrapper dCip e = do
+  let MkIpfsApiClient{..} = mkIpfsApiClient pinUrl $ Just jwtToken
+  eResp <- unpinByCip dCip e
+  let eRespUnwrapped = mkTextOrResponse <$> eResp
+  logEvent "unpinByCip request" eRespUnwrapped
   pure eRespUnwrapped
