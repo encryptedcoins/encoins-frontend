@@ -6,39 +6,24 @@ import           Control.Lens           (view)
 import           Control.Monad          (forM)
 import           Control.Monad.IO.Class (MonadIO (..))
 import           CSL                    (TransactionInputs)
-import           Data.Array.IO
 import           Data.Aeson             (Value)
+import           Data.Array.IO
 import           Data.Functor           (($>))
 import           Data.List              (delete)
 import           Data.Map               (Map)
 import           Data.Maybe             (isNothing)
 import           Data.Text              (Text)
-import           GHCJS.DOM.Types        (Blob)
-import           GHCJS.Fetch
 import           Reflex.Dom             hiding (Request, Value)
 import           Servant.Reflex         (BaseUrl (..), ReqResult (..))
 import           System.Random          (randomRIO)
 import           Witherable             (catMaybes)
 
 import           Backend.Protocol.Types
-import Language.Javascript.JSaddle (toJSVal, pToJSVal)
 import           Backend.Servant.Client
 import           Backend.Utility        (normalizeCurrentUrl, normalizePingUrl)
+import           Config.Config          (jwtToken)
 import           ENCOINS.Common.Events
 import           JS.App                 (pingServer)
-
--- import           GHCJS.Fetch
--- import           GHCJS.Marshal
-import           GHCJS.Types
-import           Network.HTTP.Types
-import GHCJS.DOM.Types (JSString)
-import Debug.Trace
--- import Data.Aeson (encode)
--- import Data.ByteString.Lazy.Char8 (pack)
--- import JSDOM (currentWindowUnchecked)
--- import JSDOM.Generated.Request (newRequest)
--- import JSDOM.Generated.Response (json)
--- import JSDOM.Generated.XMLHttpRequest (open, send, setRequestHeader, XMLHttpRequest(..))
 
 newTxRequestWrapper :: MonadWidget t m
   => BaseUrl
@@ -221,13 +206,37 @@ shuffle ev xs = performEvent $ ev $> (liftIO $ do
 pinUrl :: BaseUrl
 pinUrl = BasePath "https://api.pinata.cloud"
 
-pinJson :: MonadWidget t m
+fetchUrl :: BaseUrl
+fetchUrl = BasePath "https://coral-holy-gibbon-767.mypinata.cloud"
+
+pinJsonWrapper :: MonadWidget t m
   => Dynamic t Person
   -> Event t ()
   -> m (Event t (Either Text Value))
-pinJson dReqBody e = do
-  let MkIpfsApiClient{..} = mkIpfsApiClient pinUrl
-  eResp <- ipfsAddRequest (Right <$> dReqBody) e
+pinJsonWrapper dReqBody e = do
+  let MkIpfsApiClient{..} = mkIpfsApiClient pinUrl $ Just jwtToken
+  eResp <- pinJson (Right <$> dReqBody) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "pinJson request" eRespUnwrapped
+  pure eRespUnwrapped
+
+fetchByCipWrapper :: MonadWidget t m
+  => Dynamic t (Either Text Text)
+  -> Event t ()
+  -> m (Event t (Either Text Value))
+fetchByCipWrapper dCip e = do
+  let MkIpfsApiClient{..} = mkIpfsApiClient fetchUrl Nothing
+  eResp <- fetchByCip dCip e
+  let eRespUnwrapped = mkTextOrResponse <$> eResp
+  logEvent "fetchByCip request" eRespUnwrapped
+  pure eRespUnwrapped
+
+fetchMetaAllWrapper :: MonadWidget t m
+  => Event t ()
+  -> m (Event t (Either Text Value))
+fetchMetaAllWrapper e = do
+  let MkIpfsApiClient{..} = mkIpfsApiClient pinUrl $ Just jwtToken
+  eResp <- fetchMetaAll e
+  let eRespUnwrapped = mkTextOrResponse <$> eResp
+  logEvent "fetchMetaAll request" eRespUnwrapped
   pure eRespUnwrapped

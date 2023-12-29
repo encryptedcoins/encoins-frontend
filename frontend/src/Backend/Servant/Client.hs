@@ -1,13 +1,14 @@
 module Backend.Servant.Client where
 
+import           Control.Lens
+import           Data.Aeson             (Value)
 import           Data.Map               (Map)
 import           Data.Proxy             (Proxy (..))
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
-import Control.Lens
 import           Servant.API
-import           Servant.Reflex         (clientWithOpts, ClientOptions(..), BaseUrl, ReqResult (..), client)
-import           Data.Aeson             (Value)
+import           Servant.Reflex         (BaseUrl, ClientOptions (..),
+                                         ReqResult (..), client, clientWithOpts)
 
 import           Backend.Protocol.Types
 import           CSL                    (TransactionInputs)
@@ -60,34 +61,38 @@ mkApiClient host = ApiClient{..}
 
 -- IPFS
 
-jwtToken :: Text
-jwtToken = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiJjMmMzNTNjMC04YzIwLTQ0YmQtODc5NC1mY2YxZDczYjMxOWQiLCJlbWFpbCI6ImNvbnRpbmdlbnRhbEBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwicGluX3BvbGljeSI6eyJyZWdpb25zIjpbeyJpZCI6IkZSQTEiLCJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MX0seyJpZCI6Ik5ZQzEiLCJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MX1dLCJ2ZXJzaW9uIjoxfSwibWZhX2VuYWJsZWQiOmZhbHNlLCJzdGF0dXMiOiJBQ1RJVkUifSwiYXV0aGVudGljYXRpb25UeXBlIjoic2NvcGVkS2V5Iiwic2NvcGVkS2V5S2V5IjoiNjlmZGNhZDY1ZjgzNzYzZTJlMzMiLCJzY29wZWRLZXlTZWNyZXQiOiJlNjU4Yjg3ZWQ2YzAzNzNjYzk0MGYzZDJmMmE1OWE5NjkzOTk4NjY4MTYxMzhkMWQ1ZWM3YjA2ZTI5NzE3MzdiIiwiaWF0IjoxNzAzNzY0Njg1fQ.ANQVAtuW0xAKVNXu57zktHMF2_TwbAxi4ciIceLc2so"
-
 type IpfsAPI =
-    "pinning"
-    :> "pinJSONToIPFS"
-    :> ReqBody '[JSON] Person
-    :> Post '[JSON] Value
+       "pinning" :> "pinJSONToIPFS" :> ReqBody '[JSON] Person :> Post '[JSON] Value
+  :<|> "ipfs" :> Capture "cip" Text :> Get '[JSON] Value
+  :<|> "data" :> "pinList" :> Get '[JSON] Value
 
 data IpfsApiClient t m = MkIpfsApiClient
-  { ipfsAddRequest :: ReqRes t m Person Value
+  { pinJson      :: ReqRes t m Person Value
+  , fetchByCip   :: Dynamic t (Either Text Text) -> Res t m Value
+  , fetchMetaAll :: Res t m Value
   }
 
-clientOpts :: ClientOptions
-clientOpts = ClientOptions tweakReq
+clientOpts :: Maybe Text -> ClientOptions
+clientOpts mToken = ClientOptions tweakReq
  where
-  tweakReq r = do
-    return $ r & headerMod "authorization" .~ (Just jwtToken)
+  tweakReq :: XhrRequest a -> IO (XhrRequest a)
+  tweakReq r = case mToken of
+    Nothing -> return r
+    Just token ->
+      pure $ r & headerMod "authorization" .~ (Just $ "Bearer " <> token)
   headerMod d = xhrRequest_config . xhrRequestConfig_headers . at d
 
 mkIpfsApiClient :: forall t m . MonadWidget t m
   => BaseUrl
+  -> Maybe Text
   -> IpfsApiClient t m
-mkIpfsApiClient host = MkIpfsApiClient{..}
+mkIpfsApiClient host token = MkIpfsApiClient{..}
   where
-    (ipfsAddRequest) = clientWithOpts
+    ( pinJson :<|>
+      fetchByCip :<|>
+      fetchMetaAll) = clientWithOpts
         (Proxy @IpfsAPI)
         (Proxy @m)
         (Proxy @())
         (pure host)
-        clientOpts
+        (clientOpts token)
