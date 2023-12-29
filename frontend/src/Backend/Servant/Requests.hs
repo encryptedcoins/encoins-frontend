@@ -263,3 +263,17 @@ fetchMetaPinnedWrapper e = do
   let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "fetchMetaPinned request" eRespUnwrapped
   pure eRespUnwrapped
+
+fetchMetaPinnedIdWrapper :: MonadWidget t m
+  => Dynamic t Text
+  -> Event t ()
+  -> m (Event t (Either Text Value))
+fetchMetaPinnedIdWrapper dName e = do
+  let MkIpfsApiClient{..} = mkIpfsApiClient pinUrl $ Just jwtToken
+  eResp <- fetchMetaPinnedId
+    (pure $ QParamSome "pinned")
+    (QParamSome <$> dName)
+    e
+  let eRespUnwrapped = mkTextOrResponse <$> eResp
+  logEvent "fetchMetaPinnedId request" eRespUnwrapped
+  pure eRespUnwrapped

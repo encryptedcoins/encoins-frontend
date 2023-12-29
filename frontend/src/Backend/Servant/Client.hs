@@ -68,13 +68,20 @@ type IpfsAPI =
   :<|> "data" :> "pinList" :> Get '[JSON] Value
   :<|> "pinning" :> "unpin" :> Capture "cip" Text :> Delete '[PlainText] Text
   :<|> "data" :> "pinList" :> QueryParam "status" Text :> Get '[JSON] Value
+  :<|> "data" :> "pinList"
+        :> QueryParam "status" Text
+        :> QueryParam "metadata[name]" Text
+        :> Get '[JSON] Value
 
 data IpfsApiClient t m = MkIpfsApiClient
-  { pinJson         :: ReqRes t m Person Value
-  , fetchByCip      :: Dynamic t (Either Text Text) -> Res t m Value
-  , fetchMetaAll    :: Res t m Value
-  , unpinByCip      :: Dynamic t (Either Text Text) -> Res t m Text
-  , fetchMetaPinned :: Dynamic t (QParam Text) -> Res t m Value
+  { pinJson           :: ReqRes t m Person Value
+  , fetchByCip        :: Dynamic t (Either Text Text) -> Res t m Value
+  , fetchMetaAll      :: Res t m Value
+  , unpinByCip        :: Dynamic t (Either Text Text) -> Res t m Text
+  , fetchMetaPinned   :: Dynamic t (QParam Text) -> Res t m Value
+  , fetchMetaPinnedId :: Dynamic t (QParam Text)
+                      -> Dynamic t (QParam Text)
+                      -> Res t m Value
   }
 
 mkIpfsApiClient :: forall t m . MonadWidget t m
@@ -87,7 +94,8 @@ mkIpfsApiClient host token = MkIpfsApiClient{..}
       fetchByCip :<|>
       fetchMetaAll :<|>
       unpinByCip :<|>
-      fetchMetaPinned) = clientWithOpts
+      fetchMetaPinned :<|>
+      fetchMetaPinnedId) = clientWithOpts
         (Proxy @IpfsAPI)
         (Proxy @m)
         (Proxy @())
