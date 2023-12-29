@@ -596,30 +596,3 @@ function handle_dao_error (e) {
       break;
   }
 }
-
-// var myHeaders = new Headers();
-// myHeaders.append("project_id", "ipfsmVj2WTCYS87u8dTzQ5K2sW252y6ahskZ");
-
-// var formdata = new FormData();
-// formdata.append("value", "Hello world!");
-
-// var requestOptions = {
-//   method: 'POST',
-//   headers: myHeaders,
-//   body: formdata,
-//   redirect: 'follow'
-// };
-
-// console.log('hello');
-
-// async function ipfs_add() {
-
-//   const res = await fetch("https://ipfs.blockfrost.io/api/v0/ipfs/add", requestOptions)
-//   // .then(response => response.text())
-//   // .then(result => console.log("ipfs result:", result))
-//   // .catch(error => console.log('ipfs error:', error));
-//   console.log('res', res);
-
-// };
-
-// ipfs_add();

@@ -115,10 +115,13 @@ data ServerVersion = ServerVersion
   deriving stock (Eq, Show, Generic)
   deriving anyclass (ToJSON, FromJSON)
 
-data IpfsAdd = IpfsAdd
-  { name      :: Text     -- ^ Name of the file
-  , ipfs_hash :: Text     -- ^ IPFS hash of the file
-  , size      :: Text     -- ^ Size of the IPFS node
+
+-- IPFS
+
+-- TODO just for tests
+data Person = Person
+  { name :: Text
+  , age :: Int
   }
   deriving stock (Show, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)

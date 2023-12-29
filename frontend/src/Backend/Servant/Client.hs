@@ -4,9 +4,10 @@ import           Data.Map               (Map)
 import           Data.Proxy             (Proxy (..))
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
+import Control.Lens
 import           Servant.API
-import           Servant.Reflex         (BaseUrl, ReqResult (..), client)
--- import Servant.Multipart.API
+import           Servant.Reflex         (clientWithOpts, ClientOptions(..), BaseUrl, ReqResult (..), client)
+import           Data.Aeson             (Value)
 
 import           Backend.Protocol.Types
 import           CSL                    (TransactionInputs)
@@ -57,19 +58,36 @@ mkApiClient host = ApiClient{..}
       infoRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
 
 
--- type IpfsAPI = "api"
---     :> "v0"
---     :> "ipfs"
---     :> "add"
---     -- :> Header "project_id" String
---     :> MultipartForm Mem (MultipartData Mem)
---     :> Post '[JSON] IpfsAdd
+-- IPFS
 
--- data IpfsApiClient t m = IpfsApiClient
---   { ipfsAddRequest :: ReqRes t m (MultipartForm Mem (MultipartData Mem)) IpfsAdd
---   }
+jwtToken :: Text
+jwtToken = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiJjMmMzNTNjMC04YzIwLTQ0YmQtODc5NC1mY2YxZDczYjMxOWQiLCJlbWFpbCI6ImNvbnRpbmdlbnRhbEBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwicGluX3BvbGljeSI6eyJyZWdpb25zIjpbeyJpZCI6IkZSQTEiLCJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MX0seyJpZCI6Ik5ZQzEiLCJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MX1dLCJ2ZXJzaW9uIjoxfSwibWZhX2VuYWJsZWQiOmZhbHNlLCJzdGF0dXMiOiJBQ1RJVkUifSwiYXV0aGVudGljYXRpb25UeXBlIjoic2NvcGVkS2V5Iiwic2NvcGVkS2V5S2V5IjoiNjlmZGNhZDY1ZjgzNzYzZTJlMzMiLCJzY29wZWRLZXlTZWNyZXQiOiJlNjU4Yjg3ZWQ2YzAzNzNjYzk0MGYzZDJmMmE1OWE5NjkzOTk4NjY4MTYxMzhkMWQ1ZWM3YjA2ZTI5NzE3MzdiIiwiaWF0IjoxNzAzNzY0Njg1fQ.ANQVAtuW0xAKVNXu57zktHMF2_TwbAxi4ciIceLc2so"
 
--- mkIpfsApiClient :: forall t m . MonadWidget t m => BaseUrl -> IpfsApiClient t m
--- mkIpfsApiClient host = IpfsApiClient{..}
---   where
---     ipfsAddRequest =  (Proxy @IpfsAPI) (Proxy @m) (Proxy @()) (pure host)client
+type IpfsAPI =
+    "pinning"
+    :> "pinJSONToIPFS"
+    :> ReqBody '[JSON] Person
+    :> Post '[JSON] Value
+
+data IpfsApiClient t m = MkIpfsApiClient
+  { ipfsAddRequest :: ReqRes t m Person Value
+  }
+
+clientOpts :: ClientOptions
+clientOpts = ClientOptions tweakReq
+ where
+  tweakReq r = do
+    return $ r & headerMod "authorization" .~ (Just jwtToken)
+  headerMod d = xhrRequest_config . xhrRequestConfig_headers . at d
+
+mkIpfsApiClient :: forall t m . MonadWidget t m
+  => BaseUrl
+  -> IpfsApiClient t m
+mkIpfsApiClient host = MkIpfsApiClient{..}
+  where
+    (ipfsAddRequest) = clientWithOpts
+        (Proxy @IpfsAPI)
+        (Proxy @m)
+        (Proxy @())
+        (pure host)
+        clientOpts

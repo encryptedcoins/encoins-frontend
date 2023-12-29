@@ -29,6 +29,7 @@ import           ENCOINS.DAO.Widgets.RelayTable  (fetchDelegatedByAddress,
 import qualified JS.DAO                          as JS
 import Backend.Servant.Requests
 import GHCJS.DOM.Types (Blob)
+import Backend.Protocol.Types
 
 
 delegateWindow :: MonadWidget t m
@@ -38,12 +39,11 @@ delegateWindow :: MonadWidget t m
   -> m ()
 delegateWindow eOpen dWallet dRelayNames = mdo
   eDelay <- delay 0.05 eOpen
-  gatewayIpfs
-  let formData :: [(Map Text (FormValue Blob))] =
-        [Map.fromList [("value", FormValue_Text "HelloWorld")]]
-  logEvent "eOpen" eOpen
-  eRes <- ipfsAdd $ formData <$ eOpen
-  logEvent "delegateWindow: eRes" eRes
+  dPayload <- holdDyn (Person "world" 200) $ Person "mundo" 100 <$ eDelay
+
+
+  pinJson dPayload eDelay -- TODO: just for test. Remove it.
+
   eeRelays <- fetchRelayTable eDelay
   emDelegated <- fetchDelegatedByAddress (walletChangeAddress <$> dWallet) eDelay
   eUrlOk <- dialogWindow
