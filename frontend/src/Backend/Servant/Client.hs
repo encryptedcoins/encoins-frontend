@@ -73,7 +73,7 @@ type IpfsAPI =
   :<|> "data" :> "pinList"
               :> QueryParam "status" Text
               :> QueryParam "metadata[name]" Text
-              :> Get '[JSON] Value
+              :> Get '[JSON] Files
 
 data IpfsApiClient t m = MkIpfsApiClient
   { pinJson           :: ReqRes t m Person PinJsonResponse
@@ -83,7 +83,7 @@ data IpfsApiClient t m = MkIpfsApiClient
   , fetchMetaPinned   :: Dynamic t (QParam Text) -> Res t m Files
   , fetchMetaPinnedId :: Dynamic t (QParam Text)
                       -> Dynamic t (QParam Text)
-                      -> Res t m Value
+                      -> Res t m Files
   }
 
 mkIpfsApiClient :: forall t m . MonadWidget t m

@@ -267,7 +267,7 @@ fetchMetaPinnedWrapper e = do
 fetchMetaPinnedIdWrapper :: MonadWidget t m
   => Dynamic t Text
   -> Event t ()
-  -> m (Event t (Either Text Value))
+  -> m (Event t (Either Text Files))
 fetchMetaPinnedIdWrapper dName e = do
   let MkIpfsApiClient{..} = mkIpfsApiClient pinUrl $ Just jwtToken
   eResp <- fetchMetaPinnedId
