@@ -4,7 +4,10 @@
 
 module Backend.Protocol.Types where
 
-import           Data.Aeson           (FromJSON (..), ToJSON (..))
+import           Data.Aeson           (FromJSON (..),
+                                       Options (fieldLabelModifier),
+                                       ToJSON (..), camelTo2, defaultOptions,
+                                       genericParseJSON, withObject, (.:))
 import           Data.Maybe           (fromJust)
 import           Data.Text            (Text)
 import qualified Data.Text            as Text
@@ -118,10 +121,69 @@ data ServerVersion = ServerVersion
 
 -- IPFS
 
--- TODO just for tests
+-- TODO Person is just for tests. Remove it later.
 data Person = Person
   { name :: Text
-  , age :: Int
+  , age  :: Int
   }
   deriving stock (Show, Eq, Generic)
-  deriving anyclass (FromJSON, ToJSON)
+  deriving anyclass (ToJSON)
+
+data PinJsonResponse = MkPinJsonResponse
+  { ipfsHash    :: Text
+  , pinSize     :: Int
+  , timestamp   :: UTCTime
+  , isDuplicate :: Bool
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance FromJSON PinJsonResponse where
+    parseJSON = withObject "PinJsonResponse" $ \o -> do
+        ipfsHash    <- o .: "IpfsHash"
+        pinSize     <- o .: "PinSize"
+        timestamp   <- o .: "Timestamp"
+        isDuplicate <- o .: "isDuplicate"
+        pure MkPinJsonResponse{..}
+
+data File = MkFile
+  { fileId        :: Text
+  , ipfsPinHash   :: Text
+  , size          :: Int
+  , userId        :: Text
+  , datePinned    :: Maybe UTCTime
+  , dateUnpinned  :: Maybe UTCTime
+  , metadata      :: FileMetadata
+  , regions       :: [Regions]
+  , mimeType      :: Text
+  , numberOfFiles :: Int
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance FromJSON File where
+    parseJSON = genericParseJSON
+      defaultOptions{ fieldLabelModifier = modifyField }
+
+modifyField :: String -> String
+modifyField "fileId" = "id"
+modifyField key      = camelTo2 '_' key
+
+data Regions = MkRegions
+  { regionId                :: Text
+  , currentReplicationCount :: Int
+  , desiredReplicationCount :: Int
+  }
+  deriving stock (Show, Eq, Generic)
+  deriving anyclass (FromJSON)
+
+data FileMetadata = FileMetadata
+  { name :: Maybe Text
+  }
+  deriving stock (Show, Eq, Generic)
+  deriving anyclass (FromJSON)
+
+data Files = MkFiles
+  { count :: Int
+  , rows  :: [File]
+  }
+  deriving stock (Show, Eq, Generic)
+  deriving anyclass (FromJSON)

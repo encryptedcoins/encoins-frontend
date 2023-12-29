@@ -214,7 +214,7 @@ pinUrl = BasePath "https://api.pinata.cloud"
 pinJsonWrapper :: MonadWidget t m
   => Dynamic t Person
   -> Event t ()
-  -> m (Event t (Either Text Value))
+  -> m (Event t (Either Text PinJsonResponse))
 pinJsonWrapper dReqBody e = do
   let MkIpfsApiClient{..} = mkIpfsApiClient pinUrl $ Just jwtToken
   eResp <- pinJson (Right <$> dReqBody) e
@@ -235,7 +235,7 @@ fetchByCipWrapper dCip e = do
 
 fetchMetaAllWrapper :: MonadWidget t m
   => Event t ()
-  -> m (Event t (Either Text Value))
+  -> m (Event t (Either Text Files))
 fetchMetaAllWrapper e = do
   let MkIpfsApiClient{..} = mkIpfsApiClient pinUrl $ Just jwtToken
   eResp <- fetchMetaAll e
@@ -256,7 +256,7 @@ unpinByCipWrapper dCip e = do
 
 fetchMetaPinnedWrapper :: MonadWidget t m
   => Event t ()
-  -> m (Event t (Either Text Value))
+  -> m (Event t (Either Text Files))
 fetchMetaPinnedWrapper e = do
   let MkIpfsApiClient{..} = mkIpfsApiClient pinUrl $ Just jwtToken
   eResp <- fetchMetaPinned (pure $ QParamSome "pinned") e

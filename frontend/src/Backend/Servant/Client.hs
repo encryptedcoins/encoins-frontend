@@ -63,22 +63,24 @@ mkApiClient host = ApiClient{..}
 -- IPFS
 
 type IpfsAPI =
-       "pinning" :> "pinJSONToIPFS" :> ReqBody '[JSON] Person :> Post '[JSON] Value
+       "pinning" :> "pinJSONToIPFS"
+                 :> ReqBody '[JSON] Person
+                 :> Post '[JSON] PinJsonResponse
   :<|> "ipfs" :> Capture "cip" Text :> Get '[JSON] Value
-  :<|> "data" :> "pinList" :> Get '[JSON] Value
+  :<|> "data" :> "pinList" :> Get '[JSON] Files
   :<|> "pinning" :> "unpin" :> Capture "cip" Text :> Delete '[PlainText] Text
-  :<|> "data" :> "pinList" :> QueryParam "status" Text :> Get '[JSON] Value
+  :<|> "data" :> "pinList" :> QueryParam "status" Text :> Get '[JSON] Files
   :<|> "data" :> "pinList"
-        :> QueryParam "status" Text
-        :> QueryParam "metadata[name]" Text
-        :> Get '[JSON] Value
+              :> QueryParam "status" Text
+              :> QueryParam "metadata[name]" Text
+              :> Get '[JSON] Value
 
 data IpfsApiClient t m = MkIpfsApiClient
-  { pinJson           :: ReqRes t m Person Value
+  { pinJson           :: ReqRes t m Person PinJsonResponse
   , fetchByCip        :: Dynamic t (Either Text Text) -> Res t m Value
-  , fetchMetaAll      :: Res t m Value
+  , fetchMetaAll      :: Res t m Files
   , unpinByCip        :: Dynamic t (Either Text Text) -> Res t m Text
-  , fetchMetaPinned   :: Dynamic t (QParam Text) -> Res t m Value
+  , fetchMetaPinned   :: Dynamic t (QParam Text) -> Res t m Files
   , fetchMetaPinnedId :: Dynamic t (QParam Text)
                       -> Dynamic t (QParam Text)
                       -> Res t m Value
