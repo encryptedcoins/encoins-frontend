@@ -14,7 +14,7 @@ import           Data.Map               (Map)
 import           Data.Maybe             (isNothing)
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Request, Value)
-import           Servant.Reflex         (BaseUrl (..), ReqResult (..))
+import           Servant.Reflex         (BaseUrl (..), ReqResult (..), QParam(..))
 import           System.Random          (randomRIO)
 import           Witherable             (catMaybes)
 
@@ -252,4 +252,14 @@ unpinByCipWrapper dCip e = do
   eResp <- unpinByCip dCip e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "unpinByCip request" eRespUnwrapped
+  pure eRespUnwrapped
+
+fetchMetaPinnedWrapper :: MonadWidget t m
+  => Event t ()
+  -> m (Event t (Either Text Value))
+fetchMetaPinnedWrapper e = do
+  let MkIpfsApiClient{..} = mkIpfsApiClient pinUrl $ Just jwtToken
+  eResp <- fetchMetaPinned (pure $ QParamSome "pinned") e
+  let eRespUnwrapped = mkTextOrResponse <$> eResp
+  logEvent "fetchMetaPinned request" eRespUnwrapped
   pure eRespUnwrapped

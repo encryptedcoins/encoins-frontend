@@ -46,7 +46,8 @@ delegateWindow eOpen dWallet dRelayNames = mdo
     Right "QmekmNYdtTWa73G3cYxRmkTxowSNjB4C1Mv2BXXhrws86H" <$ eDelay
   eFetched <- fetchByCipWrapper dCip eDelay
   -- fetchMetaAllWrapper eDelay
-  unpinByCipWrapper dCip $ () <$ eFetched
+  -- unpinByCipWrapper dCip $ () <$ eFetched
+  fetchMetaPinnedWrapper $ () <$ eFetched
 
   eeRelays <- fetchRelayTable eDelay
   emDelegated <- fetchDelegatedByAddress (walletChangeAddress <$> dWallet) eDelay
