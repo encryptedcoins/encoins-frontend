@@ -239,13 +239,13 @@ encoinsTxLedgerMode
     let emFailedUrl = leftmost
           [Nothing <$ eInit, Nothing <$ eSend, tagPromptlyDyn dmUrl eFallback]
     dUpdatedUrls <- updateUrls dUrls emFailedUrl
-    -- Wait 0.1 until urls are updated
-    eFireUrlCheckDelayed <- delay 0.1 $ () <$ emFailedUrl
+    -- Wait 1s until urls are updated
+    eFireUrlCheckDelayed <- delay 1 $ () <$ emFailedUrl
     emUrl <- getRelayUrlE dUpdatedUrls eFireUrlCheckDelayed
     dmUrl <- holdDyn Nothing emUrl
 
     eTick <- tickLossyFromPostBuildTime 12
-    -- Wait 0.5 until pinging url is chosen
+    -- Wait 0.5s until pinging url is chosen
     eFireStatus <- delay 0.5 $ leftmost [eInit, void eTick, eFallback]
 
     eeStatus <- switchHoldDyn dmUrl $ \case
