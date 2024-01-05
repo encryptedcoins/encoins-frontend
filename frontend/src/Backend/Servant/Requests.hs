@@ -277,3 +277,19 @@ fetchMetaPinnedIdWrapper dName e = do
   let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "fetchMetaPinnedId request" eRespUnwrapped
   pure eRespUnwrapped
+
+-- Ipfs request to  delegate backend
+
+upfsBackendUrl :: BaseUrl
+upfsBackendUrl = BasePath "http://localhost:7000"
+
+tokenMintedRequest :: MonadWidget t m
+  => Dynamic t Token
+  -> Event t ()
+  -> m (Event t (Either Text Text))
+tokenMintedRequest dToken e = do
+  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient upfsBackendUrl
+  eResp <- minted (Right <$> dToken) e
+  let eRespUnwrapped = mkTextOrResponse <$> eResp
+  logEvent "tokenMinted request" eRespUnwrapped
+  pure eRespUnwrapped

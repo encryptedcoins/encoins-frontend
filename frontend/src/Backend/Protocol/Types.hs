@@ -187,3 +187,43 @@ data Files = MkFiles
   }
   deriving stock (Show, Eq, Generic)
   deriving anyclass (FromJSON)
+
+-- Ipfs types to delegate backend
+
+data TokenStatus = Minted | Burned
+  deriving stock (Show, Eq, Generic)
+  deriving anyclass (ToJSON, FromJSON)
+
+newtype TokenKey = MkTokenKey { tokenKey :: Text }
+  deriving newtype (Show, Eq)
+  deriving stock (Generic)
+  deriving anyclass (ToJSON, FromJSON)
+
+data MetaOptions = MkMetaOptions
+  { status :: TokenStatus
+  }
+  deriving stock (Show, Eq, Generic)
+  deriving anyclass (ToJSON, FromJSON)
+
+data Metadata = MkMetadata
+  { name      :: Maybe Text
+  , keyvalues :: Maybe MetaOptions
+  }
+  deriving stock (Show, Eq, Generic)
+  deriving anyclass (ToJSON, FromJSON)
+
+data Token = Token
+  { pinataContent  :: TokenKey
+  , pinataMetadata :: Metadata
+  }
+  deriving stock (Show, Eq, Generic)
+  deriving anyclass (ToJSON, FromJSON)
+
+tokenSample :: Token
+tokenSample = Token
+  { pinataContent = MkTokenKey "super secret key"
+  , pinataMetadata = MkMetadata
+      { name = Just "tokenName"
+      , keyvalues = Just $ MkMetaOptions Minted
+      }
+  }

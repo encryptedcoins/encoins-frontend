@@ -62,7 +62,7 @@ mkApiClient host = ApiClient{..}
 
 -- IPFS
 
-type IpfsAPI =
+type PinataIpfsAPI =
        "pinning" :> "pinJSONToIPFS"
                  :> ReqBody '[JSON] Person
                  :> Post '[JSON] PinJsonResponse
@@ -98,7 +98,7 @@ mkIpfsApiClient host token = MkIpfsApiClient{..}
       unpinByCip :<|>
       fetchMetaPinned :<|>
       fetchMetaPinnedId) = clientWithOpts
-        (Proxy @IpfsAPI)
+        (Proxy @PinataIpfsAPI)
         (Proxy @m)
         (Proxy @())
         (pure host)
@@ -113,3 +113,27 @@ clientOpts mToken = ClientOptions tweakReq
     Just token ->
       pure $ r & headerMod "authorization" .~ (Just $ "Bearer " <> token)
   headerMod d = xhrRequest_config . xhrRequestConfig_headers . at d
+
+
+-- Ipfs request to  delegate backend
+
+type BackIpfsApi =
+         "minted" :> ReqBody '[JSON] Token :> Post '[JSON] Text
+    :<|> "burned" :> ReqBody '[JSON] Token :> Post '[JSON] Text
+
+data BackIpfsApiClient t m = MkBackIpfsApiClient
+  { minted :: ReqRes t m Token Text
+  , burned :: ReqRes t m Token Text
+  }
+
+mkBackIpfsApiClient :: forall t m . MonadWidget t m
+  => BaseUrl
+  -> BackIpfsApiClient t m
+mkBackIpfsApiClient host = MkBackIpfsApiClient{..}
+  where
+    ( minted :<|>
+      burned) = client
+        (Proxy @BackIpfsApi)
+        (Proxy @m)
+        (Proxy @())
+        (pure host)

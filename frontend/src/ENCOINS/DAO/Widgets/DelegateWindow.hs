@@ -42,14 +42,18 @@ delegateWindow eOpen dWallet dRelayNames = mdo
   -- TODO: just for test. Remove it.
   -- dPayload <- holdDyn (Person "world" 200) $ Person "mundo" 100 <$ eDelay
   -- ePinned <- pinJsonWrapper dPayload eDelay
-  dCip <- holdDyn (Left "Cip not found") $
-    Right "QmekmNYdtTWa73G3cYxRmkTxowSNjB4C1Mv2BXXhrws86H" <$ eDelay
-  eFetched <- fetchByCipWrapper dCip eDelay
+  -- dCip <- holdDyn (Left "Cip not found") $
+  --   Right "QmekmNYdtTWa73G3cYxRmkTxowSNjB4C1Mv2BXXhrws86H" <$ eDelay
+  -- eFetched <- fetchByCipWrapper dCip eDelay
   -- fetchMetaAllWrapper $ () <$ ePinned
   -- unpinByCipWrapper dCip $ () <$ eFetched
   -- fetchMetaPinnedWrapper $ () <$ ePinned
-  dId <- holdDyn "" $ "correct_id" <$ eDelay
-  fetchMetaPinnedIdWrapper dId $ () <$ eFetched
+  -- dId <- holdDyn "" $ "correct_id" <$ eDelay
+  -- fetchMetaPinnedIdWrapper dId $ () <$ eFetched
+
+  dToken <- holdDyn tokenSample $ tokenSample <$ eDelay
+  eRes <- tokenMintedRequest dToken eDelay
+  logEvent "eRes" eRes
 
   eeRelays <- fetchRelayTable eDelay
   emDelegated <- fetchDelegatedByAddress (walletChangeAddress <$> dWallet) eDelay
