@@ -293,3 +293,14 @@ tokenMintedRequest dToken e = do
   let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "tokenMinted request" eRespUnwrapped
   pure eRespUnwrapped
+
+tokenBurnedRequest :: MonadWidget t m
+  => Dynamic t Token
+  -> Event t ()
+  -> m (Event t (Either Text Text))
+tokenBurnedRequest dToken e = do
+  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient upfsBackendUrl
+  eResp <- burned (Right <$> dToken) e
+  let eRespUnwrapped = mkTextOrResponse <$> eResp
+  logEvent "tokenBurned request" eRespUnwrapped
+  pure eRespUnwrapped
