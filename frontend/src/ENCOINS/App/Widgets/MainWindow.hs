@@ -17,13 +17,14 @@ import           Backend.Utility                    (switchHoldDyn)
 import           Backend.Wallet                     (Wallet (..))
 import           ENCOINS.App.Widgets.Basic          (elementResultJS,
                                                      loadAppData, tellTxStatus)
-import           ENCOINS.App.Widgets.Coin           (coinV3, coinWithName)
+import           ENCOINS.App.Widgets.Coin           (coinV3)
 import           ENCOINS.App.Widgets.MainTabs       (ledgerTab, transferTab,
                                                      walletTab)
 import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw (..))
 import           ENCOINS.App.Widgets.TabsSelection  (AppTab (..), tabsSection)
 import           ENCOINS.Bulletproofs               (Secret)
 import           JS.Website                         (saveJSON)
+import           ENCOINS.Common.Events
 
 
 mainWindow :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
@@ -37,9 +38,7 @@ mainWindow mPass dWallet dIsDisableButtons = mdo
     eSecretsWithName <- switchHoldDyn dTab $ \tab -> mdo
       dSecretsV3 :: Dynamic t [TokenCacheV3] <-
         loadAppData (getPassRaw <$> mPass) "encoins-v3" id []
-
-      -- dOldSecretsWithName <- loadAppData (getPassRaw <$> mPass) "encoins-with-name" id []
-      -- updateCache mPass dOldSecretsWithName
+      -- logDyn "mainWindow: dSecretsV3" dSecretsV3
 
       updateCacheV3 mPass dSecretsV3
 
@@ -59,51 +58,7 @@ Evolutions of encoins cache by key
 -}
 
 -- Update cache only when
--- "encoins-with-name" cache doesn't exist
---  and
--- "encoins" cache exists.
-updateCache :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
-  => Maybe PasswordRaw
-  -> Dynamic t [(Secret, Text)]
-  -> m ()
-updateCache mPass dSecretsWithName = do
-  let eSecretsWithNameIsEmpty = updated $ null <$> dSecretsWithName
-  widgetHold_ blank $
-    bool blank (loadCache mPass) <$> eSecretsWithNameIsEmpty
-
-loadCache :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
-  => Maybe PasswordRaw
-  -> m ()
-loadCache mPass = do
-  eSecrets <- updated <$> loadAppData (getPassRaw <$> mPass) "encoins" id []
-
-  let eSecretsIsEmpty = null <$> eSecrets
-
-  let statusEvent = bool
-        (CustomStatus "Cache structure is updating. Please wait.")
-        Ready
-        <$> eSecretsIsEmpty
-  tellTxStatus "App status" statusEvent
-
-
-  -- Convert "encoins" cache when it is not empty
-  let eConvertedSecrets = coincidence $
-        bool (map coinWithName <$> eSecrets) never <$> eSecretsIsEmpty
-
-  performEvent_ $
-      saveJSON (getPassRaw <$> mPass) "encoins-with-name"
-        . decodeUtf8
-        . toStrict
-        . encode <$> eConvertedSecrets
-
-  -- Ask user to reload when cache structure is updated
-  let eSecretsIsEmptyLog = () <$ ffilter id eSecretsIsEmpty
-  eSaved <- updated <$> elementResultJS "encoins-with-name" (const ())
-  tellTxStatus "App status" $
-    CustomStatus "Please reload the page" <$ leftmost [eSecretsIsEmptyLog, eSaved]
-
--- Update cache only when
--- "encoins-v3" cache doesn't exist
+-- "encoins-v3" cache doesn't exist (or empty)
 -- and
 -- "encoins-with-name" cache exists
 --  or
@@ -114,6 +69,7 @@ updateCacheV3 :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   -> m ()
 updateCacheV3 mPass dSecretsV3 = do
   let eSecretsV3 = updated $ null <$> dSecretsV3
+  logEvent "updateCacheV3: eSecretsV3" eSecretsV3
   widgetHold_ blank $
     bool blank (migrateCacheV3 mPass) <$> eSecretsV3
 
@@ -124,14 +80,20 @@ migrateCacheV3 mPass = do
   eSecretsV1 :: Event t [Secret] <-
     updated <$> loadAppData (getPassRaw <$> mPass) "encoins" id []
   eSecretsV2 :: Event t [(Secret, Text)] <-
-    updated <$> loadAppData (getPassRaw <$> mPass) "encoins-with-names" id []
+    updated <$> loadAppData (getPassRaw <$> mPass) "encoins-with-name" id []
+
+  -- logEvent "migrateCacheV3: eSecretsV1" eSecretsV1
+  -- logEvent "migrateCacheV3: eSecretsV2" eSecretsV2
 
   let eIsOldCacheEmpty = mergeWith (&&) [null <$> eSecretsV1, null <$> eSecretsV2]
+  -- logEvent "migrateCacheV3: eIsOldCacheEmpty" eIsOldCacheEmpty
+
   let eMigrateStatus = bool
         (CustomStatus "Cache structure is updating. Please wait.")
         Ready
         <$> eIsOldCacheEmpty
   tellTxStatus "App status" eMigrateStatus
+  -- logEvent "migrateCacheV3: eMigrateStatus" eMigrateStatus
 
   let cacheV3 = alignWith
         (these migrateV1 migrateV2 migrateV3)
@@ -139,6 +101,7 @@ migrateCacheV3 mPass = do
         eSecretsV2
   -- Migrate old cache (when it is not empty) to encoins-v3
   let eSecretsV3 = ffilter (not . null) cacheV3
+  -- logEvent "migrateCacheV3: eSecretsV3" eSecretsV3
 
   performEvent_ $
       saveJSON (getPassRaw <$> mPass) "encoins-v3"
@@ -148,7 +111,10 @@ migrateCacheV3 mPass = do
 
   -- Ask user to reload when cache structure is updated
   let eIsOldCacheEmptyLog = () <$ ffilter id eIsOldCacheEmpty
+  -- logEvent "migrateCacheV3: eIsOldCacheEmptyLog" eIsOldCacheEmptyLog
+
   eSaved <- updated <$> elementResultJS "encoins-v3" (const ())
+  -- logEvent "migrateCacheV3: eSaved" eSaved
   tellTxStatus "App status" $ CustomStatus "Please reload the page"
       <$ leftmost [eIsOldCacheEmptyLog, eSaved]
 

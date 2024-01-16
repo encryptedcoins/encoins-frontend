@@ -63,7 +63,7 @@ bodyContentWidget mpass = mdo
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
 
   where
-    reEncryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) "encoins-with-name"
+    reEncryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) "encoins-v3"
       . decodeUtf8 .  toStrict . encode $ d
 
 bodyWidget :: MonadWidget t m => m ()

@@ -17,7 +17,6 @@ import           Backend.EncoinsTx                      (encoinsTxLedgerMode,
                                                          encoinsTxWalletMode)
 import           Backend.Environment                    (getEnvironment)
 import           Backend.Protocol.Setup                 (emergentChangeAddress,
-                                                         encoinsCurrencySymbol,
                                                          ledgerAddress)
 import           Backend.Protocol.TxValidity            (getAda, getCoinNumber,
                                                          getDeposit)
@@ -34,10 +33,9 @@ import           ENCOINS.App.Widgets.Basic              (containerApp,
                                                          walletError)
 import           ENCOINS.App.Widgets.Coin               (CoinUpdate (..),
                                                          coinBurnCollectionWidget,
-                                                         coinMintCollectionWidget,
+                                                         coinMintCollectionV3Widget,
                                                          coinNewButtonWidget,
-                                                         coinNewWidget,
-                                                         coinV3,
+                                                         coinNewWidget, coinV3,
                                                          filterByKnownCoinNames,
                                                          noCoinsFoundWidget)
 import           ENCOINS.App.Widgets.ImportWindow       (exportWindow,
@@ -55,13 +53,9 @@ import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeLedger,
                                                          welcomeWindow,
                                                          welcomeWindowLedgerStorageKey,
                                                          welcomeWindowTransferStorageKey)
--- import           ENCOINS.Bulletproofs                   (Secret)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
--- import           JS.App                                 (fingerprintFromAssetName)
 import           JS.Website                             (saveJSON)
-
--- import           Control.Monad.IO.Class          (MonadIO (..))
 
 
 mainWindowColumnHeader :: MonadWidget t m => Text -> m ()
@@ -103,7 +97,7 @@ walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
                   $ map coinV3
                   <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
-            performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins-with-name" . decodeUtf8 . toStrict . encode <$> updated dTokenCache)
+            performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins-v3" . decodeUtf8 . toStrict . encode <$> updated dTokenCache)
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do
@@ -125,7 +119,7 @@ walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
               divClass "app-CoinColumnRight w-col w-col-6" $ mdo
                 dCoinsToMint' <- divClassId "" "welcome-coins-mint" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
-                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost
+                    dCoinsToMint'' <- coinMintCollectionV3Widget $ leftmost
                       [ fmap AddCoin eNewSecret
                       , ClearCoins <$ ffilter (== Ready) eStatusUpdate
                       ]
@@ -151,10 +145,6 @@ walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
                   dUrls
             let dSecretsInTheWallet =
                   zipDynWith filterByKnownCoinNames dAssetNamesInTheWallet dTokenCache
-            -- let assetNames = map tcAssetName <$> dSecretsInTheWallet
-            -- logDyn "assetNames" assetNames
-            -- assets <- performEvent $ traverse (fingerprintFromAssetName encoinsCurrencySymbol) <$> updated assetNames
-            -- logEvent "?assets?" assets
             pure (dCoinsToBurn, dCoinsToMint, leftmost [eStatusUpdate, eSendStatus])
     eWalletError <- walletError
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
@@ -184,7 +174,7 @@ transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
     (dCoins, eSendToLedger, eAddr, dSecretsName) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         let dTokenCache = nub <$> zipDynWith (++) dTokenCacheOld (map coinV3 <$> dImportedSecrets)
-        performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins-with-name" . decodeUtf8 . toStrict . encode <$> updated dTokenCache)
+        performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins-v3" . decodeUtf8 . toStrict . encode <$> updated dTokenCache)
 
         (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
             dCTB <- divClassId "" "welcome-coins-transfer" $ do
@@ -284,7 +274,7 @@ ledgerTab mpass dTokenCacheOld = sectionApp "" "" $ mdo
             let dTokenCache = fmap nub
                   $ zipDynWith (++) dTokenCacheOld
                   $ map coinV3 <$> zipDynWith (++) dImportedSecrets dNewSecrets
-            performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins-with-name"
+            performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins-v3"
               . decodeUtf8
               . toStrict
               . encode <$> updated dTokenCache)
@@ -308,7 +298,7 @@ ledgerTab mpass dTokenCacheOld = sectionApp "" "" $ mdo
               divClassId "app-CoinColumnRight w-col w-col-6" "welcome-ledger-mint" $ mdo
                 dCoinsToMint' <- divClass "" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
-                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost
+                    dCoinsToMint'' <- coinMintCollectionV3Widget $ leftmost
                       [ AddCoin <$> eNewSecret
                       , ClearCoins <$ ffilter (== Submitted) eStatusUpdate
                       , AddCoin <$> eAddChange
