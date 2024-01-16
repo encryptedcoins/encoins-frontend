@@ -17,6 +17,7 @@ import           Text.Read                       (readMaybe)
 
 import           Backend.Protocol.Setup          (bulletproofSetup,
                                                   encoinsCurrencySymbol)
+import           Backend.Protocol.Types          (TokenCache(..), IpfsStatus(..), CoinStatus(..))
 import           Backend.Protocol.Utility        (secretToHex)
 import           ENCOINS.BaseTypes               (FieldElement)
 import           ENCOINS.Bulletproofs            (Secret (..), Secrets,
@@ -40,6 +41,12 @@ data CoinUpdate = AddCoin Secret | RemoveCoin Secret | ClearCoins
 -- coinsWithNames :: Secrets -> [(Secret, Text)]
 -- coinsWithNames = map coinWithName
 
+coinV3 :: Secret -> TokenCache
+coinV3 s =
+    let assetName = encodeHex . fromBuiltin . snd . fromSecret bulletproofSetup $ s
+    in MkTokenCache assetName s Unpinned Minted
+    -- ^ Unpinned and Minted are default parameters
+
 coinWithName :: Secret -> (Secret, Text)
 coinWithName s =
     let bsHex = encodeHex . fromBuiltin . snd . fromSecret bulletproofSetup $ s
@@ -59,6 +66,14 @@ coinCollectionWithNames dSecrets = do
     -- sequenceA :: [Dynamic t (Secret, Text)] -> Dynamic t [(Secret, Text)]
     -- fmap sequenceA eCoinWithNameWidgets :: Event t (Dynamic t [(Secret, Text)])
     join <$> holdDyn (pure []) eCoinsWithNames
+
+coinCollectionV3 :: MonadWidget t m
+  => Dynamic t Secrets
+  -> m (Dynamic t [TokenCache])
+coinCollectionV3 dSecrets = do
+    eCoinV3Widgets <- dyn $ fmap (mapM (pure . pure . coinV3)) dSecrets
+    let eCoinsV3 = fmap sequenceA eCoinV3Widgets
+    join <$> holdDyn (pure []) eCoinsV3
 
 shortenCoinName :: Text -> Text
 shortenCoinName txt = Text.take 4 txt `Text.append` "..." `Text.append` Text.takeEnd 4 txt
@@ -122,6 +137,19 @@ coinTooltip name = elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visi
         text fp
 --------------------------------- Coins to Mint -------------------------------
 
+coinV3MintWidget :: MonadWidget t m => TokenCache -> m (Event t Secret)
+coinV3MintWidget (MkTokenCache name s _ _) = mdo
+    (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
+        eCross <- domEvent Click . fst <$> elClass' "div" "cross-div" blank
+        (txt, _) <- elClass' "div" "app-text-normal" $ text $ shortenCoinName name
+        divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
+        return (txt, eCross)
+    dTooltipVis <- toggle False (domEvent Click elTxt)
+    dyn_ $ bool blank (coinTooltip name) <$> dTooltipVis
+    return $ s <$ ret
+    where
+        mkAttrs = ("class" =: "coin-entry-mint-div" <>) . bool mempty ("style" =: "background:rgb(50 50 50);")
+
 coinMintWidget :: MonadWidget t m => (Secret, Text) -> m (Event t Secret)
 coinMintWidget (s, name) = mdo
     (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
@@ -140,9 +168,22 @@ coinMintCollectionWidget eCoinUpdate = mdo
     let f (AddCoin s)    lst = lst ++ [s]
         f (RemoveCoin s) lst = s `delete` lst
         f ClearCoins     _   = []
-    dCoinsToMintWithNames <-  foldDyn f [] (leftmost [eCoinUpdate, fmap RemoveCoin eRemoveSecret]) >>= coinCollectionWithNames
-    eRemoveSecret <- dyn (fmap (mapM coinMintWidget) dCoinsToMintWithNames) >>= switchHold never . fmap leftmost
+    dCoinsToMintWithNames <- foldDyn f []
+      (leftmost [eCoinUpdate, fmap RemoveCoin eRemoveSecret]) >>= coinCollectionWithNames
+    eRemoveSecret <- dyn (fmap (mapM coinMintWidget) dCoinsToMintWithNames)
+        >>= switchHold never . fmap leftmost
     return $ fmap (map fst) dCoinsToMintWithNames
+
+coinMintCollectionV3Widget :: MonadWidget t m => Event t CoinUpdate -> m (Dynamic t Secrets)
+coinMintCollectionV3Widget eCoinUpdate = mdo
+    let f (AddCoin s)    lst = lst ++ [s]
+        f (RemoveCoin s) lst = s `delete` lst
+        f ClearCoins     _   = []
+    dCoinsToMintV3 <- foldDyn f []
+      (leftmost [eCoinUpdate, fmap RemoveCoin eRemoveSecret]) >>= coinCollectionV3
+    eRemoveSecret <- dyn (fmap (mapM coinV3MintWidget) dCoinsToMintV3)
+        >>= switchHold never . fmap leftmost
+    return $ fmap (map tcSecret) dCoinsToMintV3
 
 --------------------------------- New coin input ------------------------------
 

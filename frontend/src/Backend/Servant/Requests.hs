@@ -14,7 +14,7 @@ import           Data.Map               (Map)
 import           Data.Maybe             (isNothing)
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Request, Value)
-import           Servant.Reflex         (BaseUrl (..), ReqResult (..), QParam(..))
+import           Servant.Reflex         (BaseUrl (..), ReqResult (..))
 import           System.Random          (randomRIO)
 import           Witherable             (catMaybes)
 
@@ -203,90 +203,15 @@ shuffle ev xs = performEvent $ ev $> (liftIO $ do
 
 -- IPFS
 
--- Used only to fetch value (files) itself through dedicated gateway
-fetchUrl :: BaseUrl
-fetchUrl = BasePath "https://coral-holy-gibbon-767.mypinata.cloud"
-
--- Used for everything
-pinUrl :: BaseUrl
-pinUrl = BasePath "https://api.pinata.cloud"
-
-pinJsonWrapper :: MonadWidget t m
-  => Dynamic t Person
-  -> Event t ()
-  -> m (Event t (Either Text PinJsonResponse))
-pinJsonWrapper dReqBody e = do
-  let MkIpfsApiClient{..} = mkIpfsApiClient pinUrl $ Just jwtToken
-  eResp <- pinJson (Right <$> dReqBody) e
-  let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "pinJson request" eRespUnwrapped
-  pure eRespUnwrapped
-
-fetchByCipWrapper :: MonadWidget t m
-  => Dynamic t (Either Text Text)
-  -> Event t ()
-  -> m (Event t (Either Text Value))
-fetchByCipWrapper dCip e = do
-  let MkIpfsApiClient{..} = mkIpfsApiClient fetchUrl Nothing
-  eResp <- fetchByCip dCip e
-  let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "fetchByCip request" eRespUnwrapped
-  pure eRespUnwrapped
-
-fetchMetaAllWrapper :: MonadWidget t m
-  => Event t ()
-  -> m (Event t (Either Text Files))
-fetchMetaAllWrapper e = do
-  let MkIpfsApiClient{..} = mkIpfsApiClient pinUrl $ Just jwtToken
-  eResp <- fetchMetaAll e
-  let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "fetchMetaAll request" eRespUnwrapped
-  pure eRespUnwrapped
-
-unpinByCipWrapper :: MonadWidget t m
-  => Dynamic t (Either Text Text)
-  -> Event t ()
-  -> m (Event t (Either Text Text))
-unpinByCipWrapper dCip e = do
-  let MkIpfsApiClient{..} = mkIpfsApiClient pinUrl $ Just jwtToken
-  eResp <- unpinByCip dCip e
-  let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "unpinByCip request" eRespUnwrapped
-  pure eRespUnwrapped
-
-fetchMetaPinnedWrapper :: MonadWidget t m
-  => Event t ()
-  -> m (Event t (Either Text Files))
-fetchMetaPinnedWrapper e = do
-  let MkIpfsApiClient{..} = mkIpfsApiClient pinUrl $ Just jwtToken
-  eResp <- fetchMetaPinned (pure $ QParamSome "pinned") e
-  let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "fetchMetaPinned request" eRespUnwrapped
-  pure eRespUnwrapped
-
-fetchMetaPinnedIdWrapper :: MonadWidget t m
-  => Dynamic t Text
-  -> Event t ()
-  -> m (Event t (Either Text Files))
-fetchMetaPinnedIdWrapper dName e = do
-  let MkIpfsApiClient{..} = mkIpfsApiClient pinUrl $ Just jwtToken
-  eResp <- fetchMetaPinnedId
-    (pure $ QParamSome "pinned")
-    (QParamSome <$> dName)
-    e
-  let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "fetchMetaPinnedId request" eRespUnwrapped
-  pure eRespUnwrapped
-
--- Ipfs request to  delegate backend
+-- Ipfs request to backend
 
 upfsBackendUrl :: BaseUrl
 upfsBackendUrl = BasePath "http://localhost:7000"
 
 tokenMintedRequest :: MonadWidget t m
-  => Dynamic t Token
+  => Dynamic t CloudRequest
   -> Event t ()
-  -> m (Event t (Either Text Text))
+  -> m (Event t (Either Text CloudResponse))
 tokenMintedRequest dToken e = do
   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient upfsBackendUrl
   eResp <- minted (Right <$> dToken) e
@@ -294,13 +219,13 @@ tokenMintedRequest dToken e = do
   logEvent "tokenMinted request" eRespUnwrapped
   pure eRespUnwrapped
 
-tokenBurnedRequest :: MonadWidget t m
-  => Dynamic t Token
-  -> Event t ()
-  -> m (Event t (Either Text Text))
-tokenBurnedRequest dToken e = do
-  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient upfsBackendUrl
-  eResp <- burned (Right <$> dToken) e
-  let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "tokenBurned request" eRespUnwrapped
-  pure eRespUnwrapped
+-- tokenBurnedRequest :: MonadWidget t m
+--   => Dynamic t Token
+--   -> Event t ()
+--   -> m (Event t (Either Text Text))
+-- tokenBurnedRequest dToken e = do
+--   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient upfsBackendUrl
+--   eResp <- burned (Right <$> dToken) e
+--   let eRespUnwrapped = mkTextOrResponse <$> eResp
+--   logEvent "tokenBurned request" eRespUnwrapped
+--   pure eRespUnwrapped

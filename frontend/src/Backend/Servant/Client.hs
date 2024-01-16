@@ -1,15 +1,11 @@
 module Backend.Servant.Client where
 
-import           Control.Lens
-import           Data.Aeson             (Value)
 import           Data.Map               (Map)
 import           Data.Proxy             (Proxy (..))
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
 import           Servant.API
-import           Servant.Reflex         (BaseUrl, ClientOptions (..),
-                                         QParam (..), ReqResult (..), client,
-                                         clientWithOpts)
+import           Servant.Reflex         (BaseUrl, ReqResult (..), client)
 
 import           Backend.Protocol.Types
 import           CSL                    (TransactionInputs)
@@ -60,70 +56,15 @@ mkApiClient host = ApiClient{..}
       infoRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
 
 
--- IPFS
-
-type PinataIpfsAPI =
-       "pinning" :> "pinJSONToIPFS"
-                 :> ReqBody '[JSON] Person
-                 :> Post '[JSON] PinJsonResponse
-  :<|> "ipfs" :> Capture "cip" Text :> Get '[JSON] Value
-  :<|> "data" :> "pinList" :> Get '[JSON] Files
-  :<|> "pinning" :> "unpin" :> Capture "cip" Text :> Delete '[PlainText] Text
-  :<|> "data" :> "pinList" :> QueryParam "status" Text :> Get '[JSON] Files
-  :<|> "data" :> "pinList"
-              :> QueryParam "status" Text
-              :> QueryParam "metadata[name]" Text
-              :> Get '[JSON] Files
-
-data IpfsApiClient t m = MkIpfsApiClient
-  { pinJson           :: ReqRes t m Person PinJsonResponse
-  , fetchByCip        :: Dynamic t (Either Text Text) -> Res t m Value
-  , fetchMetaAll      :: Res t m Files
-  , unpinByCip        :: Dynamic t (Either Text Text) -> Res t m Text
-  , fetchMetaPinned   :: Dynamic t (QParam Text) -> Res t m Files
-  , fetchMetaPinnedId :: Dynamic t (QParam Text)
-                      -> Dynamic t (QParam Text)
-                      -> Res t m Files
-  }
-
-mkIpfsApiClient :: forall t m . MonadWidget t m
-  => BaseUrl
-  -> Maybe Text
-  -> IpfsApiClient t m
-mkIpfsApiClient host token = MkIpfsApiClient{..}
-  where
-    ( pinJson :<|>
-      fetchByCip :<|>
-      fetchMetaAll :<|>
-      unpinByCip :<|>
-      fetchMetaPinned :<|>
-      fetchMetaPinnedId) = clientWithOpts
-        (Proxy @PinataIpfsAPI)
-        (Proxy @m)
-        (Proxy @())
-        (pure host)
-        (clientOpts token)
-
-clientOpts :: Maybe Text -> ClientOptions
-clientOpts mToken = ClientOptions tweakReq
- where
-  tweakReq :: XhrRequest a -> IO (XhrRequest a)
-  tweakReq r = case mToken of
-    Nothing -> return r
-    Just token ->
-      pure $ r & headerMod "authorization" .~ (Just $ "Bearer " <> token)
-  headerMod d = xhrRequest_config . xhrRequestConfig_headers . at d
-
-
 -- Ipfs request to  delegate backend
 
 type BackIpfsApi =
-         "minted" :> ReqBody '[JSON] Token :> Post '[JSON] Text
-    :<|> "burned" :> ReqBody '[JSON] Token :> Post '[JSON] Text
+         "minted" :> ReqBody '[JSON] CloudRequest :> Post '[JSON] CloudResponse
+    -- :<|> "burned" :> ReqBody '[JSON] Token :> Post '[JSON] Text
 
 data BackIpfsApiClient t m = MkBackIpfsApiClient
-  { minted :: ReqRes t m Token Text
-  , burned :: ReqRes t m Token Text
+  { minted :: ReqRes t m CloudRequest CloudResponse
+  -- , burned :: ReqRes t m Token Text
   }
 
 mkBackIpfsApiClient :: forall t m . MonadWidget t m
@@ -131,8 +72,8 @@ mkBackIpfsApiClient :: forall t m . MonadWidget t m
   -> BackIpfsApiClient t m
 mkBackIpfsApiClient host = MkBackIpfsApiClient{..}
   where
-    ( minted :<|>
-      burned) = client
+    ( minted ) = client
+      -- burned) = client
         (Proxy @BackIpfsApi)
         (Proxy @m)
         (Proxy @())

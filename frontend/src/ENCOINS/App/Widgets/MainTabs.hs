@@ -16,7 +16,9 @@ import           Backend.EncoinsTx                      (encoinsTxLedgerMode,
                                                          encoinsTxTransferMode,
                                                          encoinsTxWalletMode)
 import           Backend.Environment                    (getEnvironment)
-import           Backend.Protocol.Setup                 (ledgerAddress, emergentChangeAddress)
+import           Backend.Protocol.Setup                 (emergentChangeAddress,
+                                                         encoinsCurrencySymbol,
+                                                         ledgerAddress)
 import           Backend.Protocol.TxValidity            (getAda, getCoinNumber,
                                                          getDeposit)
 import           Backend.Protocol.Types
@@ -56,7 +58,11 @@ import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeLedger,
 import           ENCOINS.Bulletproofs                   (Secret)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
+import           JS.App                                 (fingerprintFromAssetName)
 import           JS.Website                             (saveJSON)
+
+-- import           Control.Monad.IO.Class          (MonadIO (..))
+
 
 mainWindowColumnHeader :: MonadWidget t m => Text -> m ()
 mainWindowColumnHeader title =
@@ -145,6 +151,10 @@ walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
                   dUrls
             let dSecretsWithNamesInTheWallet =
                   zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
+            let assetNames = map snd <$> dSecretsWithNamesInTheWallet
+            logDyn "assetNames" assetNames
+            assets <- performEvent $ traverse (fingerprintFromAssetName encoinsCurrencySymbol) <$> updated assetNames
+            logEvent "?assets?" assets
             pure (dCoinsToBurn, dCoinsToMint, leftmost [eStatusUpdate, eSendStatus])
     eWalletError <- walletError
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]

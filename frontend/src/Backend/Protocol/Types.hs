@@ -4,10 +4,9 @@
 
 module Backend.Protocol.Types where
 
-import           Data.Aeson           (FromJSON (..),
-                                       Options (fieldLabelModifier),
-                                       ToJSON (..), camelTo2, defaultOptions,
-                                       genericParseJSON, withObject, (.:))
+import           Data.Aeson           (FromJSON (..), ToJSON (..),
+                                       genericToJSON)
+import           Data.Aeson.Casing    (aesonPrefix, snakeCase)
 import           Data.Maybe           (fromJust)
 import           Data.Text            (Text)
 import qualified Data.Text            as Text
@@ -20,7 +19,8 @@ import           Text.Hex             (decodeHex, encodeHex)
 
 import           CSL                  (TransactionUnspentOutputs, Value)
 import           ENCOINS.BaseTypes    (MintingPolarity)
-import           ENCOINS.Bulletproofs (Proof)
+import           ENCOINS.Bulletproofs (Proof, Secret)
+
 
 type TxParams = (Address, Address, Integer)
 
@@ -118,112 +118,48 @@ data ServerVersion = ServerVersion
   deriving stock (Eq, Show, Generic)
   deriving anyclass (ToJSON, FromJSON)
 
-
 -- IPFS
 
--- TODO Person is just for tests. Remove it later.
-data Person = Person
-  { name :: Text
-  , age  :: Int
-  }
-  deriving stock (Show, Eq, Generic)
-  deriving anyclass (ToJSON)
-
-data PinJsonResponse = MkPinJsonResponse
-  { ipfsHash    :: Text
-  , pinSize     :: Int
-  , timestamp   :: UTCTime
-  , isDuplicate :: Bool
+-- Request body from frontend to backend
+data CloudRequest = MkCloudRequest
+  { tcClientId  :: Text -- Unique identification of the user
+  , tcAssetName :: Text
+  , tcTokenKey  :: Text
   }
   deriving stock (Show, Eq, Generic)
 
-instance FromJSON PinJsonResponse where
-    parseJSON = withObject "PinJsonResponse" $ \o -> do
-        ipfsHash    <- o .: "IpfsHash"
-        pinSize     <- o .: "PinSize"
-        timestamp   <- o .: "Timestamp"
-        isDuplicate <- o .: "isDuplicate"
-        pure MkPinJsonResponse{..}
+instance ToJSON CloudRequest where
+   toJSON = genericToJSON $ aesonPrefix snakeCase
 
-data File = MkFile
-  { fileId        :: Text
-  , ipfsPinHash   :: Text
-  , size          :: Int
-  , userId        :: Text
-  , datePinned    :: Maybe UTCTime
-  , dateUnpinned  :: Maybe UTCTime
-  , metadata      :: FileMetadata
-  , regions       :: [Regions]
-  , mimeType      :: Text
-  , numberOfFiles :: Int
-  }
-  deriving stock (Show, Eq, Generic)
-
-instance FromJSON File where
-    parseJSON = genericParseJSON
-      defaultOptions{ fieldLabelModifier = modifyField }
-
-modifyField :: String -> String
-modifyField "fileId" = "id"
-modifyField key      = camelTo2 '_' key
-
-data Regions = MkRegions
-  { regionId                :: Text
-  , currentReplicationCount :: Int
-  , desiredReplicationCount :: Int
-  }
+data CloudResponse = TokenPinned | TokenBurned | PinError Text
   deriving stock (Show, Eq, Generic)
   deriving anyclass (FromJSON)
 
-data FileMetadata = FileMetadata
-  { name :: Maybe Text
+-- TODO: remove after debug
+tokenSample :: CloudRequest
+tokenSample = MkCloudRequest
+  { tcClientId = "client_id_hash"
+  -- , tcAssetName = "b47f55bdc1d7615409cf8cc714e3885c42d6cb48629d44ff5a9265c88aa30cdc"
+  , tcAssetName = "495090d7e6f2911cf0e1bc59ce244983ac5f1fe4adbaec9ce6af3429ad7aec79"
+  , tcTokenKey = "super secret key"
   }
-  deriving stock (Show, Eq, Generic)
-  deriving anyclass (FromJSON)
 
-data Files = MkFiles
-  { count :: Int
-  , rows  :: [File]
+-- Cache
+
+data TokenCache = MkTokenCache
+  { tcAssetName  :: Text
+  , tcSecret     :: Secret
+  , tcIpfsStatus :: IpfsStatus
+  , tcCoinStatus :: CoinStatus
   }
-  deriving stock (Show, Eq, Generic)
-  deriving anyclass (FromJSON)
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (FromJSON, ToJSON)
 
--- Ipfs types to delegate backend
 
-data TokenStatus = Minted | Burned
-  deriving stock (Show, Eq, Generic)
-  deriving anyclass (ToJSON, FromJSON)
+data IpfsStatus = Pinned | Unpinned
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (FromJSON, ToJSON)
 
-newtype TokenKey = MkTokenKey { tokenKey :: Text }
-  deriving newtype (Show, Eq)
-  deriving stock (Generic)
-  deriving anyclass (ToJSON, FromJSON)
-
-data MetaOptions = MkMetaOptions
-  { status :: TokenStatus
-  }
-  deriving stock (Show, Eq, Generic)
-  deriving anyclass (ToJSON, FromJSON)
-
-data Metadata = MkMetadata
-  { name      :: Maybe Text
-  , keyvalues :: Maybe MetaOptions
-  }
-  deriving stock (Show, Eq, Generic)
-  deriving anyclass (ToJSON, FromJSON)
-
-data Token = Token
-  { pinataContent  :: TokenKey
-  , pinataMetadata :: Metadata
-  }
-  deriving stock (Show, Eq, Generic)
-  deriving anyclass (ToJSON, FromJSON)
-
-tokenSample :: Token
-tokenSample = Token
-  { pinataContent = MkTokenKey "super secret key"
-  , pinataMetadata = MkMetadata
-      { name = Just "tokenName"
-      , keyvalues = Just $ MkMetaOptions Minted
-      }
-  }
+data CoinStatus = Minted | Burned
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (FromJSON, ToJSON)
