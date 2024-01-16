@@ -3,19 +3,21 @@
 module ENCOINS.App.Widgets.MainWindow where
 
 import           Data.Aeson                         (encode)
+import           Data.Align                         (alignWith)
 import           Data.Bool                          (bool)
 import           Data.ByteString.Lazy               (toStrict)
 import           Data.Text                          (Text)
 import           Data.Text.Encoding                 (decodeUtf8)
+import           Data.These                         (these)
 import           Reflex.Dom
 
-import           Backend.Protocol.Types             (TokenCache)
+import           Backend.Protocol.Types             (TokenCacheV3)
 import           Backend.Status                     (Status (..))
 import           Backend.Utility                    (switchHoldDyn)
 import           Backend.Wallet                     (Wallet (..))
 import           ENCOINS.App.Widgets.Basic          (elementResultJS,
                                                      loadAppData, tellTxStatus)
-import           ENCOINS.App.Widgets.Coin           (coinWithName, coinV3)
+import           ENCOINS.App.Widgets.Coin           (coinV3, coinWithName)
 import           ENCOINS.App.Widgets.MainTabs       (ledgerTab, transferTab,
                                                      walletTab)
 import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw (..))
@@ -28,22 +30,24 @@ mainWindow :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t Bool
-  -> m (Dynamic t [(Secret, Text)])
+  -> m (Dynamic t [TokenCacheV3])
 mainWindow mPass dWallet dIsDisableButtons = mdo
     eTab <- tabsSection dTab dIsDisableButtons
     dTab <- holdDyn WalletTab eTab
     eSecretsWithName <- switchHoldDyn dTab $ \tab -> mdo
-      -- dSecretsV3 <- loadAppData (getPassRaw <$> mPass) "encoins-v3" id []
+      dSecretsV3 :: Dynamic t [TokenCacheV3] <-
+        loadAppData (getPassRaw <$> mPass) "encoins-v3" id []
 
-      dOldSecretsWithName <- loadAppData (getPassRaw <$> mPass) "encoins-with-name" id []
+      -- dOldSecretsWithName <- loadAppData (getPassRaw <$> mPass) "encoins-with-name" id []
+      -- updateCache mPass dOldSecretsWithName
 
-      updateCache mPass dOldSecretsWithName
+      updateCacheV3 mPass dSecretsV3
 
       case tab of
-        WalletTab   -> walletTab mPass dWallet dOldSecretsWithName
-        TransferTab -> transferTab mPass dWallet dOldSecretsWithName
-        LedgerTab   -> ledgerTab mPass dOldSecretsWithName
-      return $ updated dOldSecretsWithName
+        WalletTab   -> walletTab mPass dWallet dSecretsV3
+        TransferTab -> transferTab mPass dWallet dSecretsV3
+        LedgerTab   -> ledgerTab mPass dSecretsV3
+      return $ updated dSecretsV3
     holdDyn [] eSecretsWithName
 
 {-
@@ -106,30 +110,35 @@ loadCache mPass = do
 -- "encoins" cache exists.
 updateCacheV3 :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
-  -> Dynamic t [TokenCache]
+  -> Dynamic t [TokenCacheV3]
   -> m ()
 updateCacheV3 mPass dSecretsV3 = do
   let eSecretsV3 = updated $ null <$> dSecretsV3
   widgetHold_ blank $
-    bool blank (loadCacheV3 mPass) <$> eSecretsV3
+    bool blank (migrateCacheV3 mPass) <$> eSecretsV3
 
-loadCacheV3 :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+migrateCacheV3 :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> m ()
-loadCacheV3 mPass = do
-  eSecretsV1 <- updated <$> loadAppData (getPassRaw <$> mPass) "encoins" id []
+migrateCacheV3 mPass = do
+  eSecretsV1 :: Event t [Secret] <-
+    updated <$> loadAppData (getPassRaw <$> mPass) "encoins" id []
+  eSecretsV2 :: Event t [(Secret, Text)] <-
+    updated <$> loadAppData (getPassRaw <$> mPass) "encoins-with-names" id []
 
-  let eEncoinsIsEmpty = null <$> eSecretsV1
-
-  let eStatusV1 = bool
+  let eIsOldCacheEmpty = mergeWith (&&) [null <$> eSecretsV1, null <$> eSecretsV2]
+  let eMigrateStatus = bool
         (CustomStatus "Cache structure is updating. Please wait.")
         Ready
-        <$> eEncoinsIsEmpty
-  tellTxStatus "App status" eStatusV1
+        <$> eIsOldCacheEmpty
+  tellTxStatus "App status" eMigrateStatus
 
-  -- Convert "encoins" cache (when it is not empty) to encoins-v3
-  let eSecretsV3 = coincidence $
-        bool (map coinV3 <$> eSecretsV1) never <$> eEncoinsIsEmpty
+  let cacheV3 = alignWith
+        (these migrateV1 migrateV2 migrateV3)
+        eSecretsV1
+        eSecretsV2
+  -- Migrate old cache (when it is not empty) to encoins-v3
+  let eSecretsV3 = ffilter (not . null) cacheV3
 
   performEvent_ $
       saveJSON (getPassRaw <$> mPass) "encoins-v3"
@@ -138,7 +147,23 @@ loadCacheV3 mPass = do
         . encode <$> eSecretsV3
 
   -- Ask user to reload when cache structure is updated
-  let eEncoinsIsEmptyLog = () <$ ffilter id eEncoinsIsEmpty
+  let eIsOldCacheEmptyLog = () <$ ffilter id eIsOldCacheEmpty
   eSaved <- updated <$> elementResultJS "encoins-v3" (const ())
-  tellTxStatus "App status" $
-    CustomStatus "Please reload the page" <$ leftmost [eEncoinsIsEmptyLog, eSaved]
+  tellTxStatus "App status" $ CustomStatus "Please reload the page"
+      <$ leftmost [eIsOldCacheEmptyLog, eSaved]
+
+migrateV1 :: [Secret] -> [TokenCacheV3]
+migrateV1 v1
+  | not (null v1) = map coinV3 v1
+  | otherwise = []
+
+migrateV2 :: [(Secret,Text)] -> [TokenCacheV3]
+migrateV2 v2
+  | not (null v2) = map (coinV3 . fst) v2
+  | otherwise = []
+
+migrateV3 :: [Secret] -> [(Secret,Text)] -> [TokenCacheV3]
+migrateV3 v1 v2
+  | not (null v2) = map (coinV3 . fst) v2
+  | not (null v1) = map coinV3 v1
+  | otherwise = []

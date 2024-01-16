@@ -17,7 +17,7 @@ import           Text.Read                       (readMaybe)
 
 import           Backend.Protocol.Setup          (bulletproofSetup,
                                                   encoinsCurrencySymbol)
-import           Backend.Protocol.Types          (TokenCache(..), IpfsStatus(..), CoinStatus(..))
+import           Backend.Protocol.Types          (TokenCacheV3(..), IpfsStatus(..), CoinStatus(..))
 import           Backend.Protocol.Utility        (secretToHex)
 import           ENCOINS.BaseTypes               (FieldElement)
 import           ENCOINS.Bulletproofs            (Secret (..), Secrets,
@@ -41,10 +41,10 @@ data CoinUpdate = AddCoin Secret | RemoveCoin Secret | ClearCoins
 -- coinsWithNames :: Secrets -> [(Secret, Text)]
 -- coinsWithNames = map coinWithName
 
-coinV3 :: Secret -> TokenCache
+coinV3 :: Secret -> TokenCacheV3
 coinV3 s =
     let assetName = encodeHex . fromBuiltin . snd . fromSecret bulletproofSetup $ s
-    in MkTokenCache assetName s Unpinned Minted
+    in MkTokenCacheV3 assetName s Unpinned Minted
     -- ^ Unpinned and Minted are default parameters
 
 coinWithName :: Secret -> (Secret, Text)
@@ -69,7 +69,7 @@ coinCollectionWithNames dSecrets = do
 
 coinCollectionV3 :: MonadWidget t m
   => Dynamic t Secrets
-  -> m (Dynamic t [TokenCache])
+  -> m (Dynamic t [TokenCacheV3])
 coinCollectionV3 dSecrets = do
     eCoinV3Widgets <- dyn $ fmap (mapM (pure . pure . coinV3)) dSecrets
     let eCoinsV3 = fmap sequenceA eCoinV3Widgets
@@ -81,13 +81,14 @@ shortenCoinName txt = Text.take 4 txt `Text.append` "..." `Text.append` Text.tak
 coinValue :: Secret -> Text
 coinValue = toText . fst . fromSecret bulletproofSetup
 
-filterKnownCoinNames :: [Text] -> [(Secret, Text)] -> [(Secret, Text)]
-filterKnownCoinNames knownNames = filter (\(_, name) -> name `elem` knownNames)
+filterByKnownCoinNames :: [Text] -> [TokenCacheV3] -> [TokenCacheV3]
+filterByKnownCoinNames knownNames =
+  filter (\(MkTokenCacheV3 name _ _ _) -> name `elem` knownNames)
 
 -------------------------------------------- Coins in the Wallet ----------------------------------------
 
-coinBurnWidget :: MonadWidget t m => (Secret, Text) -> m (Dynamic t (Maybe Secret))
-coinBurnWidget (s, name) = mdo
+coinBurnWidget :: MonadWidget t m => TokenCacheV3 -> m (Dynamic t (Maybe Secret))
+coinBurnWidget (MkTokenCacheV3 name s _ _) = mdo
     (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
         dChecked <- divClass "" checkboxButton -- withTooltip checkboxButton mempty 0 0 $
             -- divClass "app-text-normal" $ text "Select to burn this coin."
@@ -115,9 +116,11 @@ coinBurnWidget (s, name) = mdo
 noCoinsFoundWidget :: MonadWidget t m => [a] -> m ()
 noCoinsFoundWidget = bool blank (divClass "coin-entry-burn-div-no-coins" $ divClass "app-text-normal" $ text "No coins found.") . null
 
-coinBurnCollectionWidget :: MonadWidget t m => Dynamic t [(Secret, Text)] -> m (Dynamic t Secrets)
-coinBurnCollectionWidget dSecretsWithNames = do
-    eCoinBurnWidgets <- dyn $ fmap (mapM coinBurnWidget) dSecretsWithNames
+coinBurnCollectionWidget :: MonadWidget t m
+  => Dynamic t [TokenCacheV3]
+  -> m (Dynamic t Secrets)
+coinBurnCollectionWidget dtokenCache = do
+    eCoinBurnWidgets <- dyn $ fmap (mapM coinBurnWidget) dtokenCache
     let eCoinsToBurn = fmap (fmap catMaybes . sequenceA) eCoinBurnWidgets
     join <$> holdDyn (pure []) eCoinsToBurn
 
@@ -137,8 +140,8 @@ coinTooltip name = elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visi
         text fp
 --------------------------------- Coins to Mint -------------------------------
 
-coinV3MintWidget :: MonadWidget t m => TokenCache -> m (Event t Secret)
-coinV3MintWidget (MkTokenCache name s _ _) = mdo
+coinV3MintWidget :: MonadWidget t m => TokenCacheV3 -> m (Event t Secret)
+coinV3MintWidget (MkTokenCacheV3 name s _ _) = mdo
     (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
         eCross <- domEvent Click . fst <$> elClass' "div" "cross-div" blank
         (txt, _) <- elClass' "div" "app-text-normal" $ text $ shortenCoinName name

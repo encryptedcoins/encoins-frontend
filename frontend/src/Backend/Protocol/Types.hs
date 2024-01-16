@@ -122,9 +122,9 @@ data ServerVersion = ServerVersion
 
 -- Request body from frontend to backend
 data CloudRequest = MkCloudRequest
-  { tcClientId  :: Text -- Unique identification of the user
-  , tcAssetName :: Text
-  , tcTokenKey  :: Text
+  { crClientId  :: Text -- Unique identification of the user
+  , crAssetName :: Text
+  , crTokenKey  :: Text
   }
   deriving stock (Show, Eq, Generic)
 
@@ -138,15 +138,15 @@ data CloudResponse = TokenPinned | TokenBurned | PinError Text
 -- TODO: remove after debug
 tokenSample :: CloudRequest
 tokenSample = MkCloudRequest
-  { tcClientId = "client_id_hash"
-  -- , tcAssetName = "b47f55bdc1d7615409cf8cc714e3885c42d6cb48629d44ff5a9265c88aa30cdc"
-  , tcAssetName = "495090d7e6f2911cf0e1bc59ce244983ac5f1fe4adbaec9ce6af3429ad7aec79"
-  , tcTokenKey = "super secret key"
+  { crClientId = "client_id_hash"
+  -- , crAssetName = "b47f55bdc1d7615409cf8cc714e3885c42d6cb48629d44ff5a9265c88aa30cdc"
+  , crAssetName = "495090d7e6f2911cf0e1bc59ce244983ac5f1fe4adbaec9ce6af3429ad7aec79"
+  , crTokenKey = "super secret key"
   }
 
 -- Cache
 
-data TokenCache = MkTokenCache
+data TokenCacheV3 = MkTokenCacheV3
   { tcAssetName  :: Text
   , tcSecret     :: Secret
   , tcIpfsStatus :: IpfsStatus

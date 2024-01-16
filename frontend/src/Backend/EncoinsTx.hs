@@ -5,6 +5,7 @@ module Backend.EncoinsTx where
 import           Control.Monad                   (void)
 import           Control.Monad.IO.Class          (MonadIO (..))
 import qualified CSL
+import           Data.List                       (find)
 import qualified Data.Map                        as Map
 import           Data.Maybe                      (fromJust, fromMaybe)
 import           Data.Text                       (Text)
@@ -133,7 +134,7 @@ encoinsTxWalletMode
 encoinsTxTransferMode :: MonadWidget t m
   => Dynamic t Wallet
   -> Dynamic t Secrets
-  -> Dynamic t [(Secret, Text)]
+  -> Dynamic t [TokenCacheV3]
   -> Dynamic t (Maybe Address)
   -> Event t ()
   -> Dynamic t [(Text, Text)]
@@ -142,7 +143,7 @@ encoinsTxTransferMode :: MonadWidget t m
 encoinsTxTransferMode
   dWallet
   dCoins
-  dNames
+  dTokenCache
   dmAddr
   eSend
   dWalletSignature
@@ -165,7 +166,7 @@ encoinsTxTransferMode
 
     -- Create transaction
     let dNewTxReqBody = zipDyn
-          (InputSending <$> dAddr <*> zipDynWith mkValue dCoins dNames <*> dAddrWallet)
+          (InputSending <$> dAddr <*> zipDynWith mkValue dCoins dTokenCache <*> dAddrWallet)
           dInputs
     eeNewTxResponse <- switchHoldDyn dmUrl $ \case
       Nothing -> pure never
@@ -208,12 +209,13 @@ encoinsTxTransferMode
     logEvent "encoinsTxTransferMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
   where
-    mkValue coins names = CSL.Value (toText $ minAdaTxOutInLedger * length coins)
+    mkValue :: Secrets -> [TokenCacheV3] -> CSL.Value
+    mkValue coins tokenCaches = CSL.Value (toText $ minAdaTxOutInLedger * length coins)
       . Just
       . CSL.MultiAsset
       . Map.singleton encoinsCurrencySymbol
       . Map.fromList
-      . mapMaybe (\s -> (,"1") <$> lookup s names)
+      . mapMaybe (\s -> (,"1") . tcAssetName <$> find (\tc -> s == tcSecret tc) tokenCaches)
       $ coins
 
 encoinsTxLedgerMode :: MonadWidget t m
