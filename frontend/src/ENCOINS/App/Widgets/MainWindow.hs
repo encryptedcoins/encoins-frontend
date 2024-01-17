@@ -35,10 +35,9 @@ mainWindow :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
 mainWindow mPass dWallet dIsDisableButtons = mdo
     eTab <- tabsSection dTab dIsDisableButtons
     dTab <- holdDyn WalletTab eTab
-    eSecretsWithName <- switchHoldDyn dTab $ \tab -> mdo
+    eSecretsV3 <- switchHoldDyn dTab $ \tab -> mdo
       dSecretsV3 :: Dynamic t [TokenCacheV3] <-
         loadAppData (getPassRaw <$> mPass) "encoins-v3" id []
-      -- logDyn "mainWindow: dSecretsV3" dSecretsV3
 
       updateCacheV3 mPass dSecretsV3
 
@@ -47,7 +46,7 @@ mainWindow mPass dWallet dIsDisableButtons = mdo
         TransferTab -> transferTab mPass dWallet dSecretsV3
         LedgerTab   -> ledgerTab mPass dSecretsV3
       return $ updated dSecretsV3
-    holdDyn [] eSecretsWithName
+    holdDyn [] eSecretsV3
 
 {-
 Evolutions of encoins cache by key

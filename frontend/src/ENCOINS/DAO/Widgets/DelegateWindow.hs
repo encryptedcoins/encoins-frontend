@@ -40,9 +40,9 @@ delegateWindow eOpen dWallet dRelayNames = mdo
 
 
   -- TODO: just for test. Remove it.
-  dToken <- holdDyn tokenSample $ tokenSample <$ eDelay
-  eRes <- tokenMintedRequest dToken eDelay
-  logEvent "eRes" eRes
+  -- dToken <- holdDyn tokenSample $ tokenSample <$ eDelay
+  -- eRes <- tokenMintedRequest dToken eDelay
+  -- logEvent "eRes" eRes
 
   eeRelays <- fetchRelayTable eDelay
   emDelegated <- fetchDelegatedByAddress (walletChangeAddress <$> dWallet) eDelay

@@ -219,6 +219,17 @@ tokenMintedRequest dToken e = do
   logEvent "tokenMinted request" eRespUnwrapped
   pure eRespUnwrapped
 
+cacheRequest :: MonadWidget t m
+  => Dynamic t [CloudRequest]
+  -> Event t ()
+  -> m (Event t (Either Text [CloudResponse]))
+cacheRequest dToken e = do
+  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient upfsBackendUrl
+  eResp <- cache (Right <$> dToken) e
+  let eRespUnwrapped = mkTextOrResponse <$> eResp
+  logEvent "cache request" eRespUnwrapped
+  pure eRespUnwrapped
+
 -- tokenBurnedRequest :: MonadWidget t m
 --   => Dynamic t Token
 --   -> Event t ()

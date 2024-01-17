@@ -60,10 +60,12 @@ mkApiClient host = ApiClient{..}
 
 type BackIpfsApi =
          "minted" :> ReqBody '[JSON] CloudRequest :> Post '[JSON] CloudResponse
+    :<|> "cache" :> ReqBody '[JSON] [CloudRequest] :> Post '[JSON] [CloudResponse]
     -- :<|> "burned" :> ReqBody '[JSON] Token :> Post '[JSON] Text
 
 data BackIpfsApiClient t m = MkBackIpfsApiClient
   { minted :: ReqRes t m CloudRequest CloudResponse
+  , cache :: ReqRes t m [CloudRequest] [CloudResponse]
   -- , burned :: ReqRes t m Token Text
   }
 
@@ -72,7 +74,8 @@ mkBackIpfsApiClient :: forall t m . MonadWidget t m
   -> BackIpfsApiClient t m
 mkBackIpfsApiClient host = MkBackIpfsApiClient{..}
   where
-    ( minted ) = client
+    ( minted :<|>
+      cache ) = client
       -- burned) = client
         (Proxy @BackIpfsApi)
         (Proxy @m)

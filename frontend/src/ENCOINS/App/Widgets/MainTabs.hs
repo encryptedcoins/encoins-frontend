@@ -21,7 +21,8 @@ import           Backend.Protocol.Setup                 (emergentChangeAddress,
 import           Backend.Protocol.TxValidity            (getAda, getCoinNumber,
                                                          getDeposit)
 import           Backend.Protocol.Types
-import           Backend.Servant.Requests               (currentRequestWrapper)
+import           Backend.Servant.Requests               (cacheRequest,
+                                                         currentRequestWrapper)
 import           Backend.Status                         (Status (..),
                                                          isTxProcessOrCriticalError)
 import           Backend.Wallet                         (Wallet (..))
@@ -97,7 +98,18 @@ walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
                   $ map coinV3
                   <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
-            performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins-v3" . decodeUtf8 . toStrict . encode <$> updated dTokenCache)
+            performEvent_ (saveJSON
+              (getPassRaw <$> mpass)
+              "encoins-v3"
+              . decodeUtf8
+              . toStrict
+              . encode <$> updated dTokenCache)
+
+            res <- cacheRequest
+              (mapMaybe (mkCloudRequest "clientId") <$> dTokenCache)
+              (() <$ updated dTokenCache)
+
+            logEvent "walletTab: cache response:" res
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do
