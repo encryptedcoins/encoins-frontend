@@ -131,10 +131,6 @@ data CloudRequest = MkCloudRequest
 instance ToJSON CloudRequest where
    toJSON = genericToJSON $ aesonPrefix snakeCase
 
--- data CloudResponse = TokenPinned | TokenBurned | PinError Text
---   deriving stock (Show, Eq, Generic)
---   deriving anyclass (FromJSON)
-
 data CloudResponse = MkCloudResponse
   { resAssetName  :: Text
   , resIpfsStatus :: Maybe IpfsStatus
@@ -144,6 +140,14 @@ data CloudResponse = MkCloudResponse
 
 instance FromJSON CloudResponse where
    parseJSON = genericParseJSON $ aesonPrefix snakeCase
+
+data IpfsStatus = Pinned | Unpinned | FileError Text
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (FromJSON, ToJSON)
+
+data CoinStatus = Minted | Burned | CoinError Text
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (FromJSON, ToJSON)
 
 -- Cache
 
@@ -156,17 +160,9 @@ data TokenCacheV3 = MkTokenCacheV3
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
-data IpfsStatus = Pinned | Unpinned | FileError Text
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromJSON, ToJSON)
-
-data CoinStatus = Minted | Burned | CoinError Text
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromJSON, ToJSON)
-
 mkCloudRequest :: Text -> TokenCacheV3 -> Maybe CloudRequest
-mkCloudRequest clientId cache = case tcIpfsStatus cache of
-  Unpinned -> Just $ MkCloudRequest
+mkCloudRequest clientId cache = case (tcIpfsStatus cache, tcCoinStatus cache)  of
+  (Unpinned, Minted) -> Just $ MkCloudRequest
     { reqClientId  = clientId
     , reqAssetName = tcAssetName cache
     , reqSecretKey  = "encrypted secret"
