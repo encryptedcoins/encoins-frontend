@@ -2,10 +2,11 @@ module ENCOINS.App.Widgets.IPFS where
 
 import           Backend.Protocol.Types
 
-import           Data.Map               (Map)
-import qualified Data.Map               as Map
-import           Data.Maybe             (fromMaybe)
-import           Data.Text              (Text)
+import           Control.Concurrent.STM.TVar
+import           Data.Map                    (Map)
+import qualified Data.Map                    as Map
+import           Data.Maybe                  (fromMaybe)
+import           Data.Text                   (Text)
 
 updateCacheStatus :: Map Text CloudResponse -> [TokenCacheV3] -> [TokenCacheV3]
 updateCacheStatus clouds = map updateCloud
@@ -20,7 +21,6 @@ updateCacheStatus clouds = map updateCloud
            t{ tcIpfsStatus = fromMaybe (tcIpfsStatus t) mIpfs
             , tcCoinStatus = fromMaybe (tcCoinStatus t) mCoin
             }
-
 
 mkCloudRequest :: TokenCacheV3 -> Maybe CloudRequest
 mkCloudRequest cache = case (tcIpfsStatus cache, tcCoinStatus cache)  of

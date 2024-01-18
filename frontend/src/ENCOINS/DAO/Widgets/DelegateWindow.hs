@@ -38,12 +38,6 @@ delegateWindow :: MonadWidget t m
 delegateWindow eOpen dWallet dRelayNames = mdo
   eDelay <- delay 0.05 eOpen
 
-
-  -- TODO: just for test. Remove it.
-  -- dToken <- holdDyn tokenSample $ tokenSample <$ eDelay
-  -- eRes <- tokenMintedRequest dToken eDelay
-  -- logEvent "eRes" eRes
-
   eeRelays <- fetchRelayTable eDelay
   emDelegated <- fetchDelegatedByAddress (walletChangeAddress <$> dWallet) eDelay
   eUrlOk <- dialogWindow

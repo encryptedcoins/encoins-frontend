@@ -100,12 +100,13 @@ walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
                   $ map coinV3
                   <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
-            eeCloudResponse <- cacheRequest
-              (("clientId",) . mapMaybe mkCloudRequest <$> dTokenCache)
-              (() <$ updated dTokenCache)
+            let dTokenForPin = mapMaybe mkCloudRequest <$> dTokenCache
+            logDyn "dTokenForPin" dTokenForPin
+            let eFireCaching = () <$ (ffilter (not . null) $ updated dTokenForPin)
+            logEvent "eFireCaching" eFireCaching
+            eeCloudResponse <- cacheRequest (("clientId",) <$> dTokenForPin) eFireCaching
             logEvent "walletTab: cache response:" eeCloudResponse
-
-            let (eNewTxError, eCloudResponse) = eventEither eeCloudResponse
+            let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
 
             dCloudResponse <- holdDyn Map.empty eCloudResponse
             let dUpdatedTokenCache = ffor2 dCloudResponse dTokenCache updateCacheStatus
@@ -116,8 +117,6 @@ walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
               . decodeUtf8
               . toStrict
               . encode <$> updated dUpdatedTokenCache)
-
-
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do

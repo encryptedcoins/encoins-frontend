@@ -68,7 +68,6 @@ updateCacheV3 :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   -> m ()
 updateCacheV3 mPass dSecretsV3 = do
   let eSecretsV3 = updated $ null <$> dSecretsV3
-  logEvent "updateCacheV3: eSecretsV3" eSecretsV3
   widgetHold_ blank $
     bool blank (migrateCacheV3 mPass) <$> eSecretsV3
 
