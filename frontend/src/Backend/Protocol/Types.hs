@@ -5,7 +5,7 @@
 module Backend.Protocol.Types where
 
 import           Data.Aeson           (FromJSON (..), ToJSON (..),
-                                       genericToJSON, genericParseJSON)
+                                       genericParseJSON, genericToJSON)
 import           Data.Aeson.Casing    (aesonPrefix, snakeCase)
 import           Data.Maybe           (fromJust)
 import           Data.Text            (Text)
@@ -122,9 +122,8 @@ data ServerVersion = ServerVersion
 
 -- Request body from frontend to backend
 data CloudRequest = MkCloudRequest
-  { reqClientId  :: Text -- Unique identification of the user
-  , reqAssetName :: Text
-  , reqSecretKey  :: Text
+  { reqAssetName :: Text
+  , reqSecretKey :: Text
   }
   deriving stock (Show, Eq, Generic)
 
@@ -132,8 +131,7 @@ instance ToJSON CloudRequest where
    toJSON = genericToJSON $ aesonPrefix snakeCase
 
 data CloudResponse = MkCloudResponse
-  { resAssetName  :: Text
-  , resIpfsStatus :: Maybe IpfsStatus
+  { resIpfsStatus :: Maybe IpfsStatus
   , resCoinStatus :: Maybe CoinStatus
   }
   deriving stock (Show, Eq, Generic)
@@ -159,21 +157,3 @@ data TokenCacheV3 = MkTokenCacheV3
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
-
-mkCloudRequest :: Text -> TokenCacheV3 -> Maybe CloudRequest
-mkCloudRequest clientId cache = case (tcIpfsStatus cache, tcCoinStatus cache)  of
-  (Unpinned, Minted) -> Just $ MkCloudRequest
-    { reqClientId  = clientId
-    , reqAssetName = tcAssetName cache
-    , reqSecretKey  = "encrypted secret"
-    }
-  _ -> Nothing
-
--- TODO: remove after debug
-tokenSample :: CloudRequest
-tokenSample = MkCloudRequest
-  { reqClientId = "client_id_hash"
-  -- , reqAssetName = "b47f55bdc1d7615409cf8cc714e3885c42d6cb48629d44ff5a9265c88aa30cdc"
-  , reqAssetName = "495090d7e6f2911cf0e1bc59ce244983ac5f1fe4adbaec9ce6af3429ad7aec79"
-  , reqSecretKey = "super secret key"
-  }

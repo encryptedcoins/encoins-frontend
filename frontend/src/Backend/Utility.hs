@@ -6,9 +6,11 @@ import           Control.Monad ((<=<))
 import qualified CSL
 import           Data.Functor  ((<&>))
 import qualified Data.Map      as Map
+import           Data.Maybe    (isNothing)
 import           Data.Text     (Text)
 import qualified Data.Text     as T
 import           Reflex.Dom
+import           Witherable    (catMaybes)
 
 normalizePingUrl :: Text -> Text
 normalizePingUrl url = T.append (T.dropWhileEnd (== '/') url) $ case appNetwork of
@@ -37,3 +39,9 @@ isMultiAssetOf symbol token (CSL.MultiAsset mp) =
     case Map.lookup symbol mp of
         Nothing -> False
         Just i  -> maybe False (const True) $ Map.lookup token i
+
+eventMaybe :: Reflex t => e -> Event t (Maybe a) -> (Event t e, Event t a)
+eventMaybe errValue ev = (errValue <$ ffilter isNothing ev, catMaybes ev)
+
+eventEither :: Reflex t => Event t (Either e a) -> (Event t e, Event t a)
+eventEither ev = (filterLeft ev, filterRight ev)

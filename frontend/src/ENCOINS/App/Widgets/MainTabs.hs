@@ -7,6 +7,7 @@ import           Data.Aeson                             (encode)
 import           Data.Bool                              (bool)
 import           Data.ByteString.Lazy                   (toStrict)
 import           Data.List                              (nub)
+import qualified Data.Map                               as Map
 import           Data.Text                              (Text)
 import           Data.Text.Encoding                     (decodeUtf8)
 import           Reflex.Dom
@@ -25,6 +26,7 @@ import           Backend.Servant.Requests               (cacheRequest,
                                                          currentRequestWrapper)
 import           Backend.Status                         (Status (..),
                                                          isTxProcessOrCriticalError)
+import           Backend.Utility                        (eventEither)
 import           Backend.Wallet                         (Wallet (..))
 import           Config.Config                          (delegateServerUrl)
 import           ENCOINS.App.Widgets.Basic              (containerApp,
@@ -43,6 +45,7 @@ import           ENCOINS.App.Widgets.ImportWindow       (exportWindow,
                                                          importFileWindow,
                                                          importWindow)
 import           ENCOINS.App.Widgets.InputAddressWindow (inputAddressWindow)
+import           ENCOINS.App.Widgets.IPFS
 import           ENCOINS.App.Widgets.PasswordWindow     (PasswordRaw (..))
 import           ENCOINS.App.Widgets.SendRequestButton  (sendRequestButtonLedger,
                                                          sendRequestButtonWallet)
@@ -57,7 +60,6 @@ import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeLedger,
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
 import           JS.Website                             (saveJSON)
-
 
 mainWindowColumnHeader :: MonadWidget t m => Text -> m ()
 mainWindowColumnHeader title =
@@ -98,18 +100,24 @@ walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
                   $ map coinV3
                   <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
+            eeCloudResponse <- cacheRequest
+              (("clientId",) . mapMaybe mkCloudRequest <$> dTokenCache)
+              (() <$ updated dTokenCache)
+            logEvent "walletTab: cache response:" eeCloudResponse
+
+            let (eNewTxError, eCloudResponse) = eventEither eeCloudResponse
+
+            dCloudResponse <- holdDyn Map.empty eCloudResponse
+            let dUpdatedTokenCache = ffor2 dCloudResponse dTokenCache updateCacheStatus
+
             performEvent_ (saveJSON
               (getPassRaw <$> mpass)
               "encoins-v3"
               . decodeUtf8
               . toStrict
-              . encode <$> updated dTokenCache)
+              . encode <$> updated dUpdatedTokenCache)
 
-            res <- cacheRequest
-              (mapMaybe (mkCloudRequest "clientId") <$> dTokenCache)
-              (() <$ updated dTokenCache)
 
-            logEvent "walletTab: cache response:" res
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do

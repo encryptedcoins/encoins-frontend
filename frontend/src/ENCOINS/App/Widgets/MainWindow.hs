@@ -23,8 +23,8 @@ import           ENCOINS.App.Widgets.MainTabs       (ledgerTab, transferTab,
 import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw (..))
 import           ENCOINS.App.Widgets.TabsSelection  (AppTab (..), tabsSection)
 import           ENCOINS.Bulletproofs               (Secret)
-import           JS.Website                         (saveJSON)
 import           ENCOINS.Common.Events
+import           JS.Website                         (saveJSON)
 
 
 mainWindow :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)

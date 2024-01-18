@@ -60,12 +60,13 @@ mkApiClient host = ApiClient{..}
 
 type BackIpfsApi =
          "minted" :> ReqBody '[JSON] CloudRequest :> Post '[JSON] CloudResponse
-    :<|> "cache" :> ReqBody '[JSON] [CloudRequest] :> Post '[JSON] [CloudResponse]
+    :<|> "cache" :> ReqBody '[JSON] (Text, [CloudRequest])
+                 :> Post '[JSON] (Map Text CloudResponse)
     -- :<|> "burned" :> ReqBody '[JSON] Token :> Post '[JSON] Text
 
 data BackIpfsApiClient t m = MkBackIpfsApiClient
   { minted :: ReqRes t m CloudRequest CloudResponse
-  , cache :: ReqRes t m [CloudRequest] [CloudResponse]
+  , cache  :: ReqRes t m (Text, [CloudRequest]) (Map Text CloudResponse)
   -- , burned :: ReqRes t m Token Text
   }
 

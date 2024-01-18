@@ -16,7 +16,6 @@ import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Request, Value)
 import           Servant.Reflex         (BaseUrl (..), ReqResult (..))
 import           System.Random          (randomRIO)
-import           Witherable             (catMaybes)
 
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
@@ -165,12 +164,6 @@ mkStatusOrResponse (ResponseSuccess _ a _) = Right a
 mkStatusOrResponse (ResponseFailure _ _ xhr) = Left $ fromIntegral $ view xhrResponse_status xhr
 mkStatusOrResponse (RequestFailure _ _) = Left $ -1
 
-eventMaybe :: Reflex t => e -> Event t (Maybe a) -> (Event t e, Event t a)
-eventMaybe errValue ev = (errValue <$ ffilter isNothing ev, catMaybes ev)
-
-eventEither :: Reflex t => Event t (Either e a) -> (Event t e, Event t a)
-eventEither ev = (filterLeft ev, filterRight ev)
-
 hasStatusZero :: Int -> Either Int Int
 hasStatusZero = \case
   0 -> Left 0
@@ -220,9 +213,9 @@ tokenMintedRequest dToken e = do
   pure eRespUnwrapped
 
 cacheRequest :: MonadWidget t m
-  => Dynamic t [CloudRequest]
+  => Dynamic t (Text, [CloudRequest])
   -> Event t ()
-  -> m (Event t (Either Text [CloudResponse]))
+  -> m (Event t (Either Text (Map Text CloudResponse)))
 cacheRequest dToken e = do
   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient upfsBackendUrl
   eResp <- cache (Right <$> dToken) e

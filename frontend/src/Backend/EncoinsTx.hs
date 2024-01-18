@@ -25,7 +25,8 @@ import           Backend.Protocol.Utility        (getEncoinsInUtxos,
                                                   mkWalletRedeemer)
 import           Backend.Servant.Requests
 import           Backend.Status                  (Status (..))
-import           Backend.Utility                 (switchHoldDyn, toEither)
+import           Backend.Utility                 (eventEither, eventMaybe,
+                                                  switchHoldDyn, toEither)
 import           Backend.Wallet                  (Wallet (..), toJS)
 import           ENCOINS.App.Widgets.Basic       (elementResultJS)
 import           ENCOINS.BaseTypes
