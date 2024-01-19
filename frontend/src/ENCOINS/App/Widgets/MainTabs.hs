@@ -7,7 +7,6 @@ import           Data.Aeson                             (encode)
 import           Data.Bool                              (bool)
 import           Data.ByteString.Lazy                   (toStrict)
 import           Data.List                              (nub)
-import qualified Data.Map                               as Map
 import           Data.Text                              (Text)
 import           Data.Text.Encoding                     (decodeUtf8)
 import           Reflex.Dom
@@ -22,11 +21,9 @@ import           Backend.Protocol.Setup                 (emergentChangeAddress,
 import           Backend.Protocol.TxValidity            (getAda, getCoinNumber,
                                                          getDeposit)
 import           Backend.Protocol.Types
-import           Backend.Servant.Requests               (cacheRequest,
-                                                         currentRequestWrapper)
+import           Backend.Servant.Requests               (currentRequestWrapper)
 import           Backend.Status                         (Status (..),
                                                          isTxProcessOrCriticalError)
-import           Backend.Utility                        (eventEither)
 import           Backend.Wallet                         (Wallet (..))
 import           Config.Config                          (delegateServerUrl)
 import           ENCOINS.App.Widgets.Basic              (containerApp,
@@ -100,28 +97,18 @@ walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
                   $ map coinV3
                   <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
-            let dTokenForPin = mapMaybe mkCloudRequest <$> dTokenCache
-            logDyn "dTokenForPin" dTokenForPin
-            let eFireCaching = () <$ (ffilter (not . null) $ updated dTokenForPin)
-            logEvent "eFireCaching" eFireCaching
-            eeCloudResponse <- cacheRequest (("clientId",) <$> dTokenForPin) eFireCaching
-            logEvent "walletTab: cache response:" eeCloudResponse
-            let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
-
-            dCloudResponse <- holdDyn Map.empty eCloudResponse
-            let dUpdatedTokenCache = ffor2 dCloudResponse dTokenCache updateCacheStatus
-
-            performEvent_ (saveJSON
-              (getPassRaw <$> mpass)
-              "encoins-v3"
-              . decodeUtf8
-              . toStrict
-              . encode <$> updated dUpdatedTokenCache)
+            saveCacheLocally mpass dTokenCache
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do
                   mainWindowColumnHeader "Coins in the Wallet"
                   dSecretsUniq <- holdUniqDyn dSecretsInTheWallet
+
+                  dTokenIpfsCached <- pinValidTokensInIpfs
+                    (walletAddressBech32 <$> dWallet)
+                    dSecretsUniq
+                  saveCacheLocally mpass dTokenIpfsCached
+
                   dyn_ $ fmap noCoinsFoundWidget dSecretsUniq
                   coinBurnCollectionWidget dSecretsUniq
                 eImp <- divClassId "" "welcome-import-export" $ do
@@ -193,7 +180,8 @@ transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
     (dCoins, eSendToLedger, eAddr, dSecretsName) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         let dTokenCache = nub <$> zipDynWith (++) dTokenCacheOld (map coinV3 <$> dImportedSecrets)
-        performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins-v3" . decodeUtf8 . toStrict . encode <$> updated dTokenCache)
+
+        saveCacheLocally mpass dTokenCache
 
         (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
             dCTB <- divClassId "" "welcome-coins-transfer" $ do
@@ -293,10 +281,7 @@ ledgerTab mpass dTokenCacheOld = sectionApp "" "" $ mdo
             let dTokenCache = fmap nub
                   $ zipDynWith (++) dTokenCacheOld
                   $ map coinV3 <$> zipDynWith (++) dImportedSecrets dNewSecrets
-            performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins-v3"
-              . decodeUtf8
-              . toStrict
-              . encode <$> updated dTokenCache)
+            saveCacheLocally mpass dTokenCache
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-ledger-coins" $ do
@@ -369,3 +354,16 @@ ledgerTab mpass dTokenCacheOld = sectionApp "" "" $ mdo
       then "button-switching flex-center"
       else "button-not-selected button-disabled flex-center"
     addChangeButton dBal = btn (f <$> dBal) "margin-top: 10px;" $ text "ADD CHANGE"
+
+
+saveCacheLocally :: MonadWidget t m
+  => Maybe PasswordRaw
+  -> Dynamic t [TokenCacheV3]
+  -> m ()
+saveCacheLocally mpass cache =
+  performEvent_ $ saveJSON
+      (getPassRaw <$> mpass)
+      "encoins-v3"
+      . decodeUtf8
+      . toStrict
+      . encode <$> updated cache

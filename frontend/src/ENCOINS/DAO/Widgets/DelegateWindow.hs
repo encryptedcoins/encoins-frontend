@@ -27,8 +27,6 @@ import           ENCOINS.DAO.Widgets.RelayTable  (fetchDelegatedByAddress,
                                                   fetchRelayTable,
                                                   relayAmountWidget, unStakeUrl)
 import qualified JS.DAO                          as JS
-import Backend.Servant.Requests
-import Backend.Protocol.Types
 
 delegateWindow :: MonadWidget t m
   => Event t ()

@@ -1,12 +1,18 @@
 module ENCOINS.App.Widgets.IPFS where
 
 import           Backend.Protocol.Types
+import           Backend.Servant.Requests (cacheRequest)
+import           Backend.Utility          (eventEither)
+import           ENCOINS.Common.Events
+import           ENCOINS.Common.Utils     (toText)
 
-import           Control.Concurrent.STM.TVar
-import           Data.Map                    (Map)
-import qualified Data.Map                    as Map
-import           Data.Maybe                  (fromMaybe)
-import           Data.Text                   (Text)
+import qualified Crypto.Hash              as Hash
+import           Data.Map                 (Map)
+import qualified Data.Map                 as Map
+import           Data.Maybe               (fromMaybe)
+import           Data.Text                (Text)
+import           Data.Text.Encoding       (encodeUtf8)
+import           Reflex.Dom
 
 updateCacheStatus :: Map Text CloudResponse -> [TokenCacheV3] -> [TokenCacheV3]
 updateCacheStatus clouds = map updateCloud
@@ -29,6 +35,27 @@ mkCloudRequest cache = case (tcIpfsStatus cache, tcCoinStatus cache)  of
     , reqSecretKey  = "encrypted secret"
     }
   _ -> Nothing
+
+pinValidTokensInIpfs :: MonadWidget t m
+  => Dynamic t Text
+  -> Dynamic t [TokenCacheV3]
+  -> m (Dynamic t [TokenCacheV3])
+pinValidTokensInIpfs dWalletAddress dTokenCache = do
+  let dValidTokens = mapMaybe mkCloudRequest <$> dTokenCache
+  -- logDyn "dValidTokens" dValidTokens
+  let eFireCaching = () <$ (ffilter (not . null) $ updated dValidTokens)
+  -- logEvent "eFireCaching" eFireCaching
+  let dClientId = mkClientId <$> dWalletAddress
+  let dReq = zipDynWith (,) dClientId dValidTokens
+  -- logDyn "dClientId" dClientId
+  eeCloudResponse <- cacheRequest dReq eFireCaching
+  -- logEvent "walletTab: cache response:" eeCloudResponse
+  let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
+  dCloudResponse <- holdDyn Map.empty eCloudResponse
+  pure $ ffor2 dCloudResponse dTokenCache updateCacheStatus
+
+mkClientId :: Text -> Text
+mkClientId address = toText $ Hash.hash @Hash.SHA512 $ encodeUtf8 address
 
 -- TODO: remove after debug
 tokenSample :: CloudRequest
