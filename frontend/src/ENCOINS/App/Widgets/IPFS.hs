@@ -1,18 +1,26 @@
 module ENCOINS.App.Widgets.IPFS where
 
 import           Backend.Protocol.Types
-import           Backend.Servant.Requests (cacheRequest)
-import           Backend.Utility          (eventEither)
+import           Backend.Servant.Requests           (cacheRequest)
+import           Backend.Utility                    (eventEither, switchHoldDyn)
+import           ENCOINS.App.Widgets.Basic          (elementResultJS,
+                                                     loadAppDataId)
+import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw, getPassRaw)
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils     (toText)
+import           ENCOINS.Common.Utils               (toText)
+import qualified JS.App                             as JS
+import           JS.Website                         (saveJSON)
 
-import qualified Crypto.Hash              as Hash
-import           Data.Map                 (Map)
-import qualified Data.Map                 as Map
-import           Data.Maybe               (fromMaybe)
-import           Data.Text                (Text)
-import           Data.Text.Encoding       (encodeUtf8)
+import qualified Crypto.Hash                        as Hash
+import           Data.Map                           (Map)
+import qualified Data.Map                           as Map
+import           Data.Maybe                         (fromMaybe)
+import           Data.Text                          (Text)
+import           Data.Text.Encoding                 (encodeUtf8)
 import           Reflex.Dom
+import           Data.Aeson                      (encode)
+import           Data.ByteString.Lazy            (toStrict)
+import           Data.Text.Encoding              (decodeUtf8)
 
 updateCacheStatus :: Map Text CloudResponse -> [TokenCacheV3] -> [TokenCacheV3]
 updateCacheStatus clouds = map updateCloud
@@ -55,7 +63,7 @@ pinValidTokensInIpfs dWalletAddress dTokenCache = do
   pure $ ffor2 dCloudResponse dTokenCache updateCacheStatus
 
 mkClientId :: Text -> Text
-mkClientId address = toText $ Hash.hash @Hash.SHA512 $ encodeUtf8 address
+mkClientId address = toText $ Hash.hash @Hash.SHA256 $ encodeUtf8 address
 
 -- TODO: remove after debug
 tokenSample :: CloudRequest
@@ -64,3 +72,44 @@ tokenSample = MkCloudRequest
   -- , reqAssetName = "495090d7e6f2911cf0e1bc59ce244983ac5f1fe4adbaec9ce6af3429ad7aec79"
   , reqSecretKey = "super secret key"
   }
+
+getAesKey :: MonadWidget t m
+  => Maybe PasswordRaw
+  -> Event t ()
+  -> m (Event t Text)
+getAesKey mPass ev1 = do
+  -- logEvent "getAesKey: ev1" ev1
+  let cacheKey = "encoins-aes-key"
+  dLoadedKey <- loadAppDataId
+    (getPassRaw <$> mPass)
+    cacheKey
+    "first-load-of-aes-key"
+    ev1
+    id
+    Nothing
+  -- logDyn "getAesKey: dLoadedKey1" dLoadedKey
+  let ev2 = () <$ updated dLoadedKey
+  ev3 <- delay 0.1 ev2
+  switchHoldDyn dLoadedKey $ \case
+    Nothing -> do
+        -- logEvent "empty event" ev3
+        let genElId = "genAESKeyId"
+        performEvent_ $ JS.generateAESKey genElId <$ ev3
+        eAesKey <- updated <$> elementResultJS genElId id
+        -- logEvent "getAesKey: eAesKey" eAesKey
+        ev4 <- performEvent $ saveJSON (getPassRaw <$> mPass) cacheKey
+          . decodeUtf8
+          . toStrict
+          . encode <$> eAesKey
+        eLoadedKey <- updated <$> loadAppDataId
+          (getPassRaw <$> mPass)
+          cacheKey
+          "second-load-of-aes-key"
+          ev4
+          id
+          ""
+        -- logEvent "getAesKey: eLoadedKey2" eLoadedKey
+        pure eLoadedKey
+    Just loadedKey -> do
+      -- logEvent "key event" $ loadedKey <$ ev3
+      pure $ loadedKey <$ ev3

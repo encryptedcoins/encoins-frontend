@@ -34,12 +34,13 @@ import           ENCOINS.Common.Widgets.Basic       (column, notification,
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
+import ENCOINS.App.Widgets.IPFS
 
--- import           ENCOINS.Common.Events
+import           ENCOINS.Common.Events
 
 bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe PasswordRaw))
-bodyContentWidget mpass = mdo
-  (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet dIsDisableButtons mpass
+bodyContentWidget mPass = mdo
+  (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet dIsDisableButtons mPass
 
   (dStatusT, dIsDisableButtons) <- handleAppStatus dWallet evEvStatus
   notification dStatusT
@@ -53,12 +54,16 @@ bodyContentWidget mpass = mdo
 
   divClass "section-app section-app-empty wf-section" blank
 
-  (dSecrets, evEvStatus) <- runEventWriterT $ mainWindow mpass dWallet dIsDisableButtons
+  (dSecrets, evEvStatus) <- runEventWriterT $ mainWindow mPass dWallet dIsDisableButtons
 
   performEvent_ (reEncryptEncoins <$> attachPromptlyDyn dSecrets (leftmost
     [eNewPass, Nothing <$ eCleanOk]))
 
   copiedNotification
+
+  eBuild <- postDelay 0.1
+  dKey <- holdDyn "" =<< getAesKey mPass eBuild
+  logDyn "body: dKey" dKey
 
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
 
@@ -78,7 +83,7 @@ bodyWidget = waitForScripts blank $ mdo
   dmmPass <- holdDyn Nothing $ Just <$> leftmost [ePassOk, Nothing <$ eCleanOk, eNewPass]
   eNewPass <- switchHoldDyn dmmPass $ \case
     Nothing    -> pure never
-    Just mpass -> bodyContentWidget mpass
+    Just pass -> bodyContentWidget pass
 
   jQueryWidget
 

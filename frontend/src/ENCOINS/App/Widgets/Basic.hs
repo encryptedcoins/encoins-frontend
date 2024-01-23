@@ -36,12 +36,29 @@ waitForScripts placeholderWidget actualWidget = do
   _ <- widgetHoldUntilDefined "walletAPI" ("js/ENCOINS.js" <$ ePB) placeholderWidget actualWidget
   blank
 
-loadAppData :: forall t m a b . (MonadWidget t m, FromJSON a) =>
-  Maybe Text -> Text -> (a -> b) -> b -> m (Dynamic t b)
+loadAppData :: forall t m a b . (MonadWidget t m, FromJSON a)
+  => Maybe Text
+  -> Text
+  -> (a -> b)
+  -> b
+  -> m (Dynamic t b)
 loadAppData mpass entry f val = do
     let elId = "elId-" <> entry
     e <- newEventWithDelay 0.1
     performEvent_ (loadJSON mpass entry elId <$ e)
+    elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
+
+loadAppDataId :: forall t m a b . (MonadWidget t m, FromJSON a)
+  => Maybe Text
+  -> Text
+  -> Text
+  -> Event t ()
+  -> (a -> b)
+  -> b
+  -> m (Dynamic t b)
+loadAppDataId mpass entry elId ev f val = do
+    eDelayed <- delay 0.1 ev
+    performEvent_ (loadJSON mpass entry elId <$ eDelayed)
     elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
 
 loadJsonFromStorage :: (MonadDOM m, FromJSON a) => Text -> m (Maybe a)

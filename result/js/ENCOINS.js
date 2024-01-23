@@ -596,3 +596,53 @@ function handle_dao_error (e) {
       break;
   }
 }
+
+// IPFS
+
+// Function to generate a random AES key
+async function generateAESKey(resId) {
+  const key =  await crypto.subtle.generateKey(
+    {
+      name: "AES-GCM",
+      length: 256
+    },
+    true,
+    ["encrypt", "decrypt"]
+  );
+  const keyExported = await crypto.subtle.exportKey("raw", key);
+  const exportedKeyHex = Array.from(new Uint8Array(keyExported))
+                              .map((byte) => byte.toString(16).padStart(2, '0'))
+                              .join('');
+  setInputValue(resId, exportedKeyHex);
+}
+
+
+// Function to encrypt plaintext using AES-GCM
+async function encryptAES(key, plaintext) {
+  const iv = crypto.getRandomValues(new Uint8Array(16)); // Generate a random IV
+
+  const encrypted = await crypto.subtle.encrypt(
+    {
+      name: "AES-GCM",
+      iv: iv
+    },
+    key,
+    new TextEncoder().encode(plaintext)
+  );
+
+  return { iv: iv, ciphertext: new Uint8Array(encrypted) };
+}
+
+// Function to decrypt ciphertext using AES-GCM
+async function decryptAES(key, iv, ciphertext) {
+  return new TextDecoder().decode(
+    await crypto.subtle.decrypt(
+      {
+        name: "AES-GCM",
+        iv: iv
+      },
+      key,
+      ciphertext
+    )
+  );
+}
