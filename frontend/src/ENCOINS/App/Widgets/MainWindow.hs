@@ -31,8 +31,9 @@ mainWindow :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t Bool
+  -> Dynamic t Text
   -> m (Dynamic t [TokenCacheV3])
-mainWindow mPass dWallet dIsDisableButtons = mdo
+mainWindow mPass dWallet dIsDisableButtons dKey = mdo
     eTab <- tabsSection dTab dIsDisableButtons
     dTab <- holdDyn WalletTab eTab
     eSecretsV3 <- switchHoldDyn dTab $ \tab -> mdo
@@ -42,9 +43,9 @@ mainWindow mPass dWallet dIsDisableButtons = mdo
       updateCacheV3 mPass dSecretsV3
 
       case tab of
-        WalletTab   -> walletTab mPass dWallet dSecretsV3
-        TransferTab -> transferTab mPass dWallet dSecretsV3
-        LedgerTab   -> ledgerTab mPass dSecretsV3
+        WalletTab   -> walletTab mPass dKey dWallet dSecretsV3
+        TransferTab -> transferTab mPass dKey dWallet dSecretsV3
+        LedgerTab   -> ledgerTab mPass dKey dSecretsV3
       return $ updated dSecretsV3
     holdDyn [] eSecretsV3
 

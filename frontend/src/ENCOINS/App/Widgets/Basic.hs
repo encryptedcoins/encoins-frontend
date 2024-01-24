@@ -33,6 +33,18 @@ containerApp cls = divClass ("container-app w-container " `T.append` cls)
 elementResultJS :: MonadWidget t m => Text -> (Text -> a) -> m (Dynamic t a)
 elementResultJS resId f = fmap (fmap f . value) $ inputElement $ def & initialAttributes .~ "style" =: "display:none;" <> "id" =: resId
 
+-- elementDynResultJS :: MonadWidget t m
+--   => (Text -> a)
+--   -> Dynamic t Text
+--   -> m (Dynamic t a)
+-- elementDynResultJS f dResId = do
+--   let d resId = def & initialAttributes .~ "style" =: "display:none;" <> "id" =: resId
+--   let dmElement = (\resId -> inputElement $ d resId) <$> dResId
+--   let dmdVal = fmap value <$> dmElement
+--   edVal <- dyn dmdVal
+--   ddVal <- holdDyn (constDyn "") edVal
+--   pure $ f <$> join ddVal
+
 elementDynResultJS :: MonadWidget t m
   => (Text -> a)
   -> Dynamic t Text
@@ -84,17 +96,17 @@ loadAppDataIdDyn :: forall t m a b . (MonadWidget t m, FromJSON a)
   -> b
   -> m (Dynamic t b)
 loadAppDataIdDyn mpass entry ev f val = do
-    dUid <- genUid ev
-    eDelayed <- delay 0.1 $ updated dUid
-    performEvent_ (loadJSON mpass entry <$> eDelayed)
+    eUid <- genUid ev
+    -- eDelayedUid <- delay 0.1 eUid
+    -- performEvent_ (loadJSON mpass entry <$> eDelayed)
+    eRes <- performEvent (loadJSON mpass entry <$> eUid)
     let abFunc = maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8
+    dUid <- holdDyn "default-load-uuid" $ coincidence $ eUid <$ eRes
     dVal <- elementDynResultJS abFunc dUid
     pure dVal
 
-genUid :: MonadWidget t m => Event t () -> m (Dynamic t Text)
-genUid ev = do
-  eUid <- performEvent $ (Uid.toText <$> liftIO Uid.nextRandom) <$ ev
-  holdDyn "" eUid
+genUid :: MonadWidget t m => Event t () -> m (Event t Text)
+genUid ev = performEvent $ (Uid.toText <$> liftIO Uid.nextRandom) <$ ev
 
 loadJsonFromStorage :: (MonadDOM m, FromJSON a) => Text -> m (Maybe a)
 loadJsonFromStorage elId = do

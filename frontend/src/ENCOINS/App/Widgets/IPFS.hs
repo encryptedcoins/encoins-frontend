@@ -7,17 +7,19 @@ import           ENCOINS.App.Widgets.Basic          (elementDynResultJS,
                                                      elementResultJS, genUid,
                                                      loadAppDataId)
 import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw, getPassRaw)
+import           ENCOINS.Bulletproofs               (Secret)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils               (toText)
 import qualified JS.App                             as JS
 import           JS.Website                         (saveJSON)
 
+import           Control.Monad                      (forM)
 import qualified Crypto.Hash                        as Hash
 import           Data.Aeson                         (encode)
 import           Data.ByteString.Lazy               (toStrict)
 import           Data.Map                           (Map)
 import qualified Data.Map                           as Map
-import           Data.Maybe                         (fromMaybe)
+import           Data.Maybe                         (catMaybes, fromMaybe)
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
 import           Data.Text.Encoding                 (decodeUtf8, encodeUtf8)
@@ -45,6 +47,14 @@ mkCloudRequest cache = case (tcIpfsStatus cache, tcCoinStatus cache)  of
     }
   _ -> Nothing
 
+mkCloudRequestS :: TokenCacheV3 -> Text -> Maybe CloudRequest
+mkCloudRequestS cache encryptedSecret = case (tcIpfsStatus cache, tcCoinStatus cache, T.null encryptedSecret)  of
+  (Unpinned, Minted, False) -> Just $ MkCloudRequest
+    { reqAssetName  = tcAssetName cache
+    , reqSecretKey  = encryptedSecret
+    }
+  _ -> Nothing
+
 pinValidTokensInIpfs :: MonadWidget t m
   => Dynamic t Text
   -> Dynamic t [TokenCacheV3]
@@ -56,6 +66,26 @@ pinValidTokensInIpfs dWalletAddress dTokenCache = do
   -- logEvent "eFireCaching" eFireCaching
   let dClientId = mkClientId <$> dWalletAddress
   let dReq = zipDynWith (,) dClientId dValidTokens
+  -- logDyn "dClientId" dClientId
+  eeCloudResponse <- cacheRequest dReq eFireCaching
+  -- logEvent "walletTab: cache response:" eeCloudResponse
+  let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
+  dCloudResponse <- holdDyn Map.empty eCloudResponse
+  pure $ ffor2 dCloudResponse dTokenCache updateCacheStatus
+
+pinValidTokensInIpfs2 :: MonadWidget t m
+  => Dynamic t Text
+  -> Maybe PasswordRaw
+  -> Dynamic t Text
+  -> Dynamic t [TokenCacheV3]
+  -> m (Dynamic t [TokenCacheV3])
+pinValidTokensInIpfs2 dWalletAddress mPass dKey dTokenCache = do
+  dCloudTokens <- encryptTokens dKey dTokenCache
+  logDyn "dCloudTokens" dCloudTokens
+  let eFireCaching = () <$ (ffilter (not . null) $ updated dCloudTokens)
+  -- logEvent "eFireCaching" eFireCaching
+  let dClientId = mkClientId <$> dWalletAddress
+  let dReq = zipDynWith (,) dClientId dCloudTokens
   -- logDyn "dClientId" dClientId
   eeCloudResponse <- cacheRequest dReq eFireCaching
   -- logEvent "walletTab: cache response:" eeCloudResponse
@@ -97,7 +127,7 @@ getAesKey mPass ev1 = do
         let genElId = "genAESKeyId"
         performEvent_ $ JS.generateAESKey genElId <$ ev3
         eAesKey <- updated <$> elementResultJS genElId id
-        -- logEvent "getAesKey: eAesKey" eAesKey
+        logEvent "getAesKey: eAesKey" eAesKey
         ev4 <- performEvent $ saveJSON (getPassRaw <$> mPass) cacheKey
           . decodeUtf8
           . toStrict
@@ -115,21 +145,74 @@ getAesKey mPass ev1 = do
       -- logEvent "key event" $ loadedKey <$ ev3
       pure $ loadedKey <$ ev3
 
+getAesKey2 :: MonadWidget t m
+  => Maybe PasswordRaw
+  -> m (Event t Text)
+getAesKey2 mPass = do
+  ev1 <- newEventWithDelay 0.1
+  let cacheKey = "encoins-aes-key"
+  dLoadedKey <- loadAppDataId
+    (getPassRaw <$> mPass) cacheKey "first-load-of-aes-key" ev1 id Nothing
+  let ev2 = () <$ updated dLoadedKey
+  ev3 <- delay 0.1 ev2
+  switchHoldDyn dLoadedKey $ \case
+    Nothing -> do
+        let genElId = "genAESKeyId"
+        performEvent_ $ JS.generateAESKey genElId <$ ev3
+        eAesKey <- updated <$> elementResultJS genElId id
+        logEvent "getAesKey: eAesKey" eAesKey
+        ev4 <- performEvent $ saveJSON (getPassRaw <$> mPass) cacheKey
+          . decodeUtf8
+          . toStrict
+          . encode <$> eAesKey
+        eLoadedKey <- updated <$> loadAppDataId
+          (getPassRaw <$> mPass)  cacheKey  "second-load-of-aes-key"  ev4 id ""
+        pure eLoadedKey
+    Just loadedKey -> pure $ loadedKey <$ ev3
+
 encryptToken :: MonadWidget t m
+  => Text
+  -> Event t ()
+  -> Secret
+  -> m (Dynamic t Text)
+encryptToken key ev secret = do
+  let secretByte = toStrict $ encode secret
+  let elementId = toText $ Hash.hash @Hash.SHA256 secretByte
+  performEvent_ $ JS.encryptAES (key, elementId, decodeUtf8 secretByte) <$ ev
+  dEncryptedToken <- elementResultJS elementId id
+  -- logDyn "encryptToken: dEncryptedToken" dEncryptedToken
+  pure dEncryptedToken
+
+encryptTokens :: MonadWidget t m
+  => Dynamic t Text
+  -> Dynamic t [TokenCacheV3]
+  -> m (Dynamic t [CloudRequest])
+encryptTokens dKey dTokens = do
+  eClouds <- switchHoldDyn dKey $ \case
+    "" -> pure never
+    key -> switchHoldDyn dTokens $ \case
+      [] -> pure never
+      tokens -> do
+        fmap (updated . sequence) $ flip traverse tokens $ \t -> do
+            ev <- newEvent
+            dEncryptedSecret <- encryptToken key ev $ tcSecret t
+            let dmCloud = mkCloudRequestS t <$> dEncryptedSecret
+            pure dmCloud
+  holdDyn [] $ catMaybes <$> eClouds
+
+
+decryptToken :: MonadWidget t m
   => Dynamic t Text
   -> Event t ()
-  -- -> Dynamic t TokenCacheV3
-  -- -> m (Dynamic t TokenCacheV3)
   -> Dynamic t Text
-  -> m (Event t Text)
-encryptToken dKey ev dSecret = do
-  dUid <- genUid ev
-  let dEncryptParam = ffor3 dKey dUid dSecret (,,)
-  logDyn "encryptToken: dEncryptParam" dEncryptParam
-  eDelayed <- delay 0.1 $ updated dUid
-  performEvent_ $ JS.encryptAES <$> tagPromptlyDyn dEncryptParam eDelayed
-  dEncryptedToken <- elementDynResultJS id dUid
-  logDyn "encryptToken: dEncryptedToken" dEncryptedToken
-  let eToken = ffilter (not . T.null) $ updated dEncryptedToken
-  logEvent "encryptedToken: eToken" eToken
-  pure eToken
+  -> m (Dynamic t Text)
+decryptToken dKey ev dEncryptedHex = do
+  eUid <- genUid ev
+  dUid <- holdDyn "default-decrypt-uuid" eUid
+  let dDecryptParam = ffor3 dKey dUid dEncryptedHex (,,)
+  logDyn "decryptToken: dDecryptParam" dDecryptParam
+  eDelayed <- delay 0.5 $ updated dUid
+  performEvent_ $ JS.decryptAES <$> tagPromptlyDyn dDecryptParam eDelayed
+  dDecryptedToken <- elementDynResultJS id dUid
+  logDyn "decryptToken: dDecryptedToken" dDecryptedToken
+  pure dDecryptedToken

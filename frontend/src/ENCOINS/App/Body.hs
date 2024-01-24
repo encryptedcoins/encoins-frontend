@@ -54,28 +54,40 @@ bodyContentWidget mPass = mdo
 
   divClass "section-app section-app-empty wf-section" blank
 
-  (dSecrets, evEvStatus) <- runEventWriterT $ mainWindow mPass dWallet dIsDisableButtons
+  (dSecrets, evEvStatus) <- runEventWriterT $ mainWindow mPass dWallet dIsDisableButtons dKey
 
   performEvent_ (reEncryptEncoins <$> attachPromptlyDyn dSecrets (leftmost
     [eNewPass, Nothing <$ eCleanOk]))
 
   copiedNotification
 
-  eBuild <- postDelay 0.1
-  eKey <- getAesKey mPass eBuild
-  logEvent "body: eKey" eKey
+  -- eBuild <- postDelay 0.1
+  -- eKey <- getAesKey mPass eBuild
+  -- logEvent "body: eKey" eKey
+  eKey <- getAesKey2 mPass
   dKey <- holdDyn "" eKey
-  let eFullKey = () <$ ffilter (not . T.null) eKey
-  logDyn "body: dKey" dKey
-  logEvent "body: eFullKey" eFullKey
-  eDelay <- delay 0.2 eFullKey
+  logEvent "body: eKey" eKey
 
-  eEncryptedToken <- encryptToken dKey eDelay (constDyn "secret key")
-  logEvent "body: eEncryptedToken" eEncryptedToken
+
+  -- dKey <- holdDyn "" eKey
+  -- let eFullKey = () <$ ffilter (not . T.null) eKey
+  -- logDyn "body: dKey" dKey
+  -- logEvent "body: eFullKey" eFullKey
+  -- eDelay <- delay 0.2 eFullKey
+
+  -- dEncryptedToken <- encryptToken dKey eDelay (constDyn "secret key")
   -- logDyn "body: dEncryptedToken" dEncryptedToken
+  -- logEvent "body: eEncryptedToken" eEncryptedToken
 
-  let eFullToken = () <$ (ffilter (not . T.null) eEncryptedToken)
-  logEvent "body: eFullToken" eFullToken
+  -- dEncryptedToken22 <- encryptToken dKey eDelay (constDyn "secret key 22")
+  -- logDyn "body: dEncryptedToken22" dEncryptedToken22
+
+  -- let eValidToken = ffilter (not . T.null) $ updated dEncryptedToken
+  -- logEvent "body: eValidToken" eValidToken
+
+  -- dOriginalText <- decryptToken dKey (() <$ eValidToken) dEncryptedToken
+  -- logDyn "body: dOriginalText" dOriginalText
+
 
 
 

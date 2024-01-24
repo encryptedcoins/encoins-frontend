@@ -65,10 +65,11 @@ mainWindowColumnHeader title =
 
 walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
+  -> Dynamic t Text
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
   -> m ()
-walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
+walletTab mpass dKey dWallet dTokenCacheOld = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -104,8 +105,10 @@ walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
                   mainWindowColumnHeader "Coins in the Wallet"
                   dSecretsUniq <- holdUniqDyn dSecretsInTheWallet
 
-                  dTokenIpfsCached <- pinValidTokensInIpfs
+                  dTokenIpfsCached <- pinValidTokensInIpfs2
                     (walletAddressBech32 <$> dWallet)
+                    mpass
+                    dKey
                     dSecretsUniq
                   saveCacheLocally mpass dTokenIpfsCached
 
@@ -163,10 +166,11 @@ walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
 
 transferTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
+  -> Dynamic t Text
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
   -> m ()
-transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
+transferTab mpass dKey dWallet dTokenCacheOld = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -249,9 +253,10 @@ transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
 
 ledgerTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
+  -> Dynamic t Text
   -> Dynamic t [TokenCacheV3]
   -> m ()
-ledgerTab mpass dTokenCacheOld = sectionApp "" "" $ mdo
+ledgerTab mpass dKey dTokenCacheOld = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
