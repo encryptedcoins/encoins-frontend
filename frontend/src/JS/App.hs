@@ -187,30 +187,30 @@ generateAESKey = const $ error "GHCJS is required!"
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
-  "encryptAES($1, $2)"
-  encryptAES_js :: JSString -> JSString -> JSM JSVal
+  "encryptAES($1, $2, $3)"
+  encryptAES_js :: JSString -> JSString -> JSString -> JSM ()
 
-encryptAES :: MonadIO m => Text -> Text -> m Text
-encryptAES key txt = liftIO $ do
-  res_js <- encryptAES_js (textToStr key) (textToStr txt)
-  str_js <- fromJSValUnchecked res_js :: IO String
-  return $ T.pack str_js
+encryptAES :: MonadIO m => (Text, Text, Text) -> m ()
+encryptAES (key, resId, txt) = liftIO $ encryptAES_js
+  (textToStr key)
+  (textToStr resId)
+  (textToStr txt)
 #else
-encryptAES :: MonadIO m => Text -> Text -> m Text
-encryptAES _ _ = error "GHCJS is required!"
+encryptAES :: MonadIO m => (Text, Text, Text)  -> m ()
+encryptAES _ = error "GHCJS is required!"
 #endif
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
   "decryptAES($1, $2, $3)"
-  decryptAES_js :: JSString -> JSString -> JSString -> JSM JSVal
+  decryptAES_js :: JSString -> JSString -> JSString -> JSM ()
 
-decryptAES :: MonadIO m => Text -> Text -> Text -> m Text
-decryptAES key iv txt = liftIO $ do
-  res_js <- decryptAES_js (textToStr key) (textToStr iv) (textToStr txt)
-  str_js <- fromJSValUnchecked res_js :: IO String
-  return $ T.pack str_js
+decryptAES :: MonadIO m => (Text, Text, Text) -> m ()
+decryptAES (key, resId, encryptedTxt) = liftIO $ decryptAES_js
+  (textToStr key)
+  (textToStr resId)
+  (textToStr encryptedTxt)
 #else
-decryptAES :: MonadIO m => Text -> Text -> m Text
-decryptAES _ _ = error "GHCJS is required!"
+decryptAES :: MonadIO m => (Text, Text, Text) -> m ()
+decryptAES _ = error "GHCJS is required!"
 #endif

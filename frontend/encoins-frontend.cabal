@@ -114,6 +114,7 @@ library
     , these
     , time                        ^>=1.8.0.2
     , tuple                       ^>=0.3.0.2
+    , uuid
     , vector
     , witherable                  ^>=0.4.2
 

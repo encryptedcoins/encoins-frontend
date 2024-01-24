@@ -3,7 +3,8 @@ module ENCOINS.App.Widgets.IPFS where
 import           Backend.Protocol.Types
 import           Backend.Servant.Requests           (cacheRequest)
 import           Backend.Utility                    (eventEither, switchHoldDyn)
-import           ENCOINS.App.Widgets.Basic          (elementResultJS,
+import           ENCOINS.App.Widgets.Basic          (elementDynResultJS,
+                                                     elementResultJS, genUid,
                                                      loadAppDataId)
 import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw, getPassRaw)
 import           ENCOINS.Common.Events
@@ -12,15 +13,15 @@ import qualified JS.App                             as JS
 import           JS.Website                         (saveJSON)
 
 import qualified Crypto.Hash                        as Hash
+import           Data.Aeson                         (encode)
+import           Data.ByteString.Lazy               (toStrict)
 import           Data.Map                           (Map)
 import qualified Data.Map                           as Map
 import           Data.Maybe                         (fromMaybe)
 import           Data.Text                          (Text)
-import           Data.Text.Encoding                 (encodeUtf8)
+import qualified Data.Text                          as T
+import           Data.Text.Encoding                 (decodeUtf8, encodeUtf8)
 import           Reflex.Dom
-import           Data.Aeson                      (encode)
-import           Data.ByteString.Lazy            (toStrict)
-import           Data.Text.Encoding              (decodeUtf8)
 
 updateCacheStatus :: Map Text CloudResponse -> [TokenCacheV3] -> [TokenCacheV3]
 updateCacheStatus clouds = map updateCloud
@@ -113,3 +114,22 @@ getAesKey mPass ev1 = do
     Just loadedKey -> do
       -- logEvent "key event" $ loadedKey <$ ev3
       pure $ loadedKey <$ ev3
+
+encryptToken :: MonadWidget t m
+  => Dynamic t Text
+  -> Event t ()
+  -- -> Dynamic t TokenCacheV3
+  -- -> m (Dynamic t TokenCacheV3)
+  -> Dynamic t Text
+  -> m (Event t Text)
+encryptToken dKey ev dSecret = do
+  dUid <- genUid ev
+  let dEncryptParam = ffor3 dKey dUid dSecret (,,)
+  logDyn "encryptToken: dEncryptParam" dEncryptParam
+  eDelayed <- delay 0.1 $ updated dUid
+  performEvent_ $ JS.encryptAES <$> tagPromptlyDyn dEncryptParam eDelayed
+  dEncryptedToken <- elementDynResultJS id dUid
+  logDyn "encryptToken: dEncryptedToken" dEncryptedToken
+  let eToken = ffilter (not . T.null) $ updated dEncryptedToken
+  logEvent "encryptedToken: eToken" eToken
+  pure eToken

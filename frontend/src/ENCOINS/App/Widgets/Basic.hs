@@ -1,5 +1,8 @@
 module ENCOINS.App.Widgets.Basic where
 
+import           Backend.Status         (Status (..))
+import           Control.Monad          (join)
+import           Control.Monad.IO.Class (liftIO)
 import           Data.Aeson             (FromJSON, ToJSON, decode, decodeStrict,
                                          encode)
 import           Data.Bool              (bool)
@@ -8,17 +11,17 @@ import           Data.ByteString.Lazy   (fromStrict, toStrict)
 import           Data.Text              (Text)
 import qualified Data.Text              as T
 import           Data.Text.Encoding     (decodeUtf8, encodeUtf8)
+import qualified Data.UUID              as Uid
+import qualified Data.UUID.V4           as Uid
+import           ENCOINS.Common.Events
 import           GHCJS.DOM              (currentWindowUnchecked)
 import           GHCJS.DOM.Storage      (getItem, setItem)
 import           GHCJS.DOM.Types        (MonadDOM)
 import           GHCJS.DOM.Window       (getLocalStorage)
+import           JS.Website             (loadJSON)
 import           Reflex.Dom
 import           Reflex.ScriptDependent (widgetHoldUntilDefined)
 
-
-import           Backend.Status         (Status (..))
-import           ENCOINS.Common.Events
-import           JS.Website             (loadJSON)
 
 sectionApp :: MonadWidget t m => Text -> Text -> m a -> m a
 sectionApp elemId cls = elAttr "div" ("id" =: elemId <> "class" =: "section-app wf-section " `T.append` cls)
@@ -29,6 +32,18 @@ containerApp cls = divClass ("container-app w-container " `T.append` cls)
 -- Element containing the result of a JavaScript computation
 elementResultJS :: MonadWidget t m => Text -> (Text -> a) -> m (Dynamic t a)
 elementResultJS resId f = fmap (fmap f . value) $ inputElement $ def & initialAttributes .~ "style" =: "display:none;" <> "id" =: resId
+
+elementDynResultJS :: MonadWidget t m
+  => (Text -> a)
+  -> Dynamic t Text
+  -> m (Dynamic t a)
+elementDynResultJS f dResId = do
+  let d resId = def & initialAttributes .~ "style" =: "display:none;" <> "id" =: resId
+  let dmElement = (\resId -> inputElement $ d resId) <$> dResId
+  let dmdVal = fmap value <$> dmElement
+  edVal <- dyn dmdVal
+  ddVal <- holdDyn (constDyn "") edVal
+  pure $ f <$> join ddVal
 
 waitForScripts :: MonadWidget t m => m () -> m () -> m ()
 waitForScripts placeholderWidget actualWidget = do
@@ -60,6 +75,26 @@ loadAppDataId mpass entry elId ev f val = do
     eDelayed <- delay 0.1 ev
     performEvent_ (loadJSON mpass entry elId <$ eDelayed)
     elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
+
+loadAppDataIdDyn :: forall t m a b . (MonadWidget t m, FromJSON a)
+  => Maybe Text
+  -> Text
+  -> Event t ()
+  -> (a -> b)
+  -> b
+  -> m (Dynamic t b)
+loadAppDataIdDyn mpass entry ev f val = do
+    dUid <- genUid ev
+    eDelayed <- delay 0.1 $ updated dUid
+    performEvent_ (loadJSON mpass entry <$> eDelayed)
+    let abFunc = maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8
+    dVal <- elementDynResultJS abFunc dUid
+    pure dVal
+
+genUid :: MonadWidget t m => Event t () -> m (Dynamic t Text)
+genUid ev = do
+  eUid <- performEvent $ (Uid.toText <$> liftIO Uid.nextRandom) <$ ev
+  holdDyn "" eUid
 
 loadJsonFromStorage :: (MonadDOM m, FromJSON a) => Text -> m (Maybe a)
 loadJsonFromStorage elId = do

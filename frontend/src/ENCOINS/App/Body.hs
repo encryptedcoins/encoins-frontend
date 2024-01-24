@@ -21,6 +21,7 @@ import           Config.Config                      (NetworkConfig (..),
 import           ENCOINS.App.Widgets.Basic          (elementResultJS,
                                                      waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
+import           ENCOINS.App.Widgets.IPFS
 import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
 import           ENCOINS.App.Widgets.Navbar         (navbarWidget)
 import           ENCOINS.App.Widgets.PasswordWindow
@@ -34,7 +35,6 @@ import           ENCOINS.Common.Widgets.Basic       (column, notification,
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
-import ENCOINS.App.Widgets.IPFS
 
 import           ENCOINS.Common.Events
 
@@ -62,8 +62,22 @@ bodyContentWidget mPass = mdo
   copiedNotification
 
   eBuild <- postDelay 0.1
-  dKey <- holdDyn "" =<< getAesKey mPass eBuild
+  eKey <- getAesKey mPass eBuild
+  logEvent "body: eKey" eKey
+  dKey <- holdDyn "" eKey
+  let eFullKey = () <$ ffilter (not . T.null) eKey
   logDyn "body: dKey" dKey
+  logEvent "body: eFullKey" eFullKey
+  eDelay <- delay 0.2 eFullKey
+
+  eEncryptedToken <- encryptToken dKey eDelay (constDyn "secret key")
+  logEvent "body: eEncryptedToken" eEncryptedToken
+  -- logDyn "body: dEncryptedToken" dEncryptedToken
+
+  let eFullToken = () <$ (ffilter (not . T.null) eEncryptedToken)
+  logEvent "body: eFullToken" eFullToken
+
+
 
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
 
@@ -82,7 +96,7 @@ bodyWidget = waitForScripts blank $ mdo
   eCleanOk <- cleanCacheDialog eReset
   dmmPass <- holdDyn Nothing $ Just <$> leftmost [ePassOk, Nothing <$ eCleanOk, eNewPass]
   eNewPass <- switchHoldDyn dmmPass $ \case
-    Nothing    -> pure never
+    Nothing   -> pure never
     Just pass -> bodyContentWidget pass
 
   jQueryWidget
