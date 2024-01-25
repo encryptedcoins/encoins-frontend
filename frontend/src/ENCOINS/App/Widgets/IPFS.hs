@@ -44,40 +44,45 @@ updateCacheStatus clouds = map updateCloud
             , tcCoinStatus = fromMaybe (tcCoinStatus t) mCoin
             }
 
-mkCloudRequest :: TokenCacheV3 -> Maybe CloudRequest
-mkCloudRequest cache = case (tcIpfsStatus cache, tcCoinStatus cache)  of
-  (Unpinned, Minted) -> Just $ MkCloudRequest
-    { reqAssetName  = tcAssetName cache
-    , reqSecretKey  = "encrypted secret"
-    }
+-- mkCloudRequest :: TokenCacheV3 -> Maybe CloudRequest
+-- mkCloudRequest cache = case (tcIpfsStatus cache, tcCoinStatus cache)  of
+--   (Unpinned, Minted) -> Just $ MkCloudRequest
+--     { reqAssetName  = tcAssetName cache
+--     , reqSecretKey  = "encrypted secret"
+--     }
+--   _ -> Nothing
+
+getValidTokens :: TokenCacheV3 -> Maybe TokenCacheV3
+getValidTokens t = case (tcIpfsStatus t, tcCoinStatus t)  of
+  (Unpinned, Minted) -> Just t
   _ -> Nothing
 
-mkCloudRequestS :: TokenCacheV3 -> Text -> Maybe CloudRequest
-mkCloudRequestS cache encryptedSecret = case (tcIpfsStatus cache, tcCoinStatus cache, T.null encryptedSecret)  of
-  (Unpinned, Minted, False) -> Just $ MkCloudRequest
+mkCloudRequest :: TokenCacheV3 -> Text -> Maybe CloudRequest
+mkCloudRequest cache encryptedSecret = if not (T.null encryptedSecret)
+  then Just $ MkCloudRequest
     { reqAssetName  = tcAssetName cache
     , reqSecretKey  = encryptedSecret
     }
-  _ -> Nothing
+  else Nothing
 
-pinValidTokensInIpfs :: MonadWidget t m
-  => Dynamic t Text
-  -> Dynamic t [TokenCacheV3]
-  -> m (Dynamic t [TokenCacheV3])
-pinValidTokensInIpfs dWalletAddress dTokenCache = do
-  let dValidTokens = mapMaybe mkCloudRequest <$> dTokenCache
-  -- logDyn "dValidTokens" dValidTokens
-  let eFireCaching = () <$ (ffilter (not . null) $ updated dValidTokens)
-  -- logEvent "eFireCaching" eFireCaching
-  let dClientId = mkClientId <$> dWalletAddress
-  logDyn "dClientId" dClientId
-  let dReq = zipDynWith (,) dClientId dValidTokens
-  -- logDyn "dClientId" dClientId
-  eeCloudResponse <- cacheRequest dReq eFireCaching
-  -- logEvent "walletTab: cache response:" eeCloudResponse
-  let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
-  dCloudResponse <- holdDyn Map.empty eCloudResponse
-  pure $ ffor2 dCloudResponse dTokenCache updateCacheStatus
+-- pinValidTokensInIpfs :: MonadWidget t m
+--   => Dynamic t Text
+--   -> Dynamic t [TokenCacheV3]
+--   -> m (Dynamic t [TokenCacheV3])
+-- pinValidTokensInIpfs dWalletAddress dTokenCache = do
+--   let dValidTokens = mapMaybe mkCloudRequest <$> dTokenCache
+--   -- logDyn "dValidTokens" dValidTokens
+--   let eFireCaching = () <$ (ffilter (not . null) $ updated dValidTokens)
+--   -- logEvent "eFireCaching" eFireCaching
+--   let dClientId = mkClientId <$> dWalletAddress
+--   logDyn "dClientId" dClientId
+--   let dReq = zipDynWith (,) dClientId dValidTokens
+--   -- logDyn "dClientId" dClientId
+--   eeCloudResponse <- cacheRequest dReq eFireCaching
+--   -- logEvent "walletTab: cache response:" eeCloudResponse
+--   let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
+--   dCloudResponse <- holdDyn Map.empty eCloudResponse
+--   pure $ ffor2 dCloudResponse dTokenCache updateCacheStatus
 
 pinEncryptedTokens :: MonadWidget t m
   => Dynamic t Text
@@ -88,13 +93,13 @@ pinEncryptedTokens :: MonadWidget t m
 pinEncryptedTokens dWalletAddress mPass dKey dTokenCache = do
   -- TODO depend on pass
   dCloudTokens <- encryptTokens dKey dTokenCache
-  logDyn "dCloudTokens" dCloudTokens
-  let eFireCaching = () <$ (ffilter (not . null) $ updated dCloudTokens)
+  -- logDyn "dCloudTokens" dCloudTokens
+  let eFireCaching = ffilter (not . null) $ updated dCloudTokens
   -- logEvent "eFireCaching" eFireCaching
   let dClientId = mkClientId <$> dWalletAddress
   let dReq = zipDynWith (,) dClientId dCloudTokens
   -- logDyn "dClientId" dClientId
-  eeCloudResponse <- cacheRequest dReq eFireCaching
+  eeCloudResponse <- cacheRequest dReq $ () <$ eFireCaching
   -- logEvent "walletTab: cache response:" eeCloudResponse
   let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
   dCloudResponse <- holdDyn Map.empty eCloudResponse
@@ -194,17 +199,28 @@ encryptTokens :: MonadWidget t m
   -> Dynamic t [TokenCacheV3]
   -> m (Dynamic t [CloudRequest])
 encryptTokens dKey dTokens = do
+  let dValidTokens = catMaybes . map getValidTokens <$> dTokens
+  let dValidTokenNumber = length <$> dValidTokens
   eClouds <- switchHoldDyn dKey $ \case
     "" -> pure never
-    key -> switchHoldDyn dTokens $ \case
+    key -> switchHoldDyn dValidTokens $ \case
       [] -> pure never
       tokens -> do
         fmap (updated . sequence) $ flip traverse tokens $ \t -> do
             ev <- newEvent
             dEncryptedSecret <- encryptToken key ev $ tcSecret t
-            let dmCloud = mkCloudRequestS t <$> dEncryptedSecret
+            let dmCloud = mkCloudRequest t <$> dEncryptedSecret
             pure dmCloud
-  holdDyn [] $ catMaybes <$> eClouds
+
+  -- logDyn "encryptTokens: dValidTokens" dValidTokens
+  -- logDyn "encryptTokens: dValidTokenNumber" dValidTokenNumber
+  -- logEvent "encryptTokens: eClouds" eClouds
+    -- Returns tokens when they all are decrypted
+  dRes <- foldDynMaybe
+    (\(ac,ar) _ -> if length ar == ac then Just (ac,ar) else Nothing) (0,[]) $
+    attachPromptlyDyn dValidTokenNumber $ catMaybes <$> eClouds
+  -- logDyn "encryptTokens: dRes" dRes
+  pure $ snd <$> dRes
 
 -- restore tokens from ipfs
 -- that are minted and pinned only
@@ -257,9 +273,9 @@ decryptTokens dKey dRestores = do
   let dValidLength = length <$> dRestores
   -- Returns tokens when they all are decrypted
   dRes <- foldDynMaybe
-    (\(ac,ar) (bc,br) -> if length ar == ac then Just (ac,ar) else Nothing) (0,[]) $
+    (\(ac,ar) _ -> if length ar == ac then Just (ac,ar) else Nothing) (0,[]) $
     attachPromptlyDyn dValidLength eResponses
-  logDyn "decryptTokens: dRes" dRes
+  -- logDyn "decryptTokens: dRes" dRes
   pure $ snd <$> dRes
 
 mkTokenCacheV3 :: Text -> Text -> Either String TokenCacheV3

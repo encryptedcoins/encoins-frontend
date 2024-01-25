@@ -214,7 +214,6 @@ cacheRequest :: MonadWidget t m
   -> m (Event t (Either Text (Map Text CloudResponse)))
 cacheRequest dToken e = do
   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient upfsBackendUrl
-  logDyn "cacheRequest: dToken" $ encode <$> dToken
   eResp <- cache (Right <$> dToken) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "cache request" eRespUnwrapped
