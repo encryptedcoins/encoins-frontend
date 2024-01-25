@@ -67,7 +67,8 @@ bodyContentWidget mPass = mdo
   eKey <- getAesKey2 mPass
   dKey <- holdDyn "" eKey
   logEvent "body: eKey" eKey
-
+  dRestoredTokens <- restoreValidTokens dKey (walletAddressBech32 <$> dWallet)
+  logDyn "body: dRestoredTokens" dRestoredTokens
 
   -- dKey <- holdDyn "" eKey
   -- let eFullKey = () <$ ffilter (not . T.null) eKey

@@ -1,22 +1,27 @@
 module ENCOINS.App.Widgets.IPFS where
 
 import           Backend.Protocol.Types
-import           Backend.Servant.Requests           (cacheRequest)
-import           Backend.Utility                    (eventEither, switchHoldDyn)
+import           Backend.Servant.Requests           (cacheRequest,
+                                                     restoreRequest)
+import           Backend.Utility                    (eventEither, eventTuple,
+                                                     switchHoldDyn)
 import           ENCOINS.App.Widgets.Basic          (elementDynResultJS,
                                                      elementResultJS, genUid,
                                                      loadAppDataId)
 import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw, getPassRaw)
-import           ENCOINS.Bulletproofs               (Secret)
+import           ENCOINS.Bulletproofs               (Secret (..))
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils               (toText)
+import           ENCOINS.Crypto.Field               (Field (F))
 import qualified JS.App                             as JS
 import           JS.Website                         (saveJSON)
 
-import           Control.Monad                      (forM)
+import           Control.Monad                      (forM, void)
 import qualified Crypto.Hash                        as Hash
-import           Data.Aeson                         (encode)
+import           Data.Aeson                         (eitherDecodeStrict',
+                                                     encode)
 import           Data.ByteString.Lazy               (toStrict)
+import           Data.Either                        (partitionEithers)
 import           Data.Map                           (Map)
 import qualified Data.Map                           as Map
 import           Data.Maybe                         (catMaybes, fromMaybe)
@@ -74,13 +79,14 @@ pinValidTokensInIpfs dWalletAddress dTokenCache = do
   dCloudResponse <- holdDyn Map.empty eCloudResponse
   pure $ ffor2 dCloudResponse dTokenCache updateCacheStatus
 
-pinValidTokensInIpfs2 :: MonadWidget t m
+pinEncryptedTokens :: MonadWidget t m
   => Dynamic t Text
   -> Maybe PasswordRaw
   -> Dynamic t Text
   -> Dynamic t [TokenCacheV3]
   -> m (Dynamic t [TokenCacheV3])
-pinValidTokensInIpfs2 dWalletAddress mPass dKey dTokenCache = do
+pinEncryptedTokens dWalletAddress mPass dKey dTokenCache = do
+  -- TODO depend on pass
   dCloudTokens <- encryptTokens dKey dTokenCache
   logDyn "dCloudTokens" dCloudTokens
   let eFireCaching = () <$ (ffilter (not . null) $ updated dCloudTokens)
@@ -200,19 +206,74 @@ encryptTokens dKey dTokens = do
             pure dmCloud
   holdDyn [] $ catMaybes <$> eClouds
 
+-- restore tokens from ipfs
+-- that are minted and pinned only
+restoreValidTokens :: MonadWidget t m
+  => Dynamic t Text
+  -> Dynamic t Text
+  -> m (Dynamic t [TokenCacheV3])
+restoreValidTokens dKey dWalletAddress = do
+  let dClientId = mkClientId <$> dWalletAddress
+  ev <- newEvent
+  eeResotres <- restoreRequest dClientId ev
+  let (eRestoreError, eRestoreResponses) = eventEither eeResotres
+  dRestoreResponses <- holdDyn [] eRestoreResponses
+  decryptTokens dKey dRestoreResponses
 
 decryptToken :: MonadWidget t m
-  => Dynamic t Text
+  => Text
   -> Event t ()
-  -> Dynamic t Text
+  -> Text
   -> m (Dynamic t Text)
-decryptToken dKey ev dEncryptedHex = do
-  eUid <- genUid ev
-  dUid <- holdDyn "default-decrypt-uuid" eUid
-  let dDecryptParam = ffor3 dKey dUid dEncryptedHex (,,)
-  logDyn "decryptToken: dDecryptParam" dDecryptParam
-  eDelayed <- delay 0.5 $ updated dUid
-  performEvent_ $ JS.decryptAES <$> tagPromptlyDyn dDecryptParam eDelayed
-  dDecryptedToken <- elementDynResultJS id dUid
-  logDyn "decryptToken: dDecryptedToken" dDecryptedToken
+decryptToken key ev encryptedHex = do
+  let elementId = toText $ Hash.hash @Hash.SHA256 $ encodeUtf8 encryptedHex
+  performEvent_ $ JS.decryptAES (key, elementId, encryptedHex) <$ ev
+  dDecryptedToken <- elementResultJS elementId id
+  -- logDyn "decryptToken: dDecryptedToken" dDecryptedToken
   pure dDecryptedToken
+
+decryptTokens :: MonadWidget t m
+  => Dynamic t Text
+  -> Dynamic t [RestoreResponse]
+  -> m (Dynamic t [TokenCacheV3])
+decryptTokens dKey dRestores = do
+  eTokens <- switchHoldDyn dKey $ \case
+    "" -> pure never
+    key -> switchHoldDyn dRestores $ \case
+      [] -> pure never
+      restores -> do
+        fmap (updated . sequence) $ flip traverse restores $ \r -> do
+            ev <- newEvent
+            deDecryptedSecret <- decryptToken key ev $ tkTokenKey $ rrSecretKey r
+            let deToken = mkTokenCacheV3 (rrAssetName r) <$> deDecryptedSecret
+            pure deToken
+  let (eErrors, eResponses) = eventTuple $ partitionEithers <$> eTokens
+  dErrors <- holdDyn [] eErrors
+  void $ switchHoldDyn dErrors $ \case
+    [] -> pure never
+    errs  -> do
+      logDyn "decryptTokens: json decode errors" (constDyn errs)
+      pure never
+  let dValidLength = length <$> dRestores
+  -- Returns tokens when they all are decrypted
+  dRes <- foldDynMaybe
+    (\(ac,ar) (bc,br) -> if length ar == ac then Just (ac,ar) else Nothing) (0,[]) $
+    attachPromptlyDyn dValidLength eResponses
+  logDyn "decryptTokens: dRes" dRes
+  pure $ snd <$> dRes
+
+mkTokenCacheV3 :: Text -> Text -> Either String TokenCacheV3
+mkTokenCacheV3 name decrypted = case eSecret of
+  Left err -> Left err
+  Right secret ->
+    let v = secretV secret
+    in if F 0 <= v && v < F (2^(20 :: Integer))
+          then Right $ MkTokenCacheV3
+            { tcAssetName  = name
+            , tcSecret     = secret
+            , tcIpfsStatus = Pinned
+            , tcCoinStatus = Minted
+            }
+          else Left "Invalid amount in the token from ipfs"
+  where
+    eSecret = eitherDecodeStrict' $ encodeUtf8 decrypted

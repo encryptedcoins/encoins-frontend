@@ -105,7 +105,7 @@ walletTab mpass dKey dWallet dTokenCacheOld = sectionApp "" "" $ mdo
                   mainWindowColumnHeader "Coins in the Wallet"
                   dSecretsUniq <- holdUniqDyn dSecretsInTheWallet
 
-                  dTokenIpfsCached <- pinValidTokensInIpfs2
+                  dTokenIpfsCached <- pinEncryptedTokens
                     (walletAddressBech32 <$> dWallet)
                     mpass
                     dKey

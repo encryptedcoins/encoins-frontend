@@ -45,3 +45,6 @@ eventMaybe errValue ev = (errValue <$ ffilter isNothing ev, catMaybes ev)
 
 eventEither :: Reflex t => Event t (Either e a) -> (Event t e, Event t a)
 eventEither ev = (filterLeft ev, filterRight ev)
+
+eventTuple :: Reflex t => Event t (a,b) -> (Event t a, Event t b)
+eventTuple ev  = (fst <$> ev, snd <$> ev)
