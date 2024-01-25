@@ -5,7 +5,8 @@ import           Data.Proxy             (Proxy (..))
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
 import           Servant.API
-import           Servant.Reflex         (BaseUrl, ReqResult (..), client)
+import           Servant.Reflex         (BaseUrl, ReqResult (..),
+                                         client)
 
 import           Backend.Protocol.Types
 import           CSL                    (TransactionInputs)
@@ -59,15 +60,16 @@ mkApiClient host = ApiClient{..}
 -- Ipfs request to  delegate backend
 
 type BackIpfsApi =
-         "minted" :> ReqBody '[JSON] CloudRequest :> Post '[JSON] CloudResponse
-    :<|> "cache" :> ReqBody '[JSON] (Text, [CloudRequest])
-                 :> Post '[JSON] (Map Text CloudResponse)
-    -- :<|> "burned" :> ReqBody '[JSON] Token :> Post '[JSON] Text
+         "cache"
+              :> ReqBody '[JSON] (Text, [CloudRequest])
+              :> Post '[JSON] (Map Text CloudResponse)
+    :<|> "restore"
+              :> Capture "client_id" Text
+              :> Get '[JSON] [RestoreResponse]
 
 data BackIpfsApiClient t m = MkBackIpfsApiClient
-  { minted :: ReqRes t m CloudRequest CloudResponse
-  , cache  :: ReqRes t m (Text, [CloudRequest]) (Map Text CloudResponse)
-  -- , burned :: ReqRes t m Token Text
+  { cache   :: ReqRes t m (Text, [CloudRequest]) (Map Text CloudResponse)
+  , restore :: Dynamic t (Either Text Text) -> Res t m [RestoreResponse]
   }
 
 mkBackIpfsApiClient :: forall t m . MonadWidget t m
@@ -75,9 +77,8 @@ mkBackIpfsApiClient :: forall t m . MonadWidget t m
   -> BackIpfsApiClient t m
 mkBackIpfsApiClient host = MkBackIpfsApiClient{..}
   where
-    ( minted :<|>
-      cache ) = client
-      -- burned) = client
+    ( cache :<|>
+      restore ) = client
         (Proxy @BackIpfsApi)
         (Proxy @m)
         (Proxy @())

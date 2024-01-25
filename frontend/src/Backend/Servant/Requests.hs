@@ -2,6 +2,13 @@
 
 module Backend.Servant.Requests where
 
+import           Backend.Protocol.Types
+import           Backend.Servant.Client
+import           Backend.Utility        (eventEither, normalizePingUrl)
+import           Config.Config          (urlsBS)
+import           ENCOINS.Common.Events
+import           JS.App                 (pingServer)
+
 import           Control.Lens           (view)
 import           Control.Monad          (forM)
 import           Control.Monad.IO.Class (MonadIO (..))
@@ -201,35 +208,25 @@ shuffle ev xs = performEvent $ ev $> (liftIO $ do
 upfsBackendUrl :: BaseUrl
 upfsBackendUrl = BasePath "http://localhost:7000"
 
-tokenMintedRequest :: MonadWidget t m
-  => Dynamic t CloudRequest
-  -> Event t ()
-  -> m (Event t (Either Text CloudResponse))
-tokenMintedRequest dToken e = do
-  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient upfsBackendUrl
-  eResp <- minted (Right <$> dToken) e
-  let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "tokenMinted request" eRespUnwrapped
-  pure eRespUnwrapped
-
 cacheRequest :: MonadWidget t m
   => Dynamic t (Text, [CloudRequest])
   -> Event t ()
   -> m (Event t (Either Text (Map Text CloudResponse)))
 cacheRequest dToken e = do
   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient upfsBackendUrl
+  logDyn "cacheRequest: dToken" $ encode <$> dToken
   eResp <- cache (Right <$> dToken) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "cache request" eRespUnwrapped
   pure eRespUnwrapped
 
--- tokenBurnedRequest :: MonadWidget t m
---   => Dynamic t Token
---   -> Event t ()
---   -> m (Event t (Either Text Text))
--- tokenBurnedRequest dToken e = do
---   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient upfsBackendUrl
---   eResp <- burned (Right <$> dToken) e
---   let eRespUnwrapped = mkTextOrResponse <$> eResp
---   logEvent "tokenBurned request" eRespUnwrapped
---   pure eRespUnwrapped
+restoreRequest :: MonadWidget t m
+  => Dynamic t Text
+  -> Event t ()
+  -> m (Event t (Either Text [RestoreResponse]))
+restoreRequest dClientId e = do
+  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient upfsBackendUrl
+  eResp <- restore (Right <$> dClientId) e
+  let eRespUnwrapped = mkTextOrResponse <$> eResp
+  logEvent "restore request" eRespUnwrapped
+  pure eRespUnwrapped

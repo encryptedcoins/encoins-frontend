@@ -65,6 +65,7 @@ pinValidTokensInIpfs dWalletAddress dTokenCache = do
   let eFireCaching = () <$ (ffilter (not . null) $ updated dValidTokens)
   -- logEvent "eFireCaching" eFireCaching
   let dClientId = mkClientId <$> dWalletAddress
+  logDyn "dClientId" dClientId
   let dReq = zipDynWith (,) dClientId dValidTokens
   -- logDyn "dClientId" dClientId
   eeCloudResponse <- cacheRequest dReq eFireCaching
@@ -100,7 +101,6 @@ mkClientId address = toText $ Hash.hash @Hash.SHA256 $ encodeUtf8 address
 tokenSample :: CloudRequest
 tokenSample = MkCloudRequest
   { reqAssetName = "b47f55bdc1d7615409cf8cc714e3885c42d6cb48629d44ff5a9265c88aa30cdc"
-  -- , reqAssetName = "495090d7e6f2911cf0e1bc59ce244983ac5f1fe4adbaec9ce6af3429ad7aec79"
   , reqSecretKey = "super secret key"
   }
 

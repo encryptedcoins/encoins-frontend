@@ -157,3 +157,22 @@ data TokenCacheV3 = MkTokenCacheV3
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
+
+data RestoreResponse = MkRestoreResponse
+  { rrAssetName :: Text
+  , rrSecretKey :: TokenKey
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance FromJSON RestoreResponse where
+   parseJSON = genericParseJSON $ aesonPrefix snakeCase
+
+newtype TokenKey = MkTokenKey { tkTokenKey :: Text }
+  deriving newtype (Show, Eq)
+  deriving stock (Generic)
+
+instance FromJSON TokenKey where
+   parseJSON = genericParseJSON $ aesonPrefix snakeCase
+
+instance ToJSON TokenKey where
+   toJSON = genericToJSON $ aesonPrefix snakeCase
