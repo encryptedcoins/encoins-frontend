@@ -48,9 +48,9 @@ bodyContentWidget mPass = mdo
 
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen
 
-  (eNewPass, eResetPass) <- passwordSettingsWindow ePassOpen
-  eCleanOk <- cleanCacheDialog eResetPass
-
+  (eNewPass, eClearCache) <- passwordSettingsWindow ePassOpen
+  eCleanOk <- cleanCacheDialog eClearCache
+  logEvent "body: eNewPass" eNewPass
   welcomeWindow welcomeWindowWalletStorageKey welcomeWallet
 
   divClass "section-app section-app-empty wf-section" blank
@@ -82,12 +82,12 @@ bodyContentWidget mPass = mdo
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo
   mPass <- fmap PasswordHash <$> loadHashedPassword passwordSotrageKey
-  (ePassOk, eReset) <- case mPass of
+  (ePassOk, eCleanCache) <- case mPass of
     Just pass -> first (Just <$>) <$> enterPasswordWindow pass eCleanOk
     Nothing -> do
       ePb <- getPostBuild
       pure (Nothing <$ ePb, never)
-  eCleanOk <- cleanCacheDialog eReset
+  eCleanOk <- cleanCacheDialog eCleanCache
   dmmPass <- holdDyn Nothing $ Just <$> leftmost [ePassOk, Nothing <$ eCleanOk, eNewPass]
   eNewPass <- switchHoldDyn dmmPass $ \case
     Nothing   -> pure never

@@ -45,9 +45,8 @@ pinEncryptedTokens dWalletAddress mPass dmKey dTokenCache = do
     Nothing -> pure dTokenCache
     Just _ -> do
       eTokens <- switchHoldDyn dmKey $ \case
-        Nothing -> do
-          ev <- newEvent
-          pure $ [] <$ ev
+        Nothing ->
+          pure $ updated dTokenCache
         Just key -> do
           dCloudTokens <- encryptTokens key dTokenCache
           -- logDyn "dCloudTokens" dCloudTokens
