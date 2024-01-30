@@ -116,24 +116,24 @@ passwordSettingsWindow eOpen = do
     dPassOk <- holdDyn False ePassOk
     (eReset, eClear, eSave) <- elAttr "div" ("class" =: "app-columns w-row app-PasswordSetting_ButtonContainer") $ do
       eSave' <- btn (mkSaveBtnCls <$> dmPassHash <*> dPassOk <*> dmNewPass) "" $ text "Save"
-      eClear' <- switchHoldDyn dmPassHash $ \case
+      eReset' <- switchHoldDyn dmPassHash $ \case
         Just _  -> btn (mkClearBtnCls <$> dPassOk) "" $ text "Reset password"
         Nothing -> pure never
-      eReset' <- switchHoldDyn dmPassHash $ \case
+      eClear' <- switchHoldDyn dmPassHash $ \case
         Just _  -> btn "button-switching flex-center" "" $ text "Clean cache"
         Nothing -> pure never
       return (eReset', eClear', eSave')
     let eNewPass = catMaybes (tagPromptlyDyn dmNewPass eSave)
-    performEvent_ (saveHashedTextToStorage passwordSotrageKey "" <$ eClear)
+    performEvent_ (saveHashedTextToStorage passwordSotrageKey "" <$ eReset)
     performEvent_ (saveHashedTextToStorage passwordSotrageKey . getPassRaw <$>
       eNewPass)
     widgetHold_ blank $ leftmost
       [ elAttr "div" ("class" =: "app-columns w-row" <> "style" =:
         "display:flex;justify-content:center;") (text "Password saved!") <$ eNewPass
       , elAttr "div" ("class" =: "app-columns w-row" <> "style" =:
-        "display:flex;justify-content:center;") (text "Password cleared!") <$ eClear
+        "display:flex;justify-content:center;") (text "Password cleared!") <$ eReset
       , blank <$ eOpen ]
-    return (leftmost [Just <$> eNewPass, Nothing <$ eClear], eReset)
+    return (leftmost [Just <$> eNewPass, Nothing <$ eReset], eClear)
   where
     mkErr _ Nothing                 = blank
     mkErr _ (Just (PasswordRaw "")) = blank
@@ -206,5 +206,5 @@ cleanCacheDialog eOpen = mdo
       btnCancel <- btn "button-switching flex-center" "" $ text "Cancel"
       return (btnOk, btnCancel)
   performEvent_ (saveHashedTextToStorage passwordSotrageKey "" <$ eOk)
-  performEvent_ ((saveJSON Nothing "encoins" . decodeUtf8 . toStrict $ encode @Text "") <$ eOk)
+  performEvent_ ((saveJSON Nothing "encoins-with-name" . decodeUtf8 . toStrict $ encode @Text "") <$ eOk)
   return eOk
