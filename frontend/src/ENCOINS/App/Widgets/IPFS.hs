@@ -254,7 +254,8 @@ ipfsSettingsWindow mPass eOpen = do
     "Save encoins on IPFS" $ mdo
         case mPass of
           Nothing -> do
-            divClass "app-Ipfs_Trigger-NeedPassword" $ text "You want to password local cache before using IPFS"
+            divClass "app-Ipfs_Trigger-NeedPassword"
+              $ text "Saving encoins on IPFS does not work without local password"
             pure $ constDyn False
           Just _ -> do
             dIsIpfsOn <- ipfsTrigger mPass eOpen
@@ -287,7 +288,9 @@ checkboxWidget :: MonadWidget t m
 checkboxWidget initial checkBoxClass eOpen = divClass "w-row" $ do
     inp <- inputElement $ def
       & initialAttributes .~
-          ( "class" =: checkBoxClass )
+          ( "class" =: checkBoxClass <>
+            "type" =: "checkbox"
+          )
       & inputElementConfig_initialChecked .~ False
       & inputElementConfig_setChecked .~ initial
     -- setFocusDelayOnEvent inp eOpen
