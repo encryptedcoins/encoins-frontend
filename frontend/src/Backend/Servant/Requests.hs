@@ -5,7 +5,6 @@ module Backend.Servant.Requests where
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
 import           Backend.Utility        (eventEither, normalizePingUrl)
-import           Config.Config          (urlsBS)
 import           ENCOINS.Common.Events
 import           JS.App                 (pingServer)
 
