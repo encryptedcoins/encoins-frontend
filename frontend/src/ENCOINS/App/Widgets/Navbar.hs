@@ -22,7 +22,7 @@ navbarWidget :: MonadWidget t m
   => Dynamic t Wallet
   -> Dynamic t Bool
   -> Maybe PasswordRaw
-  -> m (Event t (), Event t ())
+  -> m (Event t (), Event t (), Event t ())
 navbarWidget w dIsBlock mPass = do
   elAttr "div" ("data-animation" =: "default" <> "data-collapse" =: "none" <> "data-duration" =: "400" <> "id" =: "Navbar"
     <> "data-easing" =: "ease" <> "data-easing2" =: "ease" <> "role" =: "banner" <> "class" =: "navbar w-nav") $
@@ -36,11 +36,12 @@ navbarWidget w dIsBlock mPass = do
             divClass "menu-div-empty" blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do
                 elLocker <- lockerWidget mPass dIsBlock
+                elIpfs <- ipfsIconWidget mPass dIsBlock
                 eConnect <- divClass "menu-item-button-left" $
                     btnWithBlock "button-switching flex-center" "" dIsBlock $ do
                         dyn_ $ fmap (walletIcon . walletName) w
                         dynText $ fmap connectText w
-                return (domEvent Click elLocker, eConnect)
+                return (domEvent Click elLocker, eConnect, domEvent Click elIpfs)
 
 lockerWidget :: MonadWidget  t m
   => Maybe PasswordRaw
@@ -63,3 +64,25 @@ lockerDiv dClassMap popupText
   = fmap fst $ elDynAttr' "div" dClassMap
       $ divClass "app-Nav_CachePopup"
       $ el "p" $ text $ "Cache" <> space <> popupText
+
+ipfsIconWidget :: MonadWidget  t m
+  => Maybe PasswordRaw
+  -> Dynamic t Bool
+  -> m (Element EventResult (DomBuilderSpace m) t)
+ipfsIconWidget mPass dIsBlock = do
+  let popupText = case mPass of
+        Nothing -> ("aren't saved on IPFS")
+        Just _  -> ("are saved on IPFS")
+  let defaultClass = "menu-item app-Nav_IpfsContainer"
+  let dClass = bool defaultClass (defaultClass <> space <> "click-disabled") <$> dIsBlock
+  let dClassMap = (\cl -> "class" =: cl) <$> dClass
+  ipfsDiv dClassMap popupText
+
+ipfsDiv :: MonadWidget t m
+  => Dynamic t (Map Text Text)
+  -> Text
+  -> m (Element EventResult (DomBuilderSpace m) t)
+ipfsDiv dClassMap popupText
+  = fmap fst $ elDynAttr' "div" dClassMap
+      $ divClass "app-Nav_IpfsPopup"
+      $ el "p" $ text $ "Encoins" <> space <> popupText

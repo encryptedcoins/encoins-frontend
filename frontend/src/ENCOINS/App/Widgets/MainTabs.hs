@@ -65,11 +65,11 @@ mainWindowColumnHeader title =
 
 walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
-  -> Dynamic t Text
+  -> Dynamic t (Maybe Text)
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
   -> m ()
-walletTab mpass dKey dWallet dTokenCacheOld = sectionApp "" "" $ mdo
+walletTab mpass dmKey dWallet dTokenCacheOld = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -108,7 +108,7 @@ walletTab mpass dKey dWallet dTokenCacheOld = sectionApp "" "" $ mdo
                   dTokenIpfsCached <- pinEncryptedTokens
                     (walletAddressBech32 <$> dWallet)
                     mpass
-                    dKey
+                    dmKey
                     dSecretsUniq
                   saveCacheLocally mpass dTokenIpfsCached
 
@@ -166,7 +166,7 @@ walletTab mpass dKey dWallet dTokenCacheOld = sectionApp "" "" $ mdo
 
 transferTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
-  -> Dynamic t Text
+  -> Dynamic t (Maybe Text)
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
   -> m ()
@@ -253,7 +253,7 @@ transferTab mpass dKey dWallet dTokenCacheOld = sectionApp "" "" $ mdo
 
 ledgerTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
-  -> Dynamic t Text
+  -> Dynamic t (Maybe Text)
   -> Dynamic t [TokenCacheV3]
   -> m ()
 ledgerTab mpass dKey dTokenCacheOld = sectionApp "" "" $ mdo

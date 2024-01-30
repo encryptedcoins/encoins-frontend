@@ -69,10 +69,10 @@ loadAppData :: forall t m a b . (MonadWidget t m, FromJSON a)
   -> (a -> b)
   -> b
   -> m (Dynamic t b)
-loadAppData mpass entry f val = do
+loadAppData mPass entry f val = do
     let elId = "elId-" <> entry
     e <- newEventWithDelay 0.1
-    performEvent_ (loadJSON mpass entry elId <$ e)
+    performEvent_ (loadJSON entry elId mPass <$ e)
     elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
 
 loadAppDataId :: forall t m a b . (MonadWidget t m, FromJSON a)
@@ -83,27 +83,10 @@ loadAppDataId :: forall t m a b . (MonadWidget t m, FromJSON a)
   -> (a -> b)
   -> b
   -> m (Dynamic t b)
-loadAppDataId mpass entry elId ev f val = do
+loadAppDataId mPass entry elId ev f val = do
     eDelayed <- delay 0.1 ev
-    performEvent_ (loadJSON mpass entry elId <$ eDelayed)
+    performEvent_ (loadJSON entry elId mPass <$ eDelayed)
     elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
-
-loadAppDataIdDyn :: forall t m a b . (MonadWidget t m, FromJSON a)
-  => Maybe Text
-  -> Text
-  -> Event t ()
-  -> (a -> b)
-  -> b
-  -> m (Dynamic t b)
-loadAppDataIdDyn mpass entry ev f val = do
-    eUid <- genUid ev
-    -- eDelayedUid <- delay 0.1 eUid
-    -- performEvent_ (loadJSON mpass entry <$> eDelayed)
-    eRes <- performEvent (loadJSON mpass entry <$> eUid)
-    let abFunc = maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8
-    dUid <- holdDyn "default-load-uuid" $ coincidence $ eUid <$ eRes
-    dVal <- elementDynResultJS abFunc dUid
-    pure dVal
 
 genUid :: MonadWidget t m => Event t () -> m (Event t Text)
 genUid ev = performEvent $ (Uid.toText <$> liftIO Uid.nextRandom) <$ ev

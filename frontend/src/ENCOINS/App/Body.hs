@@ -40,57 +40,35 @@ import           ENCOINS.Common.Events
 
 bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mPass = mdo
-  (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet dIsDisableButtons mPass
+  (ePassOpen, eConnectOpen, eIpfsOpen) <- navbarWidget dWallet dIsDisableButtons mPass
 
   (dStatusT, dIsDisableButtons) <- handleAppStatus dWallet evEvStatus
   notification dStatusT
 
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen
 
-  (eNewPass, eResetPass) <- passwordSettingsWindow eSettingsOpen
+  (eNewPass, eResetPass) <- passwordSettingsWindow ePassOpen
   eCleanOk <- cleanCacheDialog eResetPass
 
   welcomeWindow welcomeWindowWalletStorageKey welcomeWallet
 
   divClass "section-app section-app-empty wf-section" blank
 
-  (dSecrets, evEvStatus) <- runEventWriterT $ mainWindow mPass dWallet dIsDisableButtons dKey
+  (dSecrets, evEvStatus) <- runEventWriterT $ mainWindow mPass dWallet dIsDisableButtons dmKey
 
   performEvent_ (reEncryptEncoins <$> attachPromptlyDyn dSecrets (leftmost
     [eNewPass, Nothing <$ eCleanOk]))
 
   copiedNotification
 
-  -- eBuild <- postDelay 0.1
-  -- eKey <- getAesKey mPass eBuild
-  -- logEvent "body: eKey" eKey
-  eKey <- getAesKey2 mPass
-  dKey <- holdDyn "" eKey
-  logEvent "body: eKey" eKey
+  dIpfsOn <- ipfsSettingsWindow mPass eIpfsOpen
+
+  ev <- newEventWithDelay 0.1
+  dmKey <- fetchAesKey mPass $ leftmost [ev, () <$ updated dIpfsOn]
+  -- dmKey <- holdDyn Nothing emKey
+  logDyn "body: dmKey" dmKey
   -- dRestoredTokens <- restoreValidTokens dKey (walletAddressBech32 <$> dWallet)
   -- logDyn "body: dRestoredTokens" dRestoredTokens
-
-  -- dKey <- holdDyn "" eKey
-  -- let eFullKey = () <$ ffilter (not . T.null) eKey
-  -- logDyn "body: dKey" dKey
-  -- logEvent "body: eFullKey" eFullKey
-  -- eDelay <- delay 0.2 eFullKey
-
-  -- dEncryptedToken <- encryptToken dKey eDelay (constDyn "secret key")
-  -- logDyn "body: dEncryptedToken" dEncryptedToken
-  -- logEvent "body: eEncryptedToken" eEncryptedToken
-
-  -- dEncryptedToken22 <- encryptToken dKey eDelay (constDyn "secret key 22")
-  -- logDyn "body: dEncryptedToken22" dEncryptedToken22
-
-  -- let eValidToken = ffilter (not . T.null) $ updated dEncryptedToken
-  -- logEvent "body: eValidToken" eValidToken
-
-  -- dOriginalText <- decryptToken dKey (() <$ eValidToken) dEncryptedToken
-  -- logDyn "body: dOriginalText" dOriginalText
-
-
-
 
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
 

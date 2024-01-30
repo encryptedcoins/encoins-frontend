@@ -52,7 +52,7 @@ function saveJSON(key, val, encr, pass) {
   setInputValue(key, "");
 }
 
-function loadJSON(key, resId, decr, pass) {
+function loadJSON(key, resId, pass, decr) {
   const val = localStorage.getItem(key);
   var res = val;
   if (decr) {

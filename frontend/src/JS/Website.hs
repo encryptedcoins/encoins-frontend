@@ -149,14 +149,14 @@ saveJSON _ _ _ = error "GHCJS is required!"
 #ifdef __GHCJS__
 foreign import javascript unsafe
   "loadJSON($1, $2, $3, $4);" loadJSON_js
-    :: JSString -> JSString -> JSVal -> JSString -> IO ()
+    :: JSString -> JSString -> JSString -> JSVal -> IO ()
 
-loadJSON :: MonadIO m => Maybe Text -> Text -> Text -> m ()
-loadJSON mpass key resId = liftIO $ do
+loadJSON :: MonadIO m => Text -> Text -> Maybe Text -> m ()
+loadJSON key resId mpass = liftIO $ do
   bool_js <- toJSVal $ isJust mpass
-  loadJSON_js (textToStr key) (textToStr resId) bool_js (maybe "" textToStr mpass)
+  loadJSON_js (textToStr key) (textToStr resId) (maybe "" textToStr mpass) bool_js
 #else
-loadJSON :: MonadIO m => Maybe Text -> Text -> Text -> m ()
+loadJSON :: MonadIO m => Text -> Text -> Maybe Text -> m ()
 loadJSON _ _ _ = error "GHCJS is required!"
 #endif
 
