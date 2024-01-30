@@ -73,7 +73,7 @@ ipfsIconWidget mPass dIsBlock = do
   let popupText = case mPass of
         Nothing -> ("aren't saved on IPFS")
         Just _  -> ("are saved on IPFS")
-  let defaultClass = "menu-item app-Nav_IpfsContainer"
+  let defaultClass = "menu-item app-Ipfs_IconContainer"
   let dClass = bool defaultClass (defaultClass <> space <> "click-disabled") <$> dIsBlock
   let dClassMap = (\cl -> "class" =: cl) <$> dClass
   ipfsDiv dClassMap popupText
@@ -84,5 +84,5 @@ ipfsDiv :: MonadWidget t m
   -> m (Element EventResult (DomBuilderSpace m) t)
 ipfsDiv dClassMap popupText
   = fmap fst $ elDynAttr' "div" dClassMap
-      $ divClass "app-Nav_IpfsPopup"
+      $ divClass "app-Nav_CachePopup"
       $ el "p" $ text $ "Encoins" <> space <> popupText

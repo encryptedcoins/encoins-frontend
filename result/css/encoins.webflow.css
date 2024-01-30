@@ -1917,3 +1917,19 @@ body {
     margin-right: 0%;
     }
   }
+
+.app-Ipfs_IconContainer {
+  width: 22px;
+  min-width: 22px;
+  height: 31px;
+  max-height: 31px;
+  background-image: url('../images/ipfs.svg');
+  background-position: 0px 0px;
+  background-size: auto;
+  margin-top: 10px;
+  margin-bottom: 40px;
+}
+
+.app-Ipfs_IconContainer:hover {
+  cursor: pointer;
+}

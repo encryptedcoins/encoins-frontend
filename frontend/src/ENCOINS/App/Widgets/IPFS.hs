@@ -251,6 +251,7 @@ ipfsSettingsWindow :: MonadWidget t m
   -> Event t ()
   -> m (Dynamic t Bool)
 ipfsSettingsWindow mPass eOpen = do
+  logEvent "ipfsSettingsWindow: eOpen" eOpen
   dialogWindow
     True
     eOpen
