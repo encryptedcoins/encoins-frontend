@@ -23,6 +23,8 @@ import           ENCOINS.App.Widgets.MainTabs       (ledgerTab, transferTab,
 import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw (..))
 import           ENCOINS.App.Widgets.TabsSelection  (AppTab (..), tabsSection)
 import           ENCOINS.Bulletproofs               (Secret)
+import           ENCOINS.Common.Cache               (encoinsV1, encoinsV2,
+                                                     encoinsV3)
 import           ENCOINS.Common.Events
 import           JS.Website                         (saveJSON)
 
@@ -38,7 +40,7 @@ mainWindow mPass dWallet dIsDisableButtons dmKey = mdo
     dTab <- holdDyn WalletTab eTab
     eSecretsV3 <- switchHoldDyn dTab $ \tab -> mdo
       dSecretsV3 :: Dynamic t [TokenCacheV3] <-
-        loadAppData (getPassRaw <$> mPass) "encoins-v3" id []
+        loadAppData (getPassRaw <$> mPass) encoinsV3 id []
 
       updateCacheV3 mPass dSecretsV3
 
@@ -77,9 +79,9 @@ migrateCacheV3 :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   -> m ()
 migrateCacheV3 mPass = do
   eSecretsV1 :: Event t [Secret] <-
-    updated <$> loadAppData (getPassRaw <$> mPass) "encoins" id []
+    updated <$> loadAppData (getPassRaw <$> mPass) encoinsV1 id []
   eSecretsV2 :: Event t [(Secret, Text)] <-
-    updated <$> loadAppData (getPassRaw <$> mPass) "encoins-with-name" id []
+    updated <$> loadAppData (getPassRaw <$> mPass) encoinsV2 id []
 
   -- logEvent "migrateCacheV3: eSecretsV1" eSecretsV1
   -- logEvent "migrateCacheV3: eSecretsV2" eSecretsV2
@@ -103,7 +105,7 @@ migrateCacheV3 mPass = do
   -- logEvent "migrateCacheV3: eSecretsV3" eSecretsV3
 
   performEvent_ $
-      saveJSON (getPassRaw <$> mPass) "encoins-v3"
+      saveJSON (getPassRaw <$> mPass) encoinsV3
         . decodeUtf8
         . toStrict
         . encode <$> eSecretsV3

@@ -54,6 +54,7 @@ import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeLedger,
                                                          welcomeWindow,
                                                          welcomeWindowLedgerStorageKey,
                                                          welcomeWindowTransferStorageKey)
+import           ENCOINS.Common.Cache                   (encoinsV3)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
 import           JS.Website                             (saveJSON)
@@ -368,7 +369,7 @@ saveCacheLocally :: MonadWidget t m
 saveCacheLocally mpass cache =
   performEvent_ $ saveJSON
       (getPassRaw <$> mpass)
-      "encoins-v3"
+        encoinsV3
       . decodeUtf8
       . toStrict
       . encode <$> updated cache

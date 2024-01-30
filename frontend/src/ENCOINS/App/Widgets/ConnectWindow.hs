@@ -12,6 +12,7 @@ import           Reflex.Dom
 import           Backend.Wallet                  (Wallet (..), WalletName (..),
                                                   fromJS, toJS)
 import           ENCOINS.App.Widgets.Basic       (loadAppData)
+import           ENCOINS.Common.Cache            (currentWallet)
 import           ENCOINS.Common.Utils            (toText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Wallet   (loadWallet, walletIcon)
@@ -34,8 +35,8 @@ connectWindow supportedWallets eConnectOpen = mdo
         let bWalletName = current $ fmap walletName dW
 
         -- save/load wallet
-        performEvent_ (saveJSON Nothing "current-wallet" . decodeUtf8 . toStrict . encode . toJS <$> eWalletName)
-        eLastWalletName <- updated <$> loadAppData Nothing "current-wallet" fromJS None
+        performEvent_ (saveJSON Nothing currentWallet . decodeUtf8 . toStrict . encode . toJS <$> eWalletName)
+        eLastWalletName <- updated <$> loadAppData Nothing currentWallet fromJS None
 
         return (void eWalletName, dW)
     return dWallet

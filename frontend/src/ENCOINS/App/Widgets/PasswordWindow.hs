@@ -16,6 +16,7 @@ import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
 import           Backend.Utility                 (switchHoldDyn)
+import           ENCOINS.Common.Cache            (encoinsV3)
 import           ENCOINS.Common.Events           (setFocusDelayOnEvent)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn, errDiv)
@@ -23,7 +24,6 @@ import           JS.App                          (checkPassword,
                                                   loadHashedPassword,
                                                   saveHashedTextToStorage)
 import           JS.Website                      (saveJSON)
-
 
 passwordSotrageKey :: Text
 passwordSotrageKey = "password-hash"
@@ -206,5 +206,5 @@ cleanCacheDialog eOpen = mdo
       btnCancel <- btn "button-switching flex-center" "" $ text "Cancel"
       return (btnOk, btnCancel)
   performEvent_ (saveHashedTextToStorage passwordSotrageKey "" <$ eOk)
-  performEvent_ ((saveJSON Nothing "encoins-with-name" . decodeUtf8 . toStrict $ encode @Text "") <$ eOk)
+  performEvent_ ((saveJSON Nothing encoinsV3 . decodeUtf8 . toStrict $ encode @Text "") <$ eOk)
   return eOk

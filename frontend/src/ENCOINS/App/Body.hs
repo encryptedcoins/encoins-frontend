@@ -28,6 +28,7 @@ import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWallet,
                                                      welcomeWindow,
                                                      welcomeWindowWalletStorageKey)
+import           ENCOINS.Common.Cache               (encoinsV3)
 import           ENCOINS.Common.Utils               (toText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           ENCOINS.Common.Widgets.Basic       (column, notification,
@@ -61,9 +62,11 @@ bodyContentWidget mPass = mdo
 
   copiedNotification
 
+  logEvent "body: eIpfsOpen" eIpfsOpen
+
   dIpfsOn <- ipfsSettingsWindow mPass eIpfsOpen
 
-  ev <- newEventWithDelay 0.1
+  ev <- newEventWithDelay 1.5
   dmKey <- fetchAesKey mPass $ leftmost [ev, () <$ updated dIpfsOn]
   -- dmKey <- holdDyn Nothing emKey
   logDyn "body: dmKey" dmKey
@@ -73,7 +76,7 @@ bodyContentWidget mPass = mdo
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
 
   where
-    reEncryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) "encoins-v3"
+    reEncryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) encoinsV3
       . decodeUtf8 .  toStrict . encode $ d
 
 bodyWidget :: MonadWidget t m => m ()

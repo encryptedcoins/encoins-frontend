@@ -43,6 +43,7 @@ library
     ENCOINS.App.Widgets.TabsSelection
     ENCOINS.App.Widgets.TransactionBalance
     ENCOINS.App.Widgets.WelcomeWindow
+    ENCOINS.Common.Cache
     ENCOINS.Common.Events
     ENCOINS.Common.Language
     ENCOINS.Common.Utils

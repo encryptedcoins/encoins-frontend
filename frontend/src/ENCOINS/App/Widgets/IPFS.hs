@@ -8,10 +8,11 @@ import           Backend.Servant.Requests           (cacheRequest,
                                                      restoreRequest)
 import           Backend.Utility                    (eventEither, eventTuple,
                                                      switchHoldDyn)
-import           ENCOINS.App.Widgets.Basic          (elementResultJS, genUid,
+import           ENCOINS.App.Widgets.Basic          (elementResultJS,
                                                      loadAppDataId)
 import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw, getPassRaw)
 import           ENCOINS.Bulletproofs               (Secret (..))
+import           ENCOINS.Common.Cache               (ipfsCacheKey, isIpfsOn)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils               (toText)
 import           ENCOINS.Common.Widgets.Advanced    (dialogWindow)
@@ -136,12 +137,6 @@ tokenSample = MkCloudRequest
   { reqAssetName = "b47f55bdc1d7615409cf8cc714e3885c42d6cb48629d44ff5a9265c88aa30cdc"
   , reqSecretKey = "super secret key"
   }
-
-ipfsCacheKey :: Text
-ipfsCacheKey = "encoins-aes-key"
-
-isIpfsOn :: Text
-isIpfsOn = "encoins-ipfs-switcher"
 
 mkAesKey :: MonadWidget t m
   => Maybe PasswordRaw
