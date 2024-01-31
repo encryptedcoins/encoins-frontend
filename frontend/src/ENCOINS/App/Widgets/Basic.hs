@@ -18,7 +18,7 @@ import           GHCJS.DOM              (currentWindowUnchecked)
 import           GHCJS.DOM.Storage      (getItem, setItem)
 import           GHCJS.DOM.Types        (MonadDOM)
 import           GHCJS.DOM.Window       (getLocalStorage)
-import           JS.Website             (loadJSON)
+import           JS.Website             (loadJSON, saveJSON)
 import           Reflex.Dom
 import           Reflex.ScriptDependent (widgetHoldUntilDefined)
 
@@ -87,6 +87,15 @@ loadAppDataId mPass entry elId ev f val = do
     eDelayed <- delay 0.1 ev
     performEvent_ (loadJSON entry elId mPass <$ eDelayed)
     elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
+
+saveAppDataId :: (MonadWidget t m, ToJSON a)
+  => Maybe Text
+  -> Text
+  -> Event t a
+  -> m ()
+saveAppDataId mPass key eVal = do
+    let eEncodedValue = decodeUtf8 . toStrict . encode <$> eVal
+    performEvent_ (saveJSON mPass key <$> eEncodedValue)
 
 genUid :: MonadWidget t m => Event t () -> m (Event t Text)
 genUid ev = performEvent $ (Uid.toText <$> liftIO Uid.nextRandom) <$ ev

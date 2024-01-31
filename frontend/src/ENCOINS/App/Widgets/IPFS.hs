@@ -9,7 +9,8 @@ import           Backend.Servant.Requests           (cacheRequest,
 import           Backend.Utility                    (eventEither, eventTuple,
                                                      switchHoldDyn)
 import           ENCOINS.App.Widgets.Basic          (elementResultJS,
-                                                     loadAppDataId)
+                                                     loadAppDataId, loadAppData,
+                                                     saveAppDataId)
 import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw, getPassRaw)
 import           ENCOINS.Bulletproofs               (Secret (..))
 import           ENCOINS.Common.Cache               (ipfsCacheKey, isIpfsOn)
@@ -49,14 +50,14 @@ pinEncryptedTokens dWalletAddress mPass dmKey dTokenCache = do
           pure $ updated dTokenCache
         Just key -> do
           dCloudTokens <- encryptTokens key dTokenCache
-          -- logDyn "dCloudTokens" dCloudTokens
+          logDyn "dCloudTokens" dCloudTokens
           let eFireCaching = ffilter (not . null) $ updated dCloudTokens
           -- logEvent "eFireCaching" eFireCaching
           let dClientId = mkClientId <$> dWalletAddress
           let dReq = zipDynWith (,) dClientId dCloudTokens
-          -- logDyn "dClientId" dClientId
+          logDyn "dClientId" dClientId
           eeCloudResponse <- cacheRequest dReq $ () <$ eFireCaching
-          -- logEvent "walletTab: cache response:" eeCloudResponse
+          logEvent "walletTab: cache response:" eeCloudResponse
           let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
           dCloudResponse <- holdDyn Map.empty eCloudResponse
           pure $ updated $ ffor2 dCloudResponse dTokenCache updateCacheStatus
@@ -258,12 +259,13 @@ ipfsSettingsWindow mPass eOpen = do
               $ text "Saving encoins on IPFS does not work without local password"
             pure $ constDyn False
           Just _ -> do
-            dIsIpfsOn <- ipfsTrigger mPass eOpen
+            dIsIpfsOn <- ipfsCheckbox eOpen
             void $ switchHoldDyn dIsIpfsOn $ \case
               False -> pure never
               True -> do
                 eKey <- mkAesKey mPass
                 dKey <- holdDyn "Ipfs key not found" eKey
+                divClass "" $ text "Following AES key used to encrypt encoins"
                 showKeyWidget dKey
                 pure never
             pure dIsIpfsOn
@@ -271,29 +273,27 @@ ipfsSettingsWindow mPass eOpen = do
 ipfsWindowStyle :: Text
 ipfsWindowStyle = "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
 
-ipfsTrigger :: MonadWidget t m
-  => Maybe PasswordRaw
-  -> Event t ()
+ipfsCheckbox :: MonadWidget t m
+  => Event t ()
   -> m (Dynamic t Bool)
-ipfsTrigger mPass eOpen = do
-  dIsIpfsOn <- loadAppDataId (getPassRaw <$> mPass) isIpfsOn "ipfs-is-on" eOpen id False
-
-  checkboxWidget (updated dIsIpfsOn) "app-Ipfs_Trigger" eOpen
+ipfsCheckbox eOpen = do
+  dIpfsCached <- loadAppDataId Nothing isIpfsOn "load-is-ipfs-on-key" eOpen id False
+  dIsChecked <- checkboxWidget (updated dIpfsCached) "app-Ipfs_Trigger"
+  saveAppDataId Nothing isIpfsOn $ updated dIsChecked
+  divClass "" $ text "Check box in order to save your coins on IPFS"
+  pure dIsChecked
 
 checkboxWidget :: MonadWidget t m
   => Event t Bool
   -> Text
-  -> Event t ()
   -> m (Dynamic t Bool)
-checkboxWidget initial checkBoxClass eOpen = divClass "w-row" $ do
+checkboxWidget initial checkBoxClass = divClass "w-row" $ do
     inp <- inputElement $ def
       & initialAttributes .~
           ( "class" =: checkBoxClass <>
             "type" =: "checkbox"
           )
-      & inputElementConfig_initialChecked .~ False
       & inputElementConfig_setChecked .~ initial
-    -- setFocusDelayOnEvent inp eOpen
     return $ _inputElement_checked inp
 
 showKeyWidget :: MonadWidget t m
