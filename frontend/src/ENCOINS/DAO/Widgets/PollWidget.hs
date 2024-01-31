@@ -1,14 +1,15 @@
 module ENCOINS.DAO.Widgets.PollWidget where
 
 import           Data.Text                     (Text, pack)
-import           Data.Text.Encoding (encodeUtf8)
+import           Data.Text.Encoding            (encodeUtf8)
 import           Reflex.Dom
 import           Text.Printf
 
 import           Backend.Wallet                (LucidConfig (..), Wallet (..),
                                                 lucidConfigDao, toJS)
 import           ENCOINS.App.Widgets.Basic     (elementResultJS)
-import           ENCOINS.Common.Utils          (downloadVotes, toText)
+import           ENCOINS.Common.Utils          (downloadVotes, toJsonStrict,
+                                                toText)
 import           ENCOINS.Common.Widgets.Basic  (btn, btnWithBlock)
 import           ENCOINS.DAO.PollResults
 import           ENCOINS.DAO.Polls             (Poll (..), formatPollTime)
@@ -62,7 +63,7 @@ pollCompletedWidget (Poll n question summary voteResults fullAnswers endTime) = 
   container "" $
     divClass "dao-VoteDownload" $ do
       eDownload <- btn "button-switching flex-center" "" $ text "DOWNLOAD"
-      downloadVotes (toJsonResult voteResults) "result" n eDownload
+      downloadVotes (toJsonStrict voteResults) "result" n eDownload
       downloadVotes (encodeUtf8 fullAnswers) "result_full" n eDownload
   where
     -- TODO: make this a widget

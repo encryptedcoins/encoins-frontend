@@ -3,19 +3,19 @@
 module ENCOINS.App.Widgets.PasswordWindow where
 
 import           Control.Monad                   (void)
-import           Data.Aeson                      (encode)
 import           Data.Bool                       (bool)
-import           Data.ByteString.Lazy            (toStrict)
 import           Data.Char                       (isAsciiLower, isAsciiUpper,
                                                   isDigit, isLower, isUpper,
                                                   ord)
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
-import           Data.Text.Encoding              (decodeUtf8)
 import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
+import           Backend.Protocol.Types          (PasswordHash (..),
+                                                  PasswordRaw (..))
 import           Backend.Utility                 (switchHoldDyn)
+import           ENCOINS.App.Widgets.Basic       (saveAppDataId_)
 import           ENCOINS.Common.Cache            (encoinsV3)
 import           ENCOINS.Common.Events           (setFocusDelayOnEvent)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
@@ -23,14 +23,11 @@ import           ENCOINS.Common.Widgets.Basic    (btn, errDiv)
 import           JS.App                          (checkPassword,
                                                   loadHashedPassword,
                                                   saveHashedTextToStorage)
-import           JS.Website                      (saveJSON)
 
 passwordSotrageKey :: Text
 passwordSotrageKey = "password-hash"
 
-newtype PasswordRaw = PasswordRaw { getPassRaw :: Text } deriving (Eq, Show)
 
-newtype PasswordHash = PasswordHash { getPassHash :: Text } deriving (Eq, Show)
 
 validatePassword :: Text -> Either Text PasswordRaw
 validatePassword txt
@@ -206,5 +203,5 @@ cleanCacheDialog eOpen = mdo
       btnCancel <- btn "button-switching flex-center" "" $ text "Cancel"
       return (btnOk, btnCancel)
   performEvent_ (saveHashedTextToStorage passwordSotrageKey "" <$ eOk)
-  performEvent_ ((saveJSON Nothing encoinsV3 . decodeUtf8 . toStrict $ encode @Text "") <$ eOk)
+  saveAppDataId_ Nothing encoinsV3 $ ("" :: Text) <$ eOk
   return eOk

@@ -176,3 +176,7 @@ instance FromJSON TokenKey where
 
 instance ToJSON TokenKey where
    toJSON = genericToJSON $ aesonPrefix snakeCase
+
+newtype PasswordRaw = PasswordRaw { getPassRaw :: Text } deriving (Eq, Show)
+
+newtype PasswordHash = PasswordHash { getPassHash :: Text } deriving (Eq, Show)

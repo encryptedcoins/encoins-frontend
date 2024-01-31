@@ -25,7 +25,7 @@ import           Backend.Wallet                         (Wallet (..))
 import           Config.Config                          (delegateServerUrl)
 import           ENCOINS.App.Widgets.Basic              (containerApp,
                                                          elementResultJS,
-                                                         saveAppDataId,
+                                                         saveAppDataId_,
                                                          sectionApp,
                                                          tellTxStatus,
                                                          walletError)
@@ -41,7 +41,6 @@ import           ENCOINS.App.Widgets.ImportWindow       (exportWindow,
                                                          importWindow)
 import           ENCOINS.App.Widgets.InputAddressWindow (inputAddressWindow)
 import           ENCOINS.App.Widgets.IPFS
-import           ENCOINS.App.Widgets.PasswordWindow     (PasswordRaw (..))
 import           ENCOINS.App.Widgets.SendRequestButton  (sendRequestButtonLedger,
                                                          sendRequestButtonWallet)
 import           ENCOINS.App.Widgets.SendToWalletWindow (sendToWalletWindow)
@@ -369,4 +368,4 @@ saveCacheLocally :: MonadWidget t m
   -> Dynamic t [TokenCacheV3]
   -> m ()
 saveCacheLocally mPass cache =
-  saveAppDataId mPass encoinsV3 $ updated cache
+  saveAppDataId_ mPass encoinsV3 $ updated cache

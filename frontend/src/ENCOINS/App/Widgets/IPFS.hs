@@ -4,35 +4,30 @@
 module ENCOINS.App.Widgets.IPFS where
 
 import           Backend.Protocol.Types
-import           Backend.Servant.Requests           (cacheRequest,
-                                                     restoreRequest)
-import           Backend.Utility                    (eventEither, eventTuple,
-                                                     switchHoldDyn)
-import           ENCOINS.App.Widgets.Basic          (elementResultJS,
-                                                     loadAppDataId,
-                                                     saveAppDataId)
-import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw, getPassRaw)
-import           ENCOINS.Bulletproofs               (Secret (..))
-import           ENCOINS.Common.Cache               (ipfsCacheKey, isIpfsOn)
+import           Backend.Servant.Requests        (cacheRequest, restoreRequest)
+import           Backend.Utility                 (eventEither, eventTuple,
+                                                  switchHoldDyn)
+import           ENCOINS.App.Widgets.Basic       (elementResultJS,
+                                                  loadAppDataId, saveAppDataId,
+                                                  saveAppDataId_)
+import           ENCOINS.Bulletproofs            (Secret (..))
+import           ENCOINS.Common.Cache            (ipfsCacheKey, isIpfsOn)
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils               (toText)
-import           ENCOINS.Common.Widgets.Advanced    (dialogWindow)
-import           ENCOINS.Crypto.Field               (Field (F))
-import qualified JS.App                             as JS
-import           JS.Website                         (saveJSON)
+import           ENCOINS.Common.Utils            (toJsonStrict, toText)
+import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
+import           ENCOINS.Crypto.Field            (Field (F))
+import qualified JS.App                          as JS
 
-import           Control.Monad                      (void)
-import qualified Crypto.Hash                        as Hash
-import           Data.Aeson                         (eitherDecodeStrict',
-                                                     encode)
-import           Data.ByteString.Lazy               (toStrict)
-import           Data.Either                        (partitionEithers)
-import           Data.Map                           (Map)
-import qualified Data.Map                           as Map
-import           Data.Maybe                         (catMaybes, fromMaybe)
-import           Data.Text                          (Text)
-import qualified Data.Text                          as T
-import           Data.Text.Encoding                 (decodeUtf8, encodeUtf8)
+import           Control.Monad                   (void)
+import qualified Crypto.Hash                     as Hash
+import           Data.Aeson                      (eitherDecodeStrict')
+import           Data.Either                     (partitionEithers)
+import           Data.Map                        (Map)
+import qualified Data.Map                        as Map
+import           Data.Maybe                      (catMaybes, fromMaybe)
+import           Data.Text                       (Text)
+import qualified Data.Text                       as T
+import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
 import           Reflex.Dom
 
 pinEncryptedTokens :: MonadWidget t m
@@ -101,7 +96,7 @@ encryptToken :: MonadWidget t m
   -> Secret
   -> m (Dynamic t Text)
 encryptToken key ev secret = do
-  let secretByte = toStrict $ encode secret
+  let secretByte = toJsonStrict secret
   let elementId = toText $ Hash.hash @Hash.SHA256 secretByte
   performEvent_ $ JS.encryptAES (key, elementId, decodeUtf8 secretByte) <$ ev
   dEncryptedToken <- elementResultJS elementId id
@@ -160,12 +155,9 @@ mkAesKey mPass = do
         performEvent_ $ JS.generateAESKey genElId <$ ev3
         eAesKey <- updated <$> elementResultJS genElId id
         logEvent "mkAesKey: eAesKey" eAesKey
-        ev4 <- performEvent $ saveJSON (getPassRaw <$> mPass) ipfsCacheKey
-          . decodeUtf8
-          . toStrict
-          . encode <$> eAesKey
+        ev4 <- saveAppDataId mPass ipfsCacheKey eAesKey
         eLoadedKey <- updated <$> loadAppDataId
-          mPass ipfsCacheKey  "second-load-of-aes-key"  ev4 id ""
+            mPass ipfsCacheKey "second-load-of-aes-key"  ev4 id ""
         pure eLoadedKey
     Just loadedKey -> pure $ loadedKey <$ ev3
 
@@ -286,7 +278,7 @@ ipfsCheckbox :: MonadWidget t m
 ipfsCheckbox eOpen = do
   dIpfsCached <- loadAppDataId Nothing isIpfsOn "load-is-ipfs-on-key" eOpen id False
   dIsChecked <- checkboxWidget (updated dIpfsCached) "app-Ipfs_Trigger"
-  saveAppDataId Nothing isIpfsOn $ updated dIsChecked
+  saveAppDataId_ Nothing isIpfsOn $ updated dIsChecked
   divClass "" $ text "Check box in order to save your coins on IPFS"
   pure dIsChecked
 

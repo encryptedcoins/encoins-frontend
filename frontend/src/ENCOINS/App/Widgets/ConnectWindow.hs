@@ -3,20 +3,16 @@
 module ENCOINS.App.Widgets.ConnectWindow (connectWindow) where
 
 import           Control.Monad                   (void)
-import           Data.Aeson                      (encode)
 import           Data.Bool                       (bool)
-import           Data.ByteString.Lazy            (toStrict)
-import           Data.Text.Encoding              (decodeUtf8)
 import           Reflex.Dom
 
 import           Backend.Wallet                  (Wallet (..), WalletName (..),
                                                   fromJS, toJS)
-import           ENCOINS.App.Widgets.Basic       (loadAppData)
+import           ENCOINS.App.Widgets.Basic       (loadAppData, saveAppDataId_)
 import           ENCOINS.Common.Cache            (currentWallet)
 import           ENCOINS.Common.Utils            (toText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Wallet   (loadWallet, walletIcon)
-import           JS.Website                      (saveJSON)
 
 walletEntry :: MonadWidget t m => WalletName -> m (Event t WalletName)
 walletEntry w = do
@@ -35,7 +31,7 @@ connectWindow supportedWallets eConnectOpen = mdo
         let bWalletName = current $ fmap walletName dW
 
         -- save/load wallet
-        performEvent_ (saveJSON Nothing currentWallet . decodeUtf8 . toStrict . encode . toJS <$> eWalletName)
+        saveAppDataId_ Nothing currentWallet $ toJS <$> eWalletName
         eLastWalletName <- updated <$> loadAppData Nothing currentWallet fromJS None
 
         return (void eWalletName, dW)

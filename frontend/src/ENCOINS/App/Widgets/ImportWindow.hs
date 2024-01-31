@@ -7,11 +7,11 @@ module ENCOINS.App.Widgets.ImportWindow
   ) where
 
 import           Control.Monad                   (void, (<=<))
-import           Data.Aeson                      (decode, encode)
-import           Data.ByteString.Lazy            (fromStrict, toStrict)
+import           Data.Aeson                      (decode)
+import           Data.ByteString.Lazy            (fromStrict)
 import           Data.Maybe                      (fromMaybe)
 import           Data.Text                       (Text)
-import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
+import           Data.Text.Encoding              (encodeUtf8)
 import           GHCJS.DOM.EventM                (on)
 import           GHCJS.DOM.FileReader            (getResult, load,
                                                   newFileReader, readAsText)
@@ -24,6 +24,7 @@ import           Witherable                      (catMaybes)
 import           Backend.Protocol.Utility        (hexToSecret)
 import           Backend.Utility                 (switchHoldDyn)
 import           ENCOINS.Bulletproofs            (Secret)
+import           ENCOINS.Common.Utils            (toJsonText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn)
 
@@ -76,7 +77,7 @@ exportWindow eOpen dSecrets = mdo
               <> "style" =: "width: min(100%, 810px); margin-bottom: 15px" <> "placeholder" =: "coins.txt"))
       dFile <- value <$> inputElement conf
       eSave <- btn "button-switching inverted flex-center" "" $ text "Save"
-      let dContent = decodeUtf8 . toStrict . encode <$> dSecrets
+      let dContent = toJsonText <$> dSecrets
       performEvent_ (uncurry saveTextFile <$> (current (zipDyn dFile dContent) `tag` eSave))
       return eSave
     blank

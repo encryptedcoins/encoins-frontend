@@ -1,17 +1,16 @@
 module ENCOINS.App.Widgets.Navbar (navbarWidget) where
 
-import           Data.Bool                          (bool)
-import           Data.Map                           (Map)
-import           Data.Text                          (Text, take, takeEnd)
-import           Prelude                            hiding (take)
+import           Data.Bool                     (bool)
+import           Data.Map                      (Map)
+import           Data.Text                     (Text, take, takeEnd)
+import           Prelude                       hiding (take)
 import           Reflex.Dom
 
-import           Backend.Wallet                     (Wallet (..),
-                                                     WalletName (..),
-                                                     currentNetworkApp)
-import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw)
-import           ENCOINS.Common.Widgets.Basic       (btnWithBlock, logo, space)
-import           ENCOINS.Common.Widgets.Wallet      (walletIcon)
+import           Backend.Protocol.Types        (PasswordRaw)
+import           Backend.Wallet                (Wallet (..), WalletName (..),
+                                                currentNetworkApp)
+import           ENCOINS.Common.Widgets.Basic  (btnWithBlock, logo, space)
+import           ENCOINS.Common.Widgets.Wallet (walletIcon)
 
 connectText :: Wallet -> Text
 connectText w = case w of

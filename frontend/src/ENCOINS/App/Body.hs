@@ -2,14 +2,13 @@
 
 module ENCOINS.App.Body (bodyWidget) where
 
-import           Data.Aeson                         (encode)
 import           Data.Bifunctor                     (first)
-import           Data.ByteString.Lazy               (toStrict)
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
-import           Data.Text.Encoding                 (decodeUtf8)
 import           Reflex.Dom
 
+import           Backend.Protocol.Types             (PasswordHash (..),
+                                                     PasswordRaw (..))
 import           Backend.Status                     (Status (..), isNoRelay,
                                                      isReady,
                                                      isTxProcessOrCriticalError)
@@ -29,7 +28,7 @@ import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWallet,
                                                      welcomeWindow,
                                                      welcomeWindowWalletStorageKey)
 import           ENCOINS.Common.Cache               (encoinsV3)
-import           ENCOINS.Common.Utils               (toText)
+import           ENCOINS.Common.Utils               (toJsonText, toText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           ENCOINS.Common.Widgets.Basic       (column, notification,
                                                      space)
@@ -55,16 +54,17 @@ bodyContentWidget mPass = mdo
 
   divClass "section-app section-app-empty wf-section" blank
 
-  (dSecrets, evEvStatus) <- runEventWriterT $ mainWindow
+  (dSecretsV3, evEvStatus) <- runEventWriterT $ mainWindow
     mPass
     dWallet
     dIsDisableButtons
     dmKey
     dIpfsOn
 
-
-  performEvent_ (reEncryptEncoins <$> attachPromptlyDyn dSecrets (leftmost
-    [eNewPass, Nothing <$ eCleanOk]))
+  performEvent_
+    $ fmap reEncryptEncoins
+    $ attachPromptlyDyn dSecretsV3
+    $ leftmost [eNewPass, Nothing <$ eCleanOk]
 
   copiedNotification
 
@@ -83,7 +83,7 @@ bodyContentWidget mPass = mdo
 
   where
     reEncryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) encoinsV3
-      . decodeUtf8 .  toStrict . encode $ d
+      . toJsonText $ d
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo

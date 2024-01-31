@@ -1,29 +1,29 @@
 module ENCOINS.App.Widgets.Basic where
 
-import           Backend.Status                     (Status (..))
-import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw (..))
+import           Backend.Protocol.Types (PasswordRaw (..))
+import           Backend.Status         (Status (..))
 import           ENCOINS.Common.Events
-import           JS.Website                         (loadJSON, saveJSON)
+import           ENCOINS.Common.Utils   (toJsonText)
+import           JS.Website             (loadJSON, saveJSON)
 
 
-import           Control.Monad                      (join)
-import           Control.Monad.IO.Class             (liftIO)
-import           Data.Aeson                         (FromJSON, ToJSON, decode,
-                                                     decodeStrict, encode)
-import           Data.Bool                          (bool)
-import           Data.ByteString                    (ByteString)
-import           Data.ByteString.Lazy               (fromStrict, toStrict)
-import           Data.Text                          (Text)
-import qualified Data.Text                          as T
-import           Data.Text.Encoding                 (decodeUtf8, encodeUtf8)
-import qualified Data.UUID                          as Uid
-import qualified Data.UUID.V4                       as Uid
-import           GHCJS.DOM                          (currentWindowUnchecked)
-import           GHCJS.DOM.Storage                  (getItem, setItem)
-import           GHCJS.DOM.Types                    (MonadDOM)
-import           GHCJS.DOM.Window                   (getLocalStorage)
+import           Control.Monad          (join, void)
+import           Control.Monad.IO.Class (liftIO)
+import           Data.Aeson             (FromJSON, ToJSON, decode, decodeStrict)
+import           Data.Bool              (bool)
+import           Data.ByteString        (ByteString)
+import           Data.ByteString.Lazy   (fromStrict)
+import           Data.Text              (Text)
+import qualified Data.Text              as T
+import           Data.Text.Encoding     (encodeUtf8)
+import qualified Data.UUID              as Uid
+import qualified Data.UUID.V4           as Uid
+import           GHCJS.DOM              (currentWindowUnchecked)
+import           GHCJS.DOM.Storage      (getItem, setItem)
+import           GHCJS.DOM.Types        (MonadDOM)
+import           GHCJS.DOM.Window       (getLocalStorage)
 import           Reflex.Dom
-import           Reflex.ScriptDependent             (widgetHoldUntilDefined)
+import           Reflex.ScriptDependent (widgetHoldUntilDefined)
 
 
 sectionApp :: MonadWidget t m => Text -> Text -> m a -> m a
@@ -91,15 +91,23 @@ loadAppDataId mPass entry elId ev f val = do
     performEvent_ (loadJSON entry elId mPassT <$ eDelayed)
     elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
 
-saveAppDataId :: (MonadWidget t m, ToJSON a)
+saveAppDataId_ :: (MonadWidget t m, ToJSON a)
   => Maybe PasswordRaw
   -> Text
   -> Event t a
   -> m ()
+saveAppDataId_ mPass key eVal = do
+    void $ saveAppDataId mPass key eVal
+
+saveAppDataId :: (MonadWidget t m, ToJSON a)
+  => Maybe PasswordRaw
+  -> Text
+  -> Event t a
+  -> m (Event t ())
 saveAppDataId mPass key eVal = do
-    let eEncodedValue = decodeUtf8 . toStrict . encode <$> eVal
+    let eEncodedValue = toJsonText <$> eVal
     let mPassT = (getPassRaw <$> mPass)
-    performEvent_ (saveJSON mPassT key <$> eEncodedValue)
+    performEvent (saveJSON mPassT key <$> eEncodedValue)
 
 genUid :: MonadWidget t m => Event t () -> m (Event t Text)
 genUid ev = performEvent $ (Uid.toText <$> liftIO Uid.nextRandom) <$ ev
@@ -112,7 +120,7 @@ loadJsonFromStorage elId = do
 saveJsonToStorage :: (MonadDOM m, ToJSON a) => Text -> a -> m ()
 saveJsonToStorage elId val = do
   lc <- currentWindowUnchecked >>= getLocalStorage
-  setItem lc elId . decodeUtf8 . toStrict . encode $ val
+  setItem lc elId . toJsonText $ val
 
 loadTextFromStorage :: MonadDOM m => Text -> m (Maybe Text)
 loadTextFromStorage key = do
