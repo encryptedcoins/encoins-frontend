@@ -79,7 +79,7 @@ migrateCacheV3 mPass = do
 
   eSaved <- updated <$> elementResultJS "encoins-v3" (const ())
   -- logEvent "migrateCacheV3: eSaved" eSaved
-  tellTxStatus "App status" $ CustomStatus "Please reload the page"
+  tellTxStatus "App status" $ CustomStatus "Local cache structure is updated"
       <$ leftmost [eIsOldCacheEmptyLog, eSaved]
 
 migrateV1 :: [Secret] -> [TokenCacheV3]

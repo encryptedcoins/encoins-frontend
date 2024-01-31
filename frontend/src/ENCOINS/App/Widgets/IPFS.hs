@@ -36,34 +36,32 @@ pinEncryptedTokens :: MonadWidget t m
   -> Dynamic t (Maybe Text)
   -> Dynamic t Bool
   -> Dynamic t [TokenCacheV3]
-  -> m (Dynamic t [TokenCacheV3])
+  -> m (Event t [TokenCacheV3])
 pinEncryptedTokens dWalletAddress mPass dmKey dIpfsOn dTokenCache = do
   case mPass of
-    Nothing -> pure dTokenCache
-    Just _ -> do
-      eTokens <- switchHoldDyn dIpfsOn $ \case
+    Nothing -> pure never
+    Just _ -> switchHoldDyn dIpfsOn $ \case
         False -> do
-          logDyn "pinEncryptedTokens: dIpfsOn" dIpfsOn
-          pure $ updated dTokenCache
+          logDyn "pinEncryptedTokens: dIpfsOn is" dIpfsOn
+          pure never
         True -> do
           switchHoldDyn dmKey $ \case
             Nothing -> do
-              logDyn "pinEncryptedTokens: dmKey" dmKey
-              pure $ updated dTokenCache
+              logDyn "pinEncryptedTokens: dmKey is" dmKey
+              pure never
             Just key -> do
               dCloudTokens <- encryptTokens key dTokenCache
               logDyn "pinEncryptedTokens: dCloudTokens" dCloudTokens
               let eFireCaching = ffilter (not . null) $ updated dCloudTokens
-              logEvent "pinEncryptedTokens: eFireCaching" eFireCaching
+              -- logEvent "pinEncryptedTokens: eFireCaching" eFireCaching
               let dClientId = mkClientId <$> dWalletAddress
               let dReq = zipDynWith (,) dClientId dCloudTokens
-              logDyn "pinEncryptedTokens: dClientId" dClientId
+              -- logDyn "pinEncryptedTokens: dClientId" dClientId
               eeCloudResponse <- cacheRequest dReq $ () <$ eFireCaching
               logEvent "pinEncryptedTokens: cache response:" eeCloudResponse
               let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
               dCloudResponse <- holdDyn Map.empty eCloudResponse
               pure $ updated $ ffor2 dCloudResponse dTokenCache updateCacheStatus
-      holdDyn [] eTokens
 
 encryptTokens :: MonadWidget t m
   => Text

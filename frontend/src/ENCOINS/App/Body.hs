@@ -49,7 +49,7 @@ bodyContentWidget mPass = mdo
 
   (eNewPass, eClearCache) <- passwordSettingsWindow ePassOpen
   eCleanOk <- cleanCacheDialog eClearCache
-  -- logEvent "body: eNewPass" eNewPass
+  logEvent "body: eNewPass" eNewPass
   welcomeWindow welcomeWindowWalletStorageKey welcomeWallet
 
   divClass "section-app section-app-empty wf-section" blank
@@ -61,14 +61,15 @@ bodyContentWidget mPass = mdo
     dmKey
     dIpfsOn
 
-  performEvent_
+  eSaveAfterPass <- performEvent
     $ fmap reEncryptEncoins
     $ attachPromptlyDyn dSecretsV3
     $ leftmost [eNewPass, Nothing <$ eCleanOk]
 
   copiedNotification
 
-  -- logEvent "body: eIpfsOpen" eIpfsOpen
+  logEvent "body: eSaveAfterPass" eSaveAfterPass
+  logEvent "body: eNewPass" eNewPass
 
   dIpfsOn <- ipfsSettingsWindow mPass eIpfsOpen
 

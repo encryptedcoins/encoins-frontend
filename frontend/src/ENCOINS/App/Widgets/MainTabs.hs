@@ -40,7 +40,6 @@ import           ENCOINS.App.Widgets.ImportWindow       (exportWindow,
                                                          importFileWindow,
                                                          importWindow)
 import           ENCOINS.App.Widgets.InputAddressWindow (inputAddressWindow)
-import           ENCOINS.App.Widgets.IPFS
 import           ENCOINS.App.Widgets.SendRequestButton  (sendRequestButtonLedger,
                                                          sendRequestButtonWallet)
 import           ENCOINS.App.Widgets.SendToWalletWindow (sendToWalletWindow)
@@ -62,12 +61,10 @@ mainWindowColumnHeader title =
 
 walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
-  -> Dynamic t (Maybe Text)
-  -> Dynamic t Bool
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
   -> m ()
-walletTab mpass dmKey dIpfsOn dWallet dTokenCacheOld = sectionApp "" "" $ mdo
+walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -102,18 +99,6 @@ walletTab mpass dmKey dIpfsOn dWallet dTokenCacheOld = sectionApp "" "" $ mdo
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do
                   mainWindowColumnHeader "Coins in the Wallet"
                   dSecretsUniq <- holdUniqDyn dSecretsInTheWallet
-
-                  -- logDyn "walletTab: dSecretsUniq" dSecretsUniq
-                  -- dTokenIpfsCached <- pinEncryptedTokens
-                  --   (walletAddressBech32 <$> dWallet)
-                  --   mpass
-                  --   dmKey
-                  --   dIpfsOn
-                  --   dSecretsUniq
-                  -- saveCacheLocally mpass dTokenIpfsCached
-                  -- logDyn "walletTab: dTokenIpfsCached" dTokenIpfsCached
-                  saveCacheLocally mpass dSecretsUniq
-
                   dyn_ $ fmap noCoinsFoundWidget dSecretsUniq
                   coinBurnCollectionWidget dSecretsUniq
                 eImp <- divClassId "" "welcome-import-export" $ do
@@ -168,11 +153,10 @@ walletTab mpass dmKey dIpfsOn dWallet dTokenCacheOld = sectionApp "" "" $ mdo
 
 transferTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
-  -> Dynamic t (Maybe Text)
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
   -> m ()
-transferTab mpass dKey dWallet dTokenCacheOld = sectionApp "" "" $ mdo
+transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -255,10 +239,9 @@ transferTab mpass dKey dWallet dTokenCacheOld = sectionApp "" "" $ mdo
 
 ledgerTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
-  -> Dynamic t (Maybe Text)
   -> Dynamic t [TokenCacheV3]
   -> m ()
-ledgerTab mpass dKey dTokenCacheOld = sectionApp "" "" $ mdo
+ledgerTab mpass dTokenCacheOld = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)

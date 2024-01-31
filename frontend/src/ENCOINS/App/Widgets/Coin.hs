@@ -121,10 +121,11 @@ noCoinsFoundWidget = bool blank (divClass "coin-entry-burn-div-no-coins" $ divCl
 coinBurnCollectionWidget :: MonadWidget t m
   => Dynamic t [TokenCacheV3]
   -> m (Dynamic t Secrets)
-coinBurnCollectionWidget dtokenCache = do
-    eCoinBurnWidgets <- dyn $ fmap (mapM coinBurnWidget) dtokenCache
-    let eCoinsToBurn = fmap (fmap catMaybes . sequenceA) eCoinBurnWidgets
-    join <$> holdDyn (pure []) eCoinsToBurn
+coinBurnCollectionWidget dlToken = do
+    eldmToken <- dyn $ fmap (mapM coinBurnWidget) dlToken
+    let edlmToken = fmap sequenceA eldmToken
+    let edlToken = fmap (fmap catMaybes) edlmToken
+    join <$> holdDyn (constDyn []) edlToken
 
 coinTooltip :: MonadWidget t m => Text -> m ()
 coinTooltip name = elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visible" <>

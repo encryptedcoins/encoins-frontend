@@ -44,6 +44,8 @@ function setInputValue(elId, val) {
 };
 
 function saveJSON(key, val, encr, pass) {
+  console.log("key",key)
+  console.log("val",val)
   var val1 = val;
   if (encr) {
     val1 = CryptoJS.AES.encrypt(val, pass).toString();

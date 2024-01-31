@@ -2,7 +2,7 @@ module Backend.Utility where
 
 import           Config.Config (NetworkId (..), appNetwork)
 
-import           Control.Monad ((<=<))
+import           Control.Monad ((<=<), join)
 import qualified CSL
 import           Data.Functor  ((<&>))
 import qualified Data.Map      as Map
@@ -33,6 +33,15 @@ switchHoldDyn :: MonadWidget t m
   -> (a -> m (Event t b))
   -> m (Event t b)
 switchHoldDyn da f = switchHold never <=< dyn $ da <&> f
+
+dynHoldDyn :: MonadWidget t m
+  => Dynamic t a
+  -> b
+  -> (a -> m (Dynamic t b))
+  -> m (Dynamic t b)
+dynHoldDyn dA b f = do
+  edB <- dyn $ f <$> dA
+  join <$> holdDyn (constDyn b) edB
 
 isMultiAssetOf :: Text -> Text -> CSL.MultiAsset -> Bool
 isMultiAssetOf symbol token (CSL.MultiAsset mp) =
