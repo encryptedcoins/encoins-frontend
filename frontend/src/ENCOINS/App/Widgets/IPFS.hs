@@ -9,7 +9,7 @@ import           Backend.Servant.Requests           (cacheRequest,
 import           Backend.Utility                    (eventEither, eventTuple,
                                                      switchHoldDyn)
 import           ENCOINS.App.Widgets.Basic          (elementResultJS,
-                                                     loadAppDataId, loadAppData,
+                                                     loadAppDataId,
                                                      saveAppDataId)
 import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw, getPassRaw)
 import           ENCOINS.Bulletproofs               (Secret (..))
@@ -39,28 +39,35 @@ pinEncryptedTokens :: MonadWidget t m
   => Dynamic t Text
   -> Maybe PasswordRaw
   -> Dynamic t (Maybe Text)
+  -> Dynamic t Bool
   -> Dynamic t [TokenCacheV3]
   -> m (Dynamic t [TokenCacheV3])
-pinEncryptedTokens dWalletAddress mPass dmKey dTokenCache = do
+pinEncryptedTokens dWalletAddress mPass dmKey dIpfsOn dTokenCache = do
   case mPass of
     Nothing -> pure dTokenCache
     Just _ -> do
-      eTokens <- switchHoldDyn dmKey $ \case
-        Nothing ->
+      eTokens <- switchHoldDyn dIpfsOn $ \case
+        False -> do
+          logDyn "pinEncryptedTokens: dIpfsOn" dIpfsOn
           pure $ updated dTokenCache
-        Just key -> do
-          dCloudTokens <- encryptTokens key dTokenCache
-          logDyn "dCloudTokens" dCloudTokens
-          let eFireCaching = ffilter (not . null) $ updated dCloudTokens
-          -- logEvent "eFireCaching" eFireCaching
-          let dClientId = mkClientId <$> dWalletAddress
-          let dReq = zipDynWith (,) dClientId dCloudTokens
-          logDyn "dClientId" dClientId
-          eeCloudResponse <- cacheRequest dReq $ () <$ eFireCaching
-          logEvent "walletTab: cache response:" eeCloudResponse
-          let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
-          dCloudResponse <- holdDyn Map.empty eCloudResponse
-          pure $ updated $ ffor2 dCloudResponse dTokenCache updateCacheStatus
+        True -> do
+          switchHoldDyn dmKey $ \case
+            Nothing -> do
+              logDyn "pinEncryptedTokens: dmKey" dmKey
+              pure $ updated dTokenCache
+            Just key -> do
+              dCloudTokens <- encryptTokens key dTokenCache
+              logDyn "pinEncryptedTokens: dCloudTokens" dCloudTokens
+              let eFireCaching = ffilter (not . null) $ updated dCloudTokens
+              logEvent "pinEncryptedTokens: eFireCaching" eFireCaching
+              let dClientId = mkClientId <$> dWalletAddress
+              let dReq = zipDynWith (,) dClientId dCloudTokens
+              logDyn "pinEncryptedTokens: dClientId" dClientId
+              eeCloudResponse <- cacheRequest dReq $ () <$ eFireCaching
+              logEvent "pinEncryptedTokens: cache response:" eeCloudResponse
+              let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
+              dCloudResponse <- holdDyn Map.empty eCloudResponse
+              pure $ updated $ ffor2 dCloudResponse dTokenCache updateCacheStatus
       holdDyn [] eTokens
 
 encryptTokens :: MonadWidget t m
@@ -144,7 +151,7 @@ mkAesKey :: MonadWidget t m
 mkAesKey mPass = do
   ev1 <- newEventWithDelay 0.1
   dLoadedKey <- loadAppDataId
-    (getPassRaw <$> mPass) ipfsCacheKey "first-load-of-aes-key" ev1 id Nothing
+    mPass ipfsCacheKey "first-load-of-aes-key" ev1 id Nothing
   let ev2 = () <$ updated dLoadedKey
   ev3 <- delay 0.1 ev2
   switchHoldDyn dLoadedKey $ \case
@@ -158,7 +165,7 @@ mkAesKey mPass = do
           . toStrict
           . encode <$> eAesKey
         eLoadedKey <- updated <$> loadAppDataId
-          (getPassRaw <$> mPass)  ipfsCacheKey  "second-load-of-aes-key"  ev4 id ""
+          mPass ipfsCacheKey  "second-load-of-aes-key"  ev4 id ""
         pure eLoadedKey
     Just loadedKey -> pure $ loadedKey <$ ev3
 
@@ -167,7 +174,7 @@ fetchAesKey :: MonadWidget t m
   -> Event t ()
   -> m (Dynamic t (Maybe Text))
 fetchAesKey mPass ev = loadAppDataId
-    (getPassRaw <$> mPass) ipfsCacheKey "fetchAesKey-load-of-aes-key" ev id Nothing
+    mPass ipfsCacheKey "fetchAesKey-load-of-aes-key" ev id Nothing
 
 -- restore tokens from ipfs
 -- that are minted and pinned only
@@ -265,7 +272,7 @@ ipfsSettingsWindow mPass eOpen = do
               True -> do
                 eKey <- mkAesKey mPass
                 dKey <- holdDyn "Ipfs key not found" eKey
-                divClass "" $ text "Following AES key used to encrypt encoins"
+                divClass "" $ text "Following AES key used to encrypt encoins before saving them on IPFS"
                 showKeyWidget dKey
                 pure never
             pure dIsIpfsOn

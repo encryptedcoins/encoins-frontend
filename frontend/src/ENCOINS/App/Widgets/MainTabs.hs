@@ -3,12 +3,9 @@
 module ENCOINS.App.Widgets.MainTabs where
 
 import           Control.Monad                          (void)
-import           Data.Aeson                             (encode)
 import           Data.Bool                              (bool)
-import           Data.ByteString.Lazy                   (toStrict)
 import           Data.List                              (nub)
 import           Data.Text                              (Text)
-import           Data.Text.Encoding                     (decodeUtf8)
 import           Reflex.Dom
 import           Witherable                             (catMaybes)
 
@@ -28,6 +25,7 @@ import           Backend.Wallet                         (Wallet (..))
 import           Config.Config                          (delegateServerUrl)
 import           ENCOINS.App.Widgets.Basic              (containerApp,
                                                          elementResultJS,
+                                                         saveAppDataId,
                                                          sectionApp,
                                                          tellTxStatus,
                                                          walletError)
@@ -57,7 +55,6 @@ import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeLedger,
 import           ENCOINS.Common.Cache                   (encoinsV3)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
-import           JS.Website                             (saveJSON)
 
 mainWindowColumnHeader :: MonadWidget t m => Text -> m ()
 mainWindowColumnHeader title =
@@ -67,10 +64,11 @@ mainWindowColumnHeader title =
 walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t (Maybe Text)
+  -> Dynamic t Bool
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
   -> m ()
-walletTab mpass dmKey dWallet dTokenCacheOld = sectionApp "" "" $ mdo
+walletTab mpass dmKey dIpfsOn dWallet dTokenCacheOld = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -107,14 +105,15 @@ walletTab mpass dmKey dWallet dTokenCacheOld = sectionApp "" "" $ mdo
                   dSecretsUniq <- holdUniqDyn dSecretsInTheWallet
 
                   -- logDyn "walletTab: dSecretsUniq" dSecretsUniq
-                  dTokenIpfsCached <- pinEncryptedTokens
-                    (walletAddressBech32 <$> dWallet)
-                    mpass
-                    dmKey
-                    dSecretsUniq
+                  -- dTokenIpfsCached <- pinEncryptedTokens
+                  --   (walletAddressBech32 <$> dWallet)
+                  --   mpass
+                  --   dmKey
+                  --   dIpfsOn
+                  --   dSecretsUniq
+                  -- saveCacheLocally mpass dTokenIpfsCached
                   -- logDyn "walletTab: dTokenIpfsCached" dTokenIpfsCached
-                  saveCacheLocally mpass dTokenIpfsCached
-                  -- saveCacheLocally mpass dSecretsUniq
+                  saveCacheLocally mpass dSecretsUniq
 
                   dyn_ $ fmap noCoinsFoundWidget dSecretsUniq
                   coinBurnCollectionWidget dSecretsUniq
@@ -369,10 +368,5 @@ saveCacheLocally :: MonadWidget t m
   => Maybe PasswordRaw
   -> Dynamic t [TokenCacheV3]
   -> m ()
-saveCacheLocally mpass cache =
-  performEvent_ $ saveJSON
-      (getPassRaw <$> mpass)
-        encoinsV3
-      . decodeUtf8
-      . toStrict
-      . encode <$> updated cache
+saveCacheLocally mPass cache =
+  saveAppDataId mPass encoinsV3 $ updated cache

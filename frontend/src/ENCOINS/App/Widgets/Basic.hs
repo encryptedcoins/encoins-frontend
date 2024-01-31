@@ -1,26 +1,29 @@
 module ENCOINS.App.Widgets.Basic where
 
-import           Backend.Status         (Status (..))
-import           Control.Monad          (join)
-import           Control.Monad.IO.Class (liftIO)
-import           Data.Aeson             (FromJSON, ToJSON, decode, decodeStrict,
-                                         encode)
-import           Data.Bool              (bool)
-import           Data.ByteString        (ByteString)
-import           Data.ByteString.Lazy   (fromStrict, toStrict)
-import           Data.Text              (Text)
-import qualified Data.Text              as T
-import           Data.Text.Encoding     (decodeUtf8, encodeUtf8)
-import qualified Data.UUID              as Uid
-import qualified Data.UUID.V4           as Uid
+import           Backend.Status                     (Status (..))
+import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw (..))
 import           ENCOINS.Common.Events
-import           GHCJS.DOM              (currentWindowUnchecked)
-import           GHCJS.DOM.Storage      (getItem, setItem)
-import           GHCJS.DOM.Types        (MonadDOM)
-import           GHCJS.DOM.Window       (getLocalStorage)
-import           JS.Website             (loadJSON, saveJSON)
+import           JS.Website                         (loadJSON, saveJSON)
+
+
+import           Control.Monad                      (join)
+import           Control.Monad.IO.Class             (liftIO)
+import           Data.Aeson                         (FromJSON, ToJSON, decode,
+                                                     decodeStrict, encode)
+import           Data.Bool                          (bool)
+import           Data.ByteString                    (ByteString)
+import           Data.ByteString.Lazy               (fromStrict, toStrict)
+import           Data.Text                          (Text)
+import qualified Data.Text                          as T
+import           Data.Text.Encoding                 (decodeUtf8, encodeUtf8)
+import qualified Data.UUID                          as Uid
+import qualified Data.UUID.V4                       as Uid
+import           GHCJS.DOM                          (currentWindowUnchecked)
+import           GHCJS.DOM.Storage                  (getItem, setItem)
+import           GHCJS.DOM.Types                    (MonadDOM)
+import           GHCJS.DOM.Window                   (getLocalStorage)
 import           Reflex.Dom
-import           Reflex.ScriptDependent (widgetHoldUntilDefined)
+import           Reflex.ScriptDependent             (widgetHoldUntilDefined)
 
 
 sectionApp :: MonadWidget t m => Text -> Text -> m a -> m a
@@ -64,19 +67,18 @@ waitForScripts placeholderWidget actualWidget = do
   blank
 
 loadAppData :: forall t m a b . (MonadWidget t m, FromJSON a)
-  => Maybe Text
+  => Maybe PasswordRaw
   -> Text
   -> (a -> b)
   -> b
   -> m (Dynamic t b)
 loadAppData mPass entry f val = do
     let elId = "elId-" <> entry
-    e <- newEventWithDelay 0.1
-    performEvent_ (loadJSON entry elId mPass <$ e)
-    elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
+    e <- newEvent
+    loadAppDataId mPass entry elId e f val
 
 loadAppDataId :: forall t m a b . (MonadWidget t m, FromJSON a)
-  => Maybe Text
+  => Maybe PasswordRaw
   -> Text
   -> Text
   -> Event t ()
@@ -84,18 +86,20 @@ loadAppDataId :: forall t m a b . (MonadWidget t m, FromJSON a)
   -> b
   -> m (Dynamic t b)
 loadAppDataId mPass entry elId ev f val = do
+    let mPassT = (getPassRaw <$> mPass)
     eDelayed <- delay 0.1 ev
-    performEvent_ (loadJSON entry elId mPass <$ eDelayed)
+    performEvent_ (loadJSON entry elId mPassT <$ eDelayed)
     elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
 
 saveAppDataId :: (MonadWidget t m, ToJSON a)
-  => Maybe Text
+  => Maybe PasswordRaw
   -> Text
   -> Event t a
   -> m ()
 saveAppDataId mPass key eVal = do
     let eEncodedValue = decodeUtf8 . toStrict . encode <$> eVal
-    performEvent_ (saveJSON mPass key <$> eEncodedValue)
+    let mPassT = (getPassRaw <$> mPass)
+    performEvent_ (saveJSON mPassT key <$> eEncodedValue)
 
 genUid :: MonadWidget t m => Event t () -> m (Event t Text)
 genUid ev = performEvent $ (Uid.toText <$> liftIO Uid.nextRandom) <$ ev

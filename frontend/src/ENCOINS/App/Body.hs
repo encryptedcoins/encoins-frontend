@@ -55,7 +55,13 @@ bodyContentWidget mPass = mdo
 
   divClass "section-app section-app-empty wf-section" blank
 
-  (dSecrets, evEvStatus) <- runEventWriterT $ mainWindow mPass dWallet dIsDisableButtons dmKey
+  (dSecrets, evEvStatus) <- runEventWriterT $ mainWindow
+    mPass
+    dWallet
+    dIsDisableButtons
+    dmKey
+    dIpfsOn
+
 
   performEvent_ (reEncryptEncoins <$> attachPromptlyDyn dSecrets (leftmost
     [eNewPass, Nothing <$ eCleanOk]))

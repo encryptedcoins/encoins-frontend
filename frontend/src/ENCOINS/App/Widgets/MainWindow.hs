@@ -34,18 +34,19 @@ mainWindow :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   -> Dynamic t Wallet
   -> Dynamic t Bool
   -> Dynamic t (Maybe Text)
+  -> Dynamic t Bool
   -> m (Dynamic t [TokenCacheV3])
-mainWindow mPass dWallet dIsDisableButtons dmKey = mdo
+mainWindow mPass dWallet dIsDisableButtons dmKey dIpfsOn = mdo
     eTab <- tabsSection dTab dIsDisableButtons
     dTab <- holdDyn WalletTab eTab
     eSecretsV3 <- switchHoldDyn dTab $ \tab -> mdo
       dSecretsV3 :: Dynamic t [TokenCacheV3] <-
-        loadAppData (getPassRaw <$> mPass) encoinsV3 id []
+        loadAppData mPass encoinsV3 id []
 
       updateCacheV3 mPass dSecretsV3
 
       case tab of
-        WalletTab   -> walletTab mPass dmKey dWallet dSecretsV3
+        WalletTab   -> walletTab mPass dmKey dIpfsOn dWallet dSecretsV3
         TransferTab -> transferTab mPass dmKey dWallet dSecretsV3
         LedgerTab   -> ledgerTab mPass dmKey dSecretsV3
       return $ updated dSecretsV3
@@ -79,9 +80,9 @@ migrateCacheV3 :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   -> m ()
 migrateCacheV3 mPass = do
   eSecretsV1 :: Event t [Secret] <-
-    updated <$> loadAppData (getPassRaw <$> mPass) encoinsV1 id []
+    updated <$> loadAppData mPass encoinsV1 id []
   eSecretsV2 :: Event t [(Secret, Text)] <-
-    updated <$> loadAppData (getPassRaw <$> mPass) encoinsV2 id []
+    updated <$> loadAppData mPass encoinsV2 id []
 
   -- logEvent "migrateCacheV3: eSecretsV1" eSecretsV1
   -- logEvent "migrateCacheV3: eSecretsV2" eSecretsV2
