@@ -17,6 +17,11 @@ normalizePingUrl url = T.append (T.dropWhileEnd (== '/') url) $ case appNetwork 
     else "/"
   Testnet -> "/"
 
+normalizeCurrentUrl :: Text -> Text
+normalizeCurrentUrl url = case url of
+  "localhost:3000" -> "http://localhost:3000"
+  u -> u
+
 toEither :: e -> Maybe a -> Either e a
 toEither err Nothing = Left err
 toEither _ (Just a)  = Right a

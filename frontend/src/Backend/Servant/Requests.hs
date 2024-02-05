@@ -2,18 +2,15 @@
 
 module Backend.Servant.Requests where
 
-import           Config.Config          (urlsBS)
 import           Control.Lens           (view)
 import           Control.Monad          (forM)
 import           Control.Monad.IO.Class (MonadIO (..))
 import           CSL                    (TransactionInputs)
-import           Data.Aeson             (decode)
 import           Data.Array.IO
-import           Data.ByteString.Lazy   (fromStrict)
 import           Data.Functor           (($>))
 import           Data.List              (delete)
 import           Data.Map               (Map)
-import           Data.Maybe             (fromJust, isNothing)
+import           Data.Maybe             (isNothing)
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
 import           Servant.Reflex         (BaseUrl (..), ReqResult (..))
@@ -22,7 +19,7 @@ import           Witherable             (catMaybes)
 
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
-import           Backend.Utility        (normalizePingUrl)
+import           Backend.Utility        (normalizeCurrentUrl, normalizePingUrl)
 import           ENCOINS.Common.Events
 import           JS.App                 (pingServer)
 
@@ -118,7 +115,7 @@ currentRequestWrapper baseUrl e = do
   eResp <- currentRequest e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "current servers request" eRespUnwrapped
-  return eRespUnwrapped
+  return $ fmap (fmap normalizeCurrentUrl) <$> eRespUnwrapped
 
 -- Fetch how much encoins and which relay the particular wallet delegated.
 infoRequestWrapper :: MonadWidget t m
@@ -134,21 +131,6 @@ infoRequestWrapper baseUrl addr e = do
   return eRespUnwrapped
 
 ---------------------------------------------- Utilities ----------------------------------------
-
-urls :: [Text]
-urls = fromJust $ decode $ fromStrict urlsBS
-
-getRelayUrl :: MonadIO m => m (Maybe BaseUrl)
-getRelayUrl = go urls
-  where
-    go [] = pure Nothing
-    go l = do
-      idx <- randomRIO (0, length l - 1)
-      let url = l !! idx
-      pingOk <- pingServer url
-      if pingOk
-        then return $ Just $ BasePath url
-        else go (delete url l)
 
 getRelayUrlE :: MonadWidget t m
   => Dynamic t [Text]
