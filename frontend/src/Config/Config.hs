@@ -8,10 +8,6 @@ import           Data.Text (Text)
 import qualified Data.Text as T
 import           Servant.Reflex               (BaseUrl (..))
 
-
-urlsBS :: ByteString
-urlsBS = $(embedFile "config/backend_url.json")
-
 bulletproofSetupBS :: ByteString
 bulletproofSetupBS = $(embedFile "config/bulletproof_setup.json")
 
