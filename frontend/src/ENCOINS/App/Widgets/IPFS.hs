@@ -316,7 +316,7 @@ showKeyWidget :: MonadWidget t m
 showKeyWidget dKey = do
   divClass "app-Ipfs_Key" $ dynText dKey
 
--- With ipfs wallet mode has two dynamics for token and save each of them separately
+-- With ipfs wallet and ledger modes have two dynamics for token and save each of them separately
 -- This function synchronize them.
 -- Otherwise dynamic with old tokens rewrite new one.
 -- TODO: consider use MVar or TWar to manage state.

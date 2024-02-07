@@ -94,10 +94,11 @@ walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
                   $ map coinV3
                   <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
+            -- Synchronize a status state of dTokenCache with dTokenIpfsSynched before saving first one.
             let dTokenCacheUpdated = zipDynWith
                   updateTokenState
                   dTokenCache
-                  dTokenWithNewState
+                  dTokenIpfsSynched
 
             logDyn "walletTab: token before local save 1:" $ showTokens <$> dTokenCacheUpdated
             saveCacheLocally mpass dTokenCacheUpdated
@@ -159,8 +160,8 @@ walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
               (walletAddressBech32 <$> dWallet)
               mpass
               (updated dWalletSecretsUniq)
-            dTokenWithNewState <- foldDyn union [] eTokenWithNewState
-            logDyn "walletTab: token accumulated on ipfs" $ showTokens <$> dTokenWithNewState
+            dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
+            logDyn "walletTab: token accumulated on ipfs" $ showTokens <$> dTokenIpfsSynched
             -- IPFS end
 
             pure (dCoinsToBurn, dCoinsToMint, leftmost [eStatusUpdate, eSendStatus])
@@ -261,9 +262,10 @@ transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
 
 ledgerTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
+  -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
   -> m ()
-ledgerTab mpass dTokenCacheOld = sectionApp "" "" $ mdo
+ledgerTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -293,7 +295,15 @@ ledgerTab mpass dTokenCacheOld = sectionApp "" "" $ mdo
             let dTokenCache = fmap nub
                   $ zipDynWith (++) dTokenCacheOld
                   $ map coinV3 <$> zipDynWith (++) dImportedSecrets dNewSecrets
-            saveCacheLocally mpass dTokenCache
+
+            -- Synchronize a status state of dTokenCache with dTokenIpfsSynched before saving first one.
+            let dTokenCacheUpdated = zipDynWith
+                  updateTokenState
+                  dTokenCache
+                  dTokenIpfsSynched
+
+            logDyn "ledgerTab: token before local save 1:" $ showTokens <$> dTokenCacheUpdated
+            saveCacheLocally mpass dTokenCacheUpdated
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-ledger-coins" $ do
@@ -351,7 +361,23 @@ ledgerTab mpass dTokenCacheOld = sectionApp "" "" $ mdo
             let dSecretsInTheWallet = zipDynWith
                   filterByKnownCoinNames
                   dAssetNamesInTheWallet
-                  dTokenCache
+                  dTokenCacheUpdated
+
+            -- IPFS begin
+            dWalletSecretsUniq <- holdUniqDyn dSecretsInTheWallet
+            eTokenWithNewState <- saveTokensOnIpfs
+              (walletAddressBech32 <$> dWallet)
+              mpass
+              (updated dWalletSecretsUniq)
+            -- accumulate token saved on ipfs.
+            -- The place of error prone.
+            -- If in tx A token was not pinned (in wallet mode) and in tx B was pinned (ledger mode), then
+            -- both of them will be included to the dynamic accumulator.
+            -- TODO: consider better union method for eliminating duplicates.
+            dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
+            logDyn "ledgerTab: token accumulated on ipfs" $ showTokens <$> dTokenIpfsSynched
+            -- IPFS end
+
             pure (dCoinsToBurn, dCoinsToMint, dChangeAddr, leftmost [eStatusUpdate, eSendStatus])
     eWalletError <- walletError
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
