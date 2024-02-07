@@ -25,7 +25,6 @@ import           Backend.Wallet                         (Wallet (..))
 import           Config.Config                          (delegateServerUrl)
 import           ENCOINS.App.Widgets.Basic              (containerApp,
                                                          elementResultJS,
-                                                         saveAppDataId,
                                                          saveAppDataId_,
                                                          sectionApp,
                                                          tellTxStatus,

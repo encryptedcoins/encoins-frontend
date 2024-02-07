@@ -4,7 +4,8 @@ module Backend.Servant.Requests where
 
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
-import           Backend.Utility        (eventEither, normalizePingUrl)
+import           Backend.Utility        (eventEither, normalizeCurrentUrl,
+                                         normalizePingUrl)
 import           ENCOINS.Common.Events
 import           JS.App                 (pingServer)
 
@@ -12,23 +13,15 @@ import           Control.Lens           (view)
 import           Control.Monad          (forM)
 import           Control.Monad.IO.Class (MonadIO (..))
 import           CSL                    (TransactionInputs)
-import           Data.Aeson             (Value)
 import           Data.Array.IO
 import           Data.Functor           (($>))
 import           Data.List              (delete)
 import           Data.Map               (Map)
-import           Data.Maybe             (isNothing)
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Request, Value)
 import           Servant.Reflex         (BaseUrl (..), ReqResult (..))
 import           System.Random          (randomRIO)
 
-import           Backend.Protocol.Types
-import           Backend.Servant.Client
-import           Backend.Utility        (normalizeCurrentUrl, normalizePingUrl)
-import           Config.Config          (jwtToken)
-import           ENCOINS.Common.Events
-import           JS.App                 (pingServer)
 
 newTxRequestWrapper :: MonadWidget t m
   => BaseUrl
