@@ -11,7 +11,8 @@ import           ENCOINS.App.Widgets.Basic       (elementResultJS,
                                                   loadAppDataId, saveAppDataId,
                                                   saveAppDataId_)
 import           ENCOINS.Bulletproofs            (Secret (..))
-import           ENCOINS.Common.Cache            (ipfsCacheKey, isIpfsOn)
+import           ENCOINS.Common.Cache            (encoinsV3, ipfsCacheKey,
+                                                  isIpfsOn)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (toJsonStrict, toText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
@@ -22,6 +23,7 @@ import           Control.Monad                   (void)
 import qualified Crypto.Hash                     as Hash
 import           Data.Aeson                      (eitherDecodeStrict')
 import           Data.Either                     (partitionEithers)
+import           Data.List                       (find, foldl')
 import           Data.Map                        (Map)
 import qualified Data.Map                        as Map
 import           Data.Maybe                      (catMaybes, fromMaybe)
@@ -30,62 +32,74 @@ import qualified Data.Text                       as T
 import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
 import           Reflex.Dom
 
-pinEncryptedTokens :: MonadWidget t m
+saveTokensOnIpfs :: MonadWidget t m
   => Dynamic t Text
   -> Maybe PasswordRaw
+  -> Event t [TokenCacheV3]
+  -> m (Event t [TokenCacheV3])
+saveTokensOnIpfs dWalletAddress mPass eTokenCache = do
+  dmKey <- fetchAesKey mPass $ () <$ eTokenCache
+  dIpfsOn <- fetchIPFSKey $ () <$ eTokenCache
+  eTokenCacheDelayed <- delay 0.2 eTokenCache
+  logEvent "saveTokensOnIpfs: tokens before ipfs save" $ showTokens <$> eTokenCacheDelayed
+  eTokenIpfsCached <- pinEncryptedTokens
+    dWalletAddress
+    dmKey
+    dIpfsOn
+    eTokenCacheDelayed
+  logEvent "saveTokensOnIpfs: tokens after ipfs save" $ showTokens <$> eTokenIpfsCached
+  eSaved <- saveAppDataId mPass encoinsV3 eTokenIpfsCached
+  logEvent "saveTokensOnIpfs: eSaved 2" eSaved
+  dTokenIpfsCached <- holdDyn [] eTokenIpfsCached
+  pure $ tagPromptlyDyn dTokenIpfsCached eSaved
+
+pinEncryptedTokens :: MonadWidget t m
+  => Dynamic t Text
   -> Dynamic t (Maybe Text)
   -> Dynamic t Bool
-  -> Dynamic t [TokenCacheV3]
+  -> Event t [TokenCacheV3]
   -> m (Event t [TokenCacheV3])
-pinEncryptedTokens dWalletAddress mPass dmKey dIpfsOn dTokenCache = do
-  case mPass of
-    Nothing -> pure never
-    Just _ -> switchHoldDyn dIpfsOn $ \case
-        False -> do
-          logDyn "pinEncryptedTokens: dIpfsOn is" dIpfsOn
+pinEncryptedTokens dWalletAddress dmKey dIpfsOn eTokenCache = do
+  switchHoldDyn dIpfsOn $ \case
+    False -> do
+      pure never
+    True -> do
+      switchHoldDyn dmKey $ \case
+        Nothing -> do
           pure never
-        True -> do
-          switchHoldDyn dmKey $ \case
-            Nothing -> do
-              logDyn "pinEncryptedTokens: dmKey is" dmKey
+        Just key -> do
+          dTokenCache <- holdDyn [] eTokenCache
+          switchHoldDyn dTokenCache $ \case
+            [] -> do
               pure never
-            Just key -> do
-              dCloudTokens <- encryptTokens key dTokenCache
-              logDyn "pinEncryptedTokens: dCloudTokens" dCloudTokens
+            tokenCache -> do
+              dCloudTokens <- encryptTokens key tokenCache
+              logDyn "pinEncryptedTokens: dCloudTokens" $ map reqAssetName <$> dCloudTokens
               let eFireCaching = ffilter (not . null) $ updated dCloudTokens
-              -- logEvent "pinEncryptedTokens: eFireCaching" eFireCaching
               let dClientId = mkClientId <$> dWalletAddress
               let dReq = zipDynWith (,) dClientId dCloudTokens
-              -- logDyn "pinEncryptedTokens: dClientId" dClientId
               eeCloudResponse <- cacheRequest dReq $ () <$ eFireCaching
-              logEvent "pinEncryptedTokens: cache response:" eeCloudResponse
               let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
               dCloudResponse <- holdDyn Map.empty eCloudResponse
               pure $ updated $ ffor2 dCloudResponse dTokenCache updateCacheStatus
 
+-- Encrypt valid tokens only and make request
 encryptTokens :: MonadWidget t m
   => Text
-  -> Dynamic t [TokenCacheV3]
+  -> [TokenCacheV3]
   -> m (Dynamic t [CloudRequest])
-encryptTokens key dTokens = do
-  let dValidTokens = catMaybes . map getValidTokens <$> dTokens
-  let dValidTokenNumber = length <$> dValidTokens
-  eClouds <- switchHoldDyn dValidTokens $ \case
-      [] -> pure never
-      tokens -> do
-        fmap (updated . sequence) $ flip traverse tokens $ \t -> do
-            ev <- newEvent
-            dEncryptedSecret <- encryptToken key ev $ tcSecret t
-            let dmCloud = mkCloudRequest t <$> dEncryptedSecret
-            pure dmCloud
-  -- logDyn "encryptTokens: dValidTokens" dValidTokens
-  -- logDyn "encryptTokens: dValidTokenNumber" dValidTokenNumber
-  -- logEvent "encryptTokens: eClouds" eClouds
-    -- Returns tokens when they all are decrypted
+encryptTokens key tokens = do
+  let validTokens = catMaybes $ map getValidTokens tokens
+  let validTokenNumber = length validTokens
+  eClouds <- fmap (updated . sequence) $ flip traverse validTokens $ \t -> do
+      ev <- newEvent
+      dEncryptedSecret <- encryptToken key ev $ tcSecret t
+      let dmCloud = mkCloudRequest t <$> dEncryptedSecret
+      pure dmCloud
+    -- Wait until all tokens are encrypted and return them
   dRes <- foldDynMaybe
     (\(ac,ar) _ -> if length ar == ac then Just (ac,ar) else Nothing) (0,[]) $
-    attachPromptlyDyn dValidTokenNumber $ catMaybes <$> eClouds
-  -- logDyn "encryptTokens: dRes" dRes
+    attachPromptlyDyn (constDyn validTokenNumber) $ catMaybes <$> eClouds
   pure $ snd <$> dRes
 
 encryptToken :: MonadWidget t m
@@ -98,9 +112,9 @@ encryptToken key ev secret = do
   let elementId = toText $ Hash.hash @Hash.SHA256 secretByte
   performEvent_ $ JS.encryptAES (key, elementId, decodeUtf8 secretByte) <$ ev
   dEncryptedToken <- elementResultJS elementId id
-  -- logDyn "encryptToken: dEncryptedToken" dEncryptedToken
   pure dEncryptedToken
 
+-- Update ipfs metadata of tokens with response from ipfs
 updateCacheStatus :: Map Text CloudResponse -> [TokenCacheV3] -> [TokenCacheV3]
 updateCacheStatus clouds = map updateCloud
   where
@@ -115,10 +129,12 @@ updateCacheStatus clouds = map updateCloud
             , tcCoinStatus = fromMaybe (tcCoinStatus t) mCoin
             }
 
+-- Valid tokens are ones that Minted and not Pinned
 getValidTokens :: TokenCacheV3 -> Maybe TokenCacheV3
 getValidTokens t = case (tcIpfsStatus t, tcCoinStatus t)  of
-  (Unpinned, Minted) -> Just t
-  _                  -> Nothing
+  (Pinned, _) -> Nothing
+  (_, Minted) -> Just t
+  _           -> Nothing
 
 mkCloudRequest :: TokenCacheV3 -> Text -> Maybe CloudRequest
 mkCloudRequest cache encryptedSecret = if not (T.null encryptedSecret)
@@ -138,6 +154,8 @@ tokenSample = MkCloudRequest
   , reqSecretKey = "super secret key"
   }
 
+-- Generate aes 256 length key with function builtin any browser
+-- And save it to local cache
 mkAesKey :: MonadWidget t m
   => Maybe PasswordRaw
   -> m (Event t Text)
@@ -165,6 +183,12 @@ fetchAesKey :: MonadWidget t m
   -> m (Dynamic t (Maybe Text))
 fetchAesKey mPass ev = loadAppDataId
     mPass ipfsCacheKey "fetchAesKey-load-of-aes-key" ev id Nothing
+
+fetchIPFSKey :: MonadWidget t m
+  => Event t ()
+  -> m (Dynamic t Bool)
+fetchIPFSKey ev = loadAppDataId
+    Nothing isIpfsOn "fetchIPFSKey-is-ipfs-on-key" ev id False
 
 -- restore tokens from ipfs
 -- that are minted and pinned only
@@ -215,11 +239,10 @@ decryptTokens dKey dRestores = do
       logDyn "decryptTokens: json decode errors" (constDyn errs)
       pure never
   let dValidLength = length <$> dRestores
-  -- Returns tokens when they all are decrypted
+  -- Wait until all tokens are decrypted and return them
   dRes <- foldDynMaybe
     (\(ac,ar) _ -> if length ar == ac then Just (ac,ar) else Nothing) (0,[]) $
     attachPromptlyDyn dValidLength eResponses
-  -- logDyn "decryptTokens: dRes" dRes
   pure $ snd <$> dRes
 
 mkTokenCacheV3 :: Text -> Text -> Either String TokenCacheV3
@@ -249,23 +272,17 @@ ipfsSettingsWindow mPass eOpen = do
     eOpen
     never
     ipfsWindowStyle
-    "Save encoins on IPFS" $ mdo
-        case mPass of
-          Nothing -> do
-            divClass "app-Ipfs_Trigger-NeedPassword"
-              $ text "Saving encoins on IPFS does not work without local password"
-            pure $ constDyn False
-          Just _ -> do
-            dIsIpfsOn <- ipfsCheckbox eOpen
-            void $ switchHoldDyn dIsIpfsOn $ \case
-              False -> pure never
-              True -> do
-                eKey <- mkAesKey mPass
-                dKey <- holdDyn "Ipfs key not found" eKey
-                divClass "" $ text "Following AES key used to encrypt encoins before saving them on IPFS"
-                showKeyWidget dKey
-                pure never
-            pure dIsIpfsOn
+    "Save encoins on IPFS" $ do
+      dIsIpfsOn <- ipfsCheckbox eOpen
+      void $ switchHoldDyn dIsIpfsOn $ \case
+        False -> pure never
+        True -> do
+          eKey <- mkAesKey mPass
+          dKey <- holdDyn "Ipfs key not found" eKey
+          divClass "" $ text "Following AES key used to encrypt encoins before saving them on IPFS"
+          showKeyWidget dKey
+          pure never
+      pure dIsIpfsOn
 
 ipfsWindowStyle :: Text
 ipfsWindowStyle = "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
@@ -298,3 +315,15 @@ showKeyWidget :: MonadWidget t m
   -> m ()
 showKeyWidget dKey = do
   divClass "app-Ipfs_Key" $ dynText dKey
+
+-- With ipfs wallet mode has two dynamics for token and save each of them separately
+-- This function synchronize them.
+-- Otherwise dynamic with old tokens rewrite new one.
+-- TODO: consider use MVar or TWar to manage state.
+updateTokenState :: [TokenCacheV3] -> [TokenCacheV3] -> [TokenCacheV3]
+updateTokenState old new = foldl' (update new) [] old
+  where
+    update ns acc o =
+      case find (\n -> tcAssetName o == tcAssetName n) ns of
+        Nothing -> o : acc
+        Just n' -> n' : acc

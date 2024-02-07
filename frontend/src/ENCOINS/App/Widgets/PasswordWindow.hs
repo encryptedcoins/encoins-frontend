@@ -89,7 +89,8 @@ enterPasswordWindow passHash eResetOk = mdo
       return $ bool Nothing (Just raw) res
     checkPass _ _ = return Nothing
 
-passwordSettingsWindow :: MonadWidget t m => Event t ()
+passwordSettingsWindow :: MonadWidget t m
+  => Event t ()
   -> m (Event t (Maybe PasswordRaw), Event t ())
 passwordSettingsWindow eOpen = do
   emPassHash <- fmap (fmap PasswordHash) <$> performEvent (loadHashedPassword passwordSotrageKey <$ eOpen)

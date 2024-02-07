@@ -66,30 +66,31 @@ waitForScripts placeholderWidget actualWidget = do
   _ <- widgetHoldUntilDefined "walletAPI" ("js/ENCOINS.js" <$ ePB) placeholderWidget actualWidget
   blank
 
-loadAppData :: forall t m a b . (MonadWidget t m, FromJSON a)
+loadAppData :: forall t m a b . (MonadWidget t m, FromJSON a, Show b)
   => Maybe PasswordRaw
-  -> Text
+  -> Text -- cache key
   -> (a -> b)
   -> b
   -> m (Dynamic t b)
 loadAppData mPass entry f val = do
     let elId = "elId-" <> entry
-    e <- newEvent
+    e <- newEventWithDelay 0.1
     loadAppDataId mPass entry elId e f val
 
-loadAppDataId :: forall t m a b . (MonadWidget t m, FromJSON a)
+loadAppDataId :: forall t m a b . (MonadWidget t m, FromJSON a, Show b)
   => Maybe PasswordRaw
-  -> Text
-  -> Text
+  -> Text -- cache key
+  -> Text -- response id
   -> Event t ()
   -> (a -> b)
   -> b
   -> m (Dynamic t b)
 loadAppDataId mPass entry elId ev f val = do
     let mPassT = (getPassRaw <$> mPass)
-    eDelayed <- delay 0.1 ev
-    performEvent_ (loadJSON entry elId mPassT <$ eDelayed)
-    elementResultJS elId (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
+    performEvent_ (loadJSON entry elId mPassT <$ ev)
+    dRes <- elementResultJS elId
+      (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
+    pure dRes
 
 saveAppDataId_ :: (MonadWidget t m, ToJSON a)
   => Maybe PasswordRaw

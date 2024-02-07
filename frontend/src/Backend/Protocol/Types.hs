@@ -158,6 +158,13 @@ data TokenCacheV3 = MkTokenCacheV3
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
+-- For readable logs
+showToken :: TokenCacheV3 -> (Text, IpfsStatus)
+showToken (MkTokenCacheV3 n _ s _) = (n,s)
+
+showTokens :: [TokenCacheV3] -> [(Text, IpfsStatus)]
+showTokens = map showToken
+
 data RestoreResponse = MkRestoreResponse
   { rrAssetName :: Text
   , rrSecretKey :: TokenKey

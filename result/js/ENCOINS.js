@@ -44,8 +44,6 @@ function setInputValue(elId, val) {
 };
 
 function saveJSON(key, val, encr, pass) {
-  console.log("key",key)
-  console.log("val",val)
   var val1 = val;
   if (encr) {
     val1 = CryptoJS.AES.encrypt(val, pass).toString();
@@ -57,12 +55,17 @@ function saveJSON(key, val, encr, pass) {
 function loadJSON(key, resId, pass, decr) {
   const val = localStorage.getItem(key);
   var res = val;
-  if (val !== null) {
-    if (decr) {
-      res = CryptoJS.AES.decrypt(val, pass).toString(CryptoJS.enc.Utf8);
-    }
-  };
-  setInputValue(resId, res);
+  try {
+    if (val !== null) {
+      if (decr) {
+        res = CryptoJS.AES.decrypt(val, pass).toString(CryptoJS.enc.Utf8);
+      }
+    };
+    setInputValue(resId, res);
+  } catch (e) {
+    console.log("loadJSON: decrypt error: ", e);
+    return;
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

@@ -4,7 +4,7 @@ module ENCOINS.App.Widgets.MainTabs where
 
 import           Control.Monad                          (void)
 import           Data.Bool                              (bool)
-import           Data.List                              (nub)
+import           Data.List                              (nub, union)
 import           Data.Text                              (Text)
 import           Reflex.Dom
 import           Witherable                             (catMaybes)
@@ -25,6 +25,7 @@ import           Backend.Wallet                         (Wallet (..))
 import           Config.Config                          (delegateServerUrl)
 import           ENCOINS.App.Widgets.Basic              (containerApp,
                                                          elementResultJS,
+                                                         saveAppDataId,
                                                          saveAppDataId_,
                                                          sectionApp,
                                                          tellTxStatus,
@@ -40,6 +41,7 @@ import           ENCOINS.App.Widgets.ImportWindow       (exportWindow,
                                                          importFileWindow,
                                                          importWindow)
 import           ENCOINS.App.Widgets.InputAddressWindow (inputAddressWindow)
+import           ENCOINS.App.Widgets.IPFS
 import           ENCOINS.App.Widgets.SendRequestButton  (sendRequestButtonLedger,
                                                          sendRequestButtonWallet)
 import           ENCOINS.App.Widgets.SendToWalletWindow (sendToWalletWindow)
@@ -93,7 +95,15 @@ walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
                   $ map coinV3
                   <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
-            saveCacheLocally mpass dTokenCache
+            let dTokenCacheUpdated = zipDynWith
+                  updateTokenState
+                  dTokenCache
+                  dTokenWithNewState
+
+            logDyn "walletTab: token before local save 1:" $ showTokens <$> dTokenCacheUpdated
+            saveCacheLocally mpass dTokenCacheUpdated
+            -- eSaved <- saveAppDataId mpass encoinsV3 $ updated dTokenCacheUpdated
+            -- logEvent "walletTab: eSaved 1" eSaved
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do
@@ -139,8 +149,21 @@ walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
                   dCoinsToMint
                   eSend
                   dUrls
-            let dSecretsInTheWallet =
-                  zipDynWith filterByKnownCoinNames dAssetNamesInTheWallet dTokenCache
+            let dSecretsInTheWallet = zipDynWith
+                  filterByKnownCoinNames
+                  dAssetNamesInTheWallet
+                  dTokenCacheUpdated
+
+            -- IPFS begin
+            dWalletSecretsUniq <- holdUniqDyn dSecretsInTheWallet
+            eTokenWithNewState <- saveTokensOnIpfs
+              (walletAddressBech32 <$> dWallet)
+              mpass
+              (updated dWalletSecretsUniq)
+            dTokenWithNewState <- foldDyn union [] eTokenWithNewState
+            logDyn "walletTab: token accumulated on ipfs" $ showTokens <$> dTokenWithNewState
+            -- IPFS end
+
             pure (dCoinsToBurn, dCoinsToMint, leftmost [eStatusUpdate, eSendStatus])
     eWalletError <- walletError
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
@@ -350,5 +373,5 @@ saveCacheLocally :: MonadWidget t m
   => Maybe PasswordRaw
   -> Dynamic t [TokenCacheV3]
   -> m ()
-saveCacheLocally mPass cache =
+saveCacheLocally mPass  cache =
   saveAppDataId_ mPass encoinsV3 $ updated cache

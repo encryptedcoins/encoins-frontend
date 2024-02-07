@@ -50,18 +50,13 @@ migrateCacheV3 mPass = do
   eSecretsV2 :: Event t [(Secret, Text)] <-
     updated <$> loadAppData mPass encoinsV2 id []
 
-  -- logEvent "migrateCacheV3: eSecretsV1" eSecretsV1
-  -- logEvent "migrateCacheV3: eSecretsV2" eSecretsV2
-
   let eIsOldCacheEmpty = mergeWith (&&) [null <$> eSecretsV1, null <$> eSecretsV2]
-  -- logEvent "migrateCacheV3: eIsOldCacheEmpty" eIsOldCacheEmpty
 
   let eMigrateStatus = bool
         (CustomStatus "Cache structure is updating. Please wait.")
         Ready
         <$> eIsOldCacheEmpty
   tellTxStatus "App status" eMigrateStatus
-  -- logEvent "migrateCacheV3: eMigrateStatus" eMigrateStatus
 
   let cacheV3 = alignWith
         (these migrateV1 migrateV2 migrateV3)
@@ -69,16 +64,13 @@ migrateCacheV3 mPass = do
         eSecretsV2
   -- Migrate old cache (when it is not empty) to encoins-v3
   let eSecretsV3 = ffilter (not . null) cacheV3
-  -- logEvent "migrateCacheV3: eSecretsV3" eSecretsV3
 
   saveAppDataId_ mPass encoinsV3 eSecretsV3
 
   -- Ask user to reload when cache structure is updated
   let eIsOldCacheEmptyLog = () <$ ffilter id eIsOldCacheEmpty
-  -- logEvent "migrateCacheV3: eIsOldCacheEmptyLog" eIsOldCacheEmptyLog
 
   eSaved <- updated <$> elementResultJS "encoins-v3" (const ())
-  -- logEvent "migrateCacheV3: eSaved" eSaved
   tellTxStatus "App status" $ CustomStatus "Local cache structure is updated"
       <$ leftmost [eIsOldCacheEmptyLog, eSaved]
 

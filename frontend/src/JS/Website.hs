@@ -138,7 +138,11 @@ foreign import javascript unsafe
 saveJSON :: MonadIO m => Maybe Text -> Text -> Text -> m ()
 saveJSON mpass key val = liftIO $ do
   bool_js <- toJSVal $ isJust mpass
-  saveJSON_js (textToStr key) (textToStr val) bool_js (maybe "" textToStr mpass)
+  saveJSON_js
+    (textToStr key)
+    (textToStr val)
+    bool_js
+    (maybe "" textToStr mpass)
 #else
 saveJSON :: MonadIO m => Maybe Text -> Text -> Text -> m ()
 saveJSON _ _ _ = error "GHCJS is required!"

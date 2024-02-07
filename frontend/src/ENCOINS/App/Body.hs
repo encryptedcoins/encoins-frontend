@@ -2,13 +2,13 @@
 
 module ENCOINS.App.Body (bodyWidget) where
 
+import           Control.Monad.IO.Class             (MonadIO (..))
 import           Data.Bifunctor                     (first)
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
 import           Reflex.Dom
 
-import           Backend.Protocol.Types             (PasswordHash (..),
-                                                     PasswordRaw (..))
+import           Backend.Protocol.Types
 import           Backend.Status                     (Status (..), isNoRelay,
                                                      isReady,
                                                      isTxProcessOrCriticalError)
@@ -38,9 +38,15 @@ import           JS.Website                         (saveJSON)
 
 import           ENCOINS.Common.Events
 
-bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe PasswordRaw))
+bodyContentWidget :: MonadWidget t m
+  => Maybe PasswordRaw
+  -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mPass = mdo
-  (ePassOpen, eConnectOpen, eIpfsOpen) <- navbarWidget dWallet dIsDisableButtons mPass
+  (ePassOpen, eConnectOpen, eIpfsOpen) <- navbarWidget
+    dWallet
+    dIsDisableButtons
+    mPass
+    dIpfsOn
 
   (dStatusT, dIsDisableButtons) <- handleAppStatus dWallet evEvStatus
   notification dStatusT
@@ -49,7 +55,6 @@ bodyContentWidget mPass = mdo
 
   (eNewPass, eClearCache) <- passwordSettingsWindow ePassOpen
   eCleanOk <- cleanCacheDialog eClearCache
-  logEvent "body: eNewPass" eNewPass
   welcomeWindow welcomeWindowWalletStorageKey welcomeWallet
 
   divClass "section-app section-app-empty wf-section" blank
@@ -58,33 +63,25 @@ bodyContentWidget mPass = mdo
     mPass
     dWallet
     dIsDisableButtons
-    dmKey
-    dIpfsOn
 
-  eSaveAfterPass <- performEvent
+  let eReEncrypt = leftmost [eNewPass, Nothing <$ eCleanOk]
+
+  performEvent_
     $ fmap reEncryptEncoins
-    $ attachPromptlyDyn dSecretsV3
-    $ leftmost [eNewPass, Nothing <$ eCleanOk]
+    $ attachPromptlyDyn dSecretsV3 eReEncrypt
 
   copiedNotification
 
-  logEvent "body: eSaveAfterPass" eSaveAfterPass
-  logEvent "body: eNewPass" eNewPass
-
   dIpfsOn <- ipfsSettingsWindow mPass eIpfsOpen
-
-  ev <- newEventWithDelay 1.5
-  dmKey <- fetchAesKey mPass $ leftmost [ev, () <$ updated dIpfsOn]
-  -- dmKey <- holdDyn Nothing emKey
-  -- logDyn "body: dmKey" dmKey
-  -- dRestoredTokens <- restoreValidTokens dKey (walletAddressBech32 <$> dWallet)
-  -- logDyn "body: dRestoredTokens" dRestoredTokens
 
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
 
   where
-    reEncryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) encoinsV3
-      . toJsonText $ d
+    reEncryptEncoins :: MonadIO m
+      => ([TokenCacheV3], Maybe PasswordRaw)
+      -> m ()
+    reEncryptEncoins (d, mNewPass) = saveJSON
+      (getPassRaw <$> mNewPass) encoinsV3 . toJsonText $ d
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo
