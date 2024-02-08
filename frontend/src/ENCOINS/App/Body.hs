@@ -42,7 +42,7 @@ bodyContentWidget :: MonadWidget t m
   => Maybe PasswordRaw
   -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mPass = mdo
-  (ePassOpen, eConnectOpen, eIpfsOpen) <- navbarWidget
+  (ePassOpen, eConnectOpen, eOpenIpfsWindow) <- navbarWidget
     dWallet
     dIsDisableButtons
     mPass
@@ -63,6 +63,8 @@ bodyContentWidget mPass = mdo
     mPass
     dWallet
     dIsDisableButtons
+    dIpfsOn
+    dmKey
 
   let eReEncrypt = leftmost [eNewPass, Nothing <$ eCleanOk]
 
@@ -72,7 +74,14 @@ bodyContentWidget mPass = mdo
 
   copiedNotification
 
-  dIpfsOn <- ipfsSettingsWindow mPass eIpfsOpen
+  evIpfs <- postDelay 0.2
+  dIpfsCache <- fetchIpfsFlag "app-body-load-is-ipfs-on-key" evIpfs
+  (dIpfsWindow, dAesKeyWindow) <- ipfsSettingsWindow mPass dIpfsCache eOpenIpfsWindow
+  dIpfsOn <- holdDyn False $ leftmost $ map updated [dIpfsCache, dIpfsWindow]
+
+  evKey <- postDelay 0.2
+  dmKeyCache <- fetchAesKey mPass "app-body-load-of-aes-key" evKey
+  dmKey <- holdDyn Nothing $ leftmost $ map updated [dmKeyCache, dAesKeyWindow]
 
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
 

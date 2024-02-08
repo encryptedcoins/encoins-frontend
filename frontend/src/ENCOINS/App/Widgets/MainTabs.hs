@@ -64,8 +64,10 @@ walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
+  -> Dynamic t Bool
+  -> Dynamic t (Maybe Text)
   -> m ()
-walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
+walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -159,6 +161,8 @@ walletTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
             eTokenWithNewState <- saveTokensOnIpfs
               (walletAddressBech32 <$> dWallet)
               mpass
+              dIpfsOn
+              dmKey
               (updated dWalletSecretsUniq)
             dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
             logDyn "walletTab: token accumulated on ipfs" $ showTokens <$> dTokenIpfsSynched
@@ -264,8 +268,10 @@ ledgerTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
+  -> Dynamic t Bool
+  -> Dynamic t (Maybe Text)
   -> m ()
-ledgerTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
+ledgerTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -368,6 +374,8 @@ ledgerTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
             eTokenWithNewState <- saveTokensOnIpfs
               (walletAddressBech32 <$> dWallet)
               mpass
+              dIpfsOn
+              dmKey
               (updated dWalletSecretsUniq)
             -- accumulate token saved on ipfs.
             -- The place of error prone.

@@ -1581,6 +1581,14 @@ body {
   pointer-events: none;
 }
 
+.app-Nav_LockerContainer {
+  margin-left: 10px;
+  -webkit-align-self: center;
+  -ms-flex-item-align: center;
+  -ms-grid-row-align: center;
+  align-self: center;
+}
+
 .app-Nav_Locker-close {
   width: 22px;
   min-width: 22px;
@@ -1654,14 +1662,6 @@ body {
 
 .app-Nav_Locker-open:hover .app-Nav_CachePopup {
   display: inline-block;
-}
-
-.app-Nav_LockerContainer {
-  margin-left: 10px;
-  -webkit-align-self: center;
-  -ms-flex-item-align: center;
-  -ms-grid-row-align: center;
-  align-self: center;
 }
 
 .app-ImportExportButton {
@@ -1919,17 +1919,96 @@ body {
   }
 
 .app-Ipfs_IconContainer {
-  width: 22px;
-  min-width: 22px;
   height: 31px;
   max-height: 31px;
+  width: 27px;
+  min-width: 27px;
+  margin-left: 10px;
+  align-self: center;
   background-image: url('../images/ipfs.svg');
   background-position: 0px 0px;
   background-size: auto;
-  margin-top: 10px;
-  margin-bottom: 40px;
 }
 
 .app-Ipfs_IconContainer:hover {
   cursor: pointer;
+}
+
+.app-Ipfs_IconContainer:hover .app-Nav_IpfsPopup {
+  display: inline-block;
+}
+
+.app-Nav_IpfsPopup {
+  display: flex;
+  top: auto;
+  right: 83px;
+  margin-top: 10px;
+  padding-top: 30px;
+  position: relative;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+@media screen and (min-width: 767px) {
+  .app-Nav_IpfsPopup {
+    display: none;
+    top: 50px;
+    position: absolute;
+  }
+}
+
+.app-Ipfs_CheckboxContainer {
+  display: flex;
+}
+
+.app-Ipfs_CheckboxDescription {
+  margin-left: 10px;
+  display: flex;
+  align-items: center;
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+}
+
+.app-Ipfs_AesKeyDescription {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+}
+
+.app-Ipfs_CheckboxToggle {
+  position: relative;
+  -webkit-appearance: none;
+  outline: none;
+  width: 50px;
+  height: 30px;
+  background-color: #fff;
+  border: 1px solid #bd4444;
+  border-radius: 50px;
+  box-shadow: inset -20px 0 0 0 #bd4444;
+}
+
+.app-Ipfs_CheckboxToggle:after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  background: transparent;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  box-shadow: 2px 4px 6px rgba(0,0,0,0.2);
+}
+
+.app-Ipfs_CheckboxToggle:checked {
+  box-shadow: inset 20px 0 0 0 #4ed164;
+  border-color: #4ed164;
+}
+
+.app-Ipfs_CheckboxToggle:checked:after {
+  left: 20px;
+  box-shadow: -2px 4px 3px rgba(0,0,0,0.05);
 }

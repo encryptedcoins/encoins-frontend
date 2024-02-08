@@ -32,7 +32,7 @@ newTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- newTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "newTx request" $ () <$ eRespUnwrapped
+  logEvent "newTx response" $ () <$ eRespUnwrapped
   pure eRespUnwrapped
 
 submitTxRequestWrapper :: MonadWidget t m
@@ -44,7 +44,7 @@ submitTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- submitTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = (() <$) . mkTextOrResponse <$> eResp
-  logEvent "submitTx request" eRespUnwrapped
+  logEvent "submitTx response" eRespUnwrapped
   return eRespUnwrapped
 
 pingRequestWrapper :: MonadWidget t m
@@ -68,7 +68,7 @@ serverTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- serverTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = (() <$) . mkTextOrResponse <$> eResp
-  logEvent "serverTx request" eRespUnwrapped
+  logEvent "serverTx response" eRespUnwrapped
   return eRespUnwrapped
 
 statusRequestWrapper :: MonadWidget t m
@@ -80,7 +80,7 @@ statusRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- statusRequest (Right <$> dReqBody) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "status request" $ fmap showStatus <$> eRespUnwrapped
+  logEvent "status response" $ fmap showStatus <$> eRespUnwrapped
   return eRespUnwrapped
 
 versionRequestWrapper :: MonadWidget t m
@@ -90,7 +90,7 @@ versionRequestWrapper :: MonadWidget t m
 versionRequestWrapper baseUrl e = do
   let ApiClient{..} = mkApiClient baseUrl
   eVersionRes <- fmap makeResponse <$> versionRequest e
-  logEvent "Version" eVersionRes
+  logEvent "version response" eVersionRes
   return eVersionRes
 
 -- Fetch servers that are selected for delegation
@@ -102,7 +102,7 @@ serversRequestWrapper baseUrl e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- serversRequest e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "servers request" eRespUnwrapped
+  logEvent "servers response" eRespUnwrapped
   return eRespUnwrapped
 
 -- Fetch available servers for app
@@ -114,7 +114,7 @@ currentRequestWrapper baseUrl e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- currentRequest e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "current servers request" eRespUnwrapped
+  logEvent "current response" eRespUnwrapped
   return $ fmap (fmap normalizeCurrentUrl) <$> eRespUnwrapped
 
 -- Fetch how much encoins and which relay the particular wallet delegated.
@@ -127,7 +127,7 @@ infoRequestWrapper baseUrl addr e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- infoRequest (Right <$> addr) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "info request" eRespUnwrapped
+  logEvent "info response" eRespUnwrapped
   return eRespUnwrapped
 
 ---------------------------------------------- Utilities ----------------------------------------

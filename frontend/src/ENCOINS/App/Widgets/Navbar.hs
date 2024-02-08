@@ -71,19 +71,19 @@ ipfsIconWidget :: MonadWidget  t m
   -> m (Element EventResult (DomBuilderSpace m) t)
 ipfsIconWidget dIsIpfsOn dIsBlock = do
   let dPopup = bool
-        "Encoins are not saving on IPFS"
-        "Encoins are saving on IPFS"
+        "IPFS saving is off"
+        "IPFS saving is on"
         <$> dIsIpfsOn
   let defaultClass = "menu-item app-Ipfs_IconContainer"
   let dClass = bool defaultClass (defaultClass <> space <> "click-disabled") <$> dIsBlock
   let dClassMap = (\cl -> "class" =: cl) <$> dClass
-  ipfsDiv dClassMap dPopup
+  ipfsPopup dClassMap dPopup
 
-ipfsDiv :: MonadWidget t m
+ipfsPopup :: MonadWidget t m
   => Dynamic t (Map Text Text)
   -> Dynamic t Text
   -> m (Element EventResult (DomBuilderSpace m) t)
-ipfsDiv dClassMap dPopup
+ipfsPopup dClassMap dPopup
   = fmap fst $ elDynAttr' "div" dClassMap
-      $ divClass "app-Nav_CachePopup"
+      $ divClass "app-Nav_IpfsPopup"
       $ el "p" $ dynText dPopup

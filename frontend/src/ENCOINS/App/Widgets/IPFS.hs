@@ -32,20 +32,30 @@ import qualified Data.Text                       as T
 import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
 import           Reflex.Dom
 
+-- IPFS saving launches
+-- when first page load for unpinned token on the left
+-- and
+-- when new token(s) appear on the left
 saveTokensOnIpfs :: MonadWidget t m
   => Dynamic t Text
   -> Maybe PasswordRaw
+  -> Dynamic t Bool
+  -> Dynamic t (Maybe Text)
   -> Event t [TokenCacheV3]
   -> m (Event t [TokenCacheV3])
-saveTokensOnIpfs dWalletAddress mPass eTokenCache = do
-  dmKey <- fetchAesKey mPass $ () <$ eTokenCache
-  dIpfsOn <- fetchIPFSKey $ () <$ eTokenCache
-  eTokenCacheDelayed <- delay 0.2 eTokenCache
+saveTokensOnIpfs dWalletAddress mPass dIpfsOn dmKey eTokenCache = do
+  -- tagPromptlyDyn prevents from loop in js
+  dmKeyFired <- holdDyn Nothing $ tagPromptlyDyn dmKey eTokenCache
+  dIpfsOnFired <- holdDyn False $ tagPromptlyDyn dIpfsOn eTokenCache
+
+  -- The delay help firing pinning
+  eTokenCacheDelayed <- delay 0.1 eTokenCache
+
   logEvent "saveTokensOnIpfs: tokens before ipfs save" $ showTokens <$> eTokenCacheDelayed
   eTokenIpfsCached <- pinEncryptedTokens
     dWalletAddress
-    dmKey
-    dIpfsOn
+    dmKeyFired
+    dIpfsOnFired
     eTokenCacheDelayed
   logEvent "saveTokensOnIpfs: tokens after ipfs save" $ showTokens <$> eTokenIpfsCached
   eSaved <- saveAppDataId mPass encoinsV3 eTokenIpfsCached
@@ -100,6 +110,7 @@ encryptTokens key tokens = do
   dRes <- foldDynMaybe
     (\(ac,ar) _ -> if length ar == ac then Just (ac,ar) else Nothing) (0,[]) $
     attachPromptlyDyn (constDyn validTokenNumber) $ catMaybes <$> eClouds
+  logDyn "dRes" dRes
   pure $ snd <$> dRes
 
 encryptToken :: MonadWidget t m
@@ -156,13 +167,12 @@ tokenSample = MkCloudRequest
 
 -- Generate aes 256 length key with function builtin any browser
 -- And save it to local cache
-mkAesKey :: MonadWidget t m
+getAesKey :: MonadWidget t m
   => Maybe PasswordRaw
-  -> m (Event t Text)
-mkAesKey mPass = do
+  -> m (Event t (Maybe Text))
+getAesKey mPass = do
   ev1 <- newEventWithDelay 0.1
-  dLoadedKey <- loadAppDataId
-    mPass ipfsCacheKey "first-load-of-aes-key" ev1 id Nothing
+  dLoadedKey <- fetchAesKey mPass "first-load-of-aes-key" ev1
   let ev2 = () <$ updated dLoadedKey
   ev3 <- delay 0.1 ev2
   switchHoldDyn dLoadedKey $ \case
@@ -170,25 +180,24 @@ mkAesKey mPass = do
         let genElId = "genAESKeyId"
         performEvent_ $ JS.generateAESKey genElId <$ ev3
         eAesKey <- updated <$> elementResultJS genElId id
-        logEvent "mkAesKey: eAesKey" eAesKey
+        logEvent "getAesKey: eAesKey" eAesKey
         ev4 <- saveAppDataId mPass ipfsCacheKey eAesKey
-        eLoadedKey <- updated <$> loadAppDataId
-            mPass ipfsCacheKey "second-load-of-aes-key"  ev4 id ""
+        eLoadedKey <- updated <$> fetchAesKey mPass "second-load-of-aes-key" ev4
         pure eLoadedKey
-    Just loadedKey -> pure $ loadedKey <$ ev3
+    Just loadedKey -> pure $ (Just loadedKey) <$ ev3
 
 fetchAesKey :: MonadWidget t m
   => Maybe PasswordRaw
+  -> Text
   -> Event t ()
   -> m (Dynamic t (Maybe Text))
-fetchAesKey mPass ev = loadAppDataId
-    mPass ipfsCacheKey "fetchAesKey-load-of-aes-key" ev id Nothing
+fetchAesKey mPass resId ev = loadAppDataId mPass ipfsCacheKey resId ev id Nothing
 
-fetchIPFSKey :: MonadWidget t m
-  => Event t ()
+fetchIpfsFlag :: MonadWidget t m
+  => Text
+  -> Event t ()
   -> m (Dynamic t Bool)
-fetchIPFSKey ev = loadAppDataId
-    Nothing isIpfsOn "fetchIPFSKey-is-ipfs-on-key" ev id False
+fetchIpfsFlag resId ev = loadAppDataId Nothing isIpfsOn resId ev id False
 
 -- restore tokens from ipfs
 -- that are minted and pinned only
@@ -263,58 +272,59 @@ mkTokenCacheV3 name decrypted = case eSecret of
 
 ipfsSettingsWindow :: MonadWidget t m
   => Maybe PasswordRaw
+  -> Dynamic t Bool
   -> Event t ()
-  -> m (Dynamic t Bool)
-ipfsSettingsWindow mPass eOpen = do
-  logEvent "ipfsSettingsWindow: eOpen" eOpen
+  -> m (Dynamic t Bool, Dynamic t (Maybe Text))
+ipfsSettingsWindow mPass ipfsCacheFlag eOpen = do
   dialogWindow
     True
     eOpen
     never
     ipfsWindowStyle
     "Save encoins on IPFS" $ do
-      dIsIpfsOn <- ipfsCheckbox eOpen
-      void $ switchHoldDyn dIsIpfsOn $ \case
+      dIsIpfsOn <- ipfsCheckbox ipfsCacheFlag
+      emKey <- switchHoldDyn dIsIpfsOn $ \case
         False -> pure never
         True -> do
-          eKey <- mkAesKey mPass
-          dKey <- holdDyn "Ipfs key not found" eKey
-          divClass "" $ text "Following AES key used to encrypt encoins before saving them on IPFS"
-          showKeyWidget dKey
-          pure never
-      pure dIsIpfsOn
+          emKey <- getAesKey mPass
+          dmKey <- holdDyn Nothing emKey
+          divClass "app-Ipfs_AesKeyDescription" $ text "The following AES key is used to encrypt encoins before saving them"
+          showKeyWidget dmKey
+          pure emKey
+      dmKey <- holdDyn Nothing emKey
+      pure (dIsIpfsOn, dmKey)
 
 ipfsWindowStyle :: Text
 ipfsWindowStyle = "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
 
 ipfsCheckbox :: MonadWidget t m
-  => Event t ()
+  => Dynamic t Bool
   -> m (Dynamic t Bool)
-ipfsCheckbox eOpen = do
-  dIpfsCached <- loadAppDataId Nothing isIpfsOn "load-is-ipfs-on-key" eOpen id False
-  dIsChecked <- checkboxWidget (updated dIpfsCached) "app-Ipfs_Trigger"
+ipfsCheckbox ipfsCacheFlag = do
+  dIsChecked <- checkboxWidget (updated ipfsCacheFlag) "app-Ipfs_CheckboxToggle"
   saveAppDataId_ Nothing isIpfsOn $ updated dIsChecked
-  divClass "" $ text "Check box in order to save your coins on IPFS"
   pure dIsChecked
 
 checkboxWidget :: MonadWidget t m
   => Event t Bool
   -> Text
   -> m (Dynamic t Bool)
-checkboxWidget initial checkBoxClass = divClass "w-row" $ do
+checkboxWidget initial checkBoxClass = divClass "w-row app-Ipfs_CheckboxContainer" $ do
     inp <- inputElement $ def
       & initialAttributes .~
           ( "class" =: checkBoxClass <>
             "type" =: "checkbox"
           )
       & inputElementConfig_setChecked .~ initial
+    divClass "app-Ipfs_CheckboxDescription" $ text "Check box in order to save your coins on IPFS"
     return $ _inputElement_checked inp
 
 showKeyWidget :: MonadWidget t m
-  => Dynamic t Text
+  => Dynamic t (Maybe Text)
   -> m ()
-showKeyWidget dKey = do
-  divClass "app-Ipfs_Key" $ dynText dKey
+showKeyWidget dmKey = divClass "app-Ipfs_Key"
+  $ dynText
+  $ maybe "Ipfs key is not generated" id <$> dmKey
 
 -- With ipfs wallet and ledger modes have two dynamics for token and save each of them separately
 -- This function synchronize them.
