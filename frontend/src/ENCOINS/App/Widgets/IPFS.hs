@@ -116,7 +116,6 @@ encryptTokens key tokens = do
   dRes <- foldDynMaybe
     (\(ac,ar) _ -> if length ar == ac then Just (ac,ar) else Nothing) (0,[]) $
     attachPromptlyDyn (constDyn validTokenNumber) $ catMaybes <$> eClouds
-  logDyn "dRes" dRes
   pure $ snd <$> dRes
 
 encryptToken :: MonadWidget t m
