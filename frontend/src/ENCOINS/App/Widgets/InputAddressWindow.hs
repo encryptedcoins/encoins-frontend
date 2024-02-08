@@ -19,8 +19,7 @@ import           JS.App                          (addrLoad)
 
 inputAddressWindow :: MonadWidget t m => Event t () -> m (Event t Address, Dynamic t (Maybe Address))
 inputAddressWindow eOpen = mdo
-  let windowStyle = "width: 950px; padding-left: 70px; padding-right: 70px; padding-top: 30px; padding-bottom: 30px"
-  (eOk, dmAddress) <- dialogWindow True eOpen (void eOk) windowStyle "" $ mdo
+  (eOk, dmAddress) <- dialogWindow True eOpen (void eOk) "app-InputAddressWindow" "" $ mdo
       divClass "connect-title-div" $ divClass "app-text-semibold" $
           text "Enter wallet address in bech32:"
       dAddrInp <- divClass "app-columns w-row" $ do

@@ -95,8 +95,7 @@ passwordSettingsWindow :: MonadWidget t m
 passwordSettingsWindow eOpen = do
   emPassHash <- fmap (fmap PasswordHash) <$> performEvent (loadHashedPassword passwordSotrageKey <$ eOpen)
   dmPassHash <- holdDyn Nothing emPassHash
-  let windowStyle = "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px)"
-  dialogWindow True eOpen never windowStyle "Protect cache of Encoins app" $ do
+  dialogWindow True eOpen never "app-PasswordSettingsWindow" "Protect cache of Encoins app" $ do
     ePassOk <- switchHoldDyn dmPassHash $ \case
       Just passHash -> divClass "app-columns w-row" $ divClass "w-col w-col-12" $ do
         dmCurPass <- passwordInput "Current password:" False True (pure Nothing) eOpen
@@ -196,7 +195,7 @@ passwordInput txt rep isFocus dmPass eOpen = mdo
 
 cleanCacheDialog :: MonadWidget t m => Event t () -> m (Event t ())
 cleanCacheDialog eOpen = mdo
-  (eOk, eCancel) <- dialogWindow True eOpen (leftmost [eOk,eCancel]) "width: 60%" "Clean cache" $ do
+  (eOk, eCancel) <- dialogWindow True eOpen (leftmost [eOk,eCancel]) "app-CleanCacheWindow" "Clean cache" $ do
     divClass "app-CleanCache_Description" $
         text "This action will reset password and clean cache (remove known coins)! Are you sure?"
     elAttr "div" ("class" =: "app-columns w-row app-CleanCache_ButtonContainer") $ do

@@ -30,7 +30,7 @@ import           ENCOINS.Common.Widgets.Basic    (btn)
 
 importWindow :: MonadWidget t m => Event t () -> m (Event t (Maybe Secret))
 importWindow eImportOpen = mdo
-    eImportClose <- dialogWindow True eImportOpen (void eImportClose) "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px)" "Import a New Coin" $ mdo
+    eImportClose <- dialogWindow True eImportOpen (void eImportClose) "app-ImportWindow" "Import a New Coin" $ mdo
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
           text "All known coins are saved on the device. Enter the minting key to import a new coin:"
       let conf    = def { _inputElementConfig_setValue = pure ("" <$ eImportOpen) } & (initialAttributes .~ ("class" =: "coin-new-input w-input" <> "type" =: "text"
@@ -43,7 +43,7 @@ importWindow eImportOpen = mdo
 
 importFileWindow :: MonadWidget t m => Event t () -> m (Event t [Secret])
 importFileWindow eImportOpen = mdo
-    eImportClose <- dialogWindow True eImportOpen (void eImportClose) "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px)" "Import New Coins" $ mdo
+    eImportClose <- dialogWindow True eImportOpen (void eImportClose) "app-ImportFileWindow" "Import New Coins" $ mdo
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
           text "Choose a file to import coins:"
       let conf    = def { _inputElementConfig_setValue = pure ("" <$ eImportOpen) } & (initialAttributes .~ ("class" =: "coin-new-input w-input" <> "type" =: "file"
@@ -70,7 +70,7 @@ readFileContent file = do
 
 exportWindow :: MonadWidget t m => Event t () -> Dynamic t [Secret] -> m ()
 exportWindow eOpen dSecrets = mdo
-    eClose <- dialogWindow True eOpen eClose "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px)" "Export Coins" $ mdo
+    eClose <- dialogWindow True eOpen eClose "app-ExportWindow" "Export Coins" $ mdo
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
           text "Enter file name:"
       let conf    = def { _inputElementConfig_setValue = pure ("" <$ eOpen) } & (initialAttributes .~ ("class" =: "coin-new-input w-input" <> "type" =: "text"

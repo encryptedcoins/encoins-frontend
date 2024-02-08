@@ -41,7 +41,7 @@ delegateWindow eOpen dWallet dRelayNames = mdo
     True
     eOpen
     (leftmost [void eUrlOk])
-    delegateWindowStyle
+    "app-DelegateWindow"
     "Delegate ENCS" $ mdo
       eUrlTable <- relayAmountWidget eeRelays emDelegated dRelayNames
       divClass "dao-DelegateWindow_EnterUrl" $ text "Choose a relay URL above or enter a new one below:"
@@ -70,9 +70,6 @@ delegateWindow eOpen dWallet dRelayNames = mdo
         <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
       return eUrl
   pure ()
-
-delegateWindowStyle :: Text
-delegateWindowStyle = "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
 
 inputWidget :: MonadWidget t m
   => Event t ()

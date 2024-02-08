@@ -280,7 +280,7 @@ ipfsSettingsWindow mPass ipfsCacheFlag eOpen = do
     True
     eOpen
     never
-    ipfsWindowStyle
+    "app-Ipfs_Window"
     "Save encoins on IPFS" $ do
       dIsIpfsOn <- ipfsCheckbox ipfsCacheFlag
       emKey <- switchHoldDyn dIsIpfsOn $ \case
@@ -293,9 +293,6 @@ ipfsSettingsWindow mPass ipfsCacheFlag eOpen = do
           pure emKey
       dmKey <- holdDyn Nothing emKey
       pure (dIsIpfsOn, dmKey)
-
-ipfsWindowStyle :: Text
-ipfsWindowStyle = "width: 70%; min-width: 750px; height: 20%; min-height: 180px; padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
 
 ipfsCheckbox :: MonadWidget t m
   => Dynamic t Bool

@@ -68,7 +68,7 @@ welcomeItemWidget WelcomeItem{..} eOpen = mdo
   performEvent_ (setElementStyle elemId "position" "relative" <$ eOpen)
   performEvent_ (setElementStyle elemId "pointer-events" "none" <$ eOpen)
   when border $ performEvent_ (setElementStyle elemId "border-style" "solid" <$ eOpen)
-  eClose <- dialogWindow False eOpen eClose "overflow: auto; max-width: 700px; max-height: 500px; padding-left: 30px; padding-right: 30px; padding-top: 30px; padding-bottom: 30px; top: 10px; position: absolute;" title $ do
+  eClose <- dialogWindow False eOpen eClose "app-WelcomeWindow" title $ do
     divClass "app-WelcomeBody" $ do
       mapM_ (\(t, lRef, lTitle) -> do text t >> if T.empty == T.strip lRef then blank else lnkInlineInverted lRef lTitle) message
     divClass "app-WelcomeBody_ButtonOkContainer" $
