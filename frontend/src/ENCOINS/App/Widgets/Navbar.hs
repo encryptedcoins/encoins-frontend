@@ -7,9 +7,11 @@ import           Prelude                       hiding (take)
 import           Reflex.Dom
 
 import           Backend.Protocol.Types        (PasswordRaw)
+import           Backend.Utility               (space)
 import           Backend.Wallet                (Wallet (..), WalletName (..),
                                                 currentNetworkApp)
-import           ENCOINS.Common.Widgets.Basic  (btnWithBlock, logo, space)
+import           ENCOINS.Common.Widgets.Basic  (btnWithBlock, logo)
+
 import           ENCOINS.Common.Widgets.Wallet (walletIcon)
 
 connectText :: Wallet -> Text

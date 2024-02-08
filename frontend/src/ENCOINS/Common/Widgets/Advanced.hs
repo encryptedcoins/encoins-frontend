@@ -13,8 +13,8 @@ import           GHCJS.DOM.Node                (contains)
 import qualified GHCJS.DOM.Types               as DOM
 import           Reflex.Dom
 
+import           Backend.Utility               (space, toText)
 import           Config.Config                 (NetworkId)
-import           ENCOINS.Common.Utils          (toText)
 import           JS.Website                    (setElementStyle)
 
 copyEvent :: MonadWidget t m => Event t () -> m (Dynamic t Bool)
@@ -78,6 +78,32 @@ dialogWindow close eOpen eClose style title tags = mdo
   dWindowIsOpen <- holdDyn False $ leftmost [True <$ eOpenDelayed, False <$ eClose']
   (e, (ret, eCross)) <- elDynAttr "div" (fmap mkClass dWindowIsOpen) $
       elAttr' "div" ("class" =: "dialog-window" <> "style" =: style) $ do
+        let titleCls = if close then "dialog-window-title" else "dialog-window-title-without-cross"
+        crossClick <- divClass titleCls $ do
+          elAttr "div" ("style" =: "width: 20px;") blank
+          divClass "app-text-semibold" $ text title
+          if close
+            then domEvent Click . fst <$> elClass' "div" "cross-div inverted" blank
+            else pure never
+        (,crossClick) <$> tags
+  return ret
+
+dialogWindowCSS :: MonadWidget t m => Bool -> Event t () -> Event t () -> Text -> Text -> m a -> m a
+dialogWindowCSS close eOpen eClose customClass title tags = mdo
+  eClickOuside <- if close
+      then clickOutside (_element_raw e)
+      else pure never
+  let eEscape = if close
+      then keydown Escape e
+      else never
+  -- Delay prevents from closing because eClickOuside fires
+  eOpenDelayed <- delay 0.1 eOpen
+  let
+    mkClass b = "class" =: "dialog-window-wrapper" <> bool ("style" =: "display: none") mempty b
+    eClose' = leftmost [eClose, eClickOuside, eCross, eEscape]
+  dWindowIsOpen <- holdDyn False $ leftmost [True <$ eOpenDelayed, False <$ eClose']
+  (e, (ret, eCross)) <- elDynAttr "div" (fmap mkClass dWindowIsOpen) $
+      elAttr' "div" ("class" =: ("dialog-window" <> space <> customClass)) $ do
         let titleCls = if close then "dialog-window-title" else "dialog-window-title-without-cross"
         crossClick <- divClass titleCls $ do
           elAttr "div" ("style" =: "width: 20px;") blank

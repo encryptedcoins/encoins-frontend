@@ -6,11 +6,11 @@ import           Control.Monad                   (void)
 import           Data.Bool                       (bool)
 import           Reflex.Dom
 
+import           Backend.Utility                 (toText)
 import           Backend.Wallet                  (Wallet (..), WalletName (..),
                                                   fromJS, toJS)
 import           ENCOINS.App.Widgets.Basic       (loadAppData, saveAppDataId_)
 import           ENCOINS.Common.Cache            (currentWallet)
-import           ENCOINS.Common.Utils            (toText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Wallet   (loadWallet, walletIcon)
 

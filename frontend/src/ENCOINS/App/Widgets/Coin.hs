@@ -17,12 +17,14 @@ import           Text.Read                       (readMaybe)
 
 import           Backend.Protocol.Setup          (bulletproofSetup,
                                                   encoinsCurrencySymbol)
-import           Backend.Protocol.Types          (TokenCacheV3(..), IpfsStatus(..), CoinStatus(..))
+import           Backend.Protocol.Types          (CoinStatus (..),
+                                                  IpfsStatus (..),
+                                                  TokenCacheV3 (..))
 import           Backend.Protocol.Utility        (secretToHex)
+import           Backend.Utility                 (toText)
 import           ENCOINS.BaseTypes               (FieldElement)
 import           ENCOINS.Bulletproofs            (Secret (..), Secrets,
                                                   fromSecret)
-import           ENCOINS.Common.Utils            (toText)
 import           ENCOINS.Common.Widgets.Advanced (checkboxButton, copyButton,
                                                   copyEvent, withTooltip)
 import           ENCOINS.Common.Widgets.Basic    (image)

@@ -12,7 +12,8 @@ import           Backend.Protocol.Types
 import           Backend.Status                     (Status (..), isNoRelay,
                                                      isReady,
                                                      isTxProcessOrCriticalError)
-import           Backend.Utility                    (switchHoldDyn)
+import           Backend.Utility                    (column, space,
+                                                     switchHoldDyn, toText)
 import           Backend.Wallet                     (Wallet (..),
                                                      walletsSupportedInApp)
 import           Config.Config                      (NetworkConfig (..),
@@ -28,10 +29,9 @@ import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWallet,
                                                      welcomeWindow,
                                                      welcomeWindowWalletStorageKey)
 import           ENCOINS.Common.Cache               (encoinsV3)
-import           ENCOINS.Common.Utils               (toJsonText, toText)
+import           ENCOINS.Common.Utils               (toJsonText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
-import           ENCOINS.Common.Widgets.Basic       (column, notification,
-                                                     space)
+import           ENCOINS.Common.Widgets.Basic       (notification)
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)

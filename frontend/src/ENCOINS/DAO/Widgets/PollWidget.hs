@@ -5,11 +5,11 @@ import           Data.Text.Encoding            (encodeUtf8)
 import           Reflex.Dom
 import           Text.Printf
 
+import           Backend.Utility               (toText)
 import           Backend.Wallet                (LucidConfig (..), Wallet (..),
                                                 lucidConfigDao, toJS)
 import           ENCOINS.App.Widgets.Basic     (elementResultJS)
-import           ENCOINS.Common.Utils          (downloadVotes, toJsonStrict,
-                                                toText)
+import           ENCOINS.Common.Utils          (downloadVotes, toJsonStrict)
 import           ENCOINS.Common.Widgets.Basic  (btn, btnWithBlock)
 import           ENCOINS.DAO.PollResults
 import           ENCOINS.DAO.Polls             (Poll (..), formatPollTime)

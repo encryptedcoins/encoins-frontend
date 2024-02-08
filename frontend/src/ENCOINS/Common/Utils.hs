@@ -2,9 +2,11 @@
 
 module ENCOINS.Common.Utils where
 
+import           Backend.Utility             (toText)
+
 import           Control.Lens                ((^.))
 import           Control.Monad               (guard)
-import           Data.Aeson                  (encode, ToJSON)
+import           Data.Aeson                  (ToJSON, encode)
 import           Data.Attoparsec.Text        (Parser, char, choice, parseOnly,
                                               sepBy1, takeWhile1, (<?>))
 import qualified Data.Attoparsec.Text        as A
@@ -31,9 +33,6 @@ import           Text.Regex.TDFA             (CompOption (lastStarGreedy),
                                               defaultCompOpt, defaultExecOpt,
                                               matchTest)
 import           Text.Regex.TDFA.Text        (compile)
-
-toText :: Show a => a -> Text
-toText = T.pack . show
 
 toJsonText :: ToJSON a => a -> Text
 toJsonText = decodeUtf8 . toJsonStrict

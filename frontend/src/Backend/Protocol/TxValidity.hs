@@ -2,25 +2,23 @@
 
 module Backend.Protocol.TxValidity where
 
-import           Data.Bool                    (bool)
-import           Data.List                    (nub)
-import           Data.Maybe                   (fromJust, isJust)
-import           Data.Text                    (Text)
+import           Data.Bool              (bool)
+import           Data.List              (nub)
+import           Data.Maybe             (fromJust, isJust)
+import           Data.Text              (Text)
 import           Reflex.Dom
 
-import           Backend.Protocol.Fees        (protocolFees)
+import           Backend.Protocol.Fees  (protocolFees)
 import           Backend.Protocol.Types
-import           Backend.Status               (Status (..), isTxProcess)
-import           Backend.Wallet               (Wallet (..), WalletName (..),
-                                               currentNetworkApp)
-import           Config.Config                (NetworkConfig (..),
-                                               networkConfig)
-import           CSL                          (TransactionUnspentOutput (..),
-                                               amount, coin)
-import           ENCOINS.Bulletproofs         (Secret (..), Secrets)
-import           ENCOINS.Common.Utils         (toText)
-import           ENCOINS.Common.Widgets.Basic (space)
-import           ENCOINS.Crypto.Field         (fromFieldElement)
+import           Backend.Status         (Status (..), isTxProcess)
+import           Backend.Utility        (space, toText)
+import           Backend.Wallet         (Wallet (..), WalletName (..),
+                                         currentNetworkApp)
+import           Config.Config          (NetworkConfig (..), networkConfig)
+import           CSL                    (TransactionUnspentOutput (..), amount,
+                                         coin)
+import           ENCOINS.Bulletproofs   (Secret (..), Secrets)
+import           ENCOINS.Crypto.Field   (fromFieldElement)
 
 
 data TxValidity = TxValid | TxInvalid Text

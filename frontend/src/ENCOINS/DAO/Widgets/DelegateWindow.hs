@@ -9,18 +9,17 @@ module ENCOINS.DAO.Widgets.DelegateWindow
 import           Control.Monad                   (void)
 import           Data.Bool                       (bool)
 import           Data.Map                        (Map)
--- import qualified Data.Map                        as Map
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import           Reflex.Dom
 
 import           Backend.Status                  (UrlStatus (..), isNotValidUrl)
+import           Backend.Utility                 (toText)
 import           Backend.Wallet                  (LucidConfig (..), Wallet (..),
                                                   lucidConfigDao, toJS)
 import           ENCOINS.App.Widgets.Basic       (containerApp)
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils            (checkUrl, stripHostOrRelay,
-                                                  toText)
+import           ENCOINS.Common.Utils            (checkUrl, stripHostOrRelay)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn, btnWithBlock, divClassId)
 import           ENCOINS.DAO.Widgets.RelayTable  (fetchDelegatedByAddress,

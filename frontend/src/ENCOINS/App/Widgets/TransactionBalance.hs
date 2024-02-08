@@ -1,13 +1,14 @@
 module ENCOINS.App.Widgets.TransactionBalance where
 
-import           Data.Bool                       (bool)
-import           Data.Text                       (Text)
+import           Data.Bool                    (bool)
+import           Data.Text                    (Text)
 import           Reflex.Dom
 
-import           Backend.Protocol.Types          (EncoinsMode (..))
-import           ENCOINS.Common.Utils            (toText)
-import           ENCOINS.Common.Widgets.Basic    (br, column, divClassId, image,
-                                                  space)
+import           Backend.Protocol.Types       (EncoinsMode (..))
+import           Backend.Utility              (column, space, toText)
+
+import           ENCOINS.Common.Widgets.Basic (br, divClassId, image)
+
 
 data Formula t = Formula
   { total    :: Dynamic t Integer

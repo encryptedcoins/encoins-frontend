@@ -5,7 +5,7 @@ import           Data.Text                   (Text)
 import           Data.Time                   (NominalDiffTime)
 import           Reflex.Dom
 
-import           ENCOINS.Common.Utils        (toText)
+import           Backend.Utility             (toText)
 import           JS.Website                  (logInfo)
 import           Language.Javascript.JSaddle (MonadJSM, liftJSM, toJSVal, (#))
 

@@ -26,13 +26,13 @@ import           Backend.Protocol.Utility        (getEncoinsInUtxos,
 import           Backend.Servant.Requests
 import           Backend.Status                  (Status (..))
 import           Backend.Utility                 (eventEither, eventMaybe,
-                                                  switchHoldDyn, toEither)
+                                                  switchHoldDyn, toEither,
+                                                  toText)
 import           Backend.Wallet                  (Wallet (..), toJS)
 import           ENCOINS.App.Widgets.Basic       (elementResultJS)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils            (toText)
 import           ENCOINS.Common.Widgets.Advanced (updateUrls)
 
 encoinsTxWalletMode :: MonadWidget t m

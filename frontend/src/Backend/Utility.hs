@@ -57,3 +57,12 @@ eventEither ev = (filterLeft ev, filterRight ev)
 
 eventTuple :: Reflex t => Event t (a,b) -> (Event t a, Event t b)
 eventTuple ev  = (fst <$> ev, snd <$> ev)
+
+space :: Text
+space = " "
+
+column :: Text
+column = ":"
+
+toText :: Show a => a -> Text
+toText = T.pack . show

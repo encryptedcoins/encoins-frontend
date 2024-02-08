@@ -6,7 +6,7 @@ module ENCOINS.App.Widgets.IPFS where
 import           Backend.Protocol.Types
 import           Backend.Servant.Requests        (cacheRequest, restoreRequest)
 import           Backend.Utility                 (eventEither, eventTuple,
-                                                  switchHoldDyn)
+                                                  switchHoldDyn, toText)
 import           ENCOINS.App.Widgets.Basic       (elementResultJS,
                                                   loadAppDataId, saveAppDataId,
                                                   saveAppDataId_)
@@ -14,7 +14,7 @@ import           ENCOINS.Bulletproofs            (Secret (..))
 import           ENCOINS.Common.Cache            (encoinsV3, ipfsCacheKey,
                                                   isIpfsOn)
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils            (toJsonStrict, toText)
+import           ENCOINS.Common.Utils            (toJsonStrict)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Crypto.Field            (Field (F))
 import qualified JS.App                          as JS
