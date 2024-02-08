@@ -102,7 +102,7 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   dTokenCache
                   dTokenIpfsSynched
 
-            logDyn "walletTab: token before local save 1:" $ showTokens <$> dTokenCacheUpdated
+            logDyn "walletTab: token before local save 1" $ showTokens <$> dTokenCacheUpdated
             saveCacheLocally mpass dTokenCacheUpdated
             -- eSaved <- saveAppDataId mpass encoinsV3 $ updated dTokenCacheUpdated
             -- logEvent "walletTab: eSaved 1" eSaved
@@ -308,7 +308,7 @@ ledgerTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   dTokenCache
                   dTokenIpfsSynched
 
-            logDyn "ledgerTab: token before local save 1:" $ showTokens <$> dTokenCacheUpdated
+            logDyn "ledgerTab: token before local save 1" $ showTokens <$> dTokenCacheUpdated
             saveCacheLocally mpass dTokenCacheUpdated
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do

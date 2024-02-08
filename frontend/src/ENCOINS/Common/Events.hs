@@ -16,7 +16,7 @@ newEventWithDelay :: MonadWidget t m => NominalDiffTime -> m (Event t ())
 newEventWithDelay t = newEvent >>= delay t
 
 logEvent :: (MonadWidget t m, Show a) => Text -> Event t a -> m ()
-logEvent title e = performEvent_ $ liftIO . logInfo . ((title <> ": ") <>) . toText <$> e
+logEvent title e = performEvent_ $ liftIO . logInfo . ((title <> ": \n") <>) . toText <$> e
 
 logDyn :: (MonadWidget t m, Show a) => Text -> Dynamic t a -> m ()
 logDyn title d = logEvent title $ updated d
