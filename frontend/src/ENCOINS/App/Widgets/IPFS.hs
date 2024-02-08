@@ -295,7 +295,7 @@ ipfsSettingsWindow mPass ipfsCacheFlag eOpen = do
       pure (dIsIpfsOn, dmKey)
 
 ipfsWindowStyle :: Text
-ipfsWindowStyle = "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
+ipfsWindowStyle = "width: 70%; min-width: 750px; height: 20%; min-height: 180px; padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
 
 ipfsCheckbox :: MonadWidget t m
   => Dynamic t Bool
