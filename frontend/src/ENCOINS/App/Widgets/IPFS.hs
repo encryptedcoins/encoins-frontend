@@ -4,7 +4,7 @@
 module ENCOINS.App.Widgets.IPFS where
 
 import           Backend.Protocol.Types
-import           Backend.Servant.Requests        (cacheRequest, restoreRequest)
+import           Backend.Servant.Requests        (ipfsCacheRequest, restoreRequest)
 import           Backend.Utility                 (eventEither, eventTuple,
                                                   switchHoldDyn, toText)
 import           ENCOINS.App.Widgets.Basic       (elementResultJS,
@@ -88,8 +88,14 @@ pinEncryptedTokens dWalletAddress dmKey dIpfsOn eTokenCache = do
               let eFireCaching = ffilter (not . null) $ updated dCloudTokens
               let dClientId = mkClientId <$> dWalletAddress
               let dReq = zipDynWith (,) dClientId dCloudTokens
-              eeCloudResponse <- cacheRequest dReq $ () <$ eFireCaching
+              eeCloudResponse <- ipfsCacheRequest dReq $ () <$ eFireCaching
               let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
+              dCacheError <- holdDyn "" eCacheError
+              void $ switchHoldDyn dCacheError $ \case
+                "" -> pure never
+                errs  -> do
+                  logDyn "ipfsCacheRequest return error" (constDyn errs)
+                  pure never
               dCloudResponse <- holdDyn Map.empty eCloudResponse
               pure $ updated $ ffor2 dCloudResponse dTokenCache updateCacheStatus
 

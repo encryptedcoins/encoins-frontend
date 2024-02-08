@@ -200,15 +200,15 @@ shuffle ev xs = performEvent $ ev $> (liftIO $ do
 upfsBackendUrl :: BaseUrl
 upfsBackendUrl = BasePath "http://localhost:7000"
 
-cacheRequest :: MonadWidget t m
+ipfsCacheRequest :: MonadWidget t m
   => Dynamic t (Text, [CloudRequest])
   -> Event t ()
   -> m (Event t (Either Text (Map Text CloudResponse)))
-cacheRequest dToken e = do
+ipfsCacheRequest dToken e = do
   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient upfsBackendUrl
-  eResp <- cache (Right <$> dToken) e
+  eResp <- ipfsCache (Right <$> dToken) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "cache request" eRespUnwrapped
+  logEvent "ipfsCache response" eRespUnwrapped
   pure eRespUnwrapped
 
 restoreRequest :: MonadWidget t m
@@ -219,5 +219,5 @@ restoreRequest dClientId e = do
   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient upfsBackendUrl
   eResp <- restore (Right <$> dClientId) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "restore request" eRespUnwrapped
+  logEvent "restore response" eRespUnwrapped
   pure eRespUnwrapped
