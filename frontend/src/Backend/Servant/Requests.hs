@@ -203,7 +203,7 @@ upfsBackendUrl = BasePath "http://localhost:7000"
 ipfsCacheRequest :: MonadWidget t m
   => Dynamic t (AesKeyHash, [CloudRequest])
   -> Event t ()
-  -> m (Event t (Either Text (Map Text CloudResponse)))
+  -> m (Event t (Either Text (Map AssetName CloudResponse)))
 ipfsCacheRequest dToken e = do
   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient upfsBackendUrl
   eResp <- cache (Right <$> dToken) e

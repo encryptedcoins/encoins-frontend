@@ -134,7 +134,7 @@ encryptToken (MkAesKeyRaw keyText) ev secret = do
   pure $ fmap MkEncryptedSecret . checkEmpty <$> dEncryptedSecretT
 
 -- Update ipfs metadata of tokens with response from ipfs
-updateCacheStatus :: Map Text CloudResponse -> [TokenCacheV3] -> [TokenCacheV3]
+updateCacheStatus :: Map AssetName CloudResponse -> [TokenCacheV3] -> [TokenCacheV3]
 updateCacheStatus clouds = map updateCloud
   where
     updateCloud :: TokenCacheV3 -> TokenCacheV3
@@ -223,9 +223,9 @@ restoreValidTokens dmKey = do
 decryptToken :: MonadWidget t m
   => AesKeyRaw
   -> Event t ()
-  -> Text
+  -> EncryptedSecret
   -> m (Dynamic t Text)
-decryptToken (MkAesKeyRaw key) ev encryptedHex = do
+decryptToken (MkAesKeyRaw key) ev (MkEncryptedSecret encryptedHex) = do
   let elementId = toText $ Hash.hash @Hash.SHA256 $ encodeUtf8 encryptedHex
   performEvent_ $ JS.decryptAES (key, elementId, encryptedHex) <$ ev
   dDecryptedToken <- elementResultJS elementId id
@@ -242,7 +242,7 @@ decryptTokens key dRestores = do
     restores -> do
       fmap (updated . sequence) $ flip traverse restores $ \r -> do
           ev <- newEvent
-          deDecryptedSecret <- decryptToken key ev $ tkTokenKey $ rrSecretKey r
+          deDecryptedSecret <- decryptToken key ev $ rrEncryptedSecret r
           let deToken = mkTokenCacheV3 (rrAssetName r) <$> deDecryptedSecret
           pure deToken
   let (eErrors, eResponses) = eventTuple $ partitionEithers <$> eTokens
@@ -259,7 +259,7 @@ decryptTokens key dRestores = do
     attachPromptlyDyn dValidLength eResponses
   pure $ snd <$> dRes
 
-mkTokenCacheV3 :: Text -> Text -> Either String TokenCacheV3
+mkTokenCacheV3 :: AssetName -> Text -> Either String TokenCacheV3
 mkTokenCacheV3 name decrypted = case eSecret of
   Left err -> Left err
   Right secret ->
@@ -271,7 +271,7 @@ mkTokenCacheV3 name decrypted = case eSecret of
             , tcIpfsStatus = Pinned
             , tcCoinStatus = Minted
             }
-          else Left "Invalid amount in the token from ipfs"
+          else Left "Invalid amount in the Secret from ipfs"
   where
     eSecret = eitherDecodeStrict' $ encodeUtf8 decrypted
 

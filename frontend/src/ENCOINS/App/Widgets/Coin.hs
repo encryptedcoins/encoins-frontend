@@ -17,7 +17,8 @@ import           Text.Read                       (readMaybe)
 
 import           Backend.Protocol.Setup          (bulletproofSetup,
                                                   encoinsCurrencySymbol)
-import           Backend.Protocol.Types          (CoinStatus (..),
+import           Backend.Protocol.Types          (AssetName (..),
+                                                  CoinStatus (..),
                                                   IpfsStatus (..),
                                                   TokenCacheV3 (..))
 import           Backend.Protocol.Utility        (secretToHex)
@@ -67,7 +68,12 @@ data CoinUpdate = AddCoin Secret | RemoveCoin Secret | ClearCoins
 
 coinV3 :: Secret -> TokenCacheV3
 coinV3 s =
-    let assetName = encodeHex . fromBuiltin . snd . fromSecret bulletproofSetup $ s
+    let assetName = MkAssetName
+          . encodeHex
+          . fromBuiltin
+          . snd
+          . fromSecret bulletproofSetup
+          $ s
     in MkTokenCacheV3 assetName s Unpinned Minted
     -- ^ Unpinned and Minted are default parameters
 
@@ -85,7 +91,7 @@ shortenCoinName txt = Text.take 4 txt `Text.append` "..." `Text.append` Text.tak
 coinValue :: Secret -> Text
 coinValue = toText . fst . fromSecret bulletproofSetup
 
-filterByKnownCoinNames :: [Text] -> [TokenCacheV3] -> [TokenCacheV3]
+filterByKnownCoinNames :: [AssetName] -> [TokenCacheV3] -> [TokenCacheV3]
 filterByKnownCoinNames knownNames =
   filter (\(MkTokenCacheV3 name _ _ _) -> name `elem` knownNames)
 
@@ -96,7 +102,12 @@ coinBurnWidget (MkTokenCacheV3 name s _ _) = mdo
     (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
         dChecked <- divClass "" checkboxButton -- withTooltip checkboxButton mempty 0 0 $
             -- divClass "app-text-normal" $ text "Select to burn this coin."
-        (txt,_) <- withTooltip (elClass' "div" "app-text-normal" $ text $ shortenCoinName name) mempty 0 0 $ do
+        (txt,_) <- withTooltip
+          (elClass' "div" "app-text-normal" $ text $ shortenCoinName $ getAssetName name)
+          mempty
+          0
+          0
+          $ do
             elAttr "div" ("class" =: "app-text-normal" <> "style" =: "width: 350px;") $ text "Click to see the full token name."
         divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
         let keyIcon = do
@@ -129,8 +140,8 @@ coinBurnCollectionWidget dlToken = do
     let edlToken = fmap (fmap catMaybes) edlmToken
     join <$> holdDyn (constDyn []) edlToken
 
-coinTooltip :: MonadWidget t m => Text -> m ()
-coinTooltip name = elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visible" <>
+coinTooltip :: MonadWidget t m => AssetName -> m ()
+coinTooltip (MkAssetName name) = elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visible" <>
     "style" =: "border-top-left-radius: 0px; border-top-right-radius: 0px") $ do
     divClass "app-text-semibold" $ text "Full token name"
     elAttr "div" ("class" =: "app-text-normal" <> "style" =: "font-size:16px;overflow-wrap: anywhere;") $ do
@@ -149,7 +160,7 @@ coinV3MintWidget :: MonadWidget t m => TokenCacheV3 -> m (Event t Secret)
 coinV3MintWidget (MkTokenCacheV3 name s _ _) = mdo
     (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
         eCross <- domEvent Click . fst <$> elClass' "div" "cross-div" blank
-        (txt, _) <- elClass' "div" "app-text-normal" $ text $ shortenCoinName name
+        (txt, _) <- elClass' "div" "app-text-normal" $ text $ shortenCoinName $ getAssetName name
         divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
         return (txt, eCross)
     dTooltipVis <- toggle False (domEvent Click elTxt)

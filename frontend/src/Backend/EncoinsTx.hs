@@ -43,7 +43,7 @@ encoinsTxWalletMode :: MonadWidget t m
   -> Dynamic t Secrets
   -> Event t ()
   -> Dynamic t [Text]
-  -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
+  -> m (Dynamic t [AssetName], Event t Status, Dynamic t Text)
 encoinsTxWalletMode
   dWallet
   dBulletproofParams
@@ -140,7 +140,7 @@ encoinsTxTransferMode :: MonadWidget t m
   -> Event t ()
   -> Dynamic t [(Text, Text)]
   -> Dynamic t [Text]
-  -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
+  -> m (Dynamic t [AssetName], Event t Status, Dynamic t Text)
 encoinsTxTransferMode
   dWallet
   dCoins
@@ -216,7 +216,7 @@ encoinsTxTransferMode
       . CSL.MultiAsset
       . Map.singleton encoinsCurrencySymbol
       . Map.fromList
-      . mapMaybe (\s -> (,"1") . tcAssetName <$> find (\tc -> s == tcSecret tc) tokenCaches)
+      . mapMaybe (\s -> (,"1") . getAssetName . tcAssetName <$> find (\tc -> s == tcSecret tc) tokenCaches)
       $ coins
 
 encoinsTxLedgerMode :: MonadWidget t m
@@ -227,7 +227,7 @@ encoinsTxLedgerMode :: MonadWidget t m
   -> Dynamic t Secrets
   -> Event t ()
   -> Dynamic t [Text]
-  -> m (Dynamic t [Text], Event t Status)
+  -> m (Dynamic t [AssetName], Event t Status)
 encoinsTxLedgerMode
   dBulletproofParams
   bRandomness

@@ -4,8 +4,9 @@
 
 module Backend.Protocol.Types where
 
-import           Data.Aeson           (FromJSON (..), ToJSON (..),
-                                       genericParseJSON, genericToJSON)
+import           Data.Aeson           (FromJSON (..), FromJSONKey, ToJSON (..),
+                                       ToJSONKey, genericParseJSON,
+                                       genericToJSON)
 import           Data.Aeson.Casing    (aesonPrefix, snakeCase)
 import           Data.Maybe           (fromJust)
 import           Data.Text            (Text)
@@ -126,9 +127,13 @@ newtype EncryptedSecret = MkEncryptedSecret { getEncryptedSecret :: Text }
   deriving newtype (Eq, Show, ToJSON, FromJSON)
   deriving stock (Generic)
 
+newtype AssetName = MkAssetName { getAssetName :: Text }
+  deriving newtype (Eq, Show, Ord, ToJSON, FromJSON, ToJSONKey, FromJSONKey)
+  deriving stock (Generic)
+
 -- Request body from frontend to backend
 data CloudRequest = MkCloudRequest
-  { reqAssetName :: Text
+  { reqAssetName :: AssetName
   , reqSecretKey :: EncryptedSecret
   }
   deriving stock (Show, Eq, Generic)
@@ -156,7 +161,7 @@ data CoinStatus = Minted | Burned | CoinError Text
 -- Cache
 
 data TokenCacheV3 = MkTokenCacheV3
-  { tcAssetName  :: Text
+  { tcAssetName  :: AssetName
   , tcSecret     :: Secret
   , tcIpfsStatus :: IpfsStatus
   , tcCoinStatus :: CoinStatus
@@ -165,30 +170,20 @@ data TokenCacheV3 = MkTokenCacheV3
   deriving anyclass (FromJSON, ToJSON)
 
 -- For readable logs
-showToken :: TokenCacheV3 -> (Text, IpfsStatus)
+showToken :: TokenCacheV3 -> (AssetName, IpfsStatus)
 showToken (MkTokenCacheV3 n _ s _) = (n,s)
 
-showTokens :: [TokenCacheV3] -> [(Text, IpfsStatus)]
+showTokens :: [TokenCacheV3] -> [(AssetName, IpfsStatus)]
 showTokens = map showToken
 
 data RestoreResponse = MkRestoreResponse
-  { rrAssetName :: Text
-  , rrSecretKey :: TokenKey
+  { rrAssetName       :: AssetName
+  , rrEncryptedSecret :: EncryptedSecret
   }
   deriving stock (Show, Eq, Generic)
 
 instance FromJSON RestoreResponse where
    parseJSON = genericParseJSON $ aesonPrefix snakeCase
-
-newtype TokenKey = MkTokenKey { tkTokenKey :: Text }
-  deriving newtype (Show, Eq)
-  deriving stock (Generic)
-
-instance FromJSON TokenKey where
-   parseJSON = genericParseJSON $ aesonPrefix snakeCase
-
-instance ToJSON TokenKey where
-   toJSON = genericToJSON $ aesonPrefix snakeCase
 
 newtype PasswordRaw = PasswordRaw { getPassRaw :: Text } deriving (Eq, Show)
 

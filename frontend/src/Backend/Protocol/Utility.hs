@@ -22,8 +22,8 @@ import           PlutusTx.Extra.ByteString (ToBuiltinByteString (..),
                                             byteStringToInteger)
 
 
-getEncoinsInUtxos :: CSL.TransactionUnspentOutputs -> [Text]
-getEncoinsInUtxos utxos = Map.keys assets
+getEncoinsInUtxos :: CSL.TransactionUnspentOutputs -> [AssetName]
+getEncoinsInUtxos utxos = map MkAssetName $ Map.keys assets
   where getMultiAsset (CSL.MultiAsset a) = a
         assets = foldr Map.union Map.empty
           (mapMaybe (Map.lookup encoinsCurrencySymbol . getMultiAsset) $
