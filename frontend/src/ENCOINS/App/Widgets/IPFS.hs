@@ -35,7 +35,6 @@ import           Reflex.Dom
 -- TODO:
 -- 1. Add pinned status
   -- Visual statuses reload, done, failed
--- 2. AES key as clientId
 
 
 -- IPFS saving launches
@@ -43,13 +42,12 @@ import           Reflex.Dom
 -- and
 -- when new token(s) appear on the left
 saveTokensOnIpfs :: MonadWidget t m
-  => Dynamic t Text
-  -> Maybe PasswordRaw
+  => Maybe PasswordRaw
   -> Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
   -> Event t [TokenCacheV3]
   -> m (Event t [TokenCacheV3])
-saveTokensOnIpfs dWalletAddress mPass dIpfsOn dmKey eTokenCache = do
+saveTokensOnIpfs mPass dIpfsOn dmKey eTokenCache = do
   -- tagPromptlyDyn prevents from loop in js
   dmKeyFired <- holdDyn Nothing $ tagPromptlyDyn dmKey eTokenCache
   dIpfsOnFired <- holdDyn False $ tagPromptlyDyn dIpfsOn eTokenCache
@@ -59,7 +57,6 @@ saveTokensOnIpfs dWalletAddress mPass dIpfsOn dmKey eTokenCache = do
 
   logEvent "saveTokensOnIpfs: tokens before ipfs save" $ showTokens <$> eTokenCacheDelayed
   eTokenIpfsCached <- pinEncryptedTokens
-    dWalletAddress
     dmKeyFired
     dIpfsOnFired
     eTokenCacheDelayed
@@ -70,12 +67,11 @@ saveTokensOnIpfs dWalletAddress mPass dIpfsOn dmKey eTokenCache = do
   pure $ tagPromptlyDyn dTokenIpfsCached eSaved
 
 pinEncryptedTokens :: MonadWidget t m
-  => Dynamic t Text -- TODO: use hash of aes key instead of wallet address
-  -> Dynamic t (Maybe AesKeyRaw)
+  => Dynamic t (Maybe AesKeyRaw)
   -> Dynamic t Bool
   -> Event t [TokenCacheV3]
   -> m (Event t [TokenCacheV3])
-pinEncryptedTokens dWalletAddress dmKey dIpfsOn eTokenCache = do
+pinEncryptedTokens dmKey dIpfsOn eTokenCache = do
   switchHoldDyn dIpfsOn $ \case
     False -> do
       pure never
@@ -92,8 +88,8 @@ pinEncryptedTokens dWalletAddress dmKey dIpfsOn eTokenCache = do
               dCloudTokens <- encryptTokens key tokenCache
               logDyn "pinEncryptedTokens: dCloudTokens" $ map reqAssetName <$> dCloudTokens
               let eFireCaching = ffilter (not . null) $ updated dCloudTokens -- TODO: check it
-              let dClientId = mkClientId <$> dWalletAddress -- TODO: hashed aes key
-              let dReq = zipDynWith (,) dClientId dCloudTokens
+              let clientId = mkClientId key
+              let dReq = (clientId,) <$> dCloudTokens
               eeCloudResponse <- ipfsCacheRequest dReq $ () <$ eFireCaching
               let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
               dCacheError <- holdDyn "" eCacheError
@@ -165,8 +161,12 @@ mkCloudRequest cache encryptedSecret = if not (T.null encryptedSecret)
     }
   else Nothing
 
-mkClientId :: Text -> Text
-mkClientId address = toText $ Hash.hash @Hash.SHA256 $ encodeUtf8 address
+mkClientId :: AesKeyRaw -> AesKeyHash
+mkClientId (MkAesKeyRaw key)
+  = MkAesKeyHash
+  $ toText
+  $ Hash.hash @Hash.SHA256
+  $ encodeUtf8 key
 
 -- Generate aes 256 length key with function builtin any browser
 -- And save it to local cache
@@ -206,23 +206,26 @@ fetchIpfsFlag resId ev = loadAppDataId Nothing isIpfsOn resId ev id False
 -- restore tokens from ipfs
 -- that are minted and pinned only
 restoreValidTokens :: MonadWidget t m
-  => Dynamic t Text
-  -> Dynamic t Text
+  => Dynamic t (Maybe AesKeyRaw)
   -> m (Dynamic t [TokenCacheV3])
-restoreValidTokens dKey dWalletAddress = do
-  let dClientId = mkClientId <$> dWalletAddress
-  ev <- newEvent
-  eeResotres <- restoreRequest dClientId ev
-  let (eRestoreError, eRestoreResponses) = eventEither eeResotres
-  dRestoreResponses <- holdDyn [] eRestoreResponses
-  decryptTokens dKey dRestoreResponses
+restoreValidTokens dmKey = do
+  eTokens <- switchHoldDyn dmKey $ \case
+    Nothing -> pure never
+    Just key -> do
+      let clientId = mkClientId key
+      ev <- newEvent
+      eeResotres <- restoreRequest (constDyn clientId) ev
+      let (eRestoreError, eRestoreResponses) = eventEither eeResotres
+      dRestoreResponses <- holdDyn [] eRestoreResponses
+      updated <$> decryptTokens key dRestoreResponses
+  holdDyn [] eTokens
 
 decryptToken :: MonadWidget t m
-  => Text
+  => AesKeyRaw
   -> Event t ()
   -> Text
   -> m (Dynamic t Text)
-decryptToken key ev encryptedHex = do
+decryptToken (MkAesKeyRaw key) ev encryptedHex = do
   let elementId = toText $ Hash.hash @Hash.SHA256 $ encodeUtf8 encryptedHex
   performEvent_ $ JS.decryptAES (key, elementId, encryptedHex) <$ ev
   dDecryptedToken <- elementResultJS elementId id
@@ -230,20 +233,18 @@ decryptToken key ev encryptedHex = do
   pure dDecryptedToken
 
 decryptTokens :: MonadWidget t m
-  => Dynamic t Text
+  => AesKeyRaw
   -> Dynamic t [RestoreResponse]
   -> m (Dynamic t [TokenCacheV3])
-decryptTokens dKey dRestores = do
-  eTokens <- switchHoldDyn dKey $ \case
-    "" -> pure never
-    key -> switchHoldDyn dRestores $ \case
-      [] -> pure never
-      restores -> do
-        fmap (updated . sequence) $ flip traverse restores $ \r -> do
-            ev <- newEvent
-            deDecryptedSecret <- decryptToken key ev $ tkTokenKey $ rrSecretKey r
-            let deToken = mkTokenCacheV3 (rrAssetName r) <$> deDecryptedSecret
-            pure deToken
+decryptTokens key dRestores = do
+  eTokens <- switchHoldDyn dRestores $ \case
+    [] -> pure never
+    restores -> do
+      fmap (updated . sequence) $ flip traverse restores $ \r -> do
+          ev <- newEvent
+          deDecryptedSecret <- decryptToken key ev $ tkTokenKey $ rrSecretKey r
+          let deToken = mkTokenCacheV3 (rrAssetName r) <$> deDecryptedSecret
+          pure deToken
   let (eErrors, eResponses) = eventTuple $ partitionEithers <$> eTokens
   dErrors <- holdDyn [] eErrors
   void $ switchHoldDyn dErrors $ \case

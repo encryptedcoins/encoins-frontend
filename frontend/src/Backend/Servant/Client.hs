@@ -61,15 +61,15 @@ mkApiClient host = ApiClient{..}
 
 type BackIpfsApi =
          "cache"
-              :> ReqBody '[JSON] (Text, [CloudRequest])
+              :> ReqBody '[JSON] (AesKeyHash, [CloudRequest])
               :> Post '[JSON] (Map Text CloudResponse)
     :<|> "restore"
-              :> Capture "client_id" Text
+              :> Capture "client_id" AesKeyHash
               :> Get '[JSON] [RestoreResponse]
 
 data BackIpfsApiClient t m = MkBackIpfsApiClient
-  { cache   :: ReqRes t m (Text, [CloudRequest]) (Map Text CloudResponse)
-  , restore :: Dynamic t (Either Text Text) -> Res t m [RestoreResponse]
+  { cache   :: ReqRes t m (AesKeyHash, [CloudRequest]) (Map Text CloudResponse)
+  , restore :: Dynamic t (Either Text AesKeyHash) -> Res t m [RestoreResponse]
   }
 
 mkBackIpfsApiClient :: forall t m . MonadWidget t m

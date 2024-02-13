@@ -159,7 +159,6 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
             -- IPFS begin
             dWalletSecretsUniq <- holdUniqDyn dSecretsInTheWallet
             eTokenWithNewState <- saveTokensOnIpfs
-              (walletAddressBech32 <$> dWallet)
               mpass
               dIpfsOn
               dmKey
@@ -266,12 +265,11 @@ transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
 
 ledgerTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
-  -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
   -> Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
   -> m ()
-ledgerTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
+ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -372,7 +370,6 @@ ledgerTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
             -- IPFS begin
             dWalletSecretsUniq <- holdUniqDyn dSecretsInTheWallet
             eTokenWithNewState <- saveTokensOnIpfs
-              (walletAddressBech32 <$> dWallet)
               mpass
               dIpfsOn
               dmKey

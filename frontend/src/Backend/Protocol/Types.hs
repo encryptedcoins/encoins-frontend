@@ -15,6 +15,7 @@ import           Data.Version         (Version)
 import           GHC.Generics         (Generic)
 import           PlutusTx.Builtins
 import           Reflex.Dom           (decodeText)
+import           Servant.API          (ToHttpApiData)
 import           Text.Hex             (decodeHex, encodeHex)
 
 import           CSL                  (TransactionUnspentOutputs, Value)
@@ -196,5 +197,5 @@ newtype AesKeyRaw = MkAesKeyRaw { getAesKeyRaw :: Text }
 -- Hash of aes key to save it in metadata field as clientId on IPFS
 -- For identifying which token to fetch
 newtype AesKeyHash = MkAesKeyHash { getAesKeyHash :: Text }
-  deriving newtype (Eq, Show, ToJSON, FromJSON)
+  deriving newtype (Eq, Show, ToJSON, FromJSON, ToHttpApiData)
   deriving stock (Generic)

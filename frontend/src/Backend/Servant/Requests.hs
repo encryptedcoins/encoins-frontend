@@ -201,7 +201,7 @@ upfsBackendUrl :: BaseUrl
 upfsBackendUrl = BasePath "http://localhost:7000"
 
 ipfsCacheRequest :: MonadWidget t m
-  => Dynamic t (Text, [CloudRequest])
+  => Dynamic t (AesKeyHash, [CloudRequest])
   -> Event t ()
   -> m (Event t (Either Text (Map Text CloudResponse)))
 ipfsCacheRequest dToken e = do
@@ -212,7 +212,7 @@ ipfsCacheRequest dToken e = do
   pure eRespUnwrapped
 
 restoreRequest :: MonadWidget t m
-  => Dynamic t Text
+  => Dynamic t AesKeyHash
   -> Event t ()
   -> m (Event t (Either Text [RestoreResponse]))
 restoreRequest dClientId e = do

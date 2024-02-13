@@ -35,6 +35,6 @@ mainWindow mPass dWallet dIsDisableButtons dIpfsOn dmKey = mdo
       case tab of
         WalletTab   -> walletTab mPass dWallet dSecretsV3 dIpfsOn dmKey
         TransferTab -> transferTab mPass dWallet dSecretsV3
-        LedgerTab   -> ledgerTab mPass dWallet dSecretsV3 dIpfsOn dmKey
+        LedgerTab   -> ledgerTab mPass dSecretsV3 dIpfsOn dmKey
       return $ updated dSecretsV3
     holdDyn [] eSecrets
