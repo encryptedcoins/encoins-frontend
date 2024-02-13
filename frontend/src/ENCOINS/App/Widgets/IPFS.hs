@@ -109,27 +109,29 @@ encryptTokens :: MonadWidget t m
 encryptTokens key tokens = do
   let validTokens = catMaybes $ map getValidTokens tokens
   let validTokenNumber = length validTokens
-  eClouds <- fmap (updated . sequence) $ flip traverse validTokens $ \t -> do
+  emClouds <- fmap (updated . sequence) $ flip traverse validTokens $ \t -> do
       ev <- newEvent
       dEncryptedSecret <- encryptToken key ev $ tcSecret t
-      let dmCloud = mkCloudRequest t <$> dEncryptedSecret
+      let dmCloud = fmap (mkCloudRequest t) <$> dEncryptedSecret
       pure dmCloud
     -- Wait until all tokens are encrypted and return them
   dRes <- foldDynMaybe
     (\(ac,ar) _ -> if length ar == ac then Just (ac,ar) else Nothing) (0,[]) $
-    attachPromptlyDyn (constDyn validTokenNumber) $ catMaybes <$> eClouds
+    attachPromptlyDyn (constDyn validTokenNumber) $ catMaybes <$> emClouds
   pure $ snd <$> dRes
 
 encryptToken :: MonadWidget t m
   => AesKeyRaw
   -> Event t ()
   -> Secret
-  -> m (Dynamic t Text)
+  -> m (Dynamic t (Maybe EncryptedSecret))
 encryptToken (MkAesKeyRaw keyText) ev secret = do
   let secretByte = toJsonStrict secret
   let elementId = toText $ Hash.hash @Hash.SHA256 secretByte
   performEvent_ $ JS.encryptAES (keyText, elementId, decodeUtf8 secretByte) <$ ev
-  elementResultJS elementId id
+  dEncryptedSecretT <- elementResultJS elementId id
+  let checkEmpty t = if T.null t then Nothing else Just t
+  pure $ fmap MkEncryptedSecret . checkEmpty <$> dEncryptedSecretT
 
 -- Update ipfs metadata of tokens with response from ipfs
 updateCacheStatus :: Map Text CloudResponse -> [TokenCacheV3] -> [TokenCacheV3]
@@ -153,13 +155,11 @@ getValidTokens t = case (tcIpfsStatus t, tcCoinStatus t)  of
   (_, Minted) -> Just t
   _           -> Nothing
 
-mkCloudRequest :: TokenCacheV3 -> Text -> Maybe CloudRequest
-mkCloudRequest cache encryptedSecret = if not (T.null encryptedSecret)
-  then Just $ MkCloudRequest
+mkCloudRequest :: TokenCacheV3 -> EncryptedSecret -> CloudRequest
+mkCloudRequest cache encryptedSecret = MkCloudRequest
     { reqAssetName  = tcAssetName cache
     , reqSecretKey  = encryptedSecret
     }
-  else Nothing
 
 mkClientId :: AesKeyRaw -> AesKeyHash
 mkClientId (MkAesKeyRaw key)

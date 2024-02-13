@@ -121,10 +121,15 @@ data ServerVersion = ServerVersion
 
 -- IPFS
 
+-- Secret hash is used to save on IPFS
+newtype EncryptedSecret = MkEncryptedSecret { getEncryptedSecret :: Text }
+  deriving newtype (Eq, Show, ToJSON, FromJSON)
+  deriving stock (Generic)
+
 -- Request body from frontend to backend
 data CloudRequest = MkCloudRequest
   { reqAssetName :: Text
-  , reqSecretKey :: Text -- TODO: strict data
+  , reqSecretKey :: EncryptedSecret
   }
   deriving stock (Show, Eq, Generic)
 
