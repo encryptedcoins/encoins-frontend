@@ -6,7 +6,7 @@ import           Data.Text                         (Text)
 import           Reflex.Dom
 
 import           Backend.Protocol.Types            (PasswordRaw (..),
-                                                    TokenCacheV3)
+                                                    TokenCacheV3, AesKeyRaw)
 import           Backend.Status                    (Status (..))
 import           Backend.Utility                   (switchHoldDyn)
 import           Backend.Wallet                    (Wallet (..))
@@ -23,7 +23,7 @@ mainWindow :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   -> Dynamic t Wallet
   -> Dynamic t Bool
   -> Dynamic t Bool
-  -> Dynamic t (Maybe Text)
+  -> Dynamic t (Maybe AesKeyRaw)
   -> m (Dynamic t [TokenCacheV3])
 mainWindow mPass dWallet dIsDisableButtons dIpfsOn dmKey = mdo
     eTab <- tabsSection dTab dIsDisableButtons

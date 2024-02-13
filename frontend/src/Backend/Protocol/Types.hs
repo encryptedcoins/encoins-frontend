@@ -123,7 +123,7 @@ data ServerVersion = ServerVersion
 -- Request body from frontend to backend
 data CloudRequest = MkCloudRequest
   { reqAssetName :: Text
-  , reqSecretKey :: Text
+  , reqSecretKey :: Text -- TODO: strict data
   }
   deriving stock (Show, Eq, Generic)
 
@@ -187,3 +187,14 @@ instance ToJSON TokenKey where
 newtype PasswordRaw = PasswordRaw { getPassRaw :: Text } deriving (Eq, Show)
 
 newtype PasswordHash = PasswordHash { getPassHash :: Text } deriving (Eq, Show)
+
+-- Randomly generated aes256 key for encrypting Secrets before saving on ipfs
+newtype AesKeyRaw = MkAesKeyRaw { getAesKeyRaw :: Text }
+  deriving newtype (Eq, Show, ToJSON, FromJSON)
+  deriving stock (Generic)
+
+-- Hash of aes key to save it in metadata field as clientId on IPFS
+-- For identifying which token to fetch
+newtype AesKeyHash = MkAesKeyHash { getAesKeyHash :: Text }
+  deriving newtype (Eq, Show, ToJSON, FromJSON)
+  deriving stock (Generic)

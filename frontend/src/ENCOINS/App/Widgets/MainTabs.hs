@@ -65,7 +65,7 @@ walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
   -> Dynamic t Bool
-  -> Dynamic t (Maybe Text)
+  -> Dynamic t (Maybe AesKeyRaw)
   -> m ()
 walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
@@ -269,7 +269,7 @@ ledgerTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
   -> Dynamic t Bool
-  -> Dynamic t (Maybe Text)
+  -> Dynamic t (Maybe AesKeyRaw)
   -> m ()
 ledgerTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent

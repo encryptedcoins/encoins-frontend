@@ -32,6 +32,12 @@ import qualified Data.Text                       as T
 import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
 import           Reflex.Dom
 
+-- TODO:
+-- 1. Add pinned status
+  -- Visual statuses reload, done, failed
+-- 2. AES key as clientId
+
+
 -- IPFS saving launches
 -- when first page load for unpinned token on the left
 -- and
@@ -40,7 +46,7 @@ saveTokensOnIpfs :: MonadWidget t m
   => Dynamic t Text
   -> Maybe PasswordRaw
   -> Dynamic t Bool
-  -> Dynamic t (Maybe Text)
+  -> Dynamic t (Maybe AesKeyRaw)
   -> Event t [TokenCacheV3]
   -> m (Event t [TokenCacheV3])
 saveTokensOnIpfs dWalletAddress mPass dIpfsOn dmKey eTokenCache = do
@@ -64,8 +70,8 @@ saveTokensOnIpfs dWalletAddress mPass dIpfsOn dmKey eTokenCache = do
   pure $ tagPromptlyDyn dTokenIpfsCached eSaved
 
 pinEncryptedTokens :: MonadWidget t m
-  => Dynamic t Text
-  -> Dynamic t (Maybe Text)
+  => Dynamic t Text -- TODO: use hash of aes key instead of wallet address
+  -> Dynamic t (Maybe AesKeyRaw)
   -> Dynamic t Bool
   -> Event t [TokenCacheV3]
   -> m (Event t [TokenCacheV3])
@@ -85,8 +91,8 @@ pinEncryptedTokens dWalletAddress dmKey dIpfsOn eTokenCache = do
             tokenCache -> do
               dCloudTokens <- encryptTokens key tokenCache
               logDyn "pinEncryptedTokens: dCloudTokens" $ map reqAssetName <$> dCloudTokens
-              let eFireCaching = ffilter (not . null) $ updated dCloudTokens
-              let dClientId = mkClientId <$> dWalletAddress
+              let eFireCaching = ffilter (not . null) $ updated dCloudTokens -- TODO: check it
+              let dClientId = mkClientId <$> dWalletAddress -- TODO: hashed aes key
               let dReq = zipDynWith (,) dClientId dCloudTokens
               eeCloudResponse <- ipfsCacheRequest dReq $ () <$ eFireCaching
               let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
@@ -101,7 +107,7 @@ pinEncryptedTokens dWalletAddress dmKey dIpfsOn eTokenCache = do
 
 -- Encrypt valid tokens only and make request
 encryptTokens :: MonadWidget t m
-  => Text
+  => AesKeyRaw
   -> [TokenCacheV3]
   -> m (Dynamic t [CloudRequest])
 encryptTokens key tokens = do
@@ -119,16 +125,15 @@ encryptTokens key tokens = do
   pure $ snd <$> dRes
 
 encryptToken :: MonadWidget t m
-  => Text
+  => AesKeyRaw
   -> Event t ()
   -> Secret
   -> m (Dynamic t Text)
-encryptToken key ev secret = do
+encryptToken (MkAesKeyRaw keyText) ev secret = do
   let secretByte = toJsonStrict secret
   let elementId = toText $ Hash.hash @Hash.SHA256 secretByte
-  performEvent_ $ JS.encryptAES (key, elementId, decodeUtf8 secretByte) <$ ev
-  dEncryptedToken <- elementResultJS elementId id
-  pure dEncryptedToken
+  performEvent_ $ JS.encryptAES (keyText, elementId, decodeUtf8 secretByte) <$ ev
+  elementResultJS elementId id
 
 -- Update ipfs metadata of tokens with response from ipfs
 updateCacheStatus :: Map Text CloudResponse -> [TokenCacheV3] -> [TokenCacheV3]
@@ -163,18 +168,11 @@ mkCloudRequest cache encryptedSecret = if not (T.null encryptedSecret)
 mkClientId :: Text -> Text
 mkClientId address = toText $ Hash.hash @Hash.SHA256 $ encodeUtf8 address
 
--- TODO: remove after debug
-tokenSample :: CloudRequest
-tokenSample = MkCloudRequest
-  { reqAssetName = "b47f55bdc1d7615409cf8cc714e3885c42d6cb48629d44ff5a9265c88aa30cdc"
-  , reqSecretKey = "super secret key"
-  }
-
 -- Generate aes 256 length key with function builtin any browser
 -- And save it to local cache
 getAesKey :: MonadWidget t m
   => Maybe PasswordRaw
-  -> m (Event t (Maybe Text))
+  -> m (Event t (Maybe AesKeyRaw))
 getAesKey mPass = do
   ev1 <- newEventWithDelay 0.1
   dLoadedKey <- fetchAesKey mPass "first-load-of-aes-key" ev1
@@ -184,8 +182,9 @@ getAesKey mPass = do
     Nothing -> do
         let genElId = "genAESKeyId"
         performEvent_ $ JS.generateAESKey genElId <$ ev3
-        eAesKey <- updated <$> elementResultJS genElId id
-        logEvent "getAesKey: eAesKey" eAesKey
+        eAesKeyText <- updated <$> elementResultJS genElId id
+        logEvent "getAesKey: eAesKeyText" eAesKeyText
+        let eAesKey = MkAesKeyRaw <$> eAesKeyText
         ev4 <- saveAppDataId mPass ipfsCacheKey eAesKey
         eLoadedKey <- updated <$> fetchAesKey mPass "second-load-of-aes-key" ev4
         pure eLoadedKey
@@ -195,7 +194,7 @@ fetchAesKey :: MonadWidget t m
   => Maybe PasswordRaw
   -> Text
   -> Event t ()
-  -> m (Dynamic t (Maybe Text))
+  -> m (Dynamic t (Maybe AesKeyRaw))
 fetchAesKey mPass resId ev = loadAppDataId mPass ipfsCacheKey resId ev id Nothing
 
 fetchIpfsFlag :: MonadWidget t m
@@ -279,7 +278,7 @@ ipfsSettingsWindow :: MonadWidget t m
   => Maybe PasswordRaw
   -> Dynamic t Bool
   -> Event t ()
-  -> m (Dynamic t Bool, Dynamic t (Maybe Text))
+  -> m (Dynamic t Bool, Dynamic t (Maybe AesKeyRaw))
 ipfsSettingsWindow mPass ipfsCacheFlag eOpen = do
   dialogWindow
     True
@@ -322,16 +321,17 @@ checkboxWidget initial checkBoxClass = divClass "w-row app-Ipfs_CheckboxContaine
     return $ _inputElement_checked inp
 
 showKeyWidget :: MonadWidget t m
-  => Dynamic t (Maybe Text)
+  => Dynamic t (Maybe AesKeyRaw)
   -> m ()
 showKeyWidget dmKey = divClass "app-Ipfs_Key"
   $ dynText
-  $ maybe "Ipfs key is not generated" id <$> dmKey
+  $ maybe "Ipfs key is not generated" getAesKeyRaw <$> dmKey
 
 -- With ipfs wallet and ledger modes have two dynamics for token and save each of them separately
 -- This function synchronize them.
 -- Otherwise dynamic with old tokens rewrite new one.
 -- TODO: consider use MVar or TWar to manage state.
+-- O(n^2)
 updateTokenState :: [TokenCacheV3] -> [TokenCacheV3] -> [TokenCacheV3]
 updateTokenState old new = foldl' (update new) [] old
   where
