@@ -199,3 +199,6 @@ newtype AesKeyRaw = MkAesKeyRaw { getAesKeyRaw :: Text }
 newtype AesKeyHash = MkAesKeyHash { getAesKeyHash :: Text }
   deriving newtype (Eq, Show, ToJSON, FromJSON, ToHttpApiData)
   deriving stock (Generic)
+
+data IpfsUpdateStatus = Processing | Complete | Failed
+  deriving stock (Eq, Show)

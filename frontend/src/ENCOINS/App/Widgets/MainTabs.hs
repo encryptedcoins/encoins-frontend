@@ -25,7 +25,7 @@ import           Backend.Wallet                         (Wallet (..))
 import           Config.Config                          (delegateServerUrl)
 import           ENCOINS.App.Widgets.Basic              (containerApp,
                                                          elementResultJS,
-                                                         saveAppDataId_,
+                                                         saveAppDataId_,saveAppDataId,
                                                          sectionApp,
                                                          tellTxStatus,
                                                          walletError)
@@ -63,7 +63,7 @@ mainWindowColumnHeader title =
 walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
-  -> Dynamic t [TokenCacheV3]
+  -> Dynamic t [TokenCacheV3] -- consider use Map or Set
   -> Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
   -> m ()
@@ -103,9 +103,9 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   dTokenIpfsSynched
 
             logDyn "walletTab: token before local save 1" $ showTokens <$> dTokenCacheUpdated
-            saveCacheLocally mpass dTokenCacheUpdated
-            -- eSaved <- saveAppDataId mpass encoinsV3 $ updated dTokenCacheUpdated
-            -- logEvent "walletTab: eSaved 1" eSaved
+            -- saveCacheLocally mpass dTokenCacheUpdated
+            eSaved <- saveAppDataId mpass encoinsV3 $ updated dTokenCacheUpdated
+            logEvent "walletTab: eSaved 1" $ () <$ eSaved
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do
@@ -162,7 +162,7 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
               mpass
               dIpfsOn
               dmKey
-              (updated dWalletSecretsUniq)
+              dWalletSecretsUniq
             dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
             logDyn "walletTab: token accumulated on ipfs" $ showTokens <$> dTokenIpfsSynched
             -- IPFS end
@@ -373,7 +373,7 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
               mpass
               dIpfsOn
               dmKey
-              (updated dWalletSecretsUniq)
+              ( dWalletSecretsUniq)
             -- accumulate token saved on ipfs.
             -- The place of error prone.
             -- If in tx A token was not pinned (in wallet mode) and in tx B was pinned (ledger mode), then

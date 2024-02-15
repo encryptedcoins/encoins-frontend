@@ -52,6 +52,12 @@ isMultiAssetOf symbol token (CSL.MultiAsset mp) =
 eventMaybe :: Reflex t => e -> Event t (Maybe a) -> (Event t e, Event t a)
 eventMaybe errValue ev = (errValue <$ ffilter isNothing ev, catMaybes ev)
 
+eventMaybeDynDef :: Reflex t
+  => Dynamic t def
+  -> Event t (Maybe a)
+  -> (Event t def, Event t a)
+eventMaybeDynDef dDefault ev = (tagPromptlyDyn dDefault $ ffilter isNothing ev, catMaybes ev)
+
 eventEither :: Reflex t => Event t (Either e a) -> (Event t e, Event t a)
 eventEither ev = (filterLeft ev, filterRight ev)
 

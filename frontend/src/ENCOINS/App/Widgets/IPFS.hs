@@ -5,7 +5,7 @@ module ENCOINS.App.Widgets.IPFS where
 
 import           Backend.Protocol.Types
 import           Backend.Servant.Requests        (ipfsCacheRequest, restoreRequest)
-import           Backend.Utility                 (eventEither, eventTuple,
+import           Backend.Utility                 (eventEither, eventTuple, eventMaybeDynDef,
                                                   switchHoldDyn, toText)
 import           ENCOINS.App.Widgets.Basic       (elementResultJS,
                                                   loadAppDataId, saveAppDataId,
@@ -31,6 +31,8 @@ import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
 import           Reflex.Dom
+import qualified Data.List.NonEmpty as NE
+import  Data.List.NonEmpty (NonEmpty)
 
 -- TODO:
 -- 1. Add pinned status
@@ -45,49 +47,50 @@ saveTokensOnIpfs :: MonadWidget t m
   => Maybe PasswordRaw
   -> Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
-  -> Event t [TokenCacheV3]
+  -> Dynamic t [TokenCacheV3]
   -> m (Event t [TokenCacheV3])
-saveTokensOnIpfs mPass dIpfsOn dmKey eTokenCache = do
-  -- tagPromptlyDyn prevents from loop in js
-  dmKeyFired <- holdDyn Nothing $ tagPromptlyDyn dmKey eTokenCache
-  dIpfsOnFired <- holdDyn False $ tagPromptlyDyn dIpfsOn eTokenCache
+saveTokensOnIpfs mPass dIpfsOn dmKey dTokenCache = mdo
+  let dIpfsConditions = zipDynWith (,) dIpfsOn dmKey
+  let dmValidTokens = getValidTokens <$> dTokenCache
+  let dMkFullConditions = zipDynWith
+        (\(isOn, mKey) ts -> (isOn, mKey, ts))
+        dIpfsConditions
 
-  -- The delay help firing pinning
-  eTokenCacheDelayed <- delay 0.1 eTokenCache
+  -- logDyn "saveTokensOnIpfs: valid tokens before ipfs pin" dmValidTokens
+  eTokenIpfsPinAttempt <- pinEncryptedTokens $ dMkFullConditions dmValidTokens
+  -- logEvent "saveTokensOnIpfs: tokens after ipfs pin" $ showTokens <$> eTokenIpfsPinAttempt
+  logEvent "saveTokensOnIpfs: token left unpinned" $ getValidTokens <$> eTokenIpfsPinAttempt
 
-  logEvent "saveTokensOnIpfs: tokens before ipfs save" $ showTokens <$> eTokenCacheDelayed
-  eTokenIpfsCached <- pinEncryptedTokens
-    dmKeyFired
-    dIpfsOnFired
-    eTokenCacheDelayed
-  logEvent "saveTokensOnIpfs: tokens after ipfs save" $ showTokens <$> eTokenIpfsCached
-  eSaved <- saveAppDataId mPass encoinsV3 eTokenIpfsCached
+  let eTokenIpfsUnpinned = fmapMaybe id $ getValidTokens <$> eTokenIpfsPinAttempt
+  logEvent "saveTokensOnIpfs: eTokenIpfsUnpinned" $ () <$ eTokenIpfsUnpinned
+
+  dmValidTokens2 <- holdDyn Nothing $ Just <$> eTryPinTokens
+  eTokenIpfsPinAttemptNext <- pinEncryptedTokens $ dMkFullConditions dmValidTokens2
+  dTokenIpfsPinAttemptNext <- holdDyn [] eTokenIpfsPinAttemptNext
+  eDelayTokens <- delay 10
+    $ leftmost [Just <$> eTokenIpfsUnpinned, getValidTokens <$> eTokenIpfsPinAttemptNext]
+  logEvent "saveTokensOnIpfs: eDelayTokens" $ () <$ eDelayTokens
+  let (eTokenIpfsCachedComplete, eTryPinTokens) =
+        eventMaybeDynDef dTokenIpfsPinAttemptNext eDelayTokens
+  logEvent "saveTokensOnIpfs: token left unpinned 2" eTryPinTokens
+  logEvent "saveTokensOnIpfs: eTokenIpfsCachedComplete" eTokenIpfsCachedComplete
+
+  let eTokensToSave = leftmost [eTokenIpfsPinAttempt, eTokenIpfsCachedComplete]
+  eSaved <- saveAppDataId mPass encoinsV3 eTokensToSave
   logEvent "saveTokensOnIpfs: eSaved 2" eSaved
-  dTokenIpfsCached <- holdDyn [] eTokenIpfsCached
+
+  dTokenIpfsCached <- holdDyn [] eTokenIpfsPinAttempt
   pure $ tagPromptlyDyn dTokenIpfsCached eSaved
 
 pinEncryptedTokens :: MonadWidget t m
-  => Dynamic t (Maybe AesKeyRaw)
-  -> Dynamic t Bool
-  -> Event t [TokenCacheV3]
+  => Dynamic t (Bool, Maybe AesKeyRaw, Maybe (NonEmpty TokenCacheV3))
   -> m (Event t [TokenCacheV3])
-pinEncryptedTokens dmKey dIpfsOn eTokenCache = do
-  switchHoldDyn dIpfsOn $ \case
-    False -> do
-      pure never
-    True -> do
-      switchHoldDyn dmKey $ \case
-        Nothing -> do
-          pure never
-        Just key -> do
-          dTokenCache <- holdDyn [] eTokenCache
-          switchHoldDyn dTokenCache $ \case
-            [] -> do
-              pure never
-            tokenCache -> do
+pinEncryptedTokens dConditions = do
+  switchHoldDyn dConditions $ \case
+    (True, Just key, Just (NE.toList -> tokenCache)) -> do
               dCloudTokens <- encryptTokens key tokenCache
-              logDyn "pinEncryptedTokens: dCloudTokens" $ map reqAssetName <$> dCloudTokens
-              let eFireCaching = ffilter (not . null) $ updated dCloudTokens -- TODO: check it
+              let eFireCaching = ffilter (not . null) $ updated dCloudTokens
+              -- logEvent "pinEncryptedTokens: fire ipfs pinning" $ () <$ eFireCaching
               let clientId = mkClientId key
               let dReq = (clientId,) <$> dCloudTokens
               eeCloudResponse <- ipfsCacheRequest dReq $ () <$ eFireCaching
@@ -96,18 +99,18 @@ pinEncryptedTokens dmKey dIpfsOn eTokenCache = do
               void $ switchHoldDyn dCacheError $ \case
                 "" -> pure never
                 errs  -> do
-                  logDyn "ipfsCacheRequest return error" (constDyn errs)
+                  logDyn "pinEncryptedTokens: ipfsCacheRequest return error" (constDyn errs)
                   pure never
               dCloudResponse <- holdDyn Map.empty eCloudResponse
-              pure $ updated $ ffor2 dCloudResponse dTokenCache updateCacheStatus
+              pure $ updated $ updateCacheStatus tokenCache <$> dCloudResponse
+    _ -> pure never
 
 -- Encrypt valid tokens only and make request
 encryptTokens :: MonadWidget t m
   => AesKeyRaw
   -> [TokenCacheV3]
   -> m (Dynamic t [CloudRequest])
-encryptTokens key tokens = do
-  let validTokens = catMaybes $ map getValidTokens tokens
+encryptTokens key validTokens = do
   let validTokenNumber = length validTokens
   emClouds <- fmap (updated . sequence) $ flip traverse validTokens $ \t -> do
       ev <- newEvent
@@ -134,13 +137,15 @@ encryptToken (MkAesKeyRaw keyText) ev secret = do
   pure $ fmap MkEncryptedSecret . checkEmpty <$> dEncryptedSecretT
 
 -- Update ipfs metadata of tokens with response from ipfs
-updateCacheStatus :: Map AssetName CloudResponse -> [TokenCacheV3] -> [TokenCacheV3]
-updateCacheStatus clouds = map updateCloud
+updateCacheStatus :: [TokenCacheV3]
+  -> Map AssetName CloudResponse
+  -> [TokenCacheV3]
+updateCacheStatus oldToken tokensFromClouds = map updateCloud oldToken
   where
     updateCloud :: TokenCacheV3 -> TokenCacheV3
     updateCloud t =
       let name = tcAssetName t
-          mStatus = Map.lookup name clouds
+          mStatus = Map.lookup name tokensFromClouds
       in case mStatus of
         Nothing -> t
         Just (MkCloudResponse mIpfs mCoin) ->
@@ -148,12 +153,15 @@ updateCacheStatus clouds = map updateCloud
             , tcCoinStatus = fromMaybe (tcCoinStatus t) mCoin
             }
 
--- Valid tokens are ones that Minted and not Pinned
-getValidTokens :: TokenCacheV3 -> Maybe TokenCacheV3
-getValidTokens t = case (tcIpfsStatus t, tcCoinStatus t)  of
+-- Valid tokens are the ones that are Minted and are not Pinned
+getValidToken :: TokenCacheV3 -> Maybe TokenCacheV3
+getValidToken t = case (tcIpfsStatus t, tcCoinStatus t)  of
   (Pinned, _) -> Nothing
   (_, Minted) -> Just t
   _           -> Nothing
+
+getValidTokens :: [TokenCacheV3] -> Maybe (NonEmpty TokenCacheV3)
+getValidTokens = NE.nonEmpty . catMaybes . map getValidToken
 
 mkCloudRequest :: TokenCacheV3 -> EncryptedSecret -> CloudRequest
 mkCloudRequest cache encryptedSecret = MkCloudRequest
