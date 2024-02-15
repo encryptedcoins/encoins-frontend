@@ -9,8 +9,12 @@ import qualified Data.Text                          as T
 import           Reflex.Dom
 
 import           Backend.Protocol.Types
-import           Backend.Status                     (Status (..), isNoRelay,
-                                                     isReady,
+import           Backend.Status                     (AppStatus,
+                                                     IpfsSaveStatus (..),
+                                                     Status (..),
+                                                     isIpfsSaveStatus,
+                                                     isNoRelay, isReady,
+                                                     isStatus,
                                                      isTxProcessOrCriticalError)
 import           Backend.Utility                    (column, space,
                                                      switchHoldDyn, toText)
@@ -47,9 +51,13 @@ bodyContentWidget mPass = mdo
     dIsDisableButtons
     mPass
     dIpfsOn
+    dIpfsSaveStatus
 
-  (dStatusT, dIsDisableButtons) <- handleAppStatus dWallet evEvStatus
+  (dStatusT, dIsDisableButtons, dIpfsSaveStatus) <-
+    handleAppStatus dWallet evEvStatus
   notification dStatusT
+
+  logDyn "body: dIpfsSaveStatus" dIpfsSaveStatus
 
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen
 
@@ -134,11 +142,12 @@ unexpectedNetworkApp =
 
 handleAppStatus :: MonadWidget t m
   => Dynamic t Wallet
-  -> Event t [Event t (Text, Status)]
-  -> m (Dynamic t Text, Dynamic t Bool)
-handleAppStatus dWallet evEvStatus = do
-  let eStatus = coincidence $ leftmost <$> evEvStatus
+  -> Event t [Event t AppStatus]
+  -> m (Dynamic t Text, Dynamic t Bool, Dynamic t IpfsSaveStatus)
+handleAppStatus dWallet evEvStatuses = do
+  let eAppStatus = coincidence $ leftmost <$> evEvStatuses
   dWalletNetworkStatus <- fetchWalletNetworkStatus dWallet
+  let (eStatus, eIpfsStatus) = divideAppStatus eAppStatus
 
   dStatus <- foldDynMaybe
     -- Hold NoRelay status once it fired until page reloading.
@@ -153,4 +162,11 @@ handleAppStatus dWallet evEvStatus = do
   let dIsDisableButtons = (isTxProcessOrCriticalError . snd) <$> dStatus
   let dStatusT = flatStatus <$> dStatus
 
-  pure (dStatusT, dIsDisableButtons)
+  dIpfsStatus <- holdDyn Pinning eIpfsStatus
+
+  pure (dStatusT, dIsDisableButtons, dIpfsStatus)
+
+divideAppStatus :: Reflex t
+  => Event t AppStatus
+  -> (Event t (Text, Status), Event t IpfsSaveStatus)
+divideAppStatus ev = (fmapMaybe isStatus ev, fmapMaybe isIpfsSaveStatus ev)

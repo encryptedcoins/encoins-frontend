@@ -7,11 +7,11 @@ import           Prelude                       hiding (take)
 import           Reflex.Dom
 
 import           Backend.Protocol.Types        (PasswordRaw)
+import           Backend.Status                (IpfsSaveStatus(..))
 import           Backend.Utility               (space)
 import           Backend.Wallet                (Wallet (..), WalletName (..),
                                                 currentNetworkApp)
 import           ENCOINS.Common.Widgets.Basic  (btnWithBlock, logo)
-
 import           ENCOINS.Common.Widgets.Wallet (walletIcon)
 
 connectText :: Wallet -> Text
@@ -24,8 +24,9 @@ navbarWidget :: MonadWidget t m
   -> Dynamic t Bool
   -> Maybe PasswordRaw
   -> Dynamic t Bool
+  -> Dynamic t IpfsSaveStatus
   -> m (Event t (), Event t (), Event t ())
-navbarWidget w dIsBlock mPass dIsIpfsOn = do
+navbarWidget w dIsBlock mPass dIsIpfsOn dIpfsStatus= do
   elAttr "div" ("data-animation" =: "default" <> "data-collapse" =: "none" <> "data-duration" =: "400" <> "id" =: "Navbar"
     <> "data-easing" =: "ease" <> "data-easing2" =: "ease" <> "role" =: "banner" <> "class" =: "navbar w-nav") $
     divClass "navbar-container w-container" $ do
@@ -38,7 +39,7 @@ navbarWidget w dIsBlock mPass dIsIpfsOn = do
             divClass "menu-div-empty" blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do
                 elLocker <- lockerWidget mPass dIsBlock
-                elIpfs <- ipfsIconWidget dIsIpfsOn dIsBlock
+                elIpfs <- ipfsIconWidget dIsIpfsOn dIsBlock dIpfsStatus
                 eConnect <- divClass "menu-item-button-left" $
                     btnWithBlock "button-switching flex-center" "" dIsBlock $ do
                         dyn_ $ fmap (walletIcon . walletName) w
@@ -70,8 +71,9 @@ lockerDiv dClassMap popupText
 ipfsIconWidget :: MonadWidget  t m
   => Dynamic t Bool
   -> Dynamic t Bool
+  -> Dynamic t IpfsSaveStatus
   -> m (Element EventResult (DomBuilderSpace m) t)
-ipfsIconWidget dIsIpfsOn dIsBlock = do
+ipfsIconWidget dIsIpfsOn dIsBlock dIpfsStatus = do
   let dPopup = bool
         "IPFS saving is off"
         "IPFS saving is on"

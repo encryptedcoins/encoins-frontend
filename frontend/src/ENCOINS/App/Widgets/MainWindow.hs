@@ -2,12 +2,11 @@
 
 module ENCOINS.App.Widgets.MainWindow where
 
-import           Data.Text                         (Text)
 import           Reflex.Dom
 
-import           Backend.Protocol.Types            (PasswordRaw (..),
-                                                    TokenCacheV3, AesKeyRaw)
-import           Backend.Status                    (Status (..))
+import           Backend.Protocol.Types            (AesKeyRaw, PasswordRaw (..),
+                                                    TokenCacheV3)
+import           Backend.Status                    (AppStatus)
 import           Backend.Utility                   (switchHoldDyn)
 import           Backend.Wallet                    (Wallet (..))
 import           ENCOINS.App.Widgets.Basic         (loadAppData)
@@ -18,7 +17,7 @@ import           ENCOINS.App.Widgets.TabsSelection (AppTab (..), tabsSection)
 import           ENCOINS.Common.Cache              (encoinsV3)
 import           ENCOINS.Common.Events
 
-mainWindow :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+mainWindow :: (MonadWidget t m, EventWriter t [Event t AppStatus] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t Bool

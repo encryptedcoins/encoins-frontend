@@ -4,12 +4,17 @@
 module ENCOINS.App.Widgets.IPFS where
 
 import           Backend.Protocol.Types
-import           Backend.Servant.Requests        (ipfsCacheRequest, restoreRequest)
-import           Backend.Utility                 (eventEither, eventTuple, eventMaybeDynDef,
-                                                  switchHoldDyn, toText)
+import           Backend.Servant.Requests        (ipfsCacheRequest,
+                                                  restoreRequest)
+import           Backend.Status                  (AppStatus,
+                                                  IpfsSaveStatus (..))
+import           Backend.Utility                 (eventEither, eventMaybeDynDef,
+                                                  eventTuple, switchHoldDyn,
+                                                  toText)
 import           ENCOINS.App.Widgets.Basic       (elementResultJS,
                                                   loadAppDataId, saveAppDataId,
-                                                  saveAppDataId_)
+                                                  saveAppDataId_,
+                                                  tellIpfsStatus)
 import           ENCOINS.Bulletproofs            (Secret (..))
 import           ENCOINS.Common.Cache            (encoinsV3, ipfsCacheKey,
                                                   isIpfsOn)
@@ -24,15 +29,16 @@ import qualified Crypto.Hash                     as Hash
 import           Data.Aeson                      (eitherDecodeStrict')
 import           Data.Either                     (partitionEithers)
 import           Data.List                       (find, foldl')
+import           Data.List.NonEmpty              (NonEmpty)
+import qualified Data.List.NonEmpty              as NE
 import           Data.Map                        (Map)
 import qualified Data.Map                        as Map
-import           Data.Maybe                      (catMaybes, fromMaybe)
+import           Data.Maybe                      (catMaybes, fromMaybe, isJust,
+                                                  isNothing)
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
 import           Reflex.Dom
-import qualified Data.List.NonEmpty as NE
-import  Data.List.NonEmpty (NonEmpty)
 
 -- TODO:
 -- 1. Add pinned status
@@ -43,7 +49,7 @@ import  Data.List.NonEmpty (NonEmpty)
 -- when first page load for unpinned token on the left
 -- and
 -- when new token(s) appear on the left
-saveTokensOnIpfs :: MonadWidget t m
+saveTokensOnIpfs :: (MonadWidget t m, EventWriter t [Event t AppStatus] m)
   => Maybe PasswordRaw
   -> Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
@@ -55,22 +61,30 @@ saveTokensOnIpfs mPass dIpfsOn dmKey dTokenCache = mdo
   let dFullConditions = combinePinConditions dIpfsConditions dmValidTokens
 
   -- logDyn "saveTokensOnIpfs: valid tokens before ipfs pin" dmValidTokens
-  eTokenIpfsPinAttempt <- pinEncryptedTokens dFullConditions
+  eTokenPinAttemptOne <- pinEncryptedTokens dFullConditions
   -- logEvent "saveTokensOnIpfs: tokens after ipfs pin" $ showTokens <$> eTokenIpfsPinAttempt
-  logEvent "saveTokensOnIpfs: token left unpinned" $ getValidTokens <$> eTokenIpfsPinAttempt
+  -- logEvent "saveTokensOnIpfs: token left unpinned" emValidTokens
 
   -- BEGIN
-  -- retry to pin 5 times
-  (eAttemptExcess, eTokenIpfsCachedComplete) <-
-    retryPinEncryptedTokens dIpfsConditions eTokenIpfsPinAttempt
+  -- retry to pin tokens extra 5 times
+  (eAttemptExcess, eTokenPinComplete) <-
+    retryPinEncryptedTokens dIpfsConditions $ unpinStatusDebug <$> eTokenPinAttemptOne
   -- END
 
-  let eTokensToSave = leftmost [eTokenIpfsPinAttempt, eTokenIpfsCachedComplete]
+  -- The results of the first pinning we save in anyway
+  let eTokensToSave = leftmost [eTokenPinAttemptOne, eTokenPinComplete]
   eSaved <- saveAppDataId mPass encoinsV3 eTokensToSave
   logEvent "saveTokensOnIpfs: eSaved 2" eSaved
 
-  dTokenIpfsCached <- holdDyn [] eTokenIpfsPinAttempt
-  pure $ tagPromptlyDyn dTokenIpfsCached eSaved
+  let emUnpinnedTokens = getValidTokens <$> eTokensToSave
+  tellIpfsStatus $ leftmost
+    [ PinnedAll <$ ffilter isNothing emUnpinnedTokens
+    , Pinning <$ ffilter isJust emUnpinnedTokens
+    , AttemptExcess <$ eAttemptExcess
+    ]
+
+  dTokenIpfsPinned <- holdDyn [] eTokensToSave
+  pure $ tagPromptlyDyn dTokenIpfsPinned eSaved
 
 pinEncryptedTokens :: MonadWidget t m
   => Dynamic t (Bool, Maybe AesKeyRaw, Maybe (NonEmpty TokenCacheV3))
@@ -99,7 +113,7 @@ pinEncryptedTokens dConditions = do
 retryPinEncryptedTokens :: MonadWidget t m
   => Dynamic t (Bool, Maybe AesKeyRaw)
   -> Event t [TokenCacheV3]
-  -> m (Event t Text, Event t [TokenCacheV3])
+  -> m (Event t (), Event t [TokenCacheV3])
 retryPinEncryptedTokens dIpfsConditions eTokenIpfsPinAttempt = mdo
   let eTokenIpfsUnpinned = fmapMaybe id $ getValidTokens <$> eTokenIpfsPinAttempt
   logEvent "retryPinEncryptedTokens: eTokenIpfsUnpinned" $ () <$ eTokenIpfsUnpinned
@@ -117,7 +131,7 @@ retryPinEncryptedTokens dIpfsConditions eTokenIpfsPinAttempt = mdo
   logEvent "retryPinEncryptedTokens: eTokenIpfsCachedComplete" eTokenIpfsCachedComplete
   dAttemptCounter :: Dynamic t Int <- count eTryPinAgain
   let (eAttemptExcess, eValidTokens3) = fanEither $ attachPromptlyDynWith
-        (\n ts -> if n > 5 then Left "attempt excess" else Right ts)
+        (\n ts -> if n > 5 then Left () else Right ts)
         dAttemptCounter
         eTryPinAgain
   logDyn "retryPinEncryptedTokens: dAttemptCounter" dAttemptCounter
@@ -130,8 +144,8 @@ combinePinConditions :: Reflex t => Dynamic t (Bool, Maybe AesKeyRaw)
   -> Dynamic t (Bool, Maybe AesKeyRaw, Maybe (NonEmpty TokenCacheV3))
 combinePinConditions = zipDynWith (\(isOn, mKey) ts -> (isOn, mKey, ts))
 
--- unpinStatusDebug :: [TokenCacheV3] -> [TokenCacheV3]
--- unpinStatusDebug = map (\t -> t{tcIpfsStatus = Unpinned})
+unpinStatusDebug :: [TokenCacheV3] -> [TokenCacheV3]
+unpinStatusDebug = map (\t -> t{tcIpfsStatus = Unpinned})
 
 -- Encrypt valid tokens only and make request
 encryptTokens :: MonadWidget t m

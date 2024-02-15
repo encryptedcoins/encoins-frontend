@@ -95,3 +95,17 @@ isNotValidUrl :: UrlStatus -> Bool
 isNotValidUrl UrlEmpty   = True
 isNotValidUrl UrlInvalid = True
 isNotValidUrl UrlValid   = False
+
+data IpfsSaveStatus = Pinning | PinnedAll | AttemptExcess
+  deriving stock (Eq, Show)
+
+data AppStatus = Ipfs IpfsSaveStatus | Tx (Text, Status)
+  deriving stock (Eq, Show)
+
+isIpfsSaveStatus :: AppStatus -> Maybe IpfsSaveStatus
+isIpfsSaveStatus (Ipfs s) = Just s
+isIpfsSaveStatus _ = Nothing
+
+isStatus :: AppStatus -> Maybe (Text, Status)
+isStatus (Tx s) = Just s
+isStatus _ = Nothing

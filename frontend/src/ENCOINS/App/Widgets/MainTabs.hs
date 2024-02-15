@@ -19,7 +19,7 @@ import           Backend.Protocol.TxValidity            (getAda, getCoinNumber,
                                                          getDeposit)
 import           Backend.Protocol.Types
 import           Backend.Servant.Requests               (currentRequestWrapper)
-import           Backend.Status                         (Status (..),
+import           Backend.Status                         (Status (..), AppStatus,
                                                          isTxProcessOrCriticalError)
 import           Backend.Wallet                         (Wallet (..))
 import           Config.Config                          (delegateServerUrl)
@@ -60,7 +60,7 @@ mainWindowColumnHeader title =
     divClass "app-column-head-div" $
         divClass "app-text-semibold" $ text title
 
-walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+walletTab :: (MonadWidget t m, EventWriter t [Event t AppStatus] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3] -- consider use Map or Set
@@ -177,7 +177,7 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
 
-transferTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+transferTab :: (MonadWidget t m, EventWriter t [Event t AppStatus] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
@@ -263,7 +263,7 @@ transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
     sendButton dActive stl = divClass "app-SendTransferButton" .
       btn (("button-switching flex-center " <>) . bool "button-disabled" "" <$> dActive) stl . text
 
-ledgerTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+ledgerTab :: (MonadWidget t m, EventWriter t [Event t AppStatus] m)
   => Maybe PasswordRaw
   -> Dynamic t [TokenCacheV3]
   -> Dynamic t Bool
