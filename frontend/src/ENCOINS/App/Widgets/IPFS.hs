@@ -52,28 +52,18 @@ saveTokensOnIpfs :: MonadWidget t m
 saveTokensOnIpfs mPass dIpfsOn dmKey dTokenCache = mdo
   let dIpfsConditions = zipDynWith (,) dIpfsOn dmKey
   let dmValidTokens = getValidTokens <$> dTokenCache
-  let dMkFullConditions = zipDynWith
-        (\(isOn, mKey) ts -> (isOn, mKey, ts))
-        dIpfsConditions
+  let dFullConditions = combinePinConditions dIpfsConditions dmValidTokens
 
   -- logDyn "saveTokensOnIpfs: valid tokens before ipfs pin" dmValidTokens
-  eTokenIpfsPinAttempt <- pinEncryptedTokens $ dMkFullConditions dmValidTokens
+  eTokenIpfsPinAttempt <- pinEncryptedTokens dFullConditions
   -- logEvent "saveTokensOnIpfs: tokens after ipfs pin" $ showTokens <$> eTokenIpfsPinAttempt
   logEvent "saveTokensOnIpfs: token left unpinned" $ getValidTokens <$> eTokenIpfsPinAttempt
 
-  let eTokenIpfsUnpinned = fmapMaybe id $ getValidTokens <$> eTokenIpfsPinAttempt
-  logEvent "saveTokensOnIpfs: eTokenIpfsUnpinned" $ () <$ eTokenIpfsUnpinned
-
-  dmValidTokens2 <- holdDyn Nothing $ Just <$> eTryPinTokens
-  eTokenIpfsPinAttemptNext <- pinEncryptedTokens $ dMkFullConditions dmValidTokens2
-  dTokenIpfsPinAttemptNext <- holdDyn [] eTokenIpfsPinAttemptNext
-  eDelayTokens <- delay 10
-    $ leftmost [Just <$> eTokenIpfsUnpinned, getValidTokens <$> eTokenIpfsPinAttemptNext]
-  logEvent "saveTokensOnIpfs: eDelayTokens" $ () <$ eDelayTokens
-  let (eTokenIpfsCachedComplete, eTryPinTokens) =
-        eventMaybeDynDef dTokenIpfsPinAttemptNext eDelayTokens
-  logEvent "saveTokensOnIpfs: token left unpinned 2" eTryPinTokens
-  logEvent "saveTokensOnIpfs: eTokenIpfsCachedComplete" eTokenIpfsCachedComplete
+  -- BEGIN
+  -- retry to pin 5 times
+  (eAttemptExcess, eTokenIpfsCachedComplete) <-
+    retryPinEncryptedTokens dIpfsConditions eTokenIpfsPinAttempt
+  -- END
 
   let eTokensToSave = leftmost [eTokenIpfsPinAttempt, eTokenIpfsCachedComplete]
   eSaved <- saveAppDataId mPass encoinsV3 eTokensToSave
@@ -104,6 +94,44 @@ pinEncryptedTokens dConditions = do
               dCloudResponse <- holdDyn Map.empty eCloudResponse
               pure $ updated $ updateCacheStatus tokenCache <$> dCloudResponse
     _ -> pure never
+
+-- if some Tokens are unpinned try to pin them 5 times with 10 seconds delay.
+retryPinEncryptedTokens :: MonadWidget t m
+  => Dynamic t (Bool, Maybe AesKeyRaw)
+  -> Event t [TokenCacheV3]
+  -> m (Event t Text, Event t [TokenCacheV3])
+retryPinEncryptedTokens dIpfsConditions eTokenIpfsPinAttempt = mdo
+  let eTokenIpfsUnpinned = fmapMaybe id $ getValidTokens <$> eTokenIpfsPinAttempt
+  logEvent "retryPinEncryptedTokens: eTokenIpfsUnpinned" $ () <$ eTokenIpfsUnpinned
+
+  dmValidTokens2 <- holdDyn Nothing $ Just <$> eValidTokens3
+  let dFullConditions = combinePinConditions dIpfsConditions dmValidTokens2
+  eTokenIpfsPinAttemptNext <- pinEncryptedTokens dFullConditions
+  dTokenIpfsPinAttemptNext <- holdDyn [] eTokenIpfsPinAttemptNext
+  eDelayTokens <- delay 10
+    $ leftmost [Just <$> eTokenIpfsUnpinned, getValidTokens <$> eTokenIpfsPinAttemptNext]
+  logEvent "retryPinEncryptedTokens: eDelayTokens" $ () <$ eDelayTokens
+  let (eTokenIpfsCachedComplete, eTryPinAgain) =
+        eventMaybeDynDef dTokenIpfsPinAttemptNext eDelayTokens
+  logEvent "retryPinEncryptedTokens: token left unpinned 2" eTryPinAgain
+  logEvent "retryPinEncryptedTokens: eTokenIpfsCachedComplete" eTokenIpfsCachedComplete
+  dAttemptCounter :: Dynamic t Int <- count eTryPinAgain
+  let (eAttemptExcess, eValidTokens3) = fanEither $ attachPromptlyDynWith
+        (\n ts -> if n > 5 then Left "attempt excess" else Right ts)
+        dAttemptCounter
+        eTryPinAgain
+  logDyn "retryPinEncryptedTokens: dAttemptCounter" dAttemptCounter
+  logEvent "retryPinEncryptedTokens: eAttemptExcess" eAttemptExcess
+  logEvent "retryPinEncryptedTokens: eValidTokens3" eValidTokens3
+  pure $ (eAttemptExcess, eTokenIpfsCachedComplete)
+
+combinePinConditions :: Reflex t => Dynamic t (Bool, Maybe AesKeyRaw)
+  -> Dynamic  t (Maybe (NonEmpty TokenCacheV3))
+  -> Dynamic t (Bool, Maybe AesKeyRaw, Maybe (NonEmpty TokenCacheV3))
+combinePinConditions = zipDynWith (\(isOn, mKey) ts -> (isOn, mKey, ts))
+
+-- unpinStatusDebug :: [TokenCacheV3] -> [TokenCacheV3]
+-- unpinStatusDebug = map (\t -> t{tcIpfsStatus = Unpinned})
 
 -- Encrypt valid tokens only and make request
 encryptTokens :: MonadWidget t m
