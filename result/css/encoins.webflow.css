@@ -1919,6 +1919,18 @@ body {
   }
 }
 
+.app_Ipfs_IconPinning {
+  background-image: url('../images/ipfs_pinning.svg');
+}
+
+.app_Ipfs_IconPinnedAll {
+  background-image: url('../images/ipfs_pinned.svg');
+}
+
+.app_Ipfs_IconAttemptExcess {
+  background-image: url('../images/ipfs_excess.svg');
+}
+
 .app-Ipfs_IconContainer {
   height: 31px;
   max-height: 31px;
@@ -1926,7 +1938,6 @@ body {
   min-width: 27px;
   margin-left: 10px;
   align-self: center;
-  background-image: url('../images/ipfs.svg');
   background-position: 0px 0px;
   background-size: auto;
   margin-bottom: 40px;

@@ -7,7 +7,7 @@ import           Prelude                       hiding (take)
 import           Reflex.Dom
 
 import           Backend.Protocol.Types        (PasswordRaw)
-import           Backend.Status                (IpfsSaveStatus(..))
+import           Backend.Status                (IpfsSaveStatus (..))
 import           Backend.Utility               (space)
 import           Backend.Wallet                (Wallet (..), WalletName (..),
                                                 currentNetworkApp)
@@ -79,7 +79,11 @@ ipfsIconWidget dIsIpfsOn dIsBlock dIpfsStatus = do
         "IPFS saving is on"
         <$> dIsIpfsOn
   let defaultClass = "menu-item app-Ipfs_IconContainer"
-  let dClass = bool defaultClass (defaultClass <> space <> "click-disabled") <$> dIsBlock
+  let dIconClass = (\iCl -> defaultClass <> space <> iCl) . selectIconClass <$> dIpfsStatus
+  let dClass = zipDynWith
+        (\isBlock cl -> bool cl (cl <> space <> "click-disabled") isBlock )
+        dIsBlock
+        dIconClass
   let dClassMap = (\cl -> "class" =: cl) <$> dClass
   ipfsPopup dClassMap dPopup
 
@@ -91,3 +95,9 @@ ipfsPopup dClassMap dPopup
   = fmap fst $ elDynAttr' "div" dClassMap
       $ divClass "app-Nav_IpfsPopup"
       $ el "p" $ dynText dPopup
+
+selectIconClass :: IpfsSaveStatus -> Text
+selectIconClass = \case
+  Pinning       -> "app_Ipfs_IconPinning"
+  PinnedAll     -> "app_Ipfs_IconPinnedAll"
+  AttemptExcess -> "app_Ipfs_IconAttemptExcess"
