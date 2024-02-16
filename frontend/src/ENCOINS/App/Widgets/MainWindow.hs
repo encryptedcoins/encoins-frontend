@@ -17,7 +17,7 @@ import           ENCOINS.App.Widgets.TabsSelection (AppTab (..), tabsSection)
 import           ENCOINS.Common.Cache              (encoinsV3)
 import           ENCOINS.Common.Events
 
-mainWindow :: (MonadWidget t m, EventWriter t [Event t AppStatus] m)
+mainWindow :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t Bool

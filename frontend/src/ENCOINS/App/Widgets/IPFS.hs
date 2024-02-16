@@ -10,7 +10,7 @@ import           Backend.Status                  (AppStatus,
                                                   IpfsSaveStatus (..))
 import           Backend.Utility                 (eventEither, eventMaybeDynDef,
                                                   eventTuple, switchHoldDyn,
-                                                  toText)
+                                                  toText, space)
 import           ENCOINS.App.Widgets.Basic       (elementResultJS,
                                                   loadAppDataId, saveAppDataId,
                                                   saveAppDataId_,
@@ -49,7 +49,7 @@ import           Reflex.Dom
 -- when first page load for unpinned token on the left
 -- and
 -- when new token(s) appear on the left
-saveTokensOnIpfs :: (MonadWidget t m, EventWriter t [Event t AppStatus] m)
+saveTokensOnIpfs :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Maybe PasswordRaw
   -> Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
@@ -60,7 +60,7 @@ saveTokensOnIpfs mPass dIpfsOn dmKey dTokenCache = mdo
   let dmValidTokens = getValidTokens <$> dTokenCache
   let dFullConditions = combinePinConditions dIpfsConditions dmValidTokens
 
-  logDyn "saveTokensOnIpfs: valid tokens before ipfs pin" dmValidTokens
+  -- logDyn "saveTokensOnIpfs: valid tokens before ipfs pin" dmValidTokens
   eTokenPinAttemptOne <- pinEncryptedTokens dFullConditions
   -- logEvent "saveTokensOnIpfs: tokens after ipfs pin" $ showTokens <$> eTokenIpfsPinAttempt
   -- logEvent "saveTokensOnIpfs: token left unpinned" emValidTokens
@@ -116,7 +116,7 @@ retryPinEncryptedTokens :: MonadWidget t m
   -> m (Event t (), Event t [TokenCacheV3])
 retryPinEncryptedTokens dIpfsConditions eTokenIpfsPinAttempt = mdo
   let eTokenIpfsUnpinned = fmapMaybe id $ getValidTokens <$> eTokenIpfsPinAttempt
-  logEvent "retryPinEncryptedTokens: eTokenIpfsUnpinned" $ () <$ eTokenIpfsUnpinned
+  -- logEvent "retryPinEncryptedTokens: eTokenIpfsUnpinned" $ () <$ eTokenIpfsUnpinned
 
   dmValidTokens2 <- holdDyn Nothing $ Just <$> eValidTokens3
   let dFullConditions = combinePinConditions dIpfsConditions dmValidTokens2
@@ -124,19 +124,19 @@ retryPinEncryptedTokens dIpfsConditions eTokenIpfsPinAttempt = mdo
   dTokenIpfsPinAttemptNext <- holdDyn [] eTokenIpfsPinAttemptNext
   eDelayTokens <- delay 10
     $ leftmost [Just <$> eTokenIpfsUnpinned, getValidTokens <$> eTokenIpfsPinAttemptNext]
-  logEvent "retryPinEncryptedTokens: eDelayTokens" $ () <$ eDelayTokens
+  -- logEvent "retryPinEncryptedTokens: eDelayTokens" $ () <$ eDelayTokens
   let (eTokenIpfsCachedComplete, eTryPinAgain) =
         eventMaybeDynDef dTokenIpfsPinAttemptNext eDelayTokens
-  logEvent "retryPinEncryptedTokens: token left unpinned 2" eTryPinAgain
-  logEvent "retryPinEncryptedTokens: eTokenIpfsCachedComplete" eTokenIpfsCachedComplete
+  -- logEvent "retryPinEncryptedTokens: token left unpinned 2" eTryPinAgain
+  -- logEvent "retryPinEncryptedTokens: eTokenIpfsCachedComplete" eTokenIpfsCachedComplete
   dAttemptCounter :: Dynamic t Int <- count eTryPinAgain
   let (eAttemptExcess, eValidTokens3) = fanEither $ attachPromptlyDynWith
         (\n ts -> if n > 5 then Left () else Right ts)
         dAttemptCounter
         eTryPinAgain
-  logDyn "retryPinEncryptedTokens: dAttemptCounter" dAttemptCounter
-  logEvent "retryPinEncryptedTokens: eAttemptExcess" eAttemptExcess
-  logEvent "retryPinEncryptedTokens: eValidTokens3" eValidTokens3
+  -- logDyn "retryPinEncryptedTokens: dAttemptCounter" dAttemptCounter
+  -- logEvent "retryPinEncryptedTokens: eAttemptExcess" eAttemptExcess
+  -- logEvent "retryPinEncryptedTokens: eValidTokens3" eValidTokens3
   pure $ (eAttemptExcess, eTokenIpfsCachedComplete)
 
 combinePinConditions :: Reflex t => Dynamic t (Bool, Maybe AesKeyRaw)
@@ -328,9 +328,10 @@ mkTokenCacheV3 name decrypted = case eSecret of
 ipfsSettingsWindow :: MonadWidget t m
   => Maybe PasswordRaw
   -> Dynamic t Bool
+  -> Dynamic t IpfsSaveStatus
   -> Event t ()
   -> m (Dynamic t Bool, Dynamic t (Maybe AesKeyRaw))
-ipfsSettingsWindow mPass ipfsCacheFlag eOpen = do
+ipfsSettingsWindow mPass ipfsCacheFlag dIpfsSaveStatus eOpen = do
   dialogWindow
     True
     eOpen
@@ -338,12 +339,14 @@ ipfsSettingsWindow mPass ipfsCacheFlag eOpen = do
     "app-Ipfs_Window"
     "Save encoins on IPFS" $ do
       dIsIpfsOn <- ipfsCheckbox ipfsCacheFlag
+      ipfsSaveStatus dIpfsSaveStatus
       emKey <- switchHoldDyn dIsIpfsOn $ \case
         False -> pure never
         True -> do
           emKey <- getAesKey mPass
           dmKey <- holdDyn Nothing emKey
-          divClass "app-Ipfs_AesKeyDescription" $ text "The following AES key is used to encrypt encoins before saving them"
+          divClass "app-Ipfs_AesKey_Title" $
+            text "The following AES key is used to encrypt encoins before saving them"
           showKeyWidget dmKey
           pure emKey
       dmKey <- holdDyn Nothing emKey
@@ -356,6 +359,25 @@ ipfsCheckbox ipfsCacheFlag = do
   dIsChecked <- checkboxWidget (updated ipfsCacheFlag) "app-Ipfs_CheckboxToggle"
   saveAppDataId_ Nothing isIpfsOn $ updated dIsChecked
   pure dIsChecked
+
+ipfsSaveStatus :: MonadWidget t m
+  => Dynamic t IpfsSaveStatus
+  -> m ()
+ipfsSaveStatus dIpfsSaveStatus = do
+  divClass "app-Ipfs_Status_Title" $
+    text "The status of saving encoins on IPFS"
+
+  divClass "app-Ipfs_StatusText" $
+    dynText $ selectIpfsStatusNote <$> dIpfsSaveStatus
+
+selectIpfsStatusNote :: IpfsSaveStatus -> Text
+selectIpfsStatusNote s =
+  let t = case s of
+        TurnOff       -> "turned off"
+        Pinning       -> "in progress"
+        PinnedAll     -> "successfully completed"
+        AttemptExcess -> "failed for at least one encoin"
+  in "The saving is" <> space <> t
 
 checkboxWidget :: MonadWidget t m
   => Event t Bool

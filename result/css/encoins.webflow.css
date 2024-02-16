@@ -1931,6 +1931,10 @@ body {
   background-image: url('../images/ipfs_excess.svg');
 }
 
+.app_Ipfs_IconTurnOff {
+  background-image: url('../images/ipfs.svg');
+}
+
 .app-Ipfs_IconContainer {
   height: 31px;
   max-height: 31px;
@@ -1990,7 +1994,16 @@ body {
   line-height: 32px;
 }
 
-.app-Ipfs_AesKeyDescription {
+.app-Ipfs_AesKey_Title {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+}
+
+.app-Ipfs_Status_Title {
   margin-top: 10px;
   display: flex;
   align-items: center;
@@ -2048,7 +2061,7 @@ body {
   width: 70%;
   min-width: 750px;
   height: 20%;
-  min-height: 180px;
+  min-height: 250px;
   padding-left: min(5%, 70px);
   padding-right: min(5%, 70px);
   padding-top: min(5%, 30px);

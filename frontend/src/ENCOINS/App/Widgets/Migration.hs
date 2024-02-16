@@ -32,7 +32,7 @@ Evolutions of encoins cache by key
 -- "encoins-with-name" cache exists
 --  or
 -- "encoins" cache exists.
-updateCacheV3 :: (MonadWidget t m, EventWriter t [Event t AppStatus] m)
+updateCacheV3 :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Maybe PasswordRaw
   -> Dynamic t [TokenCacheV3]
   -> m ()
@@ -41,7 +41,7 @@ updateCacheV3 mPass dSecretsV3 = do
   widgetHold_ blank $
     bool blank (migrateCacheV3 mPass) <$> eSecretsV3
 
-migrateCacheV3 :: (MonadWidget t m, EventWriter t [Event t AppStatus] m)
+migrateCacheV3 :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Maybe PasswordRaw
   -> m ()
 migrateCacheV3 mPass = do

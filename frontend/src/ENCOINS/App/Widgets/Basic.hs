@@ -1,7 +1,8 @@
 module ENCOINS.App.Widgets.Basic where
 
 import           Backend.Protocol.Types (PasswordRaw (..))
-import           Backend.Status         (Status (..), IpfsSaveStatus(..), AppStatus(..))
+import           Backend.Status         (AppStatus (..), IpfsSaveStatus (..),
+                                         Status (..))
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils   (toJsonText)
 import           JS.Website             (loadJSON, saveJSON)
@@ -135,15 +136,20 @@ walletError = do
     let eWalletError = ffilter ("" /=) $ updated dWalletError
     return $ WalletError <$> eWalletError
 
-tellTxStatus :: (MonadWidget t m, EventWriter t [Event t AppStatus] m)
+tellTxStatus :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Text -- Category of the status. E.g. 'wallet mode'
   -> Event t Status
   -> m ()
 tellTxStatus title ev =
   tellEvent $
-      [(\x -> Tx . bool (title, x) (T.empty, Ready) $ x == Ready) <$> ev] <$ ev
+      (\x -> singletonL . Tx . bool (title, x) (T.empty, Ready) $ x == Ready) <$> ev
 
-tellIpfsStatus :: (MonadWidget t m, EventWriter t [Event t AppStatus] m)
+tellIpfsStatus :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Event t IpfsSaveStatus
   -> m ()
-tellIpfsStatus ev = tellEvent $ [Ipfs <$> ev] <$ ev
+tellIpfsStatus ev = tellEvent $ (singletonL . Ipfs) <$> ev
+
+-- it added to base from 4.15.0.0
+-- we are on base-4.12.0.0
+singletonL :: a -> [a]
+singletonL x = [x]

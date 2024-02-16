@@ -96,7 +96,7 @@ isNotValidUrl UrlEmpty   = True
 isNotValidUrl UrlInvalid = True
 isNotValidUrl UrlValid   = False
 
-data IpfsSaveStatus = Pinning | PinnedAll | AttemptExcess
+data IpfsSaveStatus = TurnOff | Pinning | PinnedAll | AttemptExcess
   deriving stock (Eq, Show)
 
 data AppStatus = Ipfs IpfsSaveStatus | Tx (Text, Status)

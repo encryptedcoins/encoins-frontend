@@ -60,7 +60,7 @@ mainWindowColumnHeader title =
     divClass "app-column-head-div" $
         divClass "app-text-semibold" $ text title
 
-walletTab :: (MonadWidget t m, EventWriter t [Event t AppStatus] m)
+walletTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3] -- consider use Map or Set
@@ -102,10 +102,10 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   dTokenCache
                   dTokenIpfsSynched
 
-            logDyn "walletTab: token before local save 1" $ showTokens <$> dTokenCacheUpdated
-            -- saveCacheLocally mpass dTokenCacheUpdated
-            eSaved <- saveAppDataId mpass encoinsV3 $ updated dTokenCacheUpdated
-            logEvent "walletTab: eSaved 1" $ () <$ eSaved
+            -- logDyn "walletTab: token before local save 1" $ showTokens <$> dTokenCacheUpdated
+            saveCacheLocally mpass dTokenCacheUpdated
+            -- eSaved <- saveAppDataId mpass encoinsV3 $ updated dTokenCacheUpdated
+            -- logEvent "walletTab: eSaved 1" $ () <$ eSaved
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do
@@ -164,11 +164,12 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
               dmKey
               dWalletSecretsUniq
             dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
-            logDyn "walletTab: token accumulated on ipfs" $ showTokens <$> dTokenIpfsSynched
+            -- logDyn "walletTab: token accumulated on ipfs" $ showTokens <$> dTokenIpfsSynched
             -- IPFS end
 
             pure (dCoinsToBurn, dCoinsToMint, leftmost [eStatusUpdate, eSendStatus])
     eWalletError <- walletError
+    -- logEvent "walletTab: eStatusUpdate" eStatusUpdate
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Wallet mode" eStatus
@@ -177,7 +178,7 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
 
-transferTab :: (MonadWidget t m, EventWriter t [Event t AppStatus] m)
+transferTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
@@ -263,7 +264,7 @@ transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
     sendButton dActive stl = divClass "app-SendTransferButton" .
       btn (("button-switching flex-center " <>) . bool "button-disabled" "" <$> dActive) stl . text
 
-ledgerTab :: (MonadWidget t m, EventWriter t [Event t AppStatus] m)
+ledgerTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Maybe PasswordRaw
   -> Dynamic t [TokenCacheV3]
   -> Dynamic t Bool

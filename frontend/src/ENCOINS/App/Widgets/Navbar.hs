@@ -98,6 +98,7 @@ ipfsPopup dClassMap dPopup
 
 selectIconClass :: IpfsSaveStatus -> Text
 selectIconClass = \case
+  TurnOff       -> "app_Ipfs_IconTurnOff"
   Pinning       -> "app_Ipfs_IconPinning"
   PinnedAll     -> "app_Ipfs_IconPinnedAll"
   AttemptExcess -> "app_Ipfs_IconAttemptExcess"

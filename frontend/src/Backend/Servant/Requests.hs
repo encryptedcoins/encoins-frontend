@@ -205,7 +205,7 @@ ipfsCacheRequest :: MonadWidget t m
   -> Event t ()
   -> m (Event t (Either Text (Map AssetName CloudResponse)))
 ipfsCacheRequest dToken e = do
-  logEvent "ipfsCacheRequest: fire event to pin" e
+  -- logEvent "ipfsCacheRequest: fire event to pin" e
   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient upfsBackendUrl
   eResp <- cache (Right <$> dToken) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp

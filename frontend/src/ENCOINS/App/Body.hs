@@ -4,6 +4,7 @@ module ENCOINS.App.Body (bodyWidget) where
 
 import           Control.Monad.IO.Class             (MonadIO (..))
 import           Data.Bifunctor                     (first)
+import qualified Data.List.NonEmpty                 as NE
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
 import           Reflex.Dom
@@ -54,7 +55,7 @@ bodyContentWidget mPass = mdo
     dIpfsSaveStatus
 
   (dStatusT, dIsDisableButtons, dIpfsSaveStatus) <-
-    handleAppStatus dWallet evEvStatus
+    handleAppStatus dWallet evStatusList
   notification dStatusT
 
   logDyn "body: dIpfsSaveStatus" dIpfsSaveStatus
@@ -67,7 +68,7 @@ bodyContentWidget mPass = mdo
 
   divClass "section-app section-app-empty wf-section" blank
 
-  (dSecretsV3, evEvStatus) <- runEventWriterT $ mainWindow
+  (dSecretsV3, evStatusList) <- runEventWriterT $ mainWindow
     mPass
     dWallet
     dIsDisableButtons
@@ -84,7 +85,11 @@ bodyContentWidget mPass = mdo
 
   evIpfs <- postDelay 0.2
   dIpfsCache <- fetchIpfsFlag "app-body-load-is-ipfs-on-key" evIpfs
-  (dIpfsWindow, dAesKeyWindow) <- ipfsSettingsWindow mPass dIpfsCache eOpenIpfsWindow
+  (dIpfsWindow, dAesKeyWindow) <- ipfsSettingsWindow
+    mPass
+    dIpfsCache
+    dIpfsSaveStatus
+    eOpenIpfsWindow
   dIpfsOn <- holdDyn False $ leftmost $ map updated [dIpfsCache, dIpfsWindow]
 
   evKey <- postDelay 0.2
@@ -142,12 +147,12 @@ unexpectedNetworkApp =
 
 handleAppStatus :: MonadWidget t m
   => Dynamic t Wallet
-  -> Event t [Event t AppStatus]
+  -> Event t [AppStatus]
   -> m (Dynamic t Text, Dynamic t Bool, Dynamic t IpfsSaveStatus)
-handleAppStatus dWallet evEvStatuses = do
-  let eAppStatus = coincidence $ leftmost <$> evEvStatuses
+handleAppStatus dWallet elAppStatus = do
+  -- logEvent "handleAppStatus: elAppStatus" elAppStatus
+  let (eStatus, eIpfsStatus) = partitionAppStatus elAppStatus
   dWalletNetworkStatus <- fetchWalletNetworkStatus dWallet
-  let (eStatus, eIpfsStatus) = divideAppStatus eAppStatus
 
   dStatus <- foldDynMaybe
     -- Hold NoRelay status once it fired until page reloading.
@@ -162,11 +167,16 @@ handleAppStatus dWallet evEvStatuses = do
   let dIsDisableButtons = (isTxProcessOrCriticalError . snd) <$> dStatus
   let dStatusT = flatStatus <$> dStatus
 
-  dIpfsStatus <- holdDyn Pinning eIpfsStatus
+  dIpfsStatus <- holdDyn TurnOff eIpfsStatus
 
   pure (dStatusT, dIsDisableButtons, dIpfsStatus)
 
-divideAppStatus :: Reflex t
-  => Event t AppStatus
+partitionAppStatus :: Reflex t
+  => Event t [AppStatus]
   -> (Event t (Text, Status), Event t IpfsSaveStatus)
-divideAppStatus ev = (fmapMaybe isStatus ev, fmapMaybe isIpfsSaveStatus ev)
+partitionAppStatus ev =
+    ( filterMost ("", Ready) isStatus <$> ev
+    , filterMost TurnOff isIpfsSaveStatus <$> ev
+    )
+  where
+    filterMost def f = maybe def NE.head . NE.nonEmpty . mapMaybe f
