@@ -410,7 +410,7 @@ showKeyWidget dmKey = do
         let eKey = tagPromptlyDyn dKey e
         performEvent_ (liftIO . copyText <$> eKey)
   divClass "app-Ipfs_KeyContainer" $ do
-    divClass "key-div" $ withTooltip keyIcon "left: 100px; top: -90px; width: 450px; height: 60px;" 0 0 $ do
+    divClass "key-div" $ withTooltip keyIcon "app-IpfsWindow_KeyTip" 0 0 $ do
       text "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
     dynText dKey
 

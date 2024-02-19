@@ -111,7 +111,7 @@ withTooltip :: MonadWidget t m =>
   -> m ()
   -- ^ Inner content of the tooltip
   -> m a
-withTooltip mainW style delay1 delay2 innerW = mdo
+withTooltip mainW tipClass delay1 delay2 innerW = mdo
   (e, ret) <- elClass' "div" "div-tooltip-wrapper" $ do
     ret' <- mainW
     let
@@ -127,9 +127,9 @@ withTooltip mainW style delay1 delay2 innerW = mdo
     return ret'
   return ret
   where
-    constAttrs = "class" =: "div-tooltip top"
-    showAttrs = constAttrs <> "style" =: ("display:inline-block;" <> style)
-    hideAttrs = constAttrs <> "style" =: ("display:none;" <> style)
+    constAttrs = "class" =: ("div-tooltip top " <> tipClass)
+    showAttrs = constAttrs <> "style" =: "display:inline-block;"
+    hideAttrs = constAttrs <> "style" =: "display:none;"
 
 foldDynamicAny :: Reflex t => [Dynamic t Bool] -> Dynamic t Bool
 foldDynamicAny = foldr (zipDynWith (||)) (constDyn False)

@@ -114,7 +114,7 @@ coinBurnWidget (MkTokenCacheV3 name s _ _) = mdo
                 e <- image "Key.svg" "" "22px"
                 void $ copyEvent e
                 performEvent_ (liftIO (copyText secretText) <$ e)
-        divClass "key-div" $ withTooltip keyIcon "left: -400px; width: 400px;" 0 0 $ do
+        divClass "key-div" $ withTooltip keyIcon "app-CoinBurn_KeyTip" 0 0 $ do
             divClass "app-text-semibold" $ text "Minting Key"
             divClass "app-ToolTip_MintingKey" $ do
                 e <- copyButton

@@ -2146,3 +2146,15 @@ body {
   padding-top: min(5%, 30px);
   padding-bottom: min(5%, 30px);
 }
+
+.app-CoinBurn_KeyTip {
+  left: -400px;
+  width: 400px;
+}
+
+.app-IpfsWindow_KeyTip {
+  left: 100px;
+  top: -90px;
+  min-width: 420px;
+  height: 60px;
+}
