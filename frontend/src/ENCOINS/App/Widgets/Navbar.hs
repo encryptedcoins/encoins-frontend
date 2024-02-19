@@ -13,6 +13,7 @@ import           Backend.Wallet                (Wallet (..), WalletName (..),
                                                 currentNetworkApp)
 import           ENCOINS.Common.Widgets.Basic  (btnWithBlock, logo)
 import           ENCOINS.Common.Widgets.Wallet (walletIcon)
+import           ENCOINS.Common.Events
 
 connectText :: Wallet -> Text
 connectText w = case w of
@@ -74,12 +75,15 @@ ipfsIconWidget :: MonadWidget  t m
   -> Dynamic t IpfsSaveStatus
   -> m (Element EventResult (DomBuilderSpace m) t)
 ipfsIconWidget dIsIpfsOn dIsBlock dIpfsStatus = do
+  logDyn "ipfsIconWidget: dIsIpfsOn" dIsIpfsOn
+  logDyn "ipfsIconWidget: dIpfsStatus" dIpfsStatus
   let dPopup = bool
-        "IPFS sync is on"
         "IPFS sync is off"
+        "IPFS sync is on"
         <$> dIsIpfsOn
   let defaultClass = "menu-item app-Ipfs_IconContainer"
-  let dIconClass = (\iCl -> defaultClass <> space <> iCl) . selectIconClass <$> dIpfsStatus
+  let dPreIconClass = zipDynWith selectIconClass dIpfsStatus dIsIpfsOn
+  let dIconClass = (\iCl -> defaultClass <> space <> iCl) <$> dPreIconClass
   let dClass = zipDynWith
         (\isBlock cl -> bool cl (cl <> space <> "click-disabled") isBlock )
         dIsBlock
@@ -96,9 +100,10 @@ ipfsPopup dClassMap dPopup
       $ divClass "app-Nav_IpfsPopup"
       $ el "p" $ dynText dPopup
 
-selectIconClass :: IpfsSaveStatus -> Text
-selectIconClass = \case
-  TurnOff       -> "app_Ipfs_IconTurnOff"
-  Pinning       -> "app_Ipfs_IconPinning"
-  PinnedAll     -> "app_Ipfs_IconPinnedAll"
-  AttemptExcess -> "app_Ipfs_IconAttemptExcess"
+selectIconClass :: IpfsSaveStatus -> Bool -> Text
+selectIconClass status isOn = case (status, isOn) of
+  (_, False)         -> "app_Ipfs_IconTurnOff"
+  (TurnOff, _)       -> "app_Ipfs_IconTurnOff"
+  (Pinning, _)       -> "app_Ipfs_IconPinning"
+  (PinnedAll, _)     -> "app_Ipfs_IconPinnedAll"
+  (AttemptExcess, _) -> "app_Ipfs_IconAttemptExcess"

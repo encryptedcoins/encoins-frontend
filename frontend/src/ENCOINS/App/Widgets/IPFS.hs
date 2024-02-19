@@ -342,8 +342,6 @@ ipfsSettingsWindow mPass ipfsCacheFlag dIpfsSaveStatus eOpen = do
     "app-Ipfs_Window"
     "Encoins Cloud Backup" $ do
       dIsIpfsOn <- ipfsCheckbox ipfsCacheFlag
-      logDyn "ipfsSettingsWindow: dIsIpfsOn" dIsIpfsOn
-      logDyn "ipfsSettingsWindow: dIpfsSaveStatus" dIpfsSaveStatus
       ipfsSaveStatus dIpfsSaveStatus dIsIpfsOn
       emKey <- switchHoldDyn dIsIpfsOn $ \case
         False -> pure never
