@@ -75,8 +75,8 @@ ipfsIconWidget :: MonadWidget  t m
   -> m (Element EventResult (DomBuilderSpace m) t)
 ipfsIconWidget dIsIpfsOn dIsBlock dIpfsStatus = do
   let dPopup = bool
-        "IPFS saving is off"
-        "IPFS saving is on"
+        "IPFS sync is on"
+        "IPFS sync is off"
         <$> dIsIpfsOn
   let defaultClass = "menu-item app-Ipfs_IconContainer"
   let dIconClass = (\iCl -> defaultClass <> space <> iCl) . selectIconClass <$> dIpfsStatus

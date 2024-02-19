@@ -179,4 +179,4 @@ partitionAppStatus ev =
     , filterMost TurnOff isIpfsSaveStatus <$> ev
     )
   where
-    filterMost def f = maybe def NE.head . NE.nonEmpty . mapMaybe f
+    filterMost defStatus f = maybe defStatus NE.head . NE.nonEmpty . mapMaybe f

@@ -9,8 +9,8 @@ import           Backend.Servant.Requests        (ipfsCacheRequest,
 import           Backend.Status                  (AppStatus,
                                                   IpfsSaveStatus (..))
 import           Backend.Utility                 (eventEither, eventMaybeDynDef,
-                                                  eventTuple, switchHoldDyn,
-                                                  toText, space)
+                                                  eventTuple, space,
+                                                  switchHoldDyn, toText)
 import           ENCOINS.App.Widgets.Basic       (elementResultJS,
                                                   loadAppDataId, saveAppDataId,
                                                   saveAppDataId_,
@@ -20,11 +20,15 @@ import           ENCOINS.Common.Cache            (encoinsV3, ipfsCacheKey,
                                                   isIpfsOn)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (toJsonStrict)
-import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
+import           ENCOINS.Common.Widgets.Advanced (copyEvent, dialogWindow,
+                                                  withTooltip)
+import           ENCOINS.Common.Widgets.Basic    (image)
 import           ENCOINS.Crypto.Field            (Field (F))
 import qualified JS.App                          as JS
+import           JS.Website                      (copyText)
 
 import           Control.Monad                   (void)
+import           Control.Monad.IO.Class          (MonadIO (..))
 import qualified Crypto.Hash                     as Hash
 import           Data.Aeson                      (eitherDecodeStrict')
 import           Data.Either                     (partitionEithers)
@@ -39,7 +43,6 @@ import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
 import           Reflex.Dom
-
 -- TODO:
 -- 1. Add pinned status
   -- Visual statuses reload, done, failed
@@ -62,7 +65,7 @@ saveTokensOnIpfs mPass dIpfsOn dmKey dTokenCache = mdo
 
   -- logDyn "saveTokensOnIpfs: valid tokens before ipfs pin" dmValidTokens
   eTokenPinAttemptOne <- pinEncryptedTokens dFullConditions
-  -- logEvent "saveTokensOnIpfs: tokens after ipfs pin" $ showTokens <$> eTokenIpfsPinAttempt
+  -- logEvent "saveTokensOnIpfs: tokens after ipfs pin" $ showTokens <$> eTokenPinAttemptOne
   -- logEvent "saveTokensOnIpfs: token left unpinned" emValidTokens
 
   -- BEGIN
@@ -337,16 +340,18 @@ ipfsSettingsWindow mPass ipfsCacheFlag dIpfsSaveStatus eOpen = do
     eOpen
     never
     "app-Ipfs_Window"
-    "Save encoins on IPFS" $ do
+    "Encoins Cloud Backup" $ do
       dIsIpfsOn <- ipfsCheckbox ipfsCacheFlag
-      ipfsSaveStatus dIpfsSaveStatus
+      logDyn "ipfsSettingsWindow: dIsIpfsOn" dIsIpfsOn
+      logDyn "ipfsSettingsWindow: dIpfsSaveStatus" dIpfsSaveStatus
+      ipfsSaveStatus dIpfsSaveStatus dIsIpfsOn
       emKey <- switchHoldDyn dIsIpfsOn $ \case
         False -> pure never
         True -> do
           emKey <- getAesKey mPass
           dmKey <- holdDyn Nothing emKey
           divClass "app-Ipfs_AesKey_Title" $
-            text "The following AES key is used to encrypt encoins before saving them"
+            text "Your AES key for restoring encoins. Save it to a file and keep it secure!"
           showKeyWidget dmKey
           pure emKey
       dmKey <- holdDyn Nothing emKey
@@ -362,22 +367,23 @@ ipfsCheckbox ipfsCacheFlag = do
 
 ipfsSaveStatus :: MonadWidget t m
   => Dynamic t IpfsSaveStatus
+  -> Dynamic t Bool
   -> m ()
-ipfsSaveStatus dIpfsSaveStatus = do
+ipfsSaveStatus dIpfsSaveStatus dIsIpfs = do
   divClass "app-Ipfs_Status_Title" $
-    text "The status of saving encoins on IPFS"
-
+    text "IPFS synchronization status"
   divClass "app-Ipfs_StatusText" $
-    dynText $ selectIpfsStatusNote <$> dIpfsSaveStatus
+    dynText $ zipDynWith selectIpfsStatusNote dIpfsSaveStatus dIsIpfs
 
-selectIpfsStatusNote :: IpfsSaveStatus -> Text
-selectIpfsStatusNote s =
-  let t = case s of
-        TurnOff       -> "turned off"
-        Pinning       -> "in progress"
-        PinnedAll     -> "successfully completed"
-        AttemptExcess -> "failed for at least one encoin"
-  in "The saving is" <> space <> t
+selectIpfsStatusNote :: IpfsSaveStatus -> Bool -> Text
+selectIpfsStatusNote status isIpfs =
+  let t = case (status, isIpfs) of
+        (_, False)         -> "is turned off"
+        (TurnOff, _)       -> "is turned off"
+        (Pinning, _)       -> "is in progress..."
+        (PinnedAll, _)     -> "is completed successfully."
+        (AttemptExcess, _) -> "failed"
+  in "The synchronization" <> space <> t
 
 checkboxWidget :: MonadWidget t m
   => Event t Bool
@@ -390,15 +396,23 @@ checkboxWidget initial checkBoxClass = divClass "w-row app-Ipfs_CheckboxContaine
             "type" =: "checkbox"
           )
       & inputElementConfig_setChecked .~ initial
-    divClass "app-Ipfs_CheckboxDescription" $ text "Check box in order to save your coins on IPFS"
+    divClass "app-Ipfs_CheckboxDescription" $ text "Save encoins on IPFS"
     return $ _inputElement_checked inp
 
 showKeyWidget :: MonadWidget t m
   => Dynamic t (Maybe AesKeyRaw)
   -> m ()
-showKeyWidget dmKey = divClass "app-Ipfs_Key"
-  $ dynText
-  $ maybe "Ipfs key is not generated" getAesKeyRaw <$> dmKey
+showKeyWidget dmKey = do
+  let dKey = maybe "Ipfs key is not generated" getAesKeyRaw <$> dmKey
+  let keyIcon = do
+        e <- image "Key.svg" "inverted" "22px"
+        void $ copyEvent e
+        let eKey = tagPromptlyDyn dKey e
+        performEvent_ (liftIO . copyText <$> eKey)
+  divClass "app-Ipfs_KeyContainer" $ do
+    divClass "key-div" $ withTooltip keyIcon "left: 100px; top: -90px; width: 450px; height: 60px;" 0 0 $ do
+      text "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
+    dynText dKey
 
 -- With ipfs wallet and ledger modes have two dynamics for token and save each of them separately
 -- This function synchronize them.

@@ -374,7 +374,7 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
               mpass
               dIpfsOn
               dmKey
-              ( dWalletSecretsUniq)
+              dWalletSecretsUniq
             -- accumulate token saved on ipfs.
             -- The place of error prone.
             -- If in tx A token was not pinned (in wallet mode) and in tx B was pinned (ledger mode), then
