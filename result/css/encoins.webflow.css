@@ -1919,19 +1919,19 @@ body {
   }
 }
 
-.app_Ipfs_IconPinning {
+.app-Ipfs_IconPinning {
   background-image: url('../images/ipfs_pinning.svg');
 }
 
-.app_Ipfs_IconPinnedAll {
+.app-Ipfs_IconPinnedAll {
   background-image: url('../images/ipfs_pinned.svg');
 }
 
-.app_Ipfs_IconAttemptExcess {
+.app-Ipfs_IconAttemptExcess {
   background-image: url('../images/ipfs_excess.svg');
 }
 
-.app_Ipfs_IconTurnOff {
+.app-Ipfs_IconTurnOff {
   background-image: url('../images/ipfs.svg');
 }
 

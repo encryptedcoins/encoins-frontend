@@ -75,8 +75,6 @@ ipfsIconWidget :: MonadWidget  t m
   -> Dynamic t IpfsSaveStatus
   -> m (Element EventResult (DomBuilderSpace m) t)
 ipfsIconWidget dIsIpfsOn dIsBlock dIpfsStatus = do
-  logDyn "ipfsIconWidget: dIsIpfsOn" dIsIpfsOn
-  logDyn "ipfsIconWidget: dIpfsStatus" dIpfsStatus
   let dPopup = bool
         "IPFS sync is off"
         "IPFS sync is on"
@@ -102,8 +100,8 @@ ipfsPopup dClassMap dPopup
 
 selectIconClass :: IpfsSaveStatus -> Bool -> Text
 selectIconClass status isOn = case (status, isOn) of
-  (_, False)         -> "app_Ipfs_IconTurnOff"
-  (TurnOff, _)       -> "app_Ipfs_IconTurnOff"
-  (Pinning, _)       -> "app_Ipfs_IconPinning"
-  (PinnedAll, _)     -> "app_Ipfs_IconPinnedAll"
-  (AttemptExcess, _) -> "app_Ipfs_IconAttemptExcess"
+  (_, False)         -> "app-Ipfs_IconTurnOff"
+  (TurnOff, _)       -> "app-Ipfs_IconTurnOff"
+  (Pinning, _)       -> "app-Ipfs_IconPinning"
+  (PinnedAll, _)     -> "app-Ipfs_IconPinnedAll"
+  (AttemptExcess, _) -> "app-Ipfs_IconAttemptExcess"
