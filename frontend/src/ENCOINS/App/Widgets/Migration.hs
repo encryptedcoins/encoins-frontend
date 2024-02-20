@@ -58,20 +58,18 @@ migrateCacheV3 mPass = do
         <$> eIsOldCacheEmpty
   tellTxStatus "App status" eMigrateStatus
 
-  let cacheV3 = alignWith
+  let eCacheV3 = alignWith
         (these migrateV1 migrateV2 migrateV3)
         eSecretsV1
         eSecretsV2
   -- Migrate old cache (when it is not empty) to encoins-v3
-  let eSecretsV3 = ffilter (not . null) cacheV3
+  let eSecretsV3 = ffilter (not . null) eCacheV3
 
   saveAppDataId_ mPass encoinsV3 eSecretsV3
 
-  -- Ask user to reload when cache structure is updated
-  let eIsOldCacheEmptyLog = () <$ ffilter id eIsOldCacheEmpty
-
   eSaved <- updated <$> elementResultJS "encoins-v3" (const ())
-  tellTxStatus "App status" $ CacheMigrated <$ leftmost [eIsOldCacheEmptyLog, eSaved]
+  -- Ask user to reload when cache structure is updated
+  tellTxStatus "App status" $ CacheMigrated <$ eSaved
 
 migrateV1 :: [Secret] -> [TokenCacheV3]
 migrateV1 v1
