@@ -101,7 +101,7 @@ ipfsPopup dClassMap dPopup
 selectIconClass :: IpfsSaveStatus -> Bool -> Text
 selectIconClass status isOn = case (status, isOn) of
   (_, False)         -> "app-Ipfs_IconTurnOff"
-  (TurnOff, _)       -> "app-Ipfs_IconTurnOff"
+  (NoTokens, _)      -> "app-Ipfs_IconTurnOff"
   (Pinning, _)       -> "app-Ipfs_IconPinning"
   (PinnedAll, _)     -> "app-Ipfs_IconPinnedAll"
   (AttemptExcess, _) -> "app-Ipfs_IconAttemptExcess"

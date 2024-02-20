@@ -5,7 +5,6 @@ module ENCOINS.App.Body (bodyWidget) where
 import           Control.Monad.IO.Class             (MonadIO (..))
 import           Data.Bifunctor                     (first)
 import qualified Data.List.NonEmpty                 as NE
-import           Data.Maybe                         (isJust, isNothing)
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
 import           Reflex.Dom
@@ -24,7 +23,7 @@ import           Backend.Wallet                     (Wallet (..),
                                                      walletsSupportedInApp)
 import           Config.Config                      (NetworkConfig (..),
                                                      networkConfig)
-import           ENCOINS.App.Widgets.Basic          (elementResultJS,
+import           ENCOINS.App.Widgets.Basic          (elementResultJS,loadAppData,
                                                      waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.App.Widgets.IPFS
@@ -34,13 +33,14 @@ import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWallet,
                                                      welcomeWindow,
                                                      welcomeWindowWalletStorageKey)
-import           ENCOINS.Common.Cache               (encoinsV3)
+import           ENCOINS.Common.Cache               (encoinsV3,encoinsV2,encoinsV1)
 import           ENCOINS.Common.Utils               (toJsonText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           ENCOINS.Common.Widgets.Basic       (notification)
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
+import           ENCOINS.Bulletproofs   (Secret (..), Secrets)
 
 import           ENCOINS.Common.Events
 
@@ -82,6 +82,16 @@ bodyContentWidget mPass = mdo
     $ fmap reEncryptEncoins
     $ attachPromptlyDyn dSecretsV3 eReEncrypt
 
+  -- dSecretsV2 :: Dynamic t [(Secret, Text)] <- loadAppData mPass encoinsV2 id []
+  -- performEvent_
+  --   $ fmap reEncryptEncoins2
+  --   $ attachPromptlyDyn dSecretsV2 eReEncrypt
+
+  -- dSecretsV1 :: Dynamic t Secrets <- loadAppData mPass encoinsV1 id []
+  -- performEvent_
+  --   $ fmap reEncryptEncoins1
+  --   $ attachPromptlyDyn dSecretsV1 eReEncrypt
+
   copiedNotification
 
   evIpfs <- postDelay 0.2
@@ -92,10 +102,13 @@ bodyContentWidget mPass = mdo
     dIpfsSaveStatus
     eOpenIpfsWindow
   dIpfsOn <- holdDyn False $ leftmost $ map updated [dIpfsCache, dIpfsWindow]
+  -- logDyn "body: dAesKeyWindow" dAesKeyWindow
 
   evKey <- postDelay 0.2
   dmKeyCache <- fetchAesKey mPass "app-body-load-of-aes-key" evKey
+  -- logDyn "body: dmKeyCache" dmKeyCache
   dmKey <- holdDyn Nothing $ leftmost $ map updated [dmKeyCache, dAesKeyWindow]
+  -- logDyn "body: dAesKeyWindow" dAesKeyWindow
 
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
 
@@ -105,6 +118,18 @@ bodyContentWidget mPass = mdo
       -> m ()
     reEncryptEncoins (d, mNewPass) = saveJSON
       (getPassRaw <$> mNewPass) encoinsV3 . toJsonText $ d
+
+    -- reEncryptEncoins2 :: MonadIO m
+    --   => ([(Secret, Text)], Maybe PasswordRaw)
+    --   -> m ()
+    -- reEncryptEncoins2 (d, mNewPass) = saveJSON
+    --   (getPassRaw <$> mNewPass) encoinsV2 . toJsonText $ d
+
+    -- reEncryptEncoins1 :: MonadIO m
+    --   => (Secrets, Maybe PasswordRaw)
+    --   -> m ()
+    -- reEncryptEncoins1 (d, mNewPass) = saveJSON
+    --   (getPassRaw <$> mNewPass) encoinsV1 . toJsonText $ d
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo
@@ -168,7 +193,7 @@ handleAppStatus dWallet elAppStatus = do
   let dIsDisableButtons = (isStatusWantBlockButtons . snd) <$> dStatus
   let dStatusT = flatStatus <$> dStatus
 
-  dIpfsStatus <- holdDyn TurnOff eIpfsStatus
+  dIpfsStatus <- holdDyn NoTokens eIpfsStatus
 
   pure (dStatusT, dIsDisableButtons, dIpfsStatus)
 
@@ -177,7 +202,7 @@ partitionAppStatus :: Reflex t
   -> (Event t (Text, Status), Event t IpfsSaveStatus)
 partitionAppStatus ev =
     ( filterMost ("", Ready) isStatus <$> ev
-    , filterMost TurnOff isIpfsSaveStatus <$> ev
+    , filterMost NoTokens isIpfsSaveStatus <$> ev
     )
   where
     filterMost defStatus f = maybe defStatus NE.last . NE.nonEmpty . mapMaybe f

@@ -150,7 +150,7 @@ data CloudResponse = MkCloudResponse
 instance FromJSON CloudResponse where
    parseJSON = genericParseJSON $ aesonPrefix snakeCase
 
-data IpfsStatus = Pinned | Unpinned | FileError Text
+data IpfsStatus = Pinned | Unpinned | IpfsError Text
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 

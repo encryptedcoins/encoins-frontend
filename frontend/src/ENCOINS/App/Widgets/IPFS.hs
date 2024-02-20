@@ -63,10 +63,9 @@ saveTokensOnIpfs mPass dIpfsOn dmKey dTokenCache = mdo
   let dmValidTokens = getValidTokens <$> dTokenCache
   let dFullConditions = combinePinConditions dIpfsConditions dmValidTokens
 
-  -- logDyn "saveTokensOnIpfs: valid tokens before ipfs pin" dmValidTokens
+  logDyn "saveTokensOnIpfs: valid tokens before ipfs pin" dmValidTokens
   eTokenPinAttemptOne <- pinEncryptedTokens dFullConditions
-  -- logEvent "saveTokensOnIpfs: tokens after ipfs pin" $ showTokens <$> eTokenPinAttemptOne
-  -- logEvent "saveTokensOnIpfs: token left unpinned" emValidTokens
+  logEvent "saveTokensOnIpfs: tokens after ipfs pin" $ showTokens <$> eTokenPinAttemptOne
 
   -- BEGIN
   -- retry to pin tokens extra 5 times
@@ -377,7 +376,7 @@ selectIpfsStatusNote :: IpfsSaveStatus -> Bool -> Text
 selectIpfsStatusNote status isIpfs =
   let t = case (status, isIpfs) of
         (_, False)         -> "is turned off"
-        (TurnOff, _)       -> "is turned off"
+        (NoTokens, _)      -> "is impossible. There are not tokens in the local cache"
         (Pinning, _)       -> "is in progress..."
         (PinnedAll, _)     -> "is completed successfully."
         (AttemptExcess, _) -> "failed"
