@@ -20,7 +20,7 @@ import           Backend.Protocol.TxValidity            (getAda, getCoinNumber,
 import           Backend.Protocol.Types
 import           Backend.Servant.Requests               (currentRequestWrapper)
 import           Backend.Status                         (Status (..), AppStatus,
-                                                         isTxProcessOrCriticalError)
+                                                         isStatusWantBlockButtons)
 import           Backend.Wallet                         (Wallet (..))
 import           Config.Config                          (delegateServerUrl)
 import           ENCOINS.App.Widgets.Basic              (containerApp,
@@ -217,13 +217,13 @@ transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
             (zipDynWith
               (&&)
               (fmap (not . null) dCoinsToBurn)
-              (fmap (not . isTxProcessOrCriticalError) dStatus)
+              (fmap (not . isStatusWantBlockButtons) dStatus)
             ) "" " Send to Wallet"
           eLedger <- sendButton
             (zipDynWith
               (&&)
               (fmap (not . null) dCoinsToBurn)
-              (fmap (not . isTxProcessOrCriticalError) dStatus)
+              (fmap (not . isStatusWantBlockButtons) dStatus)
             ) "margin-top: 20px" " Send to Ledger"
           eWalletOk    <- sendToWalletWindow eWallet dCoinsToBurn
           (eAddrOk, _) <- inputAddressWindow eWalletOk

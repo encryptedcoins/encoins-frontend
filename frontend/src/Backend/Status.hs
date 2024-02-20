@@ -11,7 +11,8 @@ data Status =
     | Submitting           -- ^ Transaction is sent to the backend for submission
     | Submitted            -- ^ Transaction is submitted to the blockchain
     | NoError              -- ^ All errors are gone
-    | NoRelay              -- ^ All relay are down
+    | NoRelay              -- ^ All relay are down. Need reload
+    | CacheMigrated        -- ^ Cache is migrated to new version. Reload wanted.
     | InvalidChangeAddress -- ^ Change address is invalid in Ledger mode
     | BackendError Text
     | WalletNetworkError Text
@@ -27,6 +28,7 @@ instance Show Status where
     show Submitting             = "Submitting..."
     show Submitted              = "Submitted. Pending the confirmation..."
     show NoRelay                = "All available relays are down!"
+    show CacheMigrated          = "Local cache was updated. Please reload."
     show InvalidChangeAddress   = "ChangeAddress is invalid"
     show NoError                = ""
     show (BackendError e)       = "Error: " <> unpack e
@@ -39,13 +41,14 @@ instance Show Status where
 isTxProcess :: Status -> Bool
 isTxProcess status = status `elem` [Constructing, Signing, Submitting, Submitted]
 
-isTxProcessOrCriticalError :: Status -> Bool
-isTxProcessOrCriticalError = \case
+isStatusWantBlockButtons :: Status -> Bool
+isStatusWantBlockButtons = \case
   Constructing         -> True
   Signing              -> True
   Submitting           -> True
   Submitted            -> True
   NoRelay              -> True
+  CacheMigrated        -> True
   InvalidChangeAddress -> True
   WalletNetworkError _ -> True
   _                    -> False
@@ -75,9 +78,10 @@ isWalletError :: Status -> Bool
 isWalletError (WalletError _) = True
 isWalletError _               = False
 
-isNoRelay :: Status -> Bool
-isNoRelay NoRelay = True
-isNoRelay _       = False
+isStatusWantReload :: Status -> Bool
+isStatusWantReload NoRelay       = True
+isStatusWantReload CacheMigrated = True
+isStatusWantReload _             = False
 
 data UrlStatus
     = UrlEmpty
@@ -104,8 +108,8 @@ data AppStatus = Ipfs IpfsSaveStatus | Tx (Text, Status)
 
 isIpfsSaveStatus :: AppStatus -> Maybe IpfsSaveStatus
 isIpfsSaveStatus (Ipfs s) = Just s
-isIpfsSaveStatus _ = Nothing
+isIpfsSaveStatus _        = Nothing
 
 isStatus :: AppStatus -> Maybe (Text, Status)
 isStatus (Tx s) = Just s
-isStatus _ = Nothing
+isStatus _      = Nothing

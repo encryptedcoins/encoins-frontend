@@ -7,7 +7,7 @@ import           Reflex.Dom
 
 import           Backend.Status                  (Status (..), isBuffer,
                                                   isReadyOrNoError, isTxProcess,
-                                                  isTxProcessOrCriticalError,
+                                                  isStatusWantBlockButtons,
                                                   isWalletError)
 import           Backend.Utility                 (column, space, toText)
 import           Backend.Wallet                  (LucidConfig (..), Wallet (..),
@@ -157,8 +157,8 @@ handleEncToken dWallet = do
 
 processStatus :: (Text, Status) -> (Text, Status) -> (Text, Status)
 processStatus newSt oldSt =
-  case ( isTxProcessOrCriticalError $ snd oldSt
-       , isTxProcessOrCriticalError (snd newSt) || isBuffer (snd newSt)
+  case ( isStatusWantBlockButtons $ snd oldSt
+       , isStatusWantBlockButtons (snd newSt) || isBuffer (snd newSt)
        ) of
     (True, False) -> oldSt
     _             -> newSt

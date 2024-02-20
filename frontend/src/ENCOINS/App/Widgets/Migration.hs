@@ -71,8 +71,7 @@ migrateCacheV3 mPass = do
   let eIsOldCacheEmptyLog = () <$ ffilter id eIsOldCacheEmpty
 
   eSaved <- updated <$> elementResultJS "encoins-v3" (const ())
-  tellTxStatus "App status" $ CustomStatus "Local cache structure is updated"
-      <$ leftmost [eIsOldCacheEmptyLog, eSaved]
+  tellTxStatus "App status" $ CacheMigrated <$ leftmost [eIsOldCacheEmptyLog, eSaved]
 
 migrateV1 :: [Secret] -> [TokenCacheV3]
 migrateV1 v1

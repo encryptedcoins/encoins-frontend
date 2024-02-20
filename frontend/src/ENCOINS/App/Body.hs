@@ -5,6 +5,7 @@ module ENCOINS.App.Body (bodyWidget) where
 import           Control.Monad.IO.Class             (MonadIO (..))
 import           Data.Bifunctor                     (first)
 import qualified Data.List.NonEmpty                 as NE
+import           Data.Maybe                         (isJust, isNothing)
 import           Data.Text                          (Text)
 import qualified Data.Text                          as T
 import           Reflex.Dom
@@ -14,9 +15,9 @@ import           Backend.Status                     (AppStatus,
                                                      IpfsSaveStatus (..),
                                                      Status (..),
                                                      isIpfsSaveStatus,
-                                                     isNoRelay, isReady,
+                                                     isStatusWantReload, isReady,
                                                      isStatus,
-                                                     isTxProcessOrCriticalError)
+                                                     isStatusWantBlockButtons)
 import           Backend.Utility                    (column, space,
                                                      switchHoldDyn, toText)
 import           Backend.Wallet                     (Wallet (..),
@@ -150,13 +151,13 @@ handleAppStatus :: MonadWidget t m
   -> Event t [AppStatus]
   -> m (Dynamic t Text, Dynamic t Bool, Dynamic t IpfsSaveStatus)
 handleAppStatus dWallet elAppStatus = do
-  -- logEvent "handleAppStatus: elAppStatus" elAppStatus
+  logEvent "handleAppStatus: elAppStatus" elAppStatus
   let (eStatus, eIpfsStatus) = partitionAppStatus elAppStatus
   dWalletNetworkStatus <- fetchWalletNetworkStatus dWallet
 
   dStatus <- foldDynMaybe
     -- Hold NoRelay status once it fired until page reloading.
-    (\ev (_, accS) -> if isNoRelay accS then Nothing else Just ev)
+    (\ev (_, accS) -> if isStatusWantReload accS then Nothing else Just ev)
     (T.empty, Ready) $ leftmost [eStatus, updated dWalletNetworkStatus]
 
   let flatStatus (t, s)
@@ -164,7 +165,7 @@ handleAppStatus dWallet elAppStatus = do
         | T.null $ T.strip t = toText s
         | otherwise = t <> column <> space <> toText s
 
-  let dIsDisableButtons = (isTxProcessOrCriticalError . snd) <$> dStatus
+  let dIsDisableButtons = (isStatusWantBlockButtons . snd) <$> dStatus
   let dStatusT = flatStatus <$> dStatus
 
   dIpfsStatus <- holdDyn TurnOff eIpfsStatus
@@ -179,4 +180,4 @@ partitionAppStatus ev =
     , filterMost TurnOff isIpfsSaveStatus <$> ev
     )
   where
-    filterMost defStatus f = maybe defStatus NE.head . NE.nonEmpty . mapMaybe f
+    filterMost defStatus f = maybe defStatus NE.last . NE.nonEmpty . mapMaybe f
