@@ -63,9 +63,9 @@ saveTokensOnIpfs mPass dIpfsOn dmKey dTokenCache = mdo
   let dmValidTokens = getValidTokens <$> dTokenCache
   let dFullConditions = combinePinConditions dIpfsConditions dmValidTokens
 
-  logDyn "saveTokensOnIpfs: valid tokens before ipfs pin" dmValidTokens
+  -- logDyn "saveTokensOnIpfs: valid tokens before ipfs pin" dmValidTokens
   (ePinError, eTokenPinAttemptOne) <- fanThese <$> pinEncryptedTokens dFullConditions
-  logEvent "saveTokensOnIpfs: tokens after ipfs pin" $ showTokens <$> eTokenPinAttemptOne
+  -- logEvent "saveTokensOnIpfs: tokens after ipfs pin" $ showTokens <$> eTokenPinAttemptOne
 
   -- BEGIN
   -- retry to pin tokens extra 5 times
@@ -76,7 +76,7 @@ saveTokensOnIpfs mPass dIpfsOn dmKey dTokenCache = mdo
   -- The results of the first pinning we save in anyway
   let eTokensToSave = leftmost [eTokenPinAttemptOne, eTokenPinComplete]
   eSaved <- saveAppDataId mPass encoinsV3 eTokensToSave
-  logEvent "saveTokensOnIpfs: eSaved 2" eSaved
+  -- logEvent "saveTokensOnIpfs: eSaved 2" eSaved
 
   let emValidTokens = leftmost [getValidTokens <$> eTokensToSave, updated dmValidTokens]
   tellIpfsStatus $ leftmost

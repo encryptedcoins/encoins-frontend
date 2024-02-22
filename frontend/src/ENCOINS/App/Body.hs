@@ -13,17 +13,18 @@ import           Backend.Protocol.Types
 import           Backend.Status                     (AppStatus,
                                                      IpfsSaveStatus (..),
                                                      Status (..),
-                                                     isIpfsSaveStatus,
-                                                     isStatusWantReload, isReady,
+                                                     isIpfsSaveStatus, isReady,
                                                      isStatus,
-                                                     isStatusWantBlockButtons)
+                                                     isStatusWantBlockButtons,
+                                                     isStatusWantReload)
 import           Backend.Utility                    (column, space,
                                                      switchHoldDyn, toText)
 import           Backend.Wallet                     (Wallet (..),
                                                      walletsSupportedInApp)
 import           Config.Config                      (NetworkConfig (..),
                                                      networkConfig)
-import           ENCOINS.App.Widgets.Basic          (elementResultJS,loadAppData,
+import           ENCOINS.App.Widgets.Basic          (elementResultJS,
+                                                     loadAppData,
                                                      waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.App.Widgets.IPFS
@@ -33,14 +34,15 @@ import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWallet,
                                                      welcomeWindow,
                                                      welcomeWindowWalletStorageKey)
-import           ENCOINS.Common.Cache               (encoinsV3,encoinsV2,encoinsV1)
+import           ENCOINS.Bulletproofs               (Secret (..), Secrets)
+import           ENCOINS.Common.Cache               (encoinsV1, encoinsV2,
+                                                     encoinsV3, ipfsCacheKey)
 import           ENCOINS.Common.Utils               (toJsonText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           ENCOINS.Common.Widgets.Basic       (notification)
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
-import           ENCOINS.Bulletproofs   (Secret (..), Secrets)
 
 import           ENCOINS.Common.Events
 
@@ -59,7 +61,7 @@ bodyContentWidget mPass = mdo
     handleAppStatus dWallet evStatusList
   notification dStatusT
 
-  logDyn "body: dIpfsSaveStatus" dIpfsSaveStatus
+  -- logDyn "body: dIpfsSaveStatus" dIpfsSaveStatus
 
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen
 
@@ -81,6 +83,10 @@ bodyContentWidget mPass = mdo
   performEvent_
     $ fmap reEncryptEncoins
     $ attachPromptlyDyn dSecretsV3 eReEncrypt
+
+  performEvent_
+    $ fmap reEncryptAesKey
+    $ attachPromptlyDynWithMaybe (\mKey e -> (,e) <$> mKey) dmKey eReEncrypt
 
   -- dSecretsV2 :: Dynamic t [(Secret, Text)] <- loadAppData mPass encoinsV2 id []
   -- performEvent_
@@ -113,11 +119,19 @@ bodyContentWidget mPass = mdo
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
 
   where
+    -- ReEncryption functions wanted every time when
+    -- wherever saving some key with password.
     reEncryptEncoins :: MonadIO m
       => ([TokenCacheV3], Maybe PasswordRaw)
       -> m ()
     reEncryptEncoins (d, mNewPass) = saveJSON
       (getPassRaw <$> mNewPass) encoinsV3 . toJsonText $ d
+
+    reEncryptAesKey :: MonadIO m
+      => (AesKeyRaw, Maybe PasswordRaw)
+      -> m ()
+    reEncryptAesKey (key, mNewPass) = saveJSON
+      (getPassRaw <$> mNewPass) ipfsCacheKey . toJsonText $ key
 
     -- reEncryptEncoins2 :: MonadIO m
     --   => ([(Secret, Text)], Maybe PasswordRaw)
