@@ -104,4 +104,4 @@ selectIconClass status isOn = case (status, isOn) of
   (NoTokens, _)      -> "app-Ipfs_IconTurnOff"
   (Pinning, _)       -> "app-Ipfs_IconPinning"
   (PinnedAll, _)     -> "app-Ipfs_IconPinnedAll"
-  (AttemptExcess, _) -> "app-Ipfs_IconAttemptExcess"
+  (PinError, _) -> "app-Ipfs_IconAttemptExcess"

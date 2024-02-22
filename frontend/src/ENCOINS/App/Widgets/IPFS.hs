@@ -5,6 +5,7 @@ module ENCOINS.App.Widgets.IPFS where
 
 import           Backend.Protocol.Types
 import           Backend.Servant.Requests        (ipfsCacheRequest,
+                                                  ipfsPingRequest,
                                                   restoreRequest)
 import           Backend.Status                  (AppStatus,
                                                   IpfsSaveStatus (..))
@@ -31,6 +32,7 @@ import           Control.Monad                   (void)
 import           Control.Monad.IO.Class          (MonadIO (..))
 import qualified Crypto.Hash                     as Hash
 import           Data.Aeson                      (eitherDecodeStrict')
+import           Data.Align                      (align)
 import           Data.Either                     (partitionEithers)
 import           Data.List                       (find, foldl')
 import           Data.List.NonEmpty              (NonEmpty)
@@ -42,10 +44,8 @@ import           Data.Maybe                      (catMaybes, fromMaybe, isJust,
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
+import           Data.These                      (These)
 import           Reflex.Dom
--- TODO:
--- 1. Add pinned status
-  -- Visual statuses reload, done, failed
 
 
 -- IPFS saving launches
@@ -64,12 +64,12 @@ saveTokensOnIpfs mPass dIpfsOn dmKey dTokenCache = mdo
   let dFullConditions = combinePinConditions dIpfsConditions dmValidTokens
 
   logDyn "saveTokensOnIpfs: valid tokens before ipfs pin" dmValidTokens
-  eTokenPinAttemptOne <- pinEncryptedTokens dFullConditions
+  (ePinError, eTokenPinAttemptOne) <- fanThese <$> pinEncryptedTokens dFullConditions
   logEvent "saveTokensOnIpfs: tokens after ipfs pin" $ showTokens <$> eTokenPinAttemptOne
 
   -- BEGIN
   -- retry to pin tokens extra 5 times
-  (eAttemptExcess, eTokenPinComplete) <-
+  (eAttemptExcess, eTokenPinComplete) <- fanThese <$>
     retryPinEncryptedTokens dIpfsConditions eTokenPinAttemptOne
   -- END
 
@@ -82,7 +82,7 @@ saveTokensOnIpfs mPass dIpfsOn dmKey dTokenCache = mdo
   tellIpfsStatus $ leftmost
     [ PinnedAll <$ ffilter isNothing emValidTokens
     , Pinning <$ ffilter isJust emValidTokens
-    , AttemptExcess <$ eAttemptExcess
+    , PinError <$ leftmost [ePinError, eAttemptExcess]
     ]
 
   dTokenIpfsPinned <- holdDyn [] eTokensToSave
@@ -90,39 +90,42 @@ saveTokensOnIpfs mPass dIpfsOn dmKey dTokenCache = mdo
 
 pinEncryptedTokens :: MonadWidget t m
   => Dynamic t (Bool, Maybe AesKeyRaw, Maybe (NonEmpty TokenCacheV3))
-  -> m (Event t [TokenCacheV3])
+  -> m (Event t (These () [TokenCacheV3]))
 pinEncryptedTokens dConditions = do
   switchHoldDyn dConditions $ \case
     (True, Just key, Just (NE.toList -> tokenCache)) -> do
-              dCloudTokens <- encryptTokens key tokenCache
-              let eFireCaching = ffilter (not . null) $ updated dCloudTokens
-              -- logEvent "pinEncryptedTokens: fire ipfs pinning" $ () <$ eFireCaching
-              let clientId = mkClientId key
-              let dReq = (clientId,) <$> dCloudTokens
-              eeCloudResponse <- ipfsCacheRequest dReq $ () <$ eFireCaching
-              let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
-              dCacheError <- holdDyn "" eCacheError
-              void $ switchHoldDyn dCacheError $ \case
-                "" -> pure never
-                errs  -> do
-                  logDyn "pinEncryptedTokens: ipfsCacheRequest return error" (constDyn errs)
-                  pure never
-              dCloudResponse <- holdDyn Map.empty eCloudResponse
-              pure $ updated $ updateCacheStatus tokenCache <$> dCloudResponse
+        dCloudTokens <- encryptTokens key tokenCache
+        let eFireCaching = ffilter (not . null) $ updated dCloudTokens
+        -- logEvent "pinEncryptedTokens: fire ipfs pinning" $ () <$ eFireCaching
+        eePing <- ipfsPingRequest $ () <$ eFireCaching
+        let (ePingError, ePingResponse) = eventEither eePing
+        -- logEvent "pinEncryptedTokens: ePingError" ePingError
+        -- logEvent "pinEncryptedTokens: ePingResponse" ePingResponse
+
+        let clientId = mkClientId key
+        let dReq = (clientId,) <$> dCloudTokens
+        eeCloudResponse <- ipfsCacheRequest dReq $ () <$ ePingResponse
+        let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
+        -- logEvent "pinEncryptedTokens: eCacheError" eCacheError
+
+        dCloudResponse <- holdDyn Map.empty eCloudResponse
+        let eUpdatedTokens = updated $ updateCacheStatus tokenCache <$> dCloudResponse
+        let ePinError = () <$ leftmost [ePingError, eCacheError]
+        pure $ align ePinError eUpdatedTokens
     _ -> pure never
 
 -- if some Tokens are unpinned try to pin them 5 times with 10 seconds delay.
 retryPinEncryptedTokens :: MonadWidget t m
   => Dynamic t (Bool, Maybe AesKeyRaw)
   -> Event t [TokenCacheV3]
-  -> m (Event t (), Event t [TokenCacheV3])
+  -> m (Event t (These () [TokenCacheV3]))
 retryPinEncryptedTokens dIpfsConditions eTokenIpfsPinAttempt = mdo
   let eTokenIpfsUnpinned = fmapMaybe id $ getValidTokens <$> eTokenIpfsPinAttempt
   -- logEvent "retryPinEncryptedTokens: eTokenIpfsUnpinned" $ () <$ eTokenIpfsUnpinned
 
   dmValidTokens2 <- holdDyn Nothing $ Just <$> eValidTokens3
   let dFullConditions = combinePinConditions dIpfsConditions dmValidTokens2
-  eTokenIpfsPinAttemptNext <- pinEncryptedTokens dFullConditions
+  (ePinError, eTokenIpfsPinAttemptNext) <- fanThese <$> pinEncryptedTokens dFullConditions
   dTokenIpfsPinAttemptNext <- holdDyn [] eTokenIpfsPinAttemptNext
   eDelayTokens <- delay 10
     $ leftmost [Just <$> eTokenIpfsUnpinned, getValidTokens <$> eTokenIpfsPinAttemptNext]
@@ -139,7 +142,9 @@ retryPinEncryptedTokens dIpfsConditions eTokenIpfsPinAttempt = mdo
   -- logDyn "retryPinEncryptedTokens: dAttemptCounter" dAttemptCounter
   -- logEvent "retryPinEncryptedTokens: eAttemptExcess" eAttemptExcess
   -- logEvent "retryPinEncryptedTokens: eValidTokens3" eValidTokens3
-  pure $ (eAttemptExcess, eTokenIpfsCachedComplete)
+  let eError = leftmost [ePinError, eAttemptExcess]
+  -- logEvent "retryPinEncryptedTokens: eError" eError
+  pure $ align eError eTokenIpfsCachedComplete
 
 combinePinConditions :: Reflex t => Dynamic t (Bool, Maybe AesKeyRaw)
   -> Dynamic  t (Maybe (NonEmpty TokenCacheV3))
@@ -379,7 +384,7 @@ selectIpfsStatusNote status isIpfs =
         (NoTokens, _)      -> "is impossible. There are not tokens in the local cache"
         (Pinning, _)       -> "is in progress..."
         (PinnedAll, _)     -> "is completed successfully."
-        (AttemptExcess, _) -> "failed"
+        (PinError, _) -> "failed"
   in "The synchronization" <> space <> t
 
 checkboxWidget :: MonadWidget t m

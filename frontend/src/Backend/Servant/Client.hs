@@ -60,7 +60,8 @@ mkApiClient host = ApiClient{..}
 -- Ipfs request to  delegate backend
 
 type BackIpfsApi =
-         "cache"
+         "ping" :> Get '[JSON] NoContent
+    :<|> "cache"
               :> ReqBody '[JSON] (AesKeyHash, [CloudRequest])
               :> Post '[JSON] (Map AssetName CloudResponse)
     :<|> "restore"
@@ -68,7 +69,8 @@ type BackIpfsApi =
               :> Get '[JSON] [RestoreResponse]
 
 data BackIpfsApiClient t m = MkBackIpfsApiClient
-  { cache   :: ReqRes t m (AesKeyHash, [CloudRequest]) (Map AssetName CloudResponse)
+  { ping    :: Res t m NoContent
+  , cache   :: ReqRes t m (AesKeyHash, [CloudRequest]) (Map AssetName CloudResponse)
   , restore :: Dynamic t (Either Text AesKeyHash) -> Res t m [RestoreResponse]
   }
 
@@ -77,7 +79,8 @@ mkBackIpfsApiClient :: forall t m . MonadWidget t m
   -> BackIpfsApiClient t m
 mkBackIpfsApiClient host = MkBackIpfsApiClient{..}
   where
-    ( cache :<|>
+    ( ping :<|>
+      cache :<|>
       restore ) = client
         (Proxy @BackIpfsApi)
         (Proxy @m)
