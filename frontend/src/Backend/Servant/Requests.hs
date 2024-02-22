@@ -6,6 +6,7 @@ import           Backend.Protocol.Types
 import           Backend.Servant.Client
 import           Backend.Utility        (eventEither, normalizeCurrentUrl,
                                          normalizePingUrl)
+import           Config.Config          (ipfsServerUrl)
 import           ENCOINS.Common.Events
 import           JS.App                 (pingServer)
 
@@ -197,14 +198,11 @@ shuffle ev xs = performEvent $ ev $> (liftIO $ do
 
 -- Ipfs request to backend
 
-ipfsBackendUrl :: BaseUrl
-ipfsBackendUrl = BasePath "http://localhost:7000"
-
 ipfsPingRequest :: MonadWidget t m
   => Event t ()
   -> m (Event t (Either Text NoContent))
 ipfsPingRequest e = do
-  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsBackendUrl
+  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsServerUrl
   ePingRes <- fmap mkTextOrResponse <$> ping e
   logEvent "ipfsPingRequest: ping response" ePingRes
   pure ePingRes
@@ -215,7 +213,7 @@ ipfsCacheRequest :: MonadWidget t m
   -> m (Event t (Either Text (Map AssetName CloudResponse)))
 ipfsCacheRequest dToken e = do
   -- logEvent "ipfsCacheRequest: fire event to pin" e
-  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsBackendUrl
+  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsServerUrl
   eResp <- cache (Right <$> dToken) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "ipfsCache response" eRespUnwrapped
@@ -226,7 +224,7 @@ restoreRequest :: MonadWidget t m
   -> Event t ()
   -> m (Event t (Either Text [RestoreResponse]))
 restoreRequest dClientId e = do
-  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsBackendUrl
+  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsServerUrl
   eResp <- restore (Right <$> dClientId) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "restore response" eRespUnwrapped

@@ -50,3 +50,8 @@ delegateServerUrl :: BaseUrl
 delegateServerUrl = case daoNetwork of
   Mainnet -> BasePath "https://l2y0u35vje.execute-api.eu-central-1.amazonaws.com"
   Testnet -> BasePath "http://localhost:3002/"
+
+ipfsServerUrl :: BaseUrl
+ipfsServerUrl = case appNetwork of
+  Mainnet -> BasePath "https://mainnet-server-here"
+  Testnet -> BasePath "http://localhost:7000"
