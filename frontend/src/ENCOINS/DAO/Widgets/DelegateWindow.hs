@@ -94,8 +94,7 @@ stakingButtonWidget dUrlStatus =
     eStake <- btnWithBlock
         "button-switching inverted flex-center"
         ""
-        -- (isNotValidUrl <$> dUrlStatus)
-        (isNotValidUrl <$> (UrlValid <$ dUrlStatus))
+        (isNotValidUrl <$> dUrlStatus)
         (text "Delegate")
     divClass "menu-item-button-right" $ do
       containerApp ""

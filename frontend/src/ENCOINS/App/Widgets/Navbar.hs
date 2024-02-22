@@ -11,9 +11,9 @@ import           Backend.Status                (IpfsSaveStatus (..))
 import           Backend.Utility               (space)
 import           Backend.Wallet                (Wallet (..), WalletName (..),
                                                 currentNetworkApp)
+import           ENCOINS.Common.Events
 import           ENCOINS.Common.Widgets.Basic  (btnWithBlock, logo)
 import           ENCOINS.Common.Widgets.Wallet (walletIcon)
-import           ENCOINS.Common.Events
 
 connectText :: Wallet -> Text
 connectText w = case w of
@@ -100,8 +100,8 @@ ipfsPopup dClassMap dPopup
 
 selectIconClass :: IpfsSaveStatus -> Bool -> Text
 selectIconClass status isOn = case (status, isOn) of
-  (_, False)         -> "app-Ipfs_IconTurnOff"
-  (NoTokens, _)      -> "app-Ipfs_IconTurnOff"
-  (Pinning, _)       -> "app-Ipfs_IconPinning"
-  (PinnedAll, _)     -> "app-Ipfs_IconPinnedAll"
-  (PinError, _) -> "app-Ipfs_IconAttemptExcess"
+  (_, False)     -> "app-Ipfs_IconTurnOff"
+  (NoTokens, _)  -> "app-Ipfs_IconTurnOff"
+  (Pinning, _)   -> "app-Ipfs_IconPinning"
+  (PinnedAll, _) -> "app-Ipfs_IconPinnedAll"
+  (PinError, _)  -> "app-Ipfs_IconAttemptExcess"

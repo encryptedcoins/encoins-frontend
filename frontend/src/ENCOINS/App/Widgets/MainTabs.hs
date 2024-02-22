@@ -25,7 +25,7 @@ import           Backend.Wallet                         (Wallet (..))
 import           Config.Config                          (delegateServerUrl)
 import           ENCOINS.App.Widgets.Basic              (containerApp,
                                                          elementResultJS,
-                                                         saveAppDataId_,saveAppDataId,
+                                                         saveAppDataId_,
                                                          sectionApp,
                                                          tellTxStatus,
                                                          walletError)
@@ -102,10 +102,7 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   dTokenCache
                   dTokenIpfsSynched
 
-            -- logDyn "walletTab: token before local save 1" $ showTokens <$> dTokenCacheUpdated
             saveCacheLocally mpass dTokenCacheUpdated
-            -- eSaved <- saveAppDataId mpass encoinsV3 $ updated dTokenCacheUpdated
-            -- logEvent "walletTab: eSaved 1" $ () <$ eSaved
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do
@@ -164,12 +161,10 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
               dmKey
               dWalletSecretsUniq
             dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
-            -- logDyn "walletTab: token accumulated on ipfs" $ showTokens <$> dTokenIpfsSynched
             -- IPFS end
 
             pure (dCoinsToBurn, dCoinsToMint, leftmost [eStatusUpdate, eSendStatus])
     eWalletError <- walletError
-    -- logEvent "walletTab: eStatusUpdate" eStatusUpdate
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Wallet mode" eStatus
@@ -307,7 +302,6 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   dTokenCache
                   dTokenIpfsSynched
 
-            logDyn "ledgerTab: token before local save 1" $ showTokens <$> dTokenCacheUpdated
             saveCacheLocally mpass dTokenCacheUpdated
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
@@ -381,7 +375,6 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
             -- both of them will be included to the dynamic accumulator.
             -- TODO: consider better union method for eliminating duplicates.
             dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
-            logDyn "ledgerTab: token accumulated on ipfs" $ showTokens <$> dTokenIpfsSynched
             -- IPFS end
 
             pure (dCoinsToBurn, dCoinsToMint, dChangeAddr, leftmost [eStatusUpdate, eSendStatus])

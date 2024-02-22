@@ -9,7 +9,6 @@ import           JS.Website             (loadJSON, saveJSON)
 
 
 import           Control.Monad          (join, void)
-import           Control.Monad.IO.Class (liftIO)
 import           Data.Aeson             (FromJSON, ToJSON, decode, decodeStrict)
 import           Data.Bool              (bool)
 import           Data.ByteString        (ByteString)
@@ -17,8 +16,6 @@ import           Data.ByteString.Lazy   (fromStrict)
 import           Data.Text              (Text)
 import qualified Data.Text              as T
 import           Data.Text.Encoding     (encodeUtf8)
-import qualified Data.UUID              as Uid
-import qualified Data.UUID.V4           as Uid
 import           GHCJS.DOM              (currentWindowUnchecked)
 import           GHCJS.DOM.Storage      (getItem, setItem)
 import           GHCJS.DOM.Types        (MonadDOM)
@@ -36,18 +33,6 @@ containerApp cls = divClass ("container-app w-container " `T.append` cls)
 -- Element containing the result of a JavaScript computation
 elementResultJS :: MonadWidget t m => Text -> (Text -> a) -> m (Dynamic t a)
 elementResultJS resId f = fmap (fmap f . value) $ inputElement $ def & initialAttributes .~ "style" =: "display:none;" <> "id" =: resId
-
--- elementDynResultJS :: MonadWidget t m
---   => (Text -> a)
---   -> Dynamic t Text
---   -> m (Dynamic t a)
--- elementDynResultJS f dResId = do
---   let d resId = def & initialAttributes .~ "style" =: "display:none;" <> "id" =: resId
---   let dmElement = (\resId -> inputElement $ d resId) <$> dResId
---   let dmdVal = fmap value <$> dmElement
---   edVal <- dyn dmdVal
---   ddVal <- holdDyn (constDyn "") edVal
---   pure $ f <$> join ddVal
 
 elementDynResultJS :: MonadWidget t m
   => (Text -> a)
@@ -67,6 +52,11 @@ waitForScripts placeholderWidget actualWidget = do
   _ <- widgetHoldUntilDefined "walletAPI" ("js/ENCOINS.js" <$ ePB) placeholderWidget actualWidget
   blank
 
+-- WARNING
+-- Use it with care.
+-- If loadAppData is called with the same entry wherever in the code,
+-- the duplicates won't fire.
+-- TODO: use genUid
 loadAppData :: forall t m a b . (MonadWidget t m, FromJSON a, Show b)
   => Maybe PasswordRaw
   -> Text -- cache key
@@ -110,9 +100,6 @@ saveAppDataId mPass key eVal = do
     let eEncodedValue = toJsonText <$> eVal
     let mPassT = (getPassRaw <$> mPass)
     performEvent (saveJSON mPassT key <$> eEncodedValue)
-
-genUid :: MonadWidget t m => Event t () -> m (Event t Text)
-genUid ev = performEvent $ (Uid.toText <$> liftIO Uid.nextRandom) <$ ev
 
 loadJsonFromStorage :: (MonadDOM m, FromJSON a) => Text -> m (Maybe a)
 loadJsonFromStorage elId = do

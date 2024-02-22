@@ -1,16 +1,19 @@
 module Backend.Utility where
 
-import           Config.Config (NetworkId (..), appNetwork)
+import           Config.Config          (NetworkId (..), appNetwork)
 
-import           Control.Monad ((<=<), join)
+import           Control.Monad          (join, (<=<))
+import           Control.Monad.IO.Class (liftIO)
 import qualified CSL
-import           Data.Functor  ((<&>))
-import qualified Data.Map      as Map
-import           Data.Maybe    (isNothing)
-import           Data.Text     (Text)
-import qualified Data.Text     as T
+import           Data.Functor           ((<&>))
+import qualified Data.Map               as Map
+import           Data.Maybe             (isNothing)
+import           Data.Text              (Text)
+import qualified Data.Text              as T
+import qualified Data.UUID              as Uid
+import qualified Data.UUID.V4           as Uid
 import           Reflex.Dom
-import           Witherable    (catMaybes)
+import           Witherable             (catMaybes)
 
 normalizePingUrl :: Text -> Text
 normalizePingUrl url = T.append (T.dropWhileEnd (== '/') url) $ case appNetwork of
@@ -22,7 +25,7 @@ normalizePingUrl url = T.append (T.dropWhileEnd (== '/') url) $ case appNetwork 
 normalizeCurrentUrl :: Text -> Text
 normalizeCurrentUrl url = case url of
   "localhost:3000" -> "http://localhost:3000"
-  u -> u
+  u                -> u
 
 toEither :: e -> Maybe a -> Either e a
 toEither err Nothing = Left err
@@ -72,3 +75,8 @@ column = ":"
 
 toText :: Show a => a -> Text
 toText = T.pack . show
+
+-- resId should be unique in every call of elementResultJS
+-- genUid generates unique resId.
+genUid :: MonadWidget t m => Event t () -> m (Event t Text)
+genUid ev = performEvent $ (Uid.toText <$> liftIO Uid.nextRandom) <$ ev

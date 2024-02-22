@@ -63,8 +63,6 @@ function loadJSON(key, resId, pass, decr) {
     };
     setInputValue(resId, res);
   } catch (e) {
-    // console.log("decrypt: val:", val);
-    // console.log("decrypt: key:", key);
     console.log("loadJSON: decrypt error: ", e);
     return;
   }

@@ -81,8 +81,4 @@ mkBackIpfsApiClient host = MkBackIpfsApiClient{..}
   where
     ( ping :<|>
       cache :<|>
-      restore ) = client
-        (Proxy @BackIpfsApi)
-        (Proxy @m)
-        (Proxy @())
-        (pure host)
+      restore ) = client (Proxy @BackIpfsApi) (Proxy @m) (Proxy @()) (pure host)

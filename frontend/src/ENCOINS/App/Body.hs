@@ -3,6 +3,7 @@
 module ENCOINS.App.Body (bodyWidget) where
 
 import           Control.Monad.IO.Class             (MonadIO (..))
+import           Data.Aeson                         (ToJSON)
 import           Data.Bifunctor                     (first)
 import qualified Data.List.NonEmpty                 as NE
 import           Data.Text                          (Text)
@@ -24,7 +25,6 @@ import           Backend.Wallet                     (Wallet (..),
 import           Config.Config                      (NetworkConfig (..),
                                                      networkConfig)
 import           ENCOINS.App.Widgets.Basic          (elementResultJS,
-                                                     loadAppData,
                                                      waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.App.Widgets.IPFS
@@ -34,9 +34,7 @@ import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWallet,
                                                      welcomeWindow,
                                                      welcomeWindowWalletStorageKey)
-import           ENCOINS.Bulletproofs               (Secret (..), Secrets)
-import           ENCOINS.Common.Cache               (encoinsV1, encoinsV2,
-                                                     encoinsV3, ipfsCacheKey)
+import           ENCOINS.Common.Cache               (encoinsV3, ipfsCacheKey)
 import           ENCOINS.Common.Utils               (toJsonText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           ENCOINS.Common.Widgets.Basic       (notification)
@@ -61,8 +59,6 @@ bodyContentWidget mPass = mdo
     handleAppStatus dWallet evStatusList
   notification dStatusT
 
-  -- logDyn "body: dIpfsSaveStatus" dIpfsSaveStatus
-
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen
 
   (eNewPass, eClearCache) <- passwordSettingsWindow ePassOpen
@@ -81,22 +77,12 @@ bodyContentWidget mPass = mdo
   let eReEncrypt = leftmost [eNewPass, Nothing <$ eCleanOk]
 
   performEvent_
-    $ fmap reEncryptEncoins
+    $ fmap (reEncrypt encoinsV3)
     $ attachPromptlyDyn dSecretsV3 eReEncrypt
 
   performEvent_
-    $ fmap reEncryptAesKey
+    $ fmap (reEncrypt ipfsCacheKey)
     $ attachPromptlyDynWithMaybe (\mKey e -> (,e) <$> mKey) dmKey eReEncrypt
-
-  -- dSecretsV2 :: Dynamic t [(Secret, Text)] <- loadAppData mPass encoinsV2 id []
-  -- performEvent_
-  --   $ fmap reEncryptEncoins2
-  --   $ attachPromptlyDyn dSecretsV2 eReEncrypt
-
-  -- dSecretsV1 :: Dynamic t Secrets <- loadAppData mPass encoinsV1 id []
-  -- performEvent_
-  --   $ fmap reEncryptEncoins1
-  --   $ attachPromptlyDyn dSecretsV1 eReEncrypt
 
   copiedNotification
 
@@ -108,42 +94,19 @@ bodyContentWidget mPass = mdo
     dIpfsSaveStatus
     eOpenIpfsWindow
   dIpfsOn <- holdDyn False $ leftmost $ map updated [dIpfsCache, dIpfsWindow]
-  -- logDyn "body: dAesKeyWindow" dAesKeyWindow
 
   evKey <- postDelay 0.2
   dmKeyCache <- fetchAesKey mPass "app-body-load-of-aes-key" evKey
-  -- logDyn "body: dmKeyCache" dmKeyCache
   dmKey <- holdDyn Nothing $ leftmost $ map updated [dmKeyCache, dAesKeyWindow]
-  -- logDyn "body: dAesKeyWindow" dAesKeyWindow
 
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
 
-  where
-    -- ReEncryption functions wanted every time when
-    -- wherever saving some key with password.
-    reEncryptEncoins :: MonadIO m
-      => ([TokenCacheV3], Maybe PasswordRaw)
-      -> m ()
-    reEncryptEncoins (d, mNewPass) = saveJSON
-      (getPassRaw <$> mNewPass) encoinsV3 . toJsonText $ d
 
-    reEncryptAesKey :: MonadIO m
-      => (AesKeyRaw, Maybe PasswordRaw)
-      -> m ()
-    reEncryptAesKey (key, mNewPass) = saveJSON
-      (getPassRaw <$> mNewPass) ipfsCacheKey . toJsonText $ key
-
-    -- reEncryptEncoins2 :: MonadIO m
-    --   => ([(Secret, Text)], Maybe PasswordRaw)
-    --   -> m ()
-    -- reEncryptEncoins2 (d, mNewPass) = saveJSON
-    --   (getPassRaw <$> mNewPass) encoinsV2 . toJsonText $ d
-
-    -- reEncryptEncoins1 :: MonadIO m
-    --   => (Secrets, Maybe PasswordRaw)
-    --   -> m ()
-    -- reEncryptEncoins1 (d, mNewPass) = saveJSON
-    --   (getPassRaw <$> mNewPass) encoinsV1 . toJsonText $ d
+-- ReEncryption functions wanted every time when
+-- wherever some key is saved with password.
+reEncrypt :: (ToJSON a, MonadIO m) => Text -> (a, Maybe PasswordRaw) -> m ()
+reEncrypt key (d, mNewPass) = saveJSON
+      (getPassRaw <$> mNewPass) key . toJsonText $ d
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo
@@ -190,7 +153,7 @@ handleAppStatus :: MonadWidget t m
   -> Event t [AppStatus]
   -> m (Dynamic t Text, Dynamic t Bool, Dynamic t IpfsSaveStatus)
 handleAppStatus dWallet elAppStatus = do
-  logEvent "handleAppStatus: elAppStatus" elAppStatus
+  logEvent "AppStatus" elAppStatus
   let (eStatus, eIpfsStatus) = partitionAppStatus elAppStatus
   dWalletNetworkStatus <- fetchWalletNetworkStatus dWallet
 

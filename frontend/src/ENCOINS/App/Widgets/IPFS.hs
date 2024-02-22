@@ -63,9 +63,7 @@ saveTokensOnIpfs mPass dIpfsOn dmKey dTokenCache = mdo
   let dmValidTokens = getValidTokens <$> dTokenCache
   let dFullConditions = combinePinConditions dIpfsConditions dmValidTokens
 
-  -- logDyn "saveTokensOnIpfs: valid tokens before ipfs pin" dmValidTokens
   (ePinError, eTokenPinAttemptOne) <- fanThese <$> pinEncryptedTokens dFullConditions
-  -- logEvent "saveTokensOnIpfs: tokens after ipfs pin" $ showTokens <$> eTokenPinAttemptOne
 
   -- BEGIN
   -- retry to pin tokens extra 5 times
@@ -76,7 +74,6 @@ saveTokensOnIpfs mPass dIpfsOn dmKey dTokenCache = mdo
   -- The results of the first pinning we save in anyway
   let eTokensToSave = leftmost [eTokenPinAttemptOne, eTokenPinComplete]
   eSaved <- saveAppDataId mPass encoinsV3 eTokensToSave
-  -- logEvent "saveTokensOnIpfs: eSaved 2" eSaved
 
   let emValidTokens = leftmost [getValidTokens <$> eTokensToSave, updated dmValidTokens]
   tellIpfsStatus $ leftmost
@@ -96,17 +93,13 @@ pinEncryptedTokens dConditions = do
     (True, Just key, Just (NE.toList -> tokenCache)) -> do
         dCloudTokens <- encryptTokens key tokenCache
         let eFireCaching = ffilter (not . null) $ updated dCloudTokens
-        -- logEvent "pinEncryptedTokens: fire ipfs pinning" $ () <$ eFireCaching
         eePing <- ipfsPingRequest $ () <$ eFireCaching
         let (ePingError, ePingResponse) = eventEither eePing
-        -- logEvent "pinEncryptedTokens: ePingError" ePingError
-        -- logEvent "pinEncryptedTokens: ePingResponse" ePingResponse
 
         let clientId = mkClientId key
         let dReq = (clientId,) <$> dCloudTokens
         eeCloudResponse <- ipfsCacheRequest dReq $ () <$ ePingResponse
         let (eCacheError, eCloudResponse) = eventEither eeCloudResponse
-        -- logEvent "pinEncryptedTokens: eCacheError" eCacheError
 
         dCloudResponse <- holdDyn Map.empty eCloudResponse
         let eUpdatedTokens = updated $ updateCacheStatus tokenCache <$> dCloudResponse
@@ -121,29 +114,20 @@ retryPinEncryptedTokens :: MonadWidget t m
   -> m (Event t (These () [TokenCacheV3]))
 retryPinEncryptedTokens dIpfsConditions eTokenIpfsPinAttempt = mdo
   let eTokenIpfsUnpinned = fmapMaybe id $ getValidTokens <$> eTokenIpfsPinAttempt
-  -- logEvent "retryPinEncryptedTokens: eTokenIpfsUnpinned" $ () <$ eTokenIpfsUnpinned
-
   dmValidTokens2 <- holdDyn Nothing $ Just <$> eValidTokens3
   let dFullConditions = combinePinConditions dIpfsConditions dmValidTokens2
   (ePinError, eTokenIpfsPinAttemptNext) <- fanThese <$> pinEncryptedTokens dFullConditions
   dTokenIpfsPinAttemptNext <- holdDyn [] eTokenIpfsPinAttemptNext
   eDelayTokens <- delay 10
     $ leftmost [Just <$> eTokenIpfsUnpinned, getValidTokens <$> eTokenIpfsPinAttemptNext]
-  -- logEvent "retryPinEncryptedTokens: eDelayTokens" $ () <$ eDelayTokens
   let (eTokenIpfsCachedComplete, eTryPinAgain) =
         eventMaybeDynDef dTokenIpfsPinAttemptNext eDelayTokens
-  -- logEvent "retryPinEncryptedTokens: token left unpinned 2" eTryPinAgain
-  -- logEvent "retryPinEncryptedTokens: eTokenIpfsCachedComplete" eTokenIpfsCachedComplete
   dAttemptCounter :: Dynamic t Int <- count eTryPinAgain
   let (eAttemptExcess, eValidTokens3) = fanEither $ attachPromptlyDynWith
         (\n ts -> if n > 5 then Left () else Right ts)
         dAttemptCounter
         eTryPinAgain
-  -- logDyn "retryPinEncryptedTokens: dAttemptCounter" dAttemptCounter
-  -- logEvent "retryPinEncryptedTokens: eAttemptExcess" eAttemptExcess
-  -- logEvent "retryPinEncryptedTokens: eValidTokens3" eValidTokens3
   let eError = leftmost [ePinError, eAttemptExcess]
-  -- logEvent "retryPinEncryptedTokens: eError" eError
   pure $ align eError eTokenIpfsCachedComplete
 
 combinePinConditions :: Reflex t => Dynamic t (Bool, Maybe AesKeyRaw)
@@ -240,7 +224,6 @@ getAesKey mPass = do
         let genElId = "genAESKeyId"
         performEvent_ $ JS.generateAESKey genElId <$ ev3
         eAesKeyText <- updated <$> elementResultJS genElId id
-        logEvent "getAesKey: eAesKeyText" eAesKeyText
         let eAesKey = MkAesKeyRaw <$> eAesKeyText
         ev4 <- saveAppDataId mPass ipfsCacheKey eAesKey
         eLoadedKey <- updated <$> fetchAesKey mPass "second-load-of-aes-key" ev4

@@ -4,8 +4,7 @@ module Backend.Servant.Requests where
 
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
-import           Backend.Utility        (eventEither, normalizeCurrentUrl,
-                                         normalizePingUrl)
+import           Backend.Utility        (normalizeCurrentUrl, normalizePingUrl)
 import           Config.Config          (ipfsServerUrl)
 import           ENCOINS.Common.Events
 import           JS.App                 (pingServer)
@@ -164,20 +163,6 @@ mkStatusOrResponse (ResponseSuccess _ a _) = Right a
 mkStatusOrResponse (ResponseFailure _ _ xhr) = Left $ fromIntegral $ view xhrResponse_status xhr
 mkStatusOrResponse (RequestFailure _ _) = Left $ -1
 
-hasStatusZero :: Int -> Either Int Int
-hasStatusZero = \case
-  0 -> Left 0
-  n -> Right n
-
-fromRelayResponse :: Reflex t
-  => Event t (Either Int a)
-  -> (Event t Int, Event t Int, Event t a) -- Relay disconnected, failed or responded
-fromRelayResponse eeResp =
-  let (eStatus, eRespOk) = eventEither eeResp
-      eeStatus = hasStatusZero <$> eStatus
-      (eRelayDown, eRelayError) = (filterLeft eeStatus, filterRight eeStatus)
-  in (eRelayDown, eRelayError, eRespOk)
-
 -- | Randomly shuffle a list on event fires
 --   /O(N)/
 shuffle :: MonadWidget t m => Event t () -> [a] -> m (Event t [a])
@@ -212,7 +197,6 @@ ipfsCacheRequest :: MonadWidget t m
   -> Event t ()
   -> m (Event t (Either Text (Map AssetName CloudResponse)))
 ipfsCacheRequest dToken e = do
-  -- logEvent "ipfsCacheRequest: fire event to pin" e
   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsServerUrl
   eResp <- cache (Right <$> dToken) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp

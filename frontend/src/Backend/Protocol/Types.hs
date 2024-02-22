@@ -120,6 +120,10 @@ data ServerVersion = ServerVersion
   deriving stock (Eq, Show, Generic)
   deriving anyclass (ToJSON, FromJSON)
 
+newtype PasswordRaw = PasswordRaw { getPassRaw :: Text } deriving (Eq, Show)
+
+newtype PasswordHash = PasswordHash { getPassHash :: Text } deriving (Eq, Show)
+
 -- IPFS
 
 -- Secret hash is used to save on IPFS
@@ -158,6 +162,29 @@ data CoinStatus = Minted | Burned | CoinError Text
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
+data RestoreResponse = MkRestoreResponse
+  { rrAssetName       :: AssetName
+  , rrEncryptedSecret :: EncryptedSecret
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance FromJSON RestoreResponse where
+   parseJSON = genericParseJSON $ aesonPrefix snakeCase
+
+-- Randomly generated aes256 key for encrypting Secrets before saving on ipfs
+newtype AesKeyRaw = MkAesKeyRaw { getAesKeyRaw :: Text }
+  deriving newtype (Eq, Show, ToJSON, FromJSON)
+  deriving stock (Generic)
+
+-- Hash of aes key to save it in metadata field as clientId on IPFS
+-- For identifying which token to fetch
+newtype AesKeyHash = MkAesKeyHash { getAesKeyHash :: Text }
+  deriving newtype (Eq, Show, ToJSON, FromJSON, ToHttpApiData)
+  deriving stock (Generic)
+
+data IpfsUpdateStatus = Processing | Complete | Failed
+  deriving stock (Eq, Show)
+
 -- Cache
 
 data TokenCacheV3 = MkTokenCacheV3
@@ -175,30 +202,3 @@ showToken (MkTokenCacheV3 n _ s _) = (n,s)
 
 showTokens :: [TokenCacheV3] -> [(AssetName, IpfsStatus)]
 showTokens = map showToken
-
-data RestoreResponse = MkRestoreResponse
-  { rrAssetName       :: AssetName
-  , rrEncryptedSecret :: EncryptedSecret
-  }
-  deriving stock (Show, Eq, Generic)
-
-instance FromJSON RestoreResponse where
-   parseJSON = genericParseJSON $ aesonPrefix snakeCase
-
-newtype PasswordRaw = PasswordRaw { getPassRaw :: Text } deriving (Eq, Show)
-
-newtype PasswordHash = PasswordHash { getPassHash :: Text } deriving (Eq, Show)
-
--- Randomly generated aes256 key for encrypting Secrets before saving on ipfs
-newtype AesKeyRaw = MkAesKeyRaw { getAesKeyRaw :: Text }
-  deriving newtype (Eq, Show, ToJSON, FromJSON)
-  deriving stock (Generic)
-
--- Hash of aes key to save it in metadata field as clientId on IPFS
--- For identifying which token to fetch
-newtype AesKeyHash = MkAesKeyHash { getAesKeyHash :: Text }
-  deriving newtype (Eq, Show, ToJSON, FromJSON, ToHttpApiData)
-  deriving stock (Generic)
-
-data IpfsUpdateStatus = Processing | Complete | Failed
-  deriving stock (Eq, Show)
