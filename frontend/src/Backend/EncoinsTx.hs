@@ -129,7 +129,6 @@ encoinsTxWalletMode
           , (BackendError . ("Relay returned error: " <>)) <$>
             leftmost [eNewTxError, eSubmitError]
           ]
-    logEvent "encoinsTxWalletMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
 
 encoinsTxTransferMode :: MonadWidget t m
@@ -207,7 +206,6 @@ encoinsTxTransferMode
           , (BackendError . ("Relay returned error: " <>)) <$>
              leftmost [eNewTxError, eSubmitError]
           ]
-    logEvent "encoinsTxTransferMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
   where
     mkValue :: Secrets -> [TokenCacheV3] -> CSL.Value
@@ -313,5 +311,4 @@ encoinsTxLedgerMode
           , (BackendError . ("Relay returned error: " <>)) <$>
               leftmost [eStatusError, eServerError]
           ]
-    logEvent "encoinsTxLedgerMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus)

@@ -25,7 +25,7 @@ import           Backend.Wallet                         (Wallet (..))
 import           Config.Config                          (delegateServerUrl)
 import           ENCOINS.App.Widgets.Basic              (containerApp,
                                                          elementResultJS,
-                                                         saveAppDataId_,
+                                                         saveAppDataId_,saveAppDataId,
                                                          sectionApp,
                                                          tellTxStatus,
                                                          walletError)
@@ -66,7 +66,7 @@ walletTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t [TokenCacheV3] -- consider use Map or Set
   -> Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
-  -> m ()
+  -> m (Dynamic t [TokenCacheV3])
 walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
@@ -87,7 +87,7 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
           0
           0
     containerApp "" $ transactionBalanceWidget formula (Just WalletMode) ""
-    (dToBurn, dToMint, eStatusUpdate) <- containerApp "" $
+    (dToBurn, dToMint, eStatusUpdate, dTokenCacheUpdated) <- containerApp "" $
         divClass "app-columns w-row" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
             dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
@@ -102,7 +102,11 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   dTokenCache
                   dTokenIpfsSynched
 
+            -- logDyn "walletTab: dTokenCache" $ showTokens <$> dTokenCache
+            -- logDyn "walletTab: dTokenCacheUpdated" $ showTokens <$> dTokenCacheUpdated
             saveCacheLocally mpass dTokenCacheUpdated
+            -- eSaved <- saveAppDataId mpass encoinsV3 $ updated dTokenCacheUpdated
+            -- logEvent "walletTab: eSaved 1" $ () <$ eSaved
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do
@@ -161,13 +165,15 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
               dmKey
               dWalletSecretsUniq
             dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
+            -- logDyn "walletTab: dTokenIpfsSynched" $ showTokens <$> dTokenIpfsSynched
             -- IPFS end
 
-            pure (dCoinsToBurn, dCoinsToMint, leftmost [eStatusUpdate, eSendStatus])
+            pure (dCoinsToBurn, dCoinsToMint, leftmost [eStatusUpdate, eSendStatus], dTokenCacheUpdated)
     eWalletError <- walletError
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Wallet mode" eStatus
+    pure dTokenCacheUpdated
   where
     menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
@@ -177,7 +183,7 @@ transferTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
-  -> m ()
+  -> m (Dynamic t [TokenCacheV3])
 transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
@@ -252,6 +258,7 @@ transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
           [eWalletError, eStatusUpdate1, eStatusUpdate2, NoRelay <$ eUrlError]
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Transfer mode" eStatus
+    pure dSecretsName
   where
     menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
@@ -264,7 +271,7 @@ ledgerTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t [TokenCacheV3]
   -> Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
-  -> m ()
+  -> m (Dynamic t [TokenCacheV3])
 ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
@@ -288,7 +295,7 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
           (getCoinNumber <$> dToMint)
     containerApp "" $ transactionBalanceWidget formula (Just LedgerMode) ""
 
-    (dToBurn, dToMint, dAddr, eStatusUpdate) <- containerApp "" $
+    (dToBurn, dToMint, dAddr, eStatusUpdate, dTokenCacheUpdated) <- containerApp "" $
         divClassId "app-columns w-row" "welcome-ledger" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
             dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
@@ -377,11 +384,12 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
             dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
             -- IPFS end
 
-            pure (dCoinsToBurn, dCoinsToMint, dChangeAddr, leftmost [eStatusUpdate, eSendStatus])
+            pure (dCoinsToBurn, dCoinsToMint, dChangeAddr, leftmost [eStatusUpdate, eSendStatus], dTokenCacheUpdated)
     eWalletError <- walletError
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Ledger status" eStatus
+    pure dTokenCacheUpdated
   where
     menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"

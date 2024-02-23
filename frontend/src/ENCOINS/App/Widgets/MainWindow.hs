@@ -5,7 +5,7 @@ module ENCOINS.App.Widgets.MainWindow where
 import           Reflex.Dom
 
 import           Backend.Protocol.Types            (AesKeyRaw, PasswordRaw (..),
-                                                    TokenCacheV3)
+                                                    TokenCacheV3, showTokens)
 import           Backend.Status                    (AppStatus)
 import           Backend.Utility                   (switchHoldDyn)
 import           Backend.Wallet                    (Wallet (..))
@@ -27,13 +27,12 @@ mainWindow :: (MonadWidget t m, EventWriter t [AppStatus] m)
 mainWindow mPass dWallet dIsDisableButtons dIpfsOn dmKey = mdo
     eTab <- tabsSection dTab dIsDisableButtons
     dTab <- holdDyn WalletTab eTab
-    eSecrets <- switchHoldDyn dTab $ \tab -> mdo
-      dSecretsV3 :: Dynamic t [TokenCacheV3] <- loadAppData mPass encoinsV3 id []
-      updateCacheV3 mPass dSecretsV3
-
-      case tab of
-        WalletTab   -> walletTab mPass dWallet dSecretsV3 dIpfsOn dmKey
-        TransferTab -> transferTab mPass dWallet dSecretsV3
-        LedgerTab   -> ledgerTab mPass dSecretsV3 dIpfsOn dmKey
-      return $ updated dSecretsV3
-    holdDyn [] eSecrets
+    eNewTokensV3 <- switchHoldDyn dTab $ \tab -> mdo
+      dOldTokensV3 :: Dynamic t [TokenCacheV3] <- loadAppData mPass encoinsV3 id []
+      updateCacheV3 mPass dOldTokensV3
+      dUpdatedTokensV3 <- case tab of
+        WalletTab   -> walletTab mPass dWallet dOldTokensV3 dIpfsOn dmKey
+        TransferTab -> transferTab mPass dWallet dOldTokensV3
+        LedgerTab   -> ledgerTab mPass dOldTokensV3 dIpfsOn dmKey
+      return $ updated dUpdatedTokensV3
+    holdDyn [] eNewTokensV3

@@ -67,7 +67,7 @@ bodyContentWidget mPass = mdo
 
   divClass "section-app section-app-empty wf-section" blank
 
-  (dSecretsV3, evStatusList) <- runEventWriterT $ mainWindow
+  (dTokensV3, evStatusList) <- runEventWriterT $ mainWindow
     mPass
     dWallet
     dIsDisableButtons
@@ -78,7 +78,7 @@ bodyContentWidget mPass = mdo
 
   performEvent_
     $ fmap (reEncrypt encoinsV3)
-    $ attachPromptlyDyn dSecretsV3 eReEncrypt
+    $ attachPromptlyDyn dTokensV3 eReEncrypt
 
   performEvent_
     $ fmap (reEncrypt ipfsCacheKey)
@@ -97,10 +97,9 @@ bodyContentWidget mPass = mdo
 
   evKey <- postDelay 0.2
   dmKeyCache <- fetchAesKey mPass "app-body-load-of-aes-key" evKey
-  dmKey <- holdDyn Nothing $ leftmost $ map updated [dmKeyCache, dAesKeyWindow]
+  dmKey <- holdUniqDyn =<< (holdDyn Nothing $ leftmost $ map updated [dmKeyCache, dAesKeyWindow])
 
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
-
 
 -- ReEncryption functions wanted every time when
 -- wherever some key is saved with password.
