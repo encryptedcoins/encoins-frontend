@@ -181,17 +181,23 @@ updateCacheStatus oldToken tokensFromClouds = map updateCloud oldToken
           mStatus = Map.lookup name tokensFromClouds
       in case mStatus of
         Nothing -> t
+        -- If IPFS server returns a status with Nothing,
+        -- then it uses old value.
         Just (MkCloudResponse mIpfs mCoin) ->
            t{ tcIpfsStatus = fromMaybe (tcIpfsStatus t) mIpfs
             , tcCoinStatus = fromMaybe (tcCoinStatus t) mCoin
             }
 
--- Valid tokens are the ones that are Minted and are not Pinned
+-- Unpinned Minted tokens send to IPFS server
+-- Any Burned tokens send to IPFS to be pinned and checked
+-- Tokens with other states are not sent to IPFS
+-- TODO: how to handle CoinError status?
 getValidToken :: TokenCacheV3 -> Maybe TokenCacheV3
 getValidToken t = case (tcIpfsStatus t, tcCoinStatus t)  of
-  (Pinned, _) -> Nothing
-  (_, Minted) -> Just t
-  _           -> Nothing
+  (Unpinned, Minted) -> Just t
+  (_, Burned)        -> Just t
+  (Pinned, _)        -> Nothing
+  _                  -> Nothing
 
 getValidTokens :: [TokenCacheV3] -> Maybe (NonEmpty TokenCacheV3)
 getValidTokens = NE.nonEmpty . catMaybes . map getValidToken

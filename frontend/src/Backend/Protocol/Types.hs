@@ -158,7 +158,9 @@ data IpfsStatus = Pinned | Unpinned | IpfsError Text
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
-data CoinStatus = Minted | Burned | CoinError Text
+-- Discarded tokens are ones that can't be rollback
+-- Burned tokens can be rollback
+data CoinStatus = Minted | Burned | Discarded | CoinError Text
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
