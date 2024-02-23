@@ -25,7 +25,7 @@ import           Backend.Wallet                         (Wallet (..))
 import           Config.Config                          (delegateServerUrl)
 import           ENCOINS.App.Widgets.Basic              (containerApp,
                                                          elementResultJS,
-                                                         saveAppDataId_,saveAppDataId,
+                                                         saveAppDataId_,
                                                          sectionApp,
                                                          tellTxStatus,
                                                          walletError)
@@ -97,18 +97,7 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
             -- IPFS begin
-            dWalletSecretsUniq <- holdUniqDyn dSecretsInTheWallet
-            eTokenWithNewState <- saveTokensOnIpfs
-              mpass
-              dIpfsOn
-              dmKey
-              dWalletSecretsUniq
-            dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
-            -- Synchronize a status state of dTokenCache with dTokenIpfsSynched before saving first one.
-            let dTokenCacheUpdated = zipDynWith
-                  updateTokenState
-                  dTokenCache
-                  dTokenIpfsSynched
+            dTokenCacheUpdated <- handleIpfs mpass dIpfsOn dmKey dTokenCache dSecretsInTheWallet
             -- IPFS end
 
             saveCacheLocally mpass dTokenCacheUpdated
@@ -195,18 +184,7 @@ transferTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
         let dTokenCache = nub <$> zipDynWith (++) dTokenCacheOld (map coinV3 <$> dImportedSecrets)
 
         -- IPFS begin
-        dWalletSecretsUniq <- holdUniqDyn dSecretsInTheWallet
-        eTokenWithNewState <- saveTokensOnIpfs
-          mpass
-          dIpfsOn
-          dmKey
-          dWalletSecretsUniq
-        dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
-        -- Synchronize a status state of dTokenCache with dTokenIpfsSynched before saving first one.
-        let dTokenCacheUpdated = zipDynWith
-              updateTokenState
-              dTokenCache
-              dTokenIpfsSynched
+        dTokenCacheUpdated <- handleIpfs mpass dIpfsOn dmKey dTokenCache dSecretsInTheWallet
         -- IPFS end
 
         saveCacheLocally mpass dTokenCacheUpdated
@@ -314,23 +292,7 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   $ map coinV3 <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
             -- IPFS begin
-            dWalletSecretsUniq <- holdUniqDyn dSecretsInTheWallet
-            eTokenWithNewState <- saveTokensOnIpfs
-              mpass
-              dIpfsOn
-              dmKey
-              dWalletSecretsUniq
-            -- accumulate token saved on ipfs.
-            -- The place of error prone.
-            -- If in tx A token was not pinned (in wallet mode) and in tx B was pinned (ledger mode), then
-            -- both of them will be included to the dynamic accumulator.
-            -- TODO: consider better union method for eliminating duplicates.
-            dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
-            -- Synchronize a status state of dTokenCache with dTokenIpfsSynched before saving first one.
-            let dTokenCacheUpdated = zipDynWith
-                  updateTokenState
-                  dTokenCache
-                  dTokenIpfsSynched
+            dTokenCacheUpdated <- handleIpfs mpass dIpfsOn dmKey dTokenCache dSecretsInTheWallet
             -- IPFS end
 
             saveCacheLocally mpass dTokenCacheUpdated
@@ -415,3 +377,30 @@ saveCacheLocally :: MonadWidget t m
   -> m ()
 saveCacheLocally mPass  cache =
   saveAppDataId_ mPass encoinsV3 $ updated cache
+
+handleIpfs :: (MonadWidget t m, EventWriter t [AppStatus] m)
+  => Maybe PasswordRaw
+  -> Dynamic t Bool
+  -> Dynamic t (Maybe AesKeyRaw)
+  -> Dynamic t [TokenCacheV3]
+  -> Dynamic t [TokenCacheV3]
+  -> m (Dynamic t [TokenCacheV3])
+handleIpfs mpass dIpfsOn dmKey dTokenCache dSecretsInTheWallet = do
+  dWalletSecretsUniq <- holdUniqDyn dSecretsInTheWallet
+  eTokenWithNewState <- saveTokensOnIpfs
+    mpass
+    dIpfsOn
+    dmKey
+    dWalletSecretsUniq
+  -- accumulate token saved on ipfs.
+  -- The place of error prone.
+  -- If in tx A token was not pinned (in wallet mode) and in tx B was pinned (ledger mode), then
+  -- both of them will be included to the dynamic accumulator.
+  -- TODO: consider better union method for eliminating duplicates.
+  dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
+  -- Synchronize a status state of dTokenCache with dTokenIpfsSynched before saving first one.
+  let dTokenCacheUpdated = zipDynWith
+        updateTokenState
+        dTokenCache
+        dTokenIpfsSynched
+  pure dTokenCacheUpdated
