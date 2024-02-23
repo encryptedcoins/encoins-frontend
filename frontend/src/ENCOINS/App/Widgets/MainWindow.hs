@@ -5,7 +5,7 @@ module ENCOINS.App.Widgets.MainWindow where
 import           Reflex.Dom
 
 import           Backend.Protocol.Types            (AesKeyRaw, PasswordRaw (..),
-                                                    TokenCacheV3, showTokens)
+                                                    TokenCacheV3)
 import           Backend.Status                    (AppStatus)
 import           Backend.Utility                   (switchHoldDyn)
 import           Backend.Wallet                    (Wallet (..))
@@ -33,7 +33,7 @@ mainWindow mPass dWallet dIsDisableButtons dIpfsOn dmKey = mdo
       updateCacheV3 mPass dOldTokensV3
       dUpdatedTokensV3 <- case tab of
         WalletTab   -> walletTab mPass dWallet dOldTokensV3 dIpfsOn dmKey
-        TransferTab -> transferTab mPass dWallet dOldTokensV3
+        TransferTab -> transferTab mPass dWallet dOldTokensV3 dIpfsOn dmKey
         LedgerTab   -> ledgerTab mPass dOldTokensV3 dIpfsOn dmKey
       return $ updated dUpdatedTokensV3
     holdDyn [] eNewTokensV3

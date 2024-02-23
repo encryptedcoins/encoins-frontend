@@ -96,17 +96,22 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   $ map coinV3
                   <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
+            -- IPFS begin
+            dWalletSecretsUniq <- holdUniqDyn dSecretsInTheWallet
+            eTokenWithNewState <- saveTokensOnIpfs
+              mpass
+              dIpfsOn
+              dmKey
+              dWalletSecretsUniq
+            dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
             -- Synchronize a status state of dTokenCache with dTokenIpfsSynched before saving first one.
             let dTokenCacheUpdated = zipDynWith
                   updateTokenState
                   dTokenCache
                   dTokenIpfsSynched
+            -- IPFS end
 
-            -- logDyn "walletTab: dTokenCache" $ showTokens <$> dTokenCache
-            -- logDyn "walletTab: dTokenCacheUpdated" $ showTokens <$> dTokenCacheUpdated
             saveCacheLocally mpass dTokenCacheUpdated
-            -- eSaved <- saveAppDataId mpass encoinsV3 $ updated dTokenCacheUpdated
-            -- logEvent "walletTab: eSaved 1" $ () <$ eSaved
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do
@@ -156,18 +161,6 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   filterByKnownCoinNames
                   dAssetNamesInTheWallet
                   dTokenCacheUpdated
-
-            -- IPFS begin
-            dWalletSecretsUniq <- holdUniqDyn dSecretsInTheWallet
-            eTokenWithNewState <- saveTokensOnIpfs
-              mpass
-              dIpfsOn
-              dmKey
-              dWalletSecretsUniq
-            dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
-            -- logDyn "walletTab: dTokenIpfsSynched" $ showTokens <$> dTokenIpfsSynched
-            -- IPFS end
-
             pure (dCoinsToBurn, dCoinsToMint, leftmost [eStatusUpdate, eSendStatus], dTokenCacheUpdated)
     eWalletError <- walletError
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
@@ -183,8 +176,10 @@ transferTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
   -> Dynamic t [TokenCacheV3]
+  -> Dynamic t Bool
+  -> Dynamic t (Maybe AesKeyRaw)
   -> m (Dynamic t [TokenCacheV3])
-transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
+transferTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -195,11 +190,26 @@ transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
     containerApp "" $ transactionBalanceWidget (Formula 0 0 0 0 0 0) Nothing " (to Wallet)"
     let formula = Formula dDepositBalance 0 0 0 (getCoinNumber <$> dCoins) 0
     containerApp "" $ transactionBalanceWidget formula (Just TransferMode) " (to Ledger)"
-    (dCoins, eSendToLedger, eAddr, dSecretsName) <- containerApp "" $ divClass "app-columns w-row" $ mdo
+    (dCoins, eSendToLedger, eAddr, dTokensV3) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         let dTokenCache = nub <$> zipDynWith (++) dTokenCacheOld (map coinV3 <$> dImportedSecrets)
 
-        saveCacheLocally mpass dTokenCache
+        -- IPFS begin
+        dWalletSecretsUniq <- holdUniqDyn dSecretsInTheWallet
+        eTokenWithNewState <- saveTokensOnIpfs
+          mpass
+          dIpfsOn
+          dmKey
+          dWalletSecretsUniq
+        dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
+        -- Synchronize a status state of dTokenCache with dTokenIpfsSynched before saving first one.
+        let dTokenCacheUpdated = zipDynWith
+              updateTokenState
+              dTokenCache
+              dTokenIpfsSynched
+        -- IPFS end
+
+        saveCacheLocally mpass dTokenCacheUpdated
 
         (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
             dCTB <- divClassId "" "welcome-coins-transfer" $ do
@@ -228,7 +238,7 @@ transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
             ) "margin-top: 20px" " Send to Ledger"
           eWalletOk    <- sendToWalletWindow eWallet dCoinsToBurn
           (eAddrOk, _) <- inputAddressWindow eWalletOk
-          return (dCoinsToBurn, eLedger, eAddrOk, dTokenCache)
+          return (dCoinsToBurn, eLedger, eAddrOk, dTokenCacheUpdated)
     dAddr <- holdDyn Nothing (Just <$> eAddr)
     dWalletSignature <- elementResultJS "walletSignatureElement" decodeWitness
     (dAssetNamesInTheWallet, eStatusUpdate1, _) <-
@@ -242,7 +252,7 @@ transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
         dUrls
 
     let dSecretsInTheWallet =
-          zipDynWith filterByKnownCoinNames dAssetNamesInTheWallet dSecretsName
+          zipDynWith filterByKnownCoinNames dAssetNamesInTheWallet dTokensV3
     (_, eStatusUpdate2, _) <-
       encoinsTxTransferMode
         dWallet
@@ -258,7 +268,7 @@ transferTab mpass dWallet dTokenCacheOld = sectionApp "" "" $ mdo
           [eWalletError, eStatusUpdate1, eStatusUpdate2, NoRelay <$ eUrlError]
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Transfer mode" eStatus
-    pure dSecretsName
+    pure dTokensV3
   where
     menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
@@ -303,11 +313,25 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   $ zipDynWith (++) dTokenCacheOld
                   $ map coinV3 <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
+            -- IPFS begin
+            dWalletSecretsUniq <- holdUniqDyn dSecretsInTheWallet
+            eTokenWithNewState <- saveTokensOnIpfs
+              mpass
+              dIpfsOn
+              dmKey
+              dWalletSecretsUniq
+            -- accumulate token saved on ipfs.
+            -- The place of error prone.
+            -- If in tx A token was not pinned (in wallet mode) and in tx B was pinned (ledger mode), then
+            -- both of them will be included to the dynamic accumulator.
+            -- TODO: consider better union method for eliminating duplicates.
+            dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
             -- Synchronize a status state of dTokenCache with dTokenIpfsSynched before saving first one.
             let dTokenCacheUpdated = zipDynWith
                   updateTokenState
                   dTokenCache
                   dTokenIpfsSynched
+            -- IPFS end
 
             saveCacheLocally mpass dTokenCacheUpdated
 
@@ -368,22 +392,6 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   filterByKnownCoinNames
                   dAssetNamesInTheWallet
                   dTokenCacheUpdated
-
-            -- IPFS begin
-            dWalletSecretsUniq <- holdUniqDyn dSecretsInTheWallet
-            eTokenWithNewState <- saveTokensOnIpfs
-              mpass
-              dIpfsOn
-              dmKey
-              dWalletSecretsUniq
-            -- accumulate token saved on ipfs.
-            -- The place of error prone.
-            -- If in tx A token was not pinned (in wallet mode) and in tx B was pinned (ledger mode), then
-            -- both of them will be included to the dynamic accumulator.
-            -- TODO: consider better union method for eliminating duplicates.
-            dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
-            -- IPFS end
-
             pure (dCoinsToBurn, dCoinsToMint, dChangeAddr, leftmost [eStatusUpdate, eSendStatus], dTokenCacheUpdated)
     eWalletError <- walletError
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
