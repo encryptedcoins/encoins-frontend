@@ -46,9 +46,9 @@ migrateCacheV3 :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> m ()
 migrateCacheV3 mPass = do
   eSecretsV1 :: Event t [Secret] <-
-    updated <$> loadAppData mPass encoinsV1 id []
+    updated <$> loadAppData mPass encoinsV1 "migrateCacheV3-key-eSecretsV1" id []
   eSecretsV2 :: Event t [(Secret, Text)] <-
-    updated <$> loadAppData mPass encoinsV2 id []
+    updated <$> loadAppData mPass encoinsV2 "migrateCacheV3-key-eSecretsV2" id []
 
   let eIsOldCacheEmpty = mergeWith (&&) [null <$> eSecretsV1, null <$> eSecretsV2]
 

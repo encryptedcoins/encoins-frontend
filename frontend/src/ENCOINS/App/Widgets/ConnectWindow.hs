@@ -32,7 +32,8 @@ connectWindow supportedWallets eConnectOpen = mdo
 
         -- save/load wallet
         saveAppDataId_ Nothing currentWallet $ toJS <$> eWalletName
-        eLastWalletName <- updated <$> loadAppData Nothing currentWallet fromJS None
+        eLastWalletName <- updated <$> loadAppData
+          Nothing currentWallet "connectWindow-key-currentWallet" fromJS None
 
         return (void eWalletName, dW)
     return dWallet

@@ -52,21 +52,16 @@ waitForScripts placeholderWidget actualWidget = do
   _ <- widgetHoldUntilDefined "walletAPI" ("js/ENCOINS.js" <$ ePB) placeholderWidget actualWidget
   blank
 
--- WARNING
--- Use it with care.
--- If loadAppData is called with the same entry wherever in the code,
--- the duplicates won't fire.
--- TODO: use genUid
 loadAppData :: forall t m a b . (MonadWidget t m, FromJSON a, Show b)
   => Maybe PasswordRaw
   -> Text -- cache key
+  -> Text -- response id
   -> (a -> b)
   -> b
   -> m (Dynamic t b)
-loadAppData mPass entry f val = do
-    let elId = "elId-" <> entry
+loadAppData mPass key resId f val = do
     e <- newEventWithDelay 0.1
-    loadAppDataId mPass entry elId e f val
+    loadAppDataId mPass key resId e f val
 
 loadAppDataId :: forall t m a b . (MonadWidget t m, FromJSON a, Show b)
   => Maybe PasswordRaw
@@ -76,10 +71,10 @@ loadAppDataId :: forall t m a b . (MonadWidget t m, FromJSON a, Show b)
   -> (a -> b)
   -> b
   -> m (Dynamic t b)
-loadAppDataId mPass entry elId ev f val = do
+loadAppDataId mPass key resId ev f val = do
     let mPassT = (getPassRaw <$> mPass)
-    performEvent_ (loadJSON entry elId mPassT <$ ev)
-    dRes <- elementResultJS elId
+    performEvent_ (loadJSON key resId mPassT <$ ev)
+    dRes <- elementResultJS resId
       (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
     pure dRes
 

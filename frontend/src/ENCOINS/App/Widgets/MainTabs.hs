@@ -87,7 +87,7 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
           0
           0
     containerApp "" $ transactionBalanceWidget formula (Just WalletMode) ""
-    (dToBurn, dToMint, eStatusUpdate, dTokenCacheUpdated) <- containerApp "" $
+    (dToBurn, dToMint, eStatusUpdate, dNewTokensV3) <- containerApp "" $
         divClass "app-columns w-row" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
             dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
@@ -173,7 +173,7 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Wallet mode" eStatus
-    pure dTokenCacheUpdated
+    pure dNewTokensV3
   where
     menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
@@ -295,7 +295,7 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
           (getCoinNumber <$> dToMint)
     containerApp "" $ transactionBalanceWidget formula (Just LedgerMode) ""
 
-    (dToBurn, dToMint, dAddr, eStatusUpdate, dTokenCacheUpdated) <- containerApp "" $
+    (dToBurn, dToMint, dAddr, eStatusUpdate, dNewTokensV3) <- containerApp "" $
         divClassId "app-columns w-row" "welcome-ledger" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
             dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
@@ -389,7 +389,7 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Ledger status" eStatus
-    pure dTokenCacheUpdated
+    pure dNewTokensV3
   where
     menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"

@@ -28,7 +28,8 @@ mainWindow mPass dWallet dIsDisableButtons dIpfsOn dmKey = mdo
     eTab <- tabsSection dTab dIsDisableButtons
     dTab <- holdDyn WalletTab eTab
     eNewTokensV3 <- switchHoldDyn dTab $ \tab -> mdo
-      dOldTokensV3 :: Dynamic t [TokenCacheV3] <- loadAppData mPass encoinsV3 id []
+      dOldTokensV3 :: Dynamic t [TokenCacheV3] <- loadAppData
+        mPass encoinsV3 "mainWindow-key-encoinsV3" id []
       updateCacheV3 mPass dOldTokensV3
       dUpdatedTokensV3 <- case tab of
         WalletTab   -> walletTab mPass dWallet dOldTokensV3 dIpfsOn dmKey
