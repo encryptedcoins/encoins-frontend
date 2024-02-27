@@ -389,7 +389,7 @@ saveCacheLocally :: MonadWidget t m
   -> m ()
 saveCacheLocally mPass name cache = do
   eSave <- saveAppData mPass encoinsV3 $ updated cache
-  logEvent (name <> " saved cache") eSave
+  -- logEvent (name <> " saved cache") eSave
   pure ()
 
 handleMinted :: (MonadWidget t m, EventWriter t [AppStatus] m)

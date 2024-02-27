@@ -69,7 +69,7 @@ saveTokensOnIpfs dIpfsOn dmKey dTokenCache = mdo
     retryPinEncryptedTokens dIpfsConditions eTokenPinAttemptOne
   -- END
 
-  -- The results of the first pinning we save in anyway
+  -- The results of the first pinning is saved anyway
   let eTokensToSave = leftmost [eTokenPinAttemptOne, eTokenPinComplete]
 
   let emValidTokens = leftmost [selectUnpinnedTokens <$> eTokensToSave, updated dmValidTokens]
@@ -160,9 +160,6 @@ checkTokens dIpfsOn dCachedTokens = do
   logEvent "checkTokens: eError" eError
   pure dUpdatedTokens
 
--- unpinStatusDebug :: [TokenCacheV3] -> [TokenCacheV3]
--- unpinStatusDebug = map (\t -> t{tcIpfsStatus = Unpinned})
-
 -- Encrypt valid tokens only and make request
 encryptTokens :: MonadWidget t m
   => AesKeyRaw
@@ -233,6 +230,7 @@ selectTokenToCheck :: TokenCacheV3 -> Maybe TokenCacheV3
 selectTokenToCheck t = case (tcCoinStatus t, tcIpfsStatus t)  of
   (CoinUndefined, _) -> Just t
   (Burned, _)        -> Just t
+  (CoinError _, _)   -> Just t -- TOTO: do we need it?
   _                  -> Nothing
 
 selectUndefinedTokens :: [TokenCacheV3] -> Maybe (NonEmpty TokenCacheV3)
@@ -461,3 +459,7 @@ updateBurnedToken tokens burned = foldl' (update burned) [] tokens
         case find (\b -> tcAssetName t == tcAssetName b) bs of
           Nothing -> t : acc
           Just _  -> t{tcCoinStatus = CoinUndefined} : acc
+
+
+-- unpinStatusDebug :: [TokenCacheV3] -> [TokenCacheV3]
+-- unpinStatusDebug = map (\t -> t{tcIpfsStatus = Unpinned})

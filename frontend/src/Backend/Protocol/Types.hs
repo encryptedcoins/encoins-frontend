@@ -146,8 +146,8 @@ instance ToJSON PinRequest where
    toJSON = genericToJSON $ aesonPrefix snakeCase
 
 data StatusResponse = MkStatusResponse
-  { resIpfsStatus :: Maybe IpfsStatus
-  , resCoinStatus :: Maybe CoinStatus
+  { spIpfsStatus :: Maybe IpfsStatus
+  , spCoinStatus :: Maybe CoinStatus
   }
   deriving stock (Show, Eq, Generic)
 
@@ -160,6 +160,8 @@ data IpfsStatus = Pinned | Unpinned | IpfsUndefined | IpfsError Text
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
+-- Client sets CoinUndefined status only
+-- Server sets all other statuses
 -- Discarded tokens are ones that can't be rollback
 -- Burned tokens can be rollback
 data CoinStatus = Minted | Burned | Discarded | CoinUndefined | CoinError Text
