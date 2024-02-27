@@ -19,13 +19,13 @@ import           Backend.Protocol.TxValidity            (getAda, getCoinNumber,
                                                          getDeposit)
 import           Backend.Protocol.Types
 import           Backend.Servant.Requests               (currentRequestWrapper)
-import           Backend.Status                         (Status (..), AppStatus,
+import           Backend.Status                         (AppStatus, Status (..),
                                                          isStatusWantBlockButtons)
 import           Backend.Wallet                         (Wallet (..))
 import           Config.Config                          (delegateServerUrl)
 import           ENCOINS.App.Widgets.Basic              (containerApp,
                                                          elementResultJS,
-                                                         saveAppData_, saveAppData,
+                                                         saveAppData,
                                                          sectionApp,
                                                          tellTxStatus,
                                                          walletError)
@@ -97,12 +97,7 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
             -- IPFS begin
-            dTokenIpfsUpdated <- handleMinted
-              mpass
-              dIpfsOn
-              dmKey
-              dTokenCache
-              dSecretsInTheWallet
+            dTokenIpfsUpdated <- handleMinted dIpfsOn dmKey dTokenCache dSecretsInTheWallet
             -- IPFS end
 
             -- Update coin status in burned tokens
@@ -160,8 +155,6 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   dTokensUpdated
 
             dConfirmedBurnedTokens <- holdBurnedTokens eSend eStatusUpdate dTokenToBurn
-            logDyn "walletTab: dConfirmedBurnedTokens" $ showTokens <$> dConfirmedBurnedTokens
-            logDyn "walletTab: dTokensUpdated" $ showTokens <$> dTokensUpdated
 
             pure (dCoinsToBurn, dCoinsToMint, leftmost [eStatusUpdate, eSendStatus], dTokensUpdated)
     eWalletError <- walletError
@@ -197,7 +190,7 @@ transferTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
         let dTokenCache = nub <$> zipDynWith (++) dTokenCacheOld (map coinV3 <$> dImportedSecrets)
 
         -- IPFS begin
-        dTokenCacheUpdated <- handleMinted mpass dIpfsOn dmKey dTokenCache dSecretsInTheWallet
+        dTokenCacheUpdated <- handleMinted dIpfsOn dmKey dTokenCache dSecretsInTheWallet
         -- IPFS end
 
         saveCacheLocally mpass "trasferTab"  dTokenCacheUpdated
@@ -305,13 +298,15 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   $ map coinV3 <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
             -- IPFS begin
-            dTokenCacheUpdated <- handleMinted mpass dIpfsOn dmKey dTokenCache dSecretsInTheWallet
+            dTokenIpfsUpdated <- handleMinted dIpfsOn dmKey dTokenCache dSecretsInTheWallet
             -- IPFS end
+            -- Update coin status in burned tokens
+            let dTokensUpdated = zipDynWith updateBurnedToken dTokenIpfsUpdated dConfirmedBurnedTokens
 
-            saveCacheLocally mpass "ledgerTab" dTokenCacheUpdated
+            saveCacheLocally mpass "ledgerTab" dTokensUpdated
 
-            (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
-                (dCTB, _) <- divClassId "" "welcome-ledger-coins" $ do
+            (dCoinsToBurn, eImportSecret, dTokenToBurn) <- divClass "w-col w-col-6" $ do
+                (dCTB, dBurnTokens) <- divClassId "" "welcome-ledger-coins" $ do
                   mainWindowColumnHeader "Coins in the Ledger"
                   dSecretsUniq <- holdUniqDyn dSecretsInTheWallet
                   dyn_ $ fmap noCoinsFoundWidget dSecretsUniq
@@ -324,7 +319,7 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   eIS    <- fmap pure . catMaybes <$> importWindow eImport
                   eISAll <- importFileWindow eImportAll
                   return $ leftmost [eIS, eISAll]
-                return (dCTB, eImp)
+                return (dCTB, eImp, dBurnTokens)
             (eSendStatus, dCoinsToMint, eSend, dChangeAddr) <-
               divClassId "app-CoinColumnRight w-col w-col-6" "welcome-ledger-mint" $ mdo
                 dCoinsToMint' <- divClass "" $ mdo
@@ -366,8 +361,11 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
             let dSecretsInTheWallet = zipDynWith
                   filterByKnownCoinNames
                   dAssetNamesInTheWallet
-                  dTokenCacheUpdated
-            pure (dCoinsToBurn, dCoinsToMint, dChangeAddr, leftmost [eStatusUpdate, eSendStatus], dTokenCacheUpdated)
+                  dTokensUpdated
+
+            dConfirmedBurnedTokens <- holdBurnedTokens eSend eStatusUpdate dTokenToBurn
+
+            pure (dCoinsToBurn, dCoinsToMint, dChangeAddr, leftmost [eStatusUpdate, eSendStatus], dTokensUpdated)
     eWalletError <- walletError
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
     dStatus <- holdDyn Ready eStatus
@@ -394,21 +392,15 @@ saveCacheLocally mPass name cache = do
   logEvent (name <> " saved cache") eSave
   pure ()
 
-
 handleMinted :: (MonadWidget t m, EventWriter t [AppStatus] m)
-  => Maybe PasswordRaw
-  -> Dynamic t Bool
+  => Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
   -> Dynamic t [TokenCacheV3]
   -> Dynamic t [TokenCacheV3]
   -> m (Dynamic t [TokenCacheV3])
-handleMinted mpass dIpfsOn dmKey dTokenCache dSecretsInTheWallet = do
+handleMinted dIpfsOn dmKey dTokenCache dSecretsInTheWallet = do
   dWalletSecretsUniq <- holdUniqDyn dSecretsInTheWallet
-  eTokenWithNewState <- saveTokensOnIpfs
-    mpass
-    dIpfsOn
-    dmKey
-    dWalletSecretsUniq
+  eTokenWithNewState <- saveTokensOnIpfs dIpfsOn dmKey dWalletSecretsUniq
   -- accumulate token saved on ipfs.
   -- The place of error prone.
   -- If in tx A token was not pinned (in wallet mode) and in tx B was pinned (ledger mode), then
@@ -424,7 +416,7 @@ handleMinted mpass dIpfsOn dmKey dTokenCache dSecretsInTheWallet = do
 
 holdBurnedTokens :: MonadWidget t m
   => Event t ()
-  -> Event t _
+  -> Event t Status
   -> Dynamic t [TokenCacheV3]
   -> m (Dynamic t [TokenCacheV3])
 holdBurnedTokens eSend eStatusUpdate dTokenToBurn = do

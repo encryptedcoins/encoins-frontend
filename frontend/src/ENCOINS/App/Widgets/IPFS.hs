@@ -17,8 +17,7 @@ import           ENCOINS.App.Widgets.Basic       (elementResultJS, loadAppData,
                                                   saveAppData, saveAppData_,
                                                   tellIpfsStatus)
 import           ENCOINS.Bulletproofs            (Secret (..))
-import           ENCOINS.Common.Cache            (encoinsV3, ipfsCacheKey,
-                                                  isIpfsOn)
+import           ENCOINS.Common.Cache            (ipfsCacheKey, isIpfsOn)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (toJsonStrict)
 import           ENCOINS.Common.Widgets.Advanced (copyEvent, dialogWindow,
@@ -53,12 +52,11 @@ import           Reflex.Dom
 -- and
 -- when new token(s) appear on the left
 saveTokensOnIpfs :: (MonadWidget t m, EventWriter t [AppStatus] m)
-  => Maybe PasswordRaw
-  -> Dynamic t Bool
+  => Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
   -> Dynamic t [TokenCacheV3]
   -> m (Event t [TokenCacheV3])
-saveTokensOnIpfs mPass dIpfsOn dmKey dTokenCache = mdo
+saveTokensOnIpfs dIpfsOn dmKey dTokenCache = mdo
   let dIpfsConditions = zipDynWith (,) dIpfsOn dmKey
   let dmValidTokens = selectUnpinnedTokens <$> dTokenCache
   let dFullConditions = combineConditions dIpfsConditions dmValidTokens
@@ -73,7 +71,6 @@ saveTokensOnIpfs mPass dIpfsOn dmKey dTokenCache = mdo
 
   -- The results of the first pinning we save in anyway
   let eTokensToSave = leftmost [eTokenPinAttemptOne, eTokenPinComplete]
-  eSaved <- saveAppData mPass encoinsV3 eTokensToSave
 
   let emValidTokens = leftmost [selectUnpinnedTokens <$> eTokensToSave, updated dmValidTokens]
   tellIpfsStatus $ leftmost
@@ -82,8 +79,7 @@ saveTokensOnIpfs mPass dIpfsOn dmKey dTokenCache = mdo
     , PinError <$ leftmost [ePinError, eAttemptExcess]
     ]
 
-  dTokenIpfsPinned <- holdDyn [] eTokensToSave
-  pure $ tagPromptlyDyn dTokenIpfsPinned eSaved
+  pure eTokensToSave
 
 pinEncryptedTokens :: MonadWidget t m
   => Dynamic t (Bool, Maybe AesKeyRaw, Maybe (NonEmpty TokenCacheV3))
