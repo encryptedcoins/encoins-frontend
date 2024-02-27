@@ -74,8 +74,8 @@ coinV3 s =
           . snd
           . fromSecret bulletproofSetup
           $ s
-    in MkTokenCacheV3 assetName s Unpinned Minted
-    -- ^ Unpinned and Minted are default parameters
+    in MkTokenCacheV3 assetName s CoinUndefined IpfsUndefined
+    -- ^ CoinUndefined and IpfsUndefined are default statuses that client set
 
 coinCollectionV3 :: MonadWidget t m
   => Dynamic t Secrets
@@ -97,8 +97,10 @@ filterByKnownCoinNames knownNames =
 
 -------------------------------------------- Coins in the Wallet ----------------------------------------
 
-coinBurnWidget :: MonadWidget t m => TokenCacheV3 -> m (Dynamic t (Maybe Secret))
-coinBurnWidget (MkTokenCacheV3 name s _ _) = mdo
+coinBurnWidget :: MonadWidget t m
+  => TokenCacheV3
+  -> m (Dynamic t (Maybe (Secret, TokenCacheV3)))
+coinBurnWidget tokenV3@(MkTokenCacheV3 name s _ _) = mdo
     (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
         dChecked <- divClass "" checkboxButton -- withTooltip checkboxButton mempty 0 0 $
             -- divClass "app-text-normal" $ text "Select to burn this coin."
@@ -123,7 +125,7 @@ coinBurnWidget (MkTokenCacheV3 name s _ _) = mdo
         return (txt, dChecked)
     dTooltipVis <- toggle False (domEvent Click elTxt)
     dyn_ $ bool blank (coinTooltip name) <$> dTooltipVis
-    return $ fmap (bool Nothing (Just s)) ret
+    return $ fmap (bool Nothing (Just (s, tokenV3))) ret
     where
         mkAttrs = ("class" =: "coin-entry-burn-div" <>) . bool mempty ("style" =: "background:rgb(50 50 50);")
         secretText = secretToHex s
@@ -133,12 +135,13 @@ noCoinsFoundWidget = bool blank (divClass "coin-entry-burn-div-no-coins" $ divCl
 
 coinBurnCollectionWidget :: MonadWidget t m
   => Dynamic t [TokenCacheV3]
-  -> m (Dynamic t Secrets)
+  -> m (Dynamic t Secrets, Dynamic t [TokenCacheV3])
 coinBurnCollectionWidget dlToken = do
     eldmToken <- dyn $ fmap (mapM coinBurnWidget) dlToken
     let edlmToken = fmap sequenceA eldmToken
     let edlToken = fmap (fmap catMaybes) edlmToken
-    join <$> holdDyn (constDyn []) edlToken
+    dSt <- join <$> holdDyn (constDyn []) edlToken
+    pure (map fst <$> dSt, map snd <$> dSt)
 
 coinTooltip :: MonadWidget t m => AssetName -> m ()
 coinTooltip (MkAssetName name) = elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visible" <>

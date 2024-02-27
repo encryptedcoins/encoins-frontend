@@ -10,8 +10,8 @@ import           Reflex.Dom
 
 import           Backend.Protocol.Types    (PasswordRaw (..), TokenCacheV3)
 import           Backend.Status            (AppStatus, Status (..))
-import           ENCOINS.App.Widgets.Basic (elementResultJS, loadAppData,
-                                            saveAppDataId_, tellTxStatus)
+import           ENCOINS.App.Widgets.Basic (elementResultJS, loadAppDataE,
+                                            saveAppData_, tellTxStatus)
 import           ENCOINS.App.Widgets.Coin  (coinV3)
 import           ENCOINS.Bulletproofs      (Secret)
 import           ENCOINS.Common.Cache      (encoinsV1, encoinsV2, encoinsV3)
@@ -46,9 +46,9 @@ migrateCacheV3 :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> m ()
 migrateCacheV3 mPass = do
   eSecretsV1 :: Event t [Secret] <-
-    updated <$> loadAppData mPass encoinsV1 "migrateCacheV3-key-eSecretsV1" id []
+    updated <$> loadAppDataE mPass encoinsV1 "migrateCacheV3-key-eSecretsV1" id []
   eSecretsV2 :: Event t [(Secret, Text)] <-
-    updated <$> loadAppData mPass encoinsV2 "migrateCacheV3-key-eSecretsV2" id []
+    updated <$> loadAppDataE mPass encoinsV2 "migrateCacheV3-key-eSecretsV2" id []
 
   let eIsOldCacheEmpty = mergeWith (&&) [null <$> eSecretsV1, null <$> eSecretsV2]
 
@@ -65,7 +65,7 @@ migrateCacheV3 mPass = do
   -- Migrate old cache (when it is not empty) to encoins-v3
   let eSecretsV3 = ffilter (not . null) eCacheV3
 
-  saveAppDataId_ mPass encoinsV3 eSecretsV3
+  saveAppData_ mPass encoinsV3 eSecretsV3
 
   eSaved <- updated <$> elementResultJS "encoins-v3" (const ())
   -- Ask user to reload when cache structure is updated

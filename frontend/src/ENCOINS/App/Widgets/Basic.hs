@@ -52,18 +52,18 @@ waitForScripts placeholderWidget actualWidget = do
   _ <- widgetHoldUntilDefined "walletAPI" ("js/ENCOINS.js" <$ ePB) placeholderWidget actualWidget
   blank
 
-loadAppData :: forall t m a b . (MonadWidget t m, FromJSON a, Show b)
+loadAppDataE :: forall t m a b . (MonadWidget t m, FromJSON a, Show b)
   => Maybe PasswordRaw
   -> Text -- cache key
   -> Text -- response id
   -> (a -> b)
   -> b
   -> m (Dynamic t b)
-loadAppData mPass key resId f val = do
+loadAppDataE mPass key resId f val = do
     e <- newEventWithDelay 0.1
-    loadAppDataId mPass key resId e f val
+    loadAppData mPass key resId e f val
 
-loadAppDataId :: forall t m a b . (MonadWidget t m, FromJSON a, Show b)
+loadAppData :: forall t m a b . (MonadWidget t m, FromJSON a, Show b)
   => Maybe PasswordRaw
   -> Text -- cache key
   -> Text -- response id
@@ -71,27 +71,27 @@ loadAppDataId :: forall t m a b . (MonadWidget t m, FromJSON a, Show b)
   -> (a -> b)
   -> b
   -> m (Dynamic t b)
-loadAppDataId mPass key resId ev f val = do
+loadAppData mPass key resId ev f val = do
     let mPassT = (getPassRaw <$> mPass)
     performEvent_ (loadJSON key resId mPassT <$ ev)
     dRes <- elementResultJS resId
       (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
     pure dRes
 
-saveAppDataId_ :: (MonadWidget t m, ToJSON a)
+saveAppData_ :: (MonadWidget t m, ToJSON a)
   => Maybe PasswordRaw
   -> Text
   -> Event t a
   -> m ()
-saveAppDataId_ mPass key eVal = do
-    void $ saveAppDataId mPass key eVal
+saveAppData_ mPass key eVal = do
+    void $ saveAppData mPass key eVal
 
-saveAppDataId :: (MonadWidget t m, ToJSON a)
+saveAppData :: (MonadWidget t m, ToJSON a)
   => Maybe PasswordRaw
   -> Text
   -> Event t a
   -> m (Event t ())
-saveAppDataId mPass key eVal = do
+saveAppData mPass key eVal = do
     let eEncodedValue = toJsonText <$> eVal
     let mPassT = (getPassRaw <$> mPass)
     performEvent (saveJSON mPassT key <$> eEncodedValue)

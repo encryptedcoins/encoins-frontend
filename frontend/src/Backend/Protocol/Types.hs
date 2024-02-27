@@ -136,31 +136,33 @@ newtype AssetName = MkAssetName { getAssetName :: Text }
   deriving stock (Generic)
 
 -- Request body from frontend to backend
-data CloudRequest = MkCloudRequest
-  { reqAssetName :: AssetName
-  , reqSecretKey :: EncryptedSecret
+data PinRequest = MkPinRequest
+  { ppAssetName :: AssetName
+  , ppSecretKey :: EncryptedSecret
   }
   deriving stock (Show, Eq, Generic)
 
-instance ToJSON CloudRequest where
+instance ToJSON PinRequest where
    toJSON = genericToJSON $ aesonPrefix snakeCase
 
-data CloudResponse = MkCloudResponse
+data StatusResponse = MkStatusResponse
   { resIpfsStatus :: Maybe IpfsStatus
   , resCoinStatus :: Maybe CoinStatus
   }
   deriving stock (Show, Eq, Generic)
 
-instance FromJSON CloudResponse where
+instance FromJSON StatusResponse where
    parseJSON = genericParseJSON $ aesonPrefix snakeCase
 
-data IpfsStatus = Pinned | Unpinned | IpfsError Text
+-- Client sets IpfsUndefined status only
+-- Server sets all other statuses
+data IpfsStatus = Pinned | Unpinned | IpfsUndefined | IpfsError Text
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
 -- Discarded tokens are ones that can't be rollback
 -- Burned tokens can be rollback
-data CoinStatus = Minted | Burned | Discarded | CoinError Text
+data CoinStatus = Minted | Burned | Discarded | CoinUndefined | CoinError Text
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
@@ -192,15 +194,15 @@ data IpfsUpdateStatus = Processing | Complete | Failed
 data TokenCacheV3 = MkTokenCacheV3
   { tcAssetName  :: AssetName
   , tcSecret     :: Secret
-  , tcIpfsStatus :: IpfsStatus
   , tcCoinStatus :: CoinStatus
+  , tcIpfsStatus :: IpfsStatus
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
 -- For readable logs
-showToken :: TokenCacheV3 -> (AssetName, IpfsStatus)
-showToken (MkTokenCacheV3 n _ s _) = (n,s)
+showToken :: TokenCacheV3 -> (AssetName, CoinStatus, IpfsStatus)
+showToken (MkTokenCacheV3 n _ c i) = (n,c,i)
 
-showTokens :: [TokenCacheV3] -> [(AssetName, IpfsStatus)]
+showTokens :: [TokenCacheV3] -> [(AssetName, CoinStatus, IpfsStatus)]
 showTokens = map showToken

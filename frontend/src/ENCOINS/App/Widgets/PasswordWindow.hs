@@ -15,7 +15,7 @@ import           Witherable                      (catMaybes)
 import           Backend.Protocol.Types          (PasswordHash (..),
                                                   PasswordRaw (..))
 import           Backend.Utility                 (switchHoldDyn)
-import           ENCOINS.App.Widgets.Basic       (saveAppDataId_)
+import           ENCOINS.App.Widgets.Basic       (saveAppData_)
 import           ENCOINS.Common.Cache            (encoinsV3)
 import           ENCOINS.Common.Events           (setFocusDelayOnEvent)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
@@ -203,5 +203,5 @@ cleanCacheDialog eOpen = mdo
       btnCancel <- btn "button-switching flex-center" "" $ text "Cancel"
       return (btnOk, btnCancel)
   performEvent_ (saveHashedTextToStorage passwordSotrageKey "" <$ eOk)
-  saveAppDataId_ Nothing encoinsV3 $ ("" :: Text) <$ eOk
+  saveAppData_ Nothing encoinsV3 $ ("" :: Text) <$ eOk
   return eOk

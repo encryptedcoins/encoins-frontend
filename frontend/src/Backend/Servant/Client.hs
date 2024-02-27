@@ -61,17 +61,24 @@ mkApiClient host = ApiClient{..}
 
 type BackIpfsApi =
          "ping" :> Get '[JSON] NoContent
-    :<|> "cache"
-              :> ReqBody '[JSON] (AesKeyHash, [CloudRequest])
-              :> Post '[JSON] (Map AssetName CloudResponse)
+    -- 'pin' endpoint used for pinning minted actual tokens
+    :<|> "pin"
+              :> ReqBody '[JSON] (AesKeyHash, [PinRequest])
+              :> Post '[JSON] (Map AssetName StatusResponse)
+    -- 'status' endpoint used for updating statuses of burned tokens
+    :<|> "status"
+              :> ReqBody '[JSON] [AssetName]
+              :> Post '[JSON] (Map AssetName StatusResponse)
+
     :<|> "restore"
               :> Capture "client_id" AesKeyHash
               :> Get '[JSON] [RestoreResponse]
 
 data BackIpfsApiClient t m = MkBackIpfsApiClient
-  { ping    :: Res t m NoContent
-  , cache   :: ReqRes t m (AesKeyHash, [CloudRequest]) (Map AssetName CloudResponse)
-  , restore :: Dynamic t (Either Text AesKeyHash) -> Res t m [RestoreResponse]
+  { ipfsPing    :: Res t m NoContent
+  , ipfsPin     :: ReqRes t m (AesKeyHash, [PinRequest]) (Map AssetName StatusResponse)
+  , ipfsStatus   :: ReqRes t m [AssetName] (Map AssetName StatusResponse)
+  , ipfsRestore :: Dynamic t (Either Text AesKeyHash) -> Res t m [RestoreResponse]
   }
 
 mkBackIpfsApiClient :: forall t m . MonadWidget t m
@@ -79,6 +86,7 @@ mkBackIpfsApiClient :: forall t m . MonadWidget t m
   -> BackIpfsApiClient t m
 mkBackIpfsApiClient host = MkBackIpfsApiClient{..}
   where
-    ( ping :<|>
-      cache :<|>
-      restore ) = client (Proxy @BackIpfsApi) (Proxy @m) (Proxy @()) (pure host)
+    ( ipfsPing :<|>
+      ipfsPin :<|>
+      ipfsStatus :<|>
+      ipfsRestore) = client (Proxy @BackIpfsApi) (Proxy @m) (Proxy @()) (pure host)

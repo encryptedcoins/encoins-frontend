@@ -188,19 +188,30 @@ ipfsPingRequest :: MonadWidget t m
   -> m (Event t (Either Text NoContent))
 ipfsPingRequest e = do
   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsServerUrl
-  ePingRes <- fmap mkTextOrResponse <$> ping e
+  ePingRes <- fmap mkTextOrResponse <$> ipfsPing e
   logEvent "ipfsPingRequest: ping response" ePingRes
   pure ePingRes
 
-ipfsCacheRequest :: MonadWidget t m
-  => Dynamic t (AesKeyHash, [CloudRequest])
+ipfsPinRequest :: MonadWidget t m
+  => Dynamic t (AesKeyHash, [PinRequest])
   -> Event t ()
-  -> m (Event t (Either Text (Map AssetName CloudResponse)))
-ipfsCacheRequest dToken e = do
+  -> m (Event t (Either Text (Map AssetName StatusResponse)))
+ipfsPinRequest dToken e = do
   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsServerUrl
-  eResp <- cache (Right <$> dToken) e
+  eResp <- ipfsPin (Right <$> dToken) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "ipfsCache response" eRespUnwrapped
+  logEvent "ipfsMinted response" eRespUnwrapped
+  pure eRespUnwrapped
+
+ipfsStatusRequest :: MonadWidget t m
+  => Dynamic t [AssetName]
+  -> Event t ()
+  -> m (Event t (Either Text (Map AssetName StatusResponse)))
+ipfsStatusRequest dToken e = do
+  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsServerUrl
+  eResp <- ipfsStatus (Right <$> dToken) e
+  let eRespUnwrapped = mkTextOrResponse <$> eResp
+  logEvent "ipfsCheck response" eRespUnwrapped
   pure eRespUnwrapped
 
 restoreRequest :: MonadWidget t m
@@ -209,7 +220,7 @@ restoreRequest :: MonadWidget t m
   -> m (Event t (Either Text [RestoreResponse]))
 restoreRequest dClientId e = do
   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsServerUrl
-  eResp <- restore (Right <$> dClientId) e
+  eResp <- ipfsRestore (Right <$> dClientId) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "restore response" eRespUnwrapped
   pure eRespUnwrapped
