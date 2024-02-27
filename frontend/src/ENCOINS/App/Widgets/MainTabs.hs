@@ -364,7 +364,7 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   dTokensUpdated
 
             dConfirmedBurnedTokens <- holdBurnedTokens eSend eStatusUpdate dTokenToBurn
-
+            logDyn "walletTab: dTokensUpdated" dTokensUpdated
             pure (dCoinsToBurn, dCoinsToMint, dChangeAddr, leftmost [eStatusUpdate, eSendStatus], dTokensUpdated)
     eWalletError <- walletError
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
@@ -389,7 +389,7 @@ saveCacheLocally :: MonadWidget t m
   -> m ()
 saveCacheLocally mPass name cache = do
   eSave <- saveAppData mPass encoinsV3 $ updated cache
-  -- logEvent (name <> " saved cache") eSave
+  logEvent (name <> " saved cache") eSave
   pure ()
 
 handleMinted :: (MonadWidget t m, EventWriter t [AppStatus] m)
