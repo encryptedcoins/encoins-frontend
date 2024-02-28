@@ -364,7 +364,7 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   dTokensUpdated
 
             dConfirmedBurnedTokens <- holdBurnedTokens eSend eStatusUpdate dTokenToBurn
-            logDyn "walletTab: dTokensUpdated" dTokensUpdated
+            logDyn "walletTab: dTokensUpdated" $ showTokens <$> dTokensUpdated
             pure (dCoinsToBurn, dCoinsToMint, dChangeAddr, leftmost [eStatusUpdate, eSendStatus], dTokensUpdated)
     eWalletError <- walletError
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
