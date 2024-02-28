@@ -5,7 +5,7 @@ module ENCOINS.App.Widgets.MainWindow where
 import           Reflex.Dom
 
 import           Backend.Protocol.Types            (AesKeyRaw, PasswordRaw (..),
-                                                    TokenCacheV3)
+                                                    TokenCacheV3, showTokens)
 import           Backend.Status                    (AppStatus)
 import           Backend.Utility                   (switchHoldDyn)
 import           Backend.Wallet                    (Wallet (..))
