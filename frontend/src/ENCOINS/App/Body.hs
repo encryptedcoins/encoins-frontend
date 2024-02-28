@@ -86,22 +86,18 @@ bodyContentWidget mPass = mdo
 
   copiedNotification
 
-  evIpfs <- postDelay 1.2
+  evIpfs <- postDelay 0.5
   logEvent "body: evIpfs" evIpfs
   dIpfsCache <- fetchIpfsFlag "app-body-load-is-ipfs-on-key" evIpfs
-  logDyn "body: dIpfsCache" dIpfsCache
-  logDyn "body: dIpfsSaveStatus" dIpfsSaveStatus
   (dIpfsWindow, dAesKeyWindow) <- ipfsSettingsWindow
     mPass
     dIpfsCache
     dIpfsSaveStatus
     eOpenIpfsWindow
-  logDyn "body: dIpfsWindow" dIpfsWindow
   dIpfsOn <- holdDyn False $ leftmost $ map updated [dIpfsCache, dIpfsWindow]
   logDyn "body: dIpfsOn" dIpfsOn
 
-  evKey <- postDelay 1.2
-  logEvent "body: evKey" evKey
+  evKey <- postDelay 0.5
   dmKeyCache <- fetchAesKey mPass "app-body-load-of-aes-key" evKey
   dmKey <- holdUniqDyn =<< (holdDyn Nothing $ leftmost $ map updated [dmKeyCache, dAesKeyWindow])
   logDyn "body: dmKey" dmKey
