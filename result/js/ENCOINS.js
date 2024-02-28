@@ -53,7 +53,10 @@ function saveJSON(key, val, encr, pass) {
 }
 
 function loadJSON(key, resId, pass, decr) {
+  console.log("loadJSON: key", key)
+  console.log("loadJSON: resId", resId)
   const val = localStorage.getItem(key);
+  console.log("loadJSON: val", val)
   var res = val;
   try {
     if (val !== null) {
