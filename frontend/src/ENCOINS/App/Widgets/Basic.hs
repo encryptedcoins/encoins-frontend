@@ -8,7 +8,7 @@ import           ENCOINS.Common.Utils   (toJsonText)
 import           JS.Website             (loadJSON, saveJSON)
 
 
-import           Control.Monad          (join, void)
+import           Control.Monad          (void)
 import           Data.Aeson             (FromJSON, ToJSON, decode, decodeStrict)
 import           Data.Bool              (bool)
 import           Data.ByteString        (ByteString)
@@ -33,18 +33,6 @@ containerApp cls = divClass ("container-app w-container " `T.append` cls)
 -- Element containing the result of a JavaScript computation
 elementResultJS :: MonadWidget t m => Text -> (Text -> a) -> m (Dynamic t a)
 elementResultJS resId f = fmap (fmap f . value) $ inputElement $ def & initialAttributes .~ "style" =: "display:none;" <> "id" =: resId
-
-elementDynResultJS :: MonadWidget t m
-  => (Text -> a)
-  -> Dynamic t Text
-  -> m (Dynamic t a)
-elementDynResultJS f dResId = do
-  let d resId = def & initialAttributes .~ "style" =: "display:none;" <> "id" =: resId
-  let dmElement = (\resId -> inputElement $ d resId) <$> dResId
-  let dmdVal = fmap value <$> dmElement
-  edVal <- dyn dmdVal
-  ddVal <- holdDyn (constDyn "") edVal
-  pure $ f <$> join ddVal
 
 waitForScripts :: MonadWidget t m => m () -> m () -> m ()
 waitForScripts placeholderWidget actualWidget = do

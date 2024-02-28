@@ -28,15 +28,12 @@ mainWindow :: (MonadWidget t m, EventWriter t [AppStatus] m)
 mainWindow mPass dWallet dIsDisableButtons dIpfsOn dmKey = mdo
     eTab <- tabsSection dTab dIsDisableButtons
     dTab <- holdDyn WalletTab eTab
-    logDyn "mainWindow: dTab" dTab
     eNewTokensV3 <- switchHoldDyn dTab $ \tab -> mdo
       dOldTokensV3 :: Dynamic t [TokenCacheV3] <- loadAppDataE
         mPass encoinsV3 "mainWindow-key-encoinsV3" id []
-      logDyn "mainWindow: dOldTokensV3" $ showTokens <$> dOldTokensV3
       updateCacheV3 mPass dOldTokensV3
 
       dUpdatedStatusTokens <- checkTokens dIpfsOn dOldTokensV3
-      logDyn "mainWindow: dUpdatedStatusTokens" $ showTokens <$> dUpdatedStatusTokens
 
       dUpdatedTokensV3 <- case tab of
         WalletTab   -> walletTab mPass dWallet dUpdatedStatusTokens dIpfsOn dmKey

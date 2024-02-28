@@ -281,7 +281,10 @@ fetchIpfsFlag :: MonadWidget t m
   => Text
   -> Event t ()
   -> m (Dynamic t Bool)
-fetchIpfsFlag resId ev = loadAppData Nothing isIpfsOn resId ev id False
+fetchIpfsFlag resId ev = do
+  dFlag <- loadAppData Nothing isIpfsOn resId ev id False
+  logDyn "fetchIpfsFlag: dFlag" dFlag
+  pure dFlag
 
 -- restore tokens from ipfs
 -- that are minted and pinned only
