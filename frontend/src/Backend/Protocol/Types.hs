@@ -146,8 +146,8 @@ instance ToJSON PinRequest where
    toJSON = genericToJSON $ aesonPrefix snakeCase
 
 data StatusResponse = MkStatusResponse
-  { spIpfsStatus :: Maybe IpfsStatus
-  , spCoinStatus :: Maybe CoinStatus
+  { spCoinStatus :: Maybe CoinStatus
+  , spIpfsStatus :: Maybe IpfsStatus
   }
   deriving stock (Show, Eq, Generic)
 

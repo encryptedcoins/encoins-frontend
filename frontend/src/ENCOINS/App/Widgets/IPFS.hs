@@ -205,7 +205,7 @@ updateCacheStatus oldToken tokensFromClouds = map updateCloud oldToken
         Nothing -> t
         -- If IPFS server returns a status with Nothing,
         -- then it uses old value.
-        Just (MkStatusResponse mIpfs mCoin) ->
+        Just (MkStatusResponse mCoin mIpfs) ->
            t{ tcCoinStatus = fromMaybe (tcCoinStatus t) mCoin
             , tcIpfsStatus = fromMaybe (tcIpfsStatus t) mIpfs
             }
