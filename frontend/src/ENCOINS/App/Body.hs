@@ -24,7 +24,7 @@ import           Backend.Wallet                     (Wallet (..),
                                                      walletsSupportedInApp)
 import           Config.Config                      (NetworkConfig (..),
                                                      networkConfig)
-import           ENCOINS.App.Widgets.Basic          (elementResultJS,
+import           ENCOINS.App.Widgets.Basic          (elementResultJS,loadAppDataE,
                                                      waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.App.Widgets.IPFS
@@ -34,7 +34,7 @@ import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWallet,
                                                      welcomeWindow,
                                                      welcomeWindowWalletStorageKey)
-import           ENCOINS.Common.Cache               (encoinsV3, ipfsCacheKey)
+import           ENCOINS.Common.Cache               (encoinsV3, ipfsCacheKey, isIpfsOn)
 import           ENCOINS.Common.Utils               (toJsonText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           ENCOINS.Common.Widgets.Basic       (notification)
@@ -86,8 +86,7 @@ bodyContentWidget mPass = mdo
 
   copiedNotification
 
-  evIpfs <- postDelay 1
-  dIpfsCache <- fetchIpfsFlag "app-body-load-is-ipfs-on-key" evIpfs
+  dIpfsCache <- loadAppDataE Nothing isIpfsOn "app-body-load-is-ipfs-on-key" id False
   (dIpfsWindow, dAesKeyWindow) <- ipfsSettingsWindow
     mPass
     dIpfsCache
@@ -95,8 +94,7 @@ bodyContentWidget mPass = mdo
     eOpenIpfsWindow
   dIpfsOn <- holdDyn False $ leftmost $ map updated [dIpfsCache, dIpfsWindow]
 
-  evKey <- postDelay 1
-  dmKeyCache <- fetchAesKey mPass "app-body-load-of-aes-key" evKey
+  dmKeyCache <- loadAppDataE mPass ipfsCacheKey "app-body-load-of-aes-key" id Nothing
   dmKey <- holdUniqDyn =<< (holdDyn Nothing $ leftmost $ map updated [dmKeyCache, dAesKeyWindow])
 
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]

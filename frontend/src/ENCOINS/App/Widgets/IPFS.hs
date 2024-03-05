@@ -13,7 +13,7 @@ import           Backend.Status                  (AppStatus,
 import           Backend.Utility                 (eventEither, eventMaybeDynDef,
                                                   eventTuple, space,
                                                   switchHoldDyn, toText)
-import           ENCOINS.App.Widgets.Basic       (elementResultJS, loadAppData,
+import           ENCOINS.App.Widgets.Basic       (elementResultJS, loadAppData, loadAppDataE,
                                                   saveAppData, saveAppData_,
                                                   tellIpfsStatus)
 import           ENCOINS.Bulletproofs            (Secret (..))
@@ -277,12 +277,6 @@ fetchAesKey :: MonadWidget t m
   -> Event t ()
   -> m (Dynamic t (Maybe AesKeyRaw))
 fetchAesKey mPass resId ev = loadAppData mPass ipfsCacheKey resId ev id Nothing
-
-fetchIpfsFlag :: MonadWidget t m
-  => Text
-  -> Event t ()
-  -> m (Dynamic t Bool)
-fetchIpfsFlag resId ev = loadAppData Nothing isIpfsOn resId ev id False
 
 -- restore tokens from ipfs
 -- that are minted and pinned only
