@@ -99,9 +99,11 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
             -- IPFS begin
             dTokenIpfsUpdated <- handleMinted dIpfsOn dmKey dTokenCache dSecretsInTheWallet
             -- IPFS end
+            -- logDyn "walletTab: dTokenIpfsUpdated" $ showTokens <$> dTokenIpfsUpdated
 
             -- Update coin status in burned tokens
             let dTokensUpdated = zipDynWith updateBurnedToken dTokenIpfsUpdated dConfirmedBurnedTokens
+            -- logDyn "walletTab: dTokensUpdated" $ showTokens <$> dTokensUpdated
 
             saveCacheLocally mpass "walletTab" dTokensUpdated
 
@@ -302,6 +304,7 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
             -- IPFS end
             -- Update coin status in burned tokens
             let dTokensUpdated = zipDynWith updateBurnedToken dTokenIpfsUpdated dConfirmedBurnedTokens
+            logDyn "walletTab: dTokensUpdated" $ showTokens <$> dTokensUpdated
 
             saveCacheLocally mpass "ledgerTab" dTokensUpdated
 
@@ -364,7 +367,6 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   dTokensUpdated
 
             dConfirmedBurnedTokens <- holdBurnedTokens eSend eStatusUpdate dTokenToBurn
-            logDyn "walletTab: dTokensUpdated" $ showTokens <$> dTokensUpdated
             pure (dCoinsToBurn, dCoinsToMint, dChangeAddr, leftmost [eStatusUpdate, eSendStatus], dTokensUpdated)
     eWalletError <- walletError
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]

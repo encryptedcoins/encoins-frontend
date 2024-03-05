@@ -217,6 +217,7 @@ selectTokenToPin :: TokenCacheV3 -> Maybe TokenCacheV3
 selectTokenToPin t = case (tcCoinStatus t, tcIpfsStatus t)  of
   (CoinUndefined, IpfsUndefined) -> Just t
   (Minted, Unpinned)             -> Just t
+  (Minted, IpfsUndefined)        -> Just t
   (Minted, IpfsError _)          -> Just t
   _                              -> Nothing
 
@@ -281,10 +282,7 @@ fetchIpfsFlag :: MonadWidget t m
   => Text
   -> Event t ()
   -> m (Dynamic t Bool)
-fetchIpfsFlag resId ev = do
-  dFlag <- loadAppData Nothing isIpfsOn resId ev id False
-  logDyn "fetchIpfsFlag: dFlag" dFlag
-  pure dFlag
+fetchIpfsFlag resId ev = loadAppData Nothing isIpfsOn resId ev id False
 
 -- restore tokens from ipfs
 -- that are minted and pinned only

@@ -64,7 +64,6 @@ loadAppData mPass key resId ev f val = do
     performEvent_ (loadJSON key resId mPassT <$ ev)
     dRes <- elementResultJS resId
       (maybe val f . (decodeStrict :: ByteString -> Maybe a) . encodeUtf8)
-    logDyn "loadAppData: dRes" dRes
     pure dRes
 
 saveAppData_ :: (MonadWidget t m, ToJSON a)
