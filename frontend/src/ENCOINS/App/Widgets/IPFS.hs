@@ -13,7 +13,7 @@ import           Backend.Status                  (AppStatus,
 import           Backend.Utility                 (eventEither, eventMaybeDynDef,
                                                   eventTuple, space,
                                                   switchHoldDyn, toText)
-import           ENCOINS.App.Widgets.Basic       (elementResultJS, loadAppData, loadAppDataE,
+import           ENCOINS.App.Widgets.Basic       (elementResultJS, loadAppData,
                                                   saveAppData, saveAppData_,
                                                   tellIpfsStatus)
 import           ENCOINS.Bulletproofs            (Secret (..))

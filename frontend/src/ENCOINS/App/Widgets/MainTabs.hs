@@ -105,7 +105,9 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
             let dTokensUpdated = zipDynWith updateBurnedToken dTokenIpfsUpdated dConfirmedBurnedTokens
             -- logDyn "walletTab: dTokensUpdated" $ showTokens <$> dTokensUpdated
 
-            saveCacheLocally mpass "walletTab" dTokensUpdated
+            -- save unique changes only
+            dTokensUpdatedUniq <- holdUniqDyn dTokensUpdated
+            saveCacheLocally mpass "walletTab" dTokensUpdatedUniq
 
             (dCoinsToBurn, eImportSecret, dTokenToBurn) <- divClass "w-col w-col-6" $ do
                 (dCTB, dBurnTokenV3) <- divClassId "" "welcome-wallet-coins" $ do
@@ -195,7 +197,9 @@ transferTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
         dTokenCacheUpdated <- handleMinted dIpfsOn dmKey dTokenCache dSecretsInTheWallet
         -- IPFS end
 
-        saveCacheLocally mpass "trasferTab"  dTokenCacheUpdated
+        -- save unique changes only
+        dTokensUpdatedUniq <- holdUniqDyn dTokenCacheUpdated
+        saveCacheLocally mpass "trasferTab" dTokensUpdatedUniq
 
         (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
             (dCTB, _) <- divClassId "" "welcome-coins-transfer" $ do
@@ -304,9 +308,11 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
             -- IPFS end
             -- Update coin status in burned tokens
             let dTokensUpdated = zipDynWith updateBurnedToken dTokenIpfsUpdated dConfirmedBurnedTokens
-            logDyn "walletTab: dTokensUpdated" $ showTokens <$> dTokensUpdated
+            -- logDyn "ledgerTab: dTokensUpdated" $ showTokens <$> dTokensUpdated
 
-            saveCacheLocally mpass "ledgerTab" dTokensUpdated
+            -- save unique changes only
+            dTokensUpdatedUniq <- holdUniqDyn dTokensUpdated
+            saveCacheLocally mpass "ledgerTab" dTokensUpdatedUniq
 
             (dCoinsToBurn, eImportSecret, dTokenToBurn) <- divClass "w-col w-col-6" $ do
                 (dCTB, dBurnTokens) <- divClassId "" "welcome-ledger-coins" $ do

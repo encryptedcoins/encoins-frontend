@@ -211,7 +211,7 @@ ipfsStatusRequest dToken e = do
   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsServerUrl
   eResp <- ipfsStatus (Right <$> dToken) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "ipfsCheck response" eRespUnwrapped
+  logEvent "ipfsCheck response" $ () <$ eRespUnwrapped
   pure eRespUnwrapped
 
 restoreRequest :: MonadWidget t m
