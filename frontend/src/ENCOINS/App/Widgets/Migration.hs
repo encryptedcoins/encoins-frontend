@@ -2,17 +2,15 @@
 
 module ENCOINS.App.Widgets.Migration where
 
-import           Data.Align                (alignWith)
 import           Data.Bool                 (bool)
 import           Data.Text                 (Text)
-import           Data.These                (these)
 import           Reflex.Dom
 
 import           Backend.Protocol.Types    (PasswordRaw (..), TokenCacheV3)
 import           Backend.Status            (AppStatus, Status (..))
 import           Backend.Utility           (switchHoldDyn)
-import           ENCOINS.App.Widgets.Basic (loadAppData, loadAppDataE,
-                                            saveAppData, tellTxStatus)
+import           ENCOINS.App.Widgets.Basic (loadAppData, saveAppData,
+                                            tellTxStatus)
 import           ENCOINS.App.Widgets.Coin  (coinV3)
 import           ENCOINS.Bulletproofs      (Secret)
 import           ENCOINS.Common.Cache      (encoinsV1, encoinsV2, encoinsV3)
@@ -34,43 +32,41 @@ Evolutions of encoins cache by key
 -- "encoins" cache exists.
 updateCacheV3 :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Maybe PasswordRaw
-  -> Dynamic t [TokenCacheV3]
+  -> Dynamic t (Maybe [TokenCacheV3])
   -> m (Dynamic t [TokenCacheV3])
-updateCacheV3 mPass dTokensV3 = do
-  eTokensMigrated <- switchHoldDyn dTokensV3 $ \case
+updateCacheV3 mPass dmTokensV3 = do
+  eTokensMigrated <- switchHoldDyn dmTokensV3 $ \case
     -- when tokenV3 is empty, try to migrate from previous versions
-    [] -> migrateCacheV3 mPass
+    Nothing -> do
+      ev <- newEventWithDelay 0.1
+      migrateCacheV3 mPass ev
     -- when some tokenV3 exist return them
-    tokens -> do
+    Just tokens -> do
       ev <- newEvent
       pure $ tokens <$ ev
   holdDyn [] eTokensMigrated
 
 migrateCacheV3 :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Maybe PasswordRaw
+  -> Event t ()
   -> m (Event t [TokenCacheV3])
-migrateCacheV3 mPass = do
-  eSecretsV1 :: Event t [Secret] <-
-    updated <$> loadAppDataE mPass encoinsV1 "migrateCacheV3-key-eSecretsV1" id []
-  eSecretsV2 :: Event t [(Secret, Text)] <-
-    updated <$> loadAppDataE mPass encoinsV2 "migrateCacheV3-key-eSecretsV2" id []
+migrateCacheV3 mPass ev = do
+  dSecretsV1 :: Dynamic t [Secret] <-
+    loadAppData mPass encoinsV1 "migrateCacheV3-key-eSecretsV1" ev id []
+  dSecretsV2 :: Dynamic t [(Secret, Text)] <-
+    loadAppData mPass encoinsV2 "migrateCacheV3-key-eSecretsV2" ev id []
 
-  let eIsOldCacheEmpty = mergeWith (&&) [null <$> eSecretsV1, null <$> eSecretsV2]
+  let dIsOldCacheEmpty = zipDynWith (\v1 v2 -> null v1 && null v2) dSecretsV1 dSecretsV2
 
-  let eMigrateStatus = bool
+  let dMigrateStatus = bool
         (CustomStatus "Cache structure is updating. Please wait.")
         Ready
-        <$> eIsOldCacheEmpty
-  tellTxStatus "App status" eMigrateStatus
+        <$> dIsOldCacheEmpty
+  tellTxStatus "App status" $ updated dMigrateStatus
 
-  let eCacheV3 = alignWith
-        (these migrateV1 migrateV2 migrateV3)
-        eSecretsV1
-        eSecretsV2
-  -- Migrate old cache (when it is not empty) to encoins-v3
-  let eTokensV3Save = ffilter (not . null) eCacheV3
+  let dCacheV3 = zipDynWith migrateV3 dSecretsV1 dSecretsV2
 
-  eSaved <- saveAppData mPass encoinsV3 eTokensV3Save
+  eSaved <- saveAppData mPass encoinsV3 $ updated dCacheV3
   eTokensV3 :: Event t [TokenCacheV3] <- updated <$>
     loadAppData mPass encoinsV3 "migrateCacheV3-key-eSecretsV3" eSaved id []
 

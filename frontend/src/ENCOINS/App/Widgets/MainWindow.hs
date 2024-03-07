@@ -9,7 +9,7 @@ import           Backend.Protocol.Types            (AesKeyRaw, PasswordRaw (..),
 import           Backend.Status                    (AppStatus)
 import           Backend.Utility                   (switchHoldDyn)
 import           Backend.Wallet                    (Wallet (..))
-import           ENCOINS.App.Widgets.Basic         (loadAppDataE)
+import           ENCOINS.App.Widgets.Basic         (loadAppDataME)
 import           ENCOINS.App.Widgets.IPFS          (checkTokens)
 import           ENCOINS.App.Widgets.MainTabs      (ledgerTab, transferTab,
                                                     walletTab)
@@ -29,10 +29,9 @@ mainWindow mPass dWallet dIsDisableButtons dIpfsOn dmKey = mdo
     eTab <- tabsSection dTab dIsDisableButtons
     dTab <- holdDyn WalletTab eTab
     eNewTokensV3 <- switchHoldDyn dTab $ \tab -> mdo
-      dOldTokensV3 :: Dynamic t [TokenCacheV3] <- loadAppDataE
-        mPass encoinsV3 "mainWindow-key-encoinsV3" id []
-      dOldTokensMigrated <- updateCacheV3 mPass dOldTokensV3
-
+      dmOldTokensV3 :: Dynamic t (Maybe [TokenCacheV3]) <- loadAppDataME
+          mPass encoinsV3 "mainWindow-key-encoinsV3"
+      dOldTokensMigrated <- updateCacheV3 mPass dmOldTokensV3
       dUpdatedStatusTokens <- checkTokens dIpfsOn dOldTokensMigrated
 
       dUpdatedTokensV3 <- case tab of
