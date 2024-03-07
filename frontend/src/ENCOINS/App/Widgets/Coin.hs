@@ -74,8 +74,8 @@ coinV3 s =
           . snd
           . fromSecret bulletproofSetup
           $ s
-    in MkTokenCacheV3 assetName s CoinUndefined IpfsUndefined
-    -- ^ CoinUndefined and IpfsUndefined are default statuses that client set
+    in MkTokenCacheV3 assetName s MintUndefined IpfsUndefined
+    -- ^ MintUndefined and IpfsUndefined are default statuses that client set
 
 coinCollectionV3 :: MonadWidget t m
   => Dynamic t Secrets

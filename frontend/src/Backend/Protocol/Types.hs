@@ -160,11 +160,17 @@ data IpfsStatus = Pinned | Unpinned | IpfsUndefined | IpfsError Text
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
--- Client sets CoinUndefined status only
--- Server sets all other statuses
+-- Client sets MintUndefined and BurnUndefined statuses only
+-- Server sets rest statuses
 -- Discarded tokens are ones that can't be rollback
 -- Burned tokens can be rollback
-data CoinStatus = Minted | Burned | Discarded | CoinUndefined | CoinError Text
+data CoinStatus
+    = Minted
+    | Burned
+    | Discarded
+    | MintUndefined
+    | BurnUndefined
+    | CoinError Text
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 

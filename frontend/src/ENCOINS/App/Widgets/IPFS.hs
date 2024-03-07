@@ -210,12 +210,13 @@ updateCacheStatus oldToken tokensFromClouds = map updateCloud oldToken
             , tcIpfsStatus = fromMaybe (tcIpfsStatus t) mIpfs
             }
 
--- Just created tokens with IpfsUndefined and CoinUndefined statuses are selected to IPFS
+-- Select valid tokens for pinning
+-- Just created tokens with IpfsUndefined and MintUndefined statuses are selected to IPFS
 -- Minted tokens that have Unpinned or IpfsError statuses are selected to IPFS again
 -- Tokens with other statuses are not selected to IPFS
 selectTokenToPin :: TokenCacheV3 -> Maybe TokenCacheV3
 selectTokenToPin t = case (tcCoinStatus t, tcIpfsStatus t)  of
-  (CoinUndefined, IpfsUndefined) -> Just t
+  (MintUndefined, IpfsUndefined) -> Just t
   (Minted, Unpinned)             -> Just t
   (Minted, IpfsUndefined)        -> Just t
   (Minted, IpfsError _)          -> Just t
@@ -224,12 +225,12 @@ selectTokenToPin t = case (tcCoinStatus t, tcIpfsStatus t)  of
 selectUnpinnedTokens :: [TokenCacheV3] -> Maybe (NonEmpty TokenCacheV3)
 selectUnpinnedTokens = NE.nonEmpty . catMaybes . map selectTokenToPin
 
--- Just created tokens with IpfsUndefined and CoinUndefined statuses are selected to IPFS
--- Minted tokens that have Unpinned or IpfsError statuses are selected to IPFS again
--- Tokens with other stateses are not selected to IPFS
+-- Select tokens for checking them if they are Discarded
+-- Select tokens with BurnUndefined which have been just assigned by the client
+-- And select Burned tokens that already confirmed by server
 selectTokenToCheck :: TokenCacheV3 -> Maybe TokenCacheV3
 selectTokenToCheck t = case (tcCoinStatus t, tcIpfsStatus t)  of
-  (CoinUndefined, _) -> Just t
+  (BurnUndefined, _) -> Just t
   (Burned, _)        -> Just t
   (CoinError _, _)   -> Just t -- TOTO: do we need it?
   _                  -> Nothing
@@ -453,7 +454,7 @@ updateBurnedToken tokens burned = foldl' (update burned) [] tokens
       update bs acc t =
         case find (\b -> tcAssetName t == tcAssetName b) bs of
           Nothing -> t : acc
-          Just _  -> t{tcCoinStatus = CoinUndefined} : acc
+          Just _  -> t{tcCoinStatus = BurnUndefined} : acc
 
 
 -- unpinStatusDebug :: [TokenCacheV3] -> [TokenCacheV3]
