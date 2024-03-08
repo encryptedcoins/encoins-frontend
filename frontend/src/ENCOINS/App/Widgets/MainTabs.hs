@@ -34,8 +34,8 @@ import           ENCOINS.App.Widgets.Coin               (CoinUpdate (..),
                                                          coinMintCollectionV3Widget,
                                                          coinNewButtonWidget,
                                                          coinNewWidget, coinV3,
-                                                         filterByKnownCoinNames,
-                                                         noCoinsFoundWidget)
+                                                         noCoinsFoundWidget,
+                                                         partitionByWalletCoinNames)
 import           ENCOINS.App.Widgets.ImportWindow       (exportWindow,
                                                          importFileWindow,
                                                          importWindow)
@@ -96,13 +96,13 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   $ map coinV3
                   <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
-            -- IPFS begin
-            dTokenIpfsUpdated <- handleMinted dIpfsOn dmKey dTokenCache dSecretsInTheWallet
-            -- IPFS end
-            -- logDyn "walletTab: dTokenIpfsUpdated" $ showTokens <$> dTokenIpfsUpdated
-
             -- Update coin status in burned tokens
-            let dTokensUpdated = zipDynWith updateBurnedToken dTokenIpfsUpdated dConfirmedBurnedTokens
+            let dTokensBurnUpdated = zipDynWith (updateBurnedToken WalletBurn) dTokenCache dConfirmedBurnedTokens
+            -- logDyn "walletTab: dTokensBurnUpdated" $ showTokens <$> dTokensBurnUpdated
+
+            -- IPFS begin
+            dTokensUpdated <- handleMinted dIpfsOn dmKey dTokensBurnUpdated dSecretsInTheWallet dSecretsOutTheWallet WalletBurn
+            -- IPFS end
             -- logDyn "walletTab: dTokensUpdated" $ showTokens <$> dTokensUpdated
 
             -- save unique changes only
@@ -153,8 +153,8 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   dCoinsToMint
                   eSend
                   dUrls
-            let dSecretsInTheWallet = zipDynWith
-                  filterByKnownCoinNames
+            let (dSecretsInTheWallet, dSecretsOutTheWallet) = splitDynPure $ zipDynWith
+                  partitionByWalletCoinNames
                   dAssetNamesInTheWallet
                   dTokensUpdated
 
@@ -194,7 +194,7 @@ transferTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
         let dTokenCache = nub <$> zipDynWith (++) dTokenCacheOld (map coinV3 <$> dImportedSecrets)
 
         -- IPFS begin
-        dTokenCacheUpdated <- handleMinted dIpfsOn dmKey dTokenCache dSecretsInTheWallet
+        dTokenCacheUpdated <- handleMinted dIpfsOn dmKey dTokenCache dSecretsInTheWallet dSecretsOutTheWallet WalletBurn
         -- IPFS end
 
         -- save unique changes only
@@ -241,8 +241,8 @@ transferTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
         dWalletSignature
         dUrls
 
-    let dSecretsInTheWallet =
-          zipDynWith filterByKnownCoinNames dAssetNamesInTheWallet dTokensV3
+    let (dSecretsInTheWallet, dSecretsOutTheWallet) = splitDynPure $ zipDynWith
+          partitionByWalletCoinNames dAssetNamesInTheWallet dTokensV3
     (_, eStatusUpdate2, _) <-
       encoinsTxTransferMode
         dWallet
@@ -303,12 +303,14 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   $ zipDynWith (++) dTokenCacheOld
                   $ map coinV3 <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
-            -- IPFS begin
-            dTokenIpfsUpdated <- handleMinted dIpfsOn dmKey dTokenCache dSecretsInTheWallet
-            -- IPFS end
             -- Update coin status in burned tokens
-            let dTokensUpdated = zipDynWith updateBurnedToken dTokenIpfsUpdated dConfirmedBurnedTokens
+            let dTokensBurnedUpdated = zipDynWith (updateBurnedToken LedgerBurn) dTokenCache dConfirmedBurnedTokens
+            -- logDyn "ledgerTab: dTokensBurnedUpdated" $ showTokens <$> dTokensBurnedUpdated
+
+            -- IPFS begin
+            dTokensUpdated <- handleMinted dIpfsOn dmKey dTokensBurnedUpdated dSecretsInTheWallet dSecretsOutTheWallet LedgerBurn
             -- logDyn "ledgerTab: dTokensUpdated" $ showTokens <$> dTokensUpdated
+            -- IPFS end
 
             -- save unique changes only
             dTokensUpdatedUniq <- holdUniqDyn dTokensUpdated
@@ -367,8 +369,8 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
               dCoinsToMint
               eSend
               dUrls
-            let dSecretsInTheWallet = zipDynWith
-                  filterByKnownCoinNames
+            let (dSecretsInTheWallet, dSecretsOutTheWallet) = splitDynPure $ zipDynWith
+                  partitionByWalletCoinNames
                   dAssetNamesInTheWallet
                   dTokensUpdated
 
@@ -405,10 +407,14 @@ handleMinted :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t (Maybe AesKeyRaw)
   -> Dynamic t [TokenCacheV3]
   -> Dynamic t [TokenCacheV3]
+  -> Dynamic t [TokenCacheV3]
+  -> BurnUndefined
   -> m (Dynamic t [TokenCacheV3])
-handleMinted dIpfsOn dmKey dTokenCache dSecretsInTheWallet = do
-  dWalletSecretsUniq <- holdUniqDyn dSecretsInTheWallet
-  eTokenWithNewState <- saveTokensOnIpfs dIpfsOn dmKey dWalletSecretsUniq
+handleMinted dIpfsOn dmKey dTokenCache dTokensInWallet dTokensOutWallet status = do
+  dTokensInWalletUniq <- holdUniqDyn dTokensInWallet
+  dTokensOutWalletUniq <- holdUniqDyn dTokensOutWallet
+  eTokenWithNewState <- saveTokensOnIpfs
+    dIpfsOn dmKey dTokensOutWalletUniq dTokensInWalletUniq status
   -- accumulate token saved on ipfs.
   -- The place of error prone.
   -- If in tx A token was not pinned (in wallet mode) and in tx B was pinned (ledger mode), then
@@ -430,5 +436,5 @@ holdBurnedTokens :: MonadWidget t m
 holdBurnedTokens eSend eStatusUpdate dTokenToBurn = do
   let eTokenToBurnSend = tagPromptlyDyn dTokenToBurn eSend
   dTokenToBurnSend <- holdDyn [] eTokenToBurnSend
-  let eSubmitted = ffilter (==Ready) eStatusUpdate
+  let eSubmitted = ffilter (==Constructing) eStatusUpdate
   holdDyn [] $ tagPromptlyDyn dTokenToBurnSend eSubmitted

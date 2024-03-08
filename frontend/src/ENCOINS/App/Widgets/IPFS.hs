@@ -55,11 +55,23 @@ saveTokensOnIpfs :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
   -> Dynamic t [TokenCacheV3]
+  -> Dynamic t [TokenCacheV3]
+  -> BurnUndefined
   -> m (Event t [TokenCacheV3])
-saveTokensOnIpfs dIpfsOn dmKey dTokenCache = mdo
+saveTokensOnIpfs dIpfsOn dmKey dTokenOutWallet dTokenInWallet status = mdo
   let dIpfsConditions = zipDynWith (,) dIpfsOn dmKey
-  let dmValidTokens = selectUnpinnedTokens <$> dTokenCache
-  let dFullConditions = combineConditions dIpfsConditions dmValidTokens
+  -- Select unpinned tokens in wallet
+  let dmUnpinnedTokens = selectUnpinnedTokens <$> dTokenInWallet
+  -- Select token depending on burned coin status
+  let dmBurnUndefinedTokens = selectBurnUndefinedTokens status <$> dTokenOutWallet
+  -- Combine tokens before checking/pinning
+  let dmValidTokens = zipDynWith (<>) dmUnpinnedTokens dmBurnUndefinedTokens
+  -- Wait until tokens in wallet/ledger are loaded
+  eInTokensFired <- delay 1 $ updated dTokenInWallet
+  let emValidTokensFired = tagPromptlyDyn dmValidTokens eInTokensFired
+  dmValidTokensInWalletFired <- holdDyn Nothing emValidTokensFired
+  -- Combine all condition in a tuple
+  let dFullConditions = combineConditions dIpfsConditions dmValidTokensInWalletFired
 
   (ePinError, eTokenPinAttemptOne) <- fanThese <$> pinEncryptedTokens dFullConditions
 
@@ -127,7 +139,7 @@ retryPinEncryptedTokens dIpfsConditions eTokenIpfsPinAttempt = mdo
   pure $ align eError eTokenIpfsCachedComplete
 
 combineConditions :: Reflex t => Dynamic t (Bool, Maybe AesKeyRaw)
-  -> Dynamic  t (Maybe (NonEmpty TokenCacheV3))
+  -> Dynamic t (Maybe (NonEmpty TokenCacheV3))
   -> Dynamic t (Bool, Maybe AesKeyRaw, Maybe (NonEmpty TokenCacheV3))
 combineConditions = zipDynWith (\(isOn, mKey) ts -> (isOn, mKey, ts))
 
@@ -136,7 +148,7 @@ checkTokens :: MonadWidget t m
   -> Dynamic t [TokenCacheV3]
   -> m (Dynamic t [TokenCacheV3])
 checkTokens dIpfsOn dCachedTokens = do
-  let dmUndefinedTokens = selectUndefinedTokens <$> dCachedTokens
+  let dmUndefinedTokens = selectBurnedTokens <$> dCachedTokens
   dIpfsOnUniq <- holdUniqDyn dIpfsOn
   dFullConditions <- holdUniqDyn $ zipDynWith (,) dIpfsOnUniq dmUndefinedTokens
 
@@ -225,18 +237,23 @@ selectTokenToPin t = case (tcCoinStatus t, tcIpfsStatus t)  of
 selectUnpinnedTokens :: [TokenCacheV3] -> Maybe (NonEmpty TokenCacheV3)
 selectUnpinnedTokens = NE.nonEmpty . catMaybes . map selectTokenToPin
 
--- Select tokens for checking them if they are Discarded
--- Select tokens with BurnUndefined which have been just assigned by the client
--- And select Burned tokens that already confirmed by server
-selectTokenToCheck :: TokenCacheV3 -> Maybe TokenCacheV3
-selectTokenToCheck t = case (tcCoinStatus t, tcIpfsStatus t)  of
-  (BurnUndefined, _) -> Just t
-  (Burned, _)        -> Just t
-  (CoinError _, _)   -> Just t -- TOTO: do we need it?
-  _                  -> Nothing
+-- Select BurnUndefined tokens
+-- Used in pinning step for checking them
+selectBurnUndefinedToken :: BurnUndefined -> TokenCacheV3 -> Maybe TokenCacheV3
+selectBurnUndefinedToken s t = if tcCoinStatus t == BU s then Just t else Nothing
 
-selectUndefinedTokens :: [TokenCacheV3] -> Maybe (NonEmpty TokenCacheV3)
-selectUndefinedTokens = NE.nonEmpty . catMaybes . map selectTokenToCheck
+selectBurnUndefinedTokens :: BurnUndefined -> [TokenCacheV3] -> Maybe (NonEmpty TokenCacheV3)
+selectBurnUndefinedTokens s = NE.nonEmpty . catMaybes . map (selectBurnUndefinedToken s)
+
+-- Select Burned tokens for checking them if they are Discarded
+selectBurnedToken :: TokenCacheV3 -> Maybe TokenCacheV3
+selectBurnedToken t = case (tcCoinStatus t, tcIpfsStatus t)  of
+  (Burned, _)      -> Just t
+  (CoinError _, _) -> Just t -- TOTO: do we need it?
+  _                -> Nothing
+
+selectBurnedTokens :: [TokenCacheV3] -> Maybe (NonEmpty TokenCacheV3)
+selectBurnedTokens = NE.nonEmpty . catMaybes . map selectBurnedToken
 
 mkPinRequest :: TokenCacheV3 -> EncryptedSecret -> PinRequest
 mkPinRequest cache encryptedSecret = MkPinRequest
@@ -448,14 +465,10 @@ updateMintedTokens old new = foldl' (update new) [] old
         Nothing -> o : acc
         Just n' -> n' : acc
 
-updateBurnedToken :: [TokenCacheV3] -> [TokenCacheV3] -> [TokenCacheV3]
-updateBurnedToken tokens burned = foldl' (update burned) [] tokens
+updateBurnedToken :: BurnUndefined -> [TokenCacheV3] -> [TokenCacheV3] -> [TokenCacheV3]
+updateBurnedToken s tokens burned = foldl' (update burned) [] tokens
     where
       update bs acc t =
         case find (\b -> tcAssetName t == tcAssetName b) bs of
           Nothing -> t : acc
-          Just _  -> t{tcCoinStatus = BurnUndefined} : acc
-
-
--- unpinStatusDebug :: [TokenCacheV3] -> [TokenCacheV3]
--- unpinStatusDebug = map (\t -> t{tcIpfsStatus = Unpinned})
+          Just _  -> t{tcCoinStatus = BU s} : acc

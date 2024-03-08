@@ -160,7 +160,11 @@ data IpfsStatus = Pinned | Unpinned | IpfsUndefined | IpfsError Text
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
--- Client sets MintUndefined and BurnUndefined statuses only
+data BurnUndefined = LedgerBurn | WalletBurn
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (FromJSON, ToJSON)
+
+-- Client sets MintUndefined and LedgerBurn/WalletBurn statuses only
 -- Server sets rest statuses
 -- Discarded tokens are ones that can't be rollback
 -- Burned tokens can be rollback
@@ -169,7 +173,7 @@ data CoinStatus
     | Burned
     | Discarded
     | MintUndefined
-    | BurnUndefined
+    | BU BurnUndefined
     | CoinError Text
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
@@ -212,5 +216,5 @@ data TokenCacheV3 = MkTokenCacheV3
 showToken :: TokenCacheV3 -> (AssetName, CoinStatus, IpfsStatus)
 showToken (MkTokenCacheV3 n _ c i) = (n,c,i)
 
-showTokens :: [TokenCacheV3] -> [(AssetName, CoinStatus, IpfsStatus)]
-showTokens = map showToken
+showTokens :: (Foldable t, Functor t) => t TokenCacheV3 -> t (AssetName, CoinStatus, IpfsStatus)
+showTokens = fmap showToken

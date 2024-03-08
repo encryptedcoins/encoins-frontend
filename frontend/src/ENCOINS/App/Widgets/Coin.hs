@@ -5,7 +5,7 @@ module ENCOINS.App.Widgets.Coin where
 import           Control.Monad                   (join, void)
 import           Control.Monad.IO.Class          (MonadIO (..))
 import           Data.Bool                       (bool)
-import           Data.List                       (delete)
+import           Data.List                       (delete, partition)
 import           Data.Maybe                      (catMaybes, fromMaybe)
 import           Data.Text                       (Text, unpack)
 import qualified Data.Text                       as Text
@@ -94,6 +94,14 @@ coinValue = toText . fst . fromSecret bulletproofSetup
 filterByKnownCoinNames :: [AssetName] -> [TokenCacheV3] -> [TokenCacheV3]
 filterByKnownCoinNames knownNames =
   filter (\(MkTokenCacheV3 name _ _ _) -> name `elem` knownNames)
+
+filterByUnknownCoinNames :: [AssetName] -> [TokenCacheV3] -> [TokenCacheV3]
+filterByUnknownCoinNames knownNames =
+  filter (\(MkTokenCacheV3 name _ _ _) -> name `notElem` knownNames)
+
+partitionByWalletCoinNames :: [AssetName] -> [TokenCacheV3] -> ([TokenCacheV3],[TokenCacheV3])
+partitionByWalletCoinNames knownNames =
+  partition (\(MkTokenCacheV3 name _ _ _) -> name `elem` knownNames)
 
 -------------------------------------------- Coins in the Wallet ----------------------------------------
 
