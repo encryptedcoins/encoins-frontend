@@ -146,8 +146,7 @@ instance ToJSON PinRequest where
    toJSON = genericToJSON $ aesonPrefix snakeCase
 
 data StatusResponse = MkStatusResponse
-  { spCoinStatus :: Maybe CoinStatus
-  , spIpfsStatus :: Maybe IpfsStatus
+  { spIpfsStatus :: Maybe IpfsStatus
   }
   deriving stock (Show, Eq, Generic)
 
@@ -157,24 +156,6 @@ instance FromJSON StatusResponse where
 -- Client sets IpfsUndefined status only
 -- Server sets all other statuses
 data IpfsStatus = Pinned | Unpinned | IpfsUndefined | IpfsError Text
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromJSON, ToJSON)
-
-data BurnUndefined = LedgerBurn | WalletBurn
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromJSON, ToJSON)
-
--- Client sets MintUndefined and LedgerBurn/WalletBurn statuses only
--- Server sets rest statuses
--- Discarded tokens are ones that can't be rollback
--- Burned tokens can be rollback
-data CoinStatus
-    = Minted
-    | Burned
-    | Discarded
-    | MintUndefined
-    | BU BurnUndefined
-    | CoinError Text
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
@@ -206,15 +187,14 @@ data IpfsUpdateStatus = Processing | Complete | Failed
 data TokenCacheV3 = MkTokenCacheV3
   { tcAssetName  :: AssetName
   , tcSecret     :: Secret
-  , tcCoinStatus :: CoinStatus
   , tcIpfsStatus :: IpfsStatus
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
 -- For readable logs
-showToken :: TokenCacheV3 -> (AssetName, CoinStatus, IpfsStatus)
-showToken (MkTokenCacheV3 n _ c i) = (n,c,i)
+showToken :: TokenCacheV3 -> (AssetName, IpfsStatus)
+showToken (MkTokenCacheV3 n _ i) = (n,i)
 
-showTokens :: (Foldable t, Functor t) => t TokenCacheV3 -> t (AssetName, CoinStatus, IpfsStatus)
+showTokens :: (Foldable t, Functor t) => t TokenCacheV3 -> t (AssetName, IpfsStatus)
 showTokens = fmap showToken

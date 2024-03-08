@@ -18,7 +18,6 @@ import           Text.Read                       (readMaybe)
 import           Backend.Protocol.Setup          (bulletproofSetup,
                                                   encoinsCurrencySymbol)
 import           Backend.Protocol.Types          (AssetName (..),
-                                                  CoinStatus (..),
                                                   IpfsStatus (..),
                                                   TokenCacheV3 (..))
 import           Backend.Protocol.Utility        (secretToHex)
@@ -74,8 +73,8 @@ coinV3 s =
           . snd
           . fromSecret bulletproofSetup
           $ s
-    in MkTokenCacheV3 assetName s MintUndefined IpfsUndefined
-    -- ^ MintUndefined and IpfsUndefined are default statuses that client set
+    in MkTokenCacheV3 assetName s IpfsUndefined
+    -- ^ IpfsUndefined are default statuses that client set
 
 coinCollectionV3 :: MonadWidget t m
   => Dynamic t Secrets
@@ -93,22 +92,22 @@ coinValue = toText . fst . fromSecret bulletproofSetup
 
 filterByKnownCoinNames :: [AssetName] -> [TokenCacheV3] -> [TokenCacheV3]
 filterByKnownCoinNames knownNames =
-  filter (\(MkTokenCacheV3 name _ _ _) -> name `elem` knownNames)
+  filter (\(MkTokenCacheV3 name _ _) -> name `elem` knownNames)
 
 filterByUnknownCoinNames :: [AssetName] -> [TokenCacheV3] -> [TokenCacheV3]
 filterByUnknownCoinNames knownNames =
-  filter (\(MkTokenCacheV3 name _ _ _) -> name `notElem` knownNames)
+  filter (\(MkTokenCacheV3 name _ _) -> name `notElem` knownNames)
 
 partitionByWalletCoinNames :: [AssetName] -> [TokenCacheV3] -> ([TokenCacheV3],[TokenCacheV3])
 partitionByWalletCoinNames knownNames =
-  partition (\(MkTokenCacheV3 name _ _ _) -> name `elem` knownNames)
+  partition (\(MkTokenCacheV3 name _ _) -> name `elem` knownNames)
 
 -------------------------------------------- Coins in the Wallet ----------------------------------------
 
 coinBurnWidget :: MonadWidget t m
   => TokenCacheV3
   -> m (Dynamic t (Maybe (Secret, TokenCacheV3)))
-coinBurnWidget tokenV3@(MkTokenCacheV3 name s _ _) = mdo
+coinBurnWidget tokenV3@(MkTokenCacheV3 name s _) = mdo
     (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
         dChecked <- divClass "" checkboxButton -- withTooltip checkboxButton mempty 0 0 $
             -- divClass "app-text-normal" $ text "Select to burn this coin."
@@ -143,13 +142,13 @@ noCoinsFoundWidget = bool blank (divClass "coin-entry-burn-div-no-coins" $ divCl
 
 coinBurnCollectionWidget :: MonadWidget t m
   => Dynamic t [TokenCacheV3]
-  -> m (Dynamic t Secrets, Dynamic t [TokenCacheV3])
+  -> m (Dynamic t Secrets)
 coinBurnCollectionWidget dlToken = do
     eldmToken <- dyn $ fmap (mapM coinBurnWidget) dlToken
     let edlmToken = fmap sequenceA eldmToken
     let edlToken = fmap (fmap catMaybes) edlmToken
     dSt <- join <$> holdDyn (constDyn []) edlToken
-    pure (map fst <$> dSt, map snd <$> dSt)
+    pure (map fst <$> dSt)
 
 coinTooltip :: MonadWidget t m => AssetName -> m ()
 coinTooltip (MkAssetName name) = elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visible" <>
@@ -168,7 +167,7 @@ coinTooltip (MkAssetName name) = elAttr "div" ("class" =: "div-tooltip div-toolt
 --------------------------------- Coins to Mint -------------------------------
 
 coinV3MintWidget :: MonadWidget t m => TokenCacheV3 -> m (Event t Secret)
-coinV3MintWidget (MkTokenCacheV3 name s _ _) = mdo
+coinV3MintWidget (MkTokenCacheV3 name s _) = mdo
     (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
         eCross <- domEvent Click . fst <$> elClass' "div" "cross-div" blank
         (txt, _) <- elClass' "div" "app-text-normal" $ text $ shortenCoinName $ getAssetName name

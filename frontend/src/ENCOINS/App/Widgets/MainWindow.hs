@@ -10,7 +10,6 @@ import           Backend.Status                    (AppStatus)
 import           Backend.Utility                   (switchHoldDyn)
 import           Backend.Wallet                    (Wallet (..))
 import           ENCOINS.App.Widgets.Basic         (loadAppDataME)
-import           ENCOINS.App.Widgets.IPFS          (checkTokens)
 import           ENCOINS.App.Widgets.MainTabs      (ledgerTab, transferTab,
                                                     walletTab)
 import           ENCOINS.App.Widgets.Migration     (updateCacheV3)
@@ -32,11 +31,10 @@ mainWindow mPass dWallet dIsDisableButtons dIpfsOn dmKey = mdo
       dmOldTokensV3 :: Dynamic t (Maybe [TokenCacheV3]) <- loadAppDataME
           mPass encoinsV3 "mainWindow-key-encoinsV3"
       dOldTokensMigrated <- updateCacheV3 mPass dmOldTokensV3
-      dUpdatedStatusTokens <- checkTokens dIpfsOn dOldTokensMigrated
 
       dUpdatedTokensV3 <- case tab of
-        WalletTab   -> walletTab mPass dWallet dUpdatedStatusTokens dIpfsOn dmKey
-        TransferTab -> transferTab mPass dWallet dUpdatedStatusTokens dIpfsOn dmKey
-        LedgerTab   -> ledgerTab mPass dUpdatedStatusTokens dIpfsOn dmKey
+        WalletTab   -> walletTab mPass dWallet dOldTokensMigrated dIpfsOn dmKey
+        TransferTab -> transferTab mPass dWallet dOldTokensMigrated dIpfsOn dmKey
+        LedgerTab   -> ledgerTab mPass dOldTokensMigrated dIpfsOn dmKey
       return $ updated dUpdatedTokensV3
     holdDyn [] eNewTokensV3
