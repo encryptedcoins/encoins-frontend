@@ -98,13 +98,13 @@ isNotValidUrl UrlEmpty   = True
 isNotValidUrl UrlInvalid = True
 isNotValidUrl UrlValid   = False
 
-data IpfsSaveStatus = NoTokens | Pinning | PinnedAll | PinError
+data IpfsIconStatus = NoTokens | Pinning | PinnedAll | PinError
   deriving stock (Eq, Show)
 
-data AppStatus = Ipfs IpfsSaveStatus | Tx (Text, Status)
+data AppStatus = Ipfs IpfsIconStatus | Tx (Text, Status)
   deriving stock (Eq, Show)
 
-isIpfsSaveStatus :: AppStatus -> Maybe IpfsSaveStatus
+isIpfsSaveStatus :: AppStatus -> Maybe IpfsIconStatus
 isIpfsSaveStatus (Ipfs s) = Just s
 isIpfsSaveStatus _        = Nothing
 

@@ -65,10 +65,6 @@ type BackIpfsApi =
     :<|> "pin"
               :> ReqBody '[JSON] (AesKeyHash, [PinRequest])
               :> Post '[JSON] (Map AssetName StatusResponse)
-    -- 'status' endpoint used for updating statuses of burned tokens
-    :<|> "status"
-              :> ReqBody '[JSON] [AssetName]
-              :> Post '[JSON] (Map AssetName StatusResponse)
 
     :<|> "restore"
               :> Capture "client_id" AesKeyHash
@@ -77,7 +73,6 @@ type BackIpfsApi =
 data BackIpfsApiClient t m = MkBackIpfsApiClient
   { ipfsPing    :: Res t m NoContent
   , ipfsPin     :: ReqRes t m (AesKeyHash, [PinRequest]) (Map AssetName StatusResponse)
-  , ipfsStatus   :: ReqRes t m [AssetName] (Map AssetName StatusResponse)
   , ipfsRestore :: Dynamic t (Either Text AesKeyHash) -> Res t m [RestoreResponse]
   }
 
@@ -88,5 +83,4 @@ mkBackIpfsApiClient host = MkBackIpfsApiClient{..}
   where
     ( ipfsPing :<|>
       ipfsPin :<|>
-      ipfsStatus :<|>
       ipfsRestore) = client (Proxy @BackIpfsApi) (Proxy @m) (Proxy @()) (pure host)

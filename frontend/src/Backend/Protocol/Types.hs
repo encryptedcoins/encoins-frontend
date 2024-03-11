@@ -146,7 +146,7 @@ instance ToJSON PinRequest where
    toJSON = genericToJSON $ aesonPrefix snakeCase
 
 data StatusResponse = MkStatusResponse
-  { spIpfsStatus :: Maybe IpfsStatus
+  { spStatusResponse :: IpfsStatus
   }
   deriving stock (Show, Eq, Generic)
 
@@ -155,7 +155,7 @@ instance FromJSON StatusResponse where
 
 -- Client sets IpfsUndefined status only
 -- Server sets all other statuses
-data IpfsStatus = Pinned | Unpinned | IpfsUndefined | IpfsError Text
+data IpfsStatus = Pinned | Unpinned | IpfsError Text | IpfsUndefined | Discarded Text
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON, ToJSON)
 
@@ -190,7 +190,12 @@ data TokenCacheV3 = MkTokenCacheV3
   , tcIpfsStatus :: IpfsStatus
   }
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromJSON, ToJSON)
+
+instance FromJSON TokenCacheV3 where
+   parseJSON = genericParseJSON $ aesonPrefix snakeCase
+
+instance ToJSON TokenCacheV3 where
+   toJSON = genericToJSON $ aesonPrefix snakeCase
 
 -- For readable logs
 showToken :: TokenCacheV3 -> (AssetName, IpfsStatus)

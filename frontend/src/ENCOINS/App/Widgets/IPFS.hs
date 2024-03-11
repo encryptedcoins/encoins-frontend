@@ -8,7 +8,7 @@ import           Backend.Servant.Requests        (ipfsPinRequest,
                                                   ipfsPingRequest,
                                                   restoreRequest)
 import           Backend.Status                  (AppStatus,
-                                                  IpfsSaveStatus (..))
+                                                  IpfsIconStatus (..))
 import           Backend.Utility                 (eventEither, eventMaybeDynDef,
                                                   eventTuple, space,
                                                   switchHoldDyn, toText)
@@ -37,7 +37,7 @@ import           Data.List.NonEmpty              (NonEmpty)
 import qualified Data.List.NonEmpty              as NE
 import           Data.Map                        (Map)
 import qualified Data.Map                        as Map
-import           Data.Maybe                      (catMaybes, fromMaybe, isJust,
+import           Data.Maybe                      (catMaybes, isJust,
                                                   isNothing)
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
@@ -181,8 +181,8 @@ updateCacheStatus oldToken tokensFromClouds = map updateCloud oldToken
         Nothing -> t
         -- If IPFS server returns a status with Nothing,
         -- then it uses old value.
-        Just (MkStatusResponse mIpfs) ->
-           t{ tcIpfsStatus = fromMaybe (tcIpfsStatus t) mIpfs
+        Just (MkStatusResponse ipfsStatus) ->
+           t{ tcIpfsStatus = ipfsStatus
             }
 
 -- Select valid tokens for pinning
@@ -314,7 +314,7 @@ mkTokenCacheV3 name decrypted = case eSecret of
 ipfsSettingsWindow :: MonadWidget t m
   => Maybe PasswordRaw
   -> Dynamic t Bool
-  -> Dynamic t IpfsSaveStatus
+  -> Dynamic t IpfsIconStatus
   -> Event t ()
   -> m (Dynamic t Bool, Dynamic t (Maybe AesKeyRaw))
 ipfsSettingsWindow mPass ipfsCacheFlag dIpfsSaveStatus eOpen = do
@@ -347,7 +347,7 @@ ipfsCheckbox ipfsCacheFlag = do
   pure dIsChecked
 
 ipfsSaveStatus :: MonadWidget t m
-  => Dynamic t IpfsSaveStatus
+  => Dynamic t IpfsIconStatus
   -> Dynamic t Bool
   -> m ()
 ipfsSaveStatus dIpfsSaveStatus dIsIpfs = do
@@ -356,7 +356,7 @@ ipfsSaveStatus dIpfsSaveStatus dIsIpfs = do
   divClass "app-Ipfs_StatusText" $
     dynText $ zipDynWith selectIpfsStatusNote dIpfsSaveStatus dIsIpfs
 
-selectIpfsStatusNote :: IpfsSaveStatus -> Bool -> Text
+selectIpfsStatusNote :: IpfsIconStatus -> Bool -> Text
 selectIpfsStatusNote status isIpfs =
   let t = case (status, isIpfs) of
         (_, False)         -> "is turned off"

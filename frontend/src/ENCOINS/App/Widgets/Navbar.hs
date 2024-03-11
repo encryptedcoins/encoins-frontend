@@ -7,7 +7,7 @@ import           Prelude                       hiding (take)
 import           Reflex.Dom
 
 import           Backend.Protocol.Types        (PasswordRaw)
-import           Backend.Status                (IpfsSaveStatus (..))
+import           Backend.Status                (IpfsIconStatus (..))
 import           Backend.Utility               (space)
 import           Backend.Wallet                (Wallet (..), WalletName (..),
                                                 currentNetworkApp)
@@ -25,7 +25,7 @@ navbarWidget :: MonadWidget t m
   -> Dynamic t Bool
   -> Maybe PasswordRaw
   -> Dynamic t Bool
-  -> Dynamic t IpfsSaveStatus
+  -> Dynamic t IpfsIconStatus
   -> m (Event t (), Event t (), Event t ())
 navbarWidget w dIsBlock mPass dIsIpfsOn dIpfsStatus= do
   elAttr "div" ("data-animation" =: "default" <> "data-collapse" =: "none" <> "data-duration" =: "400" <> "id" =: "Navbar"
@@ -72,7 +72,7 @@ lockerDiv dClassMap popupText
 ipfsIconWidget :: MonadWidget  t m
   => Dynamic t Bool
   -> Dynamic t Bool
-  -> Dynamic t IpfsSaveStatus
+  -> Dynamic t IpfsIconStatus
   -> m (Element EventResult (DomBuilderSpace m) t)
 ipfsIconWidget dIsIpfsOn dIsBlock dIpfsStatus = do
   let dPopup = bool
@@ -98,7 +98,7 @@ ipfsPopup dClassMap dPopup
       $ divClass "app-Nav_IpfsPopup"
       $ el "p" $ dynText dPopup
 
-selectIconClass :: IpfsSaveStatus -> Bool -> Text
+selectIconClass :: IpfsIconStatus -> Bool -> Text
 selectIconClass status isOn = case (status, isOn) of
   (_, False)     -> "app-Ipfs_IconTurnOff"
   (NoTokens, _)  -> "app-Ipfs_IconTurnOff"

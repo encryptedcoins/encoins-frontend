@@ -203,17 +203,6 @@ ipfsPinRequest dToken e = do
   logEvent "ipfsMinted response" $ () <$ eRespUnwrapped
   pure eRespUnwrapped
 
-ipfsStatusRequest :: MonadWidget t m
-  => Dynamic t [AssetName]
-  -> Event t ()
-  -> m (Event t (Either Text (Map AssetName StatusResponse)))
-ipfsStatusRequest dToken e = do
-  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsServerUrl
-  eResp <- ipfsStatus (Right <$> dToken) e
-  let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "ipfsCheck response" $ () <$ eRespUnwrapped
-  pure eRespUnwrapped
-
 restoreRequest :: MonadWidget t m
   => Dynamic t AesKeyHash
   -> Event t ()

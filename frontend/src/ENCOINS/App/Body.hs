@@ -12,7 +12,7 @@ import           Reflex.Dom
 
 import           Backend.Protocol.Types
 import           Backend.Status                     (AppStatus,
-                                                     IpfsSaveStatus (..),
+                                                     IpfsIconStatus (..),
                                                      Status (..),
                                                      isIpfsSaveStatus, isReady,
                                                      isStatus,
@@ -148,7 +148,7 @@ unexpectedNetworkApp =
 handleAppStatus :: MonadWidget t m
   => Dynamic t Wallet
   -> Event t [AppStatus]
-  -> m (Dynamic t Text, Dynamic t Bool, Dynamic t IpfsSaveStatus)
+  -> m (Dynamic t Text, Dynamic t Bool, Dynamic t IpfsIconStatus)
 handleAppStatus dWallet elAppStatus = do
   logEvent "AppStatus" elAppStatus
   let (eStatus, eIpfsStatus) = partitionAppStatus elAppStatus
@@ -173,7 +173,7 @@ handleAppStatus dWallet elAppStatus = do
 
 partitionAppStatus :: Reflex t
   => Event t [AppStatus]
-  -> (Event t (Text, Status), Event t IpfsSaveStatus)
+  -> (Event t (Text, Status), Event t IpfsIconStatus)
 partitionAppStatus ev =
     ( filterMost ("", Ready) isStatus <$> ev
     , filterMost NoTokens isIpfsSaveStatus <$> ev
