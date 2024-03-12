@@ -16,7 +16,8 @@ import           ENCOINS.App.Widgets.Basic       (elementResultJS, loadAppData,
                                                   saveAppData, saveAppData_,
                                                   tellIpfsStatus)
 import           ENCOINS.Bulletproofs            (Secret (..))
-import           ENCOINS.Common.Cache            (ipfsCacheKey, isIpfsOn)
+import           ENCOINS.Common.Cache            (encoinsV3, ipfsCacheKey,
+                                                  isIpfsOn)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (toJsonStrict)
 import           ENCOINS.Common.Widgets.Advanced (copyEvent, dialogWindow,
@@ -37,8 +38,7 @@ import           Data.List.NonEmpty              (NonEmpty)
 import qualified Data.List.NonEmpty              as NE
 import           Data.Map                        (Map)
 import qualified Data.Map                        as Map
-import           Data.Maybe                      (catMaybes, isJust,
-                                                  isNothing)
+import           Data.Maybe                      (catMaybes, isJust, isNothing)
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
@@ -193,7 +193,7 @@ selectTokenToPin :: TokenCacheV3 -> Maybe TokenCacheV3
 selectTokenToPin t = case tcIpfsStatus t  of
   (IpfsUndefined) -> Just t
   (Unpinned)      -> Just t
-  (IpfsError _)   -> Just t
+  (IpfsError)     -> Just t
   _               -> Nothing
 
 selectUnpinnedTokens :: [TokenCacheV3] -> Maybe (NonEmpty TokenCacheV3)
@@ -229,7 +229,8 @@ getAesKey mPass = do
         eAesKeyText <- updated <$> elementResultJS genElId id
         let eAesKey = MkAesKeyRaw <$> eAesKeyText
         ev4 <- saveAppData mPass ipfsCacheKey eAesKey
-        eLoadedKey <- updated <$> fetchAesKey mPass "second-load-of-aes-key" ev4
+        ev5 <- resetIpfsStatus mPass ev4
+        eLoadedKey <- updated <$> fetchAesKey mPass "second-load-of-aes-key" ev5
         pure eLoadedKey
     Just loadedKey -> pure $ (Just loadedKey) <$ ev3
 
@@ -239,6 +240,15 @@ fetchAesKey :: MonadWidget t m
   -> Event t ()
   -> m (Dynamic t (Maybe AesKeyRaw))
 fetchAesKey mPass resId ev = loadAppData mPass ipfsCacheKey resId ev id Nothing
+
+resetIpfsStatus :: MonadWidget t m
+  => Maybe PasswordRaw
+  -> Event t ()
+  -> m (Event t ())
+resetIpfsStatus mPass ev = do
+  dTokens <- loadAppData mPass encoinsV3 "resetIpfsStatus_load_tokens" ev id []
+  let dResetTokens = map (\t -> t{ tcIpfsStatus = IpfsUndefined }) <$> dTokens
+  saveAppData mPass encoinsV3 $ updated dResetTokens
 
 -- restore tokens from ipfs
 -- that are minted and pinned only

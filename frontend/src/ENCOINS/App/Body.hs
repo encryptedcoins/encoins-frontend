@@ -5,36 +5,25 @@ module ENCOINS.App.Body (bodyWidget) where
 import           Control.Monad.IO.Class             (MonadIO (..))
 import           Data.Aeson                         (ToJSON)
 import           Data.Bifunctor                     (first)
-import qualified Data.List.NonEmpty                 as NE
 import           Data.Text                          (Text)
-import qualified Data.Text                          as T
 import           Reflex.Dom
 
 import           Backend.Protocol.Types
-import           Backend.Status                     (AppStatus,
-                                                     IpfsIconStatus (..),
-                                                     Status (..),
-                                                     isIpfsSaveStatus, isReady,
-                                                     isStatus,
-                                                     isStatusWantBlockButtons,
-                                                     isStatusWantReload)
-import           Backend.Utility                    (column, space,
-                                                     switchHoldDyn, toText)
-import           Backend.Wallet                     (Wallet (..),
-                                                     walletsSupportedInApp)
-import           Config.Config                      (NetworkConfig (..),
-                                                     networkConfig)
-import           ENCOINS.App.Widgets.Basic          (elementResultJS,loadAppDataE,
+import           Backend.Utility                    (switchHoldDyn)
+import           Backend.Wallet                     (walletsSupportedInApp)
+import           ENCOINS.App.Widgets.Basic          (loadAppDataE,
                                                      waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.App.Widgets.IPFS
 import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
 import           ENCOINS.App.Widgets.Navbar         (navbarWidget)
+import           ENCOINS.App.Widgets.Notification
 import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWallet,
                                                      welcomeWindow,
                                                      welcomeWindowWalletStorageKey)
-import           ENCOINS.Common.Cache               (encoinsV3, ipfsCacheKey, isIpfsOn)
+import           ENCOINS.Common.Cache               (encoinsV3, ipfsCacheKey,
+                                                     isIpfsOn)
 import           ENCOINS.Common.Utils               (toJsonText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           ENCOINS.Common.Widgets.Basic       (notification)
@@ -95,7 +84,10 @@ bodyContentWidget mPass = mdo
   dIpfsOn <- holdDyn False $ leftmost $ map updated [dIpfsCache, dIpfsWindow]
 
   dmKeyCache <- loadAppDataE mPass ipfsCacheKey "app-body-load-of-aes-key" id Nothing
+  logDyn "body: dmKeyCache" dmKeyCache
+  logDyn "body: dAesKeyWindow" dAesKeyWindow
   dmKey <- holdUniqDyn =<< (holdDyn Nothing $ leftmost $ map updated [dmKeyCache, dAesKeyWindow])
+  logDyn "body: dmKey" dmKey
 
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
 
@@ -118,65 +110,4 @@ bodyWidget = waitForScripts blank $ mdo
   eNewPass <- switchHoldDyn dmmPass $ \case
     Nothing   -> pure never
     Just pass -> bodyContentWidget pass
-
   jQueryWidget
-
-fetchWalletNetworkStatus :: MonadWidget t m
-  => Dynamic t Wallet
-  -> m (Dynamic t (Text, Status))
-fetchWalletNetworkStatus dWallet = do
-  dWalletLoad <- elementResultJS "EndWalletLoad" id
-  let eLoadedWallet = tagPromptlyDyn dWallet $ updated dWalletLoad
-  let eUnexpectedNetworkB = fmap
-        (\w -> walletNetworkId w /= app networkConfig)
-        eLoadedWallet
-  let mkNetworkMessage isInvalidNetwork message =
-        case (isInvalidNetwork, message) of
-          (True,_) -> Just ("NetworkId status", WalletNetworkError unexpectedNetworkApp)
-          (False, ("", Ready)) -> Nothing
-          (False, _) -> Just (T.empty, Ready)
-  foldDynMaybe mkNetworkMessage (T.empty, Ready) eUnexpectedNetworkB
-
-unexpectedNetworkApp :: Text
-unexpectedNetworkApp =
-           "Unexpected network! Please switch the wallet to"
-        <> space
-        <> toText (app networkConfig)
-        <> space
-        <> "mode."
-
-handleAppStatus :: MonadWidget t m
-  => Dynamic t Wallet
-  -> Event t [AppStatus]
-  -> m (Dynamic t Text, Dynamic t Bool, Dynamic t IpfsIconStatus)
-handleAppStatus dWallet elAppStatus = do
-  logEvent "AppStatus" elAppStatus
-  let (eStatus, eIpfsStatus) = partitionAppStatus elAppStatus
-  dWalletNetworkStatus <- fetchWalletNetworkStatus dWallet
-
-  dStatus <- foldDynMaybe
-    -- Hold NoRelay status once it fired until page reloading.
-    (\ev (_, accS) -> if isStatusWantReload accS then Nothing else Just ev)
-    (T.empty, Ready) $ leftmost [eStatus, updated dWalletNetworkStatus]
-
-  let flatStatus (t, s)
-        | isReady s = T.empty
-        | T.null $ T.strip t = toText s
-        | otherwise = t <> column <> space <> toText s
-
-  let dIsDisableButtons = (isStatusWantBlockButtons . snd) <$> dStatus
-  let dStatusT = flatStatus <$> dStatus
-
-  dIpfsStatus <- holdDyn NoTokens eIpfsStatus
-
-  pure (dStatusT, dIsDisableButtons, dIpfsStatus)
-
-partitionAppStatus :: Reflex t
-  => Event t [AppStatus]
-  -> (Event t (Text, Status), Event t IpfsIconStatus)
-partitionAppStatus ev =
-    ( filterMost ("", Ready) isStatus <$> ev
-    , filterMost NoTokens isIpfsSaveStatus <$> ev
-    )
-  where
-    filterMost defStatus f = maybe defStatus NE.last . NE.nonEmpty . mapMaybe f

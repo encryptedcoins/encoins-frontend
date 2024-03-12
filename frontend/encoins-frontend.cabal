@@ -41,6 +41,7 @@ library
     ENCOINS.App.Widgets.MainWindow
     ENCOINS.App.Widgets.Migration
     ENCOINS.App.Widgets.Navbar
+    ENCOINS.App.Widgets.Notification
     ENCOINS.App.Widgets.PasswordWindow
     ENCOINS.App.Widgets.SendRequestButton
     ENCOINS.App.Widgets.SendToWalletWindow

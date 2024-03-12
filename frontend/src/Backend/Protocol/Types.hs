@@ -5,8 +5,9 @@
 module Backend.Protocol.Types where
 
 import           Data.Aeson           (FromJSON (..), FromJSONKey, ToJSON (..),
-                                       ToJSONKey, genericParseJSON,
-                                       genericToJSON)
+                                       ToJSONKey, defaultOptions,
+                                       genericParseJSON, genericToJSON,
+                                       tagSingleConstructors)
 import           Data.Aeson.Casing    (aesonPrefix, snakeCase)
 import           Data.Maybe           (fromJust)
 import           Data.Text            (Text)
@@ -155,9 +156,19 @@ instance FromJSON StatusResponse where
 
 -- Client sets IpfsUndefined status only
 -- Server sets all other statuses
-data IpfsStatus = Pinned | Unpinned | IpfsError Text | IpfsUndefined | Discarded Text
+data IpfsStatus
+  = Pinned
+  | Unpinned
+  | IpfsError
+  | IpfsUndefined
+  | Discarded
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromJSON, ToJSON)
+
+instance FromJSON IpfsStatus where
+   parseJSON = genericParseJSON $ defaultOptions{tagSingleConstructors = True}
+
+instance ToJSON IpfsStatus where
+   toJSON = genericToJSON $ defaultOptions{tagSingleConstructors = True}
 
 data RestoreResponse = MkRestoreResponse
   { rrAssetName       :: AssetName
