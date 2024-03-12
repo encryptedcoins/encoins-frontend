@@ -5,7 +5,7 @@ module ENCOINS.App.Widgets.MainWindow where
 import           Reflex.Dom
 
 import           Backend.Protocol.Types            (AesKeyRaw, PasswordRaw (..),
-                                                    TokenCacheV3)
+                                                    TokenCacheV3, showTokens)
 import           Backend.Status                    (AppStatus)
 import           Backend.Utility                   (switchHoldDyn)
 import           Backend.Wallet                    (Wallet (..))
@@ -30,6 +30,9 @@ mainWindow mPass dWallet dIsDisableButtons dIpfsOn dmKey = mdo
     eNewTokensV3 <- switchHoldDyn dTab $ \tab -> mdo
       dmOldTokensV3 :: Dynamic t (Maybe [TokenCacheV3]) <- loadAppDataME
           mPass encoinsV3 "mainWindow-key-encoinsV3"
+      logDyn "mainWindow: dmOldTokensV3" $ fmap showTokens <$> dmOldTokensV3
+
+      -- let emOldTokensV3 = dmOldTokensV3 $ updated dmKey
       dOldTokensMigrated <- updateCacheV3 mPass dmOldTokensV3
 
       dUpdatedTokensV3 <- case tab of

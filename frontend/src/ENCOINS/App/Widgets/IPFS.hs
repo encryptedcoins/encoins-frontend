@@ -216,9 +216,11 @@ mkClientId (MkAesKeyRaw key)
 -- And save it to local cache
 getAesKey :: MonadWidget t m
   => Maybe PasswordRaw
+  -> Event t ()
   -> m (Event t (Maybe AesKeyRaw))
-getAesKey mPass = do
-  ev1 <- newEventWithDelay 0.1
+getAesKey mPass ev1 = do
+  -- ev1 <- newEventWithDelay 0.1
+  logEvent "getAesKey: ev1" ev1
   dLoadedKey <- fetchAesKey mPass "first-load-of-aes-key" ev1
   let ev2 = () <$ updated dLoadedKey
   ev3 <- delay 0.1 ev2
@@ -229,8 +231,8 @@ getAesKey mPass = do
         eAesKeyText <- updated <$> elementResultJS genElId id
         let eAesKey = MkAesKeyRaw <$> eAesKeyText
         ev4 <- saveAppData mPass ipfsCacheKey eAesKey
-        ev5 <- resetIpfsStatus mPass ev4
-        eLoadedKey <- updated <$> fetchAesKey mPass "second-load-of-aes-key" ev5
+        -- ev5 <- resetIpfsStatus mPass ev4
+        eLoadedKey <- updated <$> fetchAesKey mPass "second-load-of-aes-key" ev4
         pure eLoadedKey
     Just loadedKey -> pure $ (Just loadedKey) <$ ev3
 
@@ -334,12 +336,14 @@ ipfsSettingsWindow mPass ipfsCacheFlag dIpfsSaveStatus eOpen = do
     never
     "app-Ipfs_Window"
     "Encoins Cloud Backup" $ do
-      dIsIpfsOn <- ipfsCheckbox ipfsCacheFlag
-      ipfsSaveStatus dIpfsSaveStatus dIsIpfsOn
+      (dIsIpfsOn, eIpfsChange) <- ipfsCheckbox ipfsCacheFlag
+      let eIpfsChangeVal = ffilter id $ tagPromptlyDyn dIsIpfsOn eIpfsChange
+      eIpfsChangeValDelayed <- delay 0.1 eIpfsChangeVal
+      ipfsIconStatus dIpfsSaveStatus dIsIpfsOn
       emKey <- switchHoldDyn dIsIpfsOn $ \case
         False -> pure never
         True -> do
-          emKey <- getAesKey mPass
+          emKey <- getAesKey mPass $ leftmost [() <$ eIpfsChangeValDelayed, eOpen]
           dmKey <- holdDyn Nothing emKey
           divClass "app-Ipfs_AesKey_Title" $
             text "Your AES key for restoring encoins. Save it to a file and keep it secure!"
@@ -350,17 +354,17 @@ ipfsSettingsWindow mPass ipfsCacheFlag dIpfsSaveStatus eOpen = do
 
 ipfsCheckbox :: MonadWidget t m
   => Dynamic t Bool
-  -> m (Dynamic t Bool)
+  -> m (Dynamic t Bool, Event t Bool)
 ipfsCheckbox ipfsCacheFlag = do
-  dIsChecked <- checkboxWidget (updated ipfsCacheFlag) "app-Ipfs_CheckboxToggle"
+  (dIsChecked, eIpfsChange) <- checkboxWidget (updated ipfsCacheFlag) "app-Ipfs_CheckboxToggle"
   saveAppData_ Nothing isIpfsOn $ updated dIsChecked
-  pure dIsChecked
+  pure (dIsChecked, eIpfsChange)
 
-ipfsSaveStatus :: MonadWidget t m
+ipfsIconStatus :: MonadWidget t m
   => Dynamic t IpfsIconStatus
   -> Dynamic t Bool
   -> m ()
-ipfsSaveStatus dIpfsSaveStatus dIsIpfs = do
+ipfsIconStatus dIpfsSaveStatus dIsIpfs = do
   divClass "app-Ipfs_Status_Title" $
     text "IPFS synchronization status"
   divClass "app-Ipfs_StatusText" $
@@ -379,7 +383,7 @@ selectIpfsStatusNote status isIpfs =
 checkboxWidget :: MonadWidget t m
   => Event t Bool
   -> Text
-  -> m (Dynamic t Bool)
+  -> m (Dynamic t Bool, Event t Bool)
 checkboxWidget initial checkBoxClass = divClass "w-row app-Ipfs_CheckboxContainer" $ do
     inp <- inputElement $ def
       & initialAttributes .~
@@ -388,7 +392,7 @@ checkboxWidget initial checkBoxClass = divClass "w-row app-Ipfs_CheckboxContaine
           )
       & inputElementConfig_setChecked .~ initial
     divClass "app-Ipfs_CheckboxDescription" $ text "Save encoins on IPFS"
-    return $ _inputElement_checked inp
+    pure (_inputElement_checked inp, _inputElement_checkedChange inp)
 
 showKeyWidget :: MonadWidget t m
   => Dynamic t (Maybe AesKeyRaw)
