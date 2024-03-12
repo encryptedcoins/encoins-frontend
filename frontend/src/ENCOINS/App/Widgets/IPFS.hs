@@ -217,24 +217,28 @@ mkClientId (MkAesKeyRaw key)
 getAesKey :: MonadWidget t m
   => Maybe PasswordRaw
   -> Event t ()
-  -> m (Event t (Maybe AesKeyRaw))
+  -> m (Event t (Maybe AesKeyRaw), Dynamic t Bool)
 getAesKey mPass ev1 = do
   -- ev1 <- newEventWithDelay 0.1
   logEvent "getAesKey: ev1" ev1
-  dLoadedKey <- fetchAesKey mPass "first-load-of-aes-key" ev1
-  let ev2 = () <$ updated dLoadedKey
+  dOldLoadedKey <- fetchAesKey mPass "first-load-of-aes-key" ev1
+  let ev2 = () <$ updated dOldLoadedKey
   ev3 <- delay 0.1 ev2
-  switchHoldDyn dLoadedKey $ \case
+  eNewLoadedKey <- switchHoldDyn dOldLoadedKey $ \case
     Nothing -> do
         let genElId = "genAESKeyId"
         performEvent_ $ JS.generateAESKey genElId <$ ev3
         eAesKeyText <- updated <$> elementResultJS genElId id
         let eAesKey = MkAesKeyRaw <$> eAesKeyText
         ev4 <- saveAppData mPass ipfsCacheKey eAesKey
-        -- ev5 <- resetIpfsStatus mPass ev4
         eLoadedKey <- updated <$> fetchAesKey mPass "second-load-of-aes-key" ev4
         pure eLoadedKey
     Just loadedKey -> pure $ (Just loadedKey) <$ ev3
+  dNewLoadedKey <- holdDyn Nothing eNewLoadedKey
+  -- dIsKeyTheSame flag is used to reset status of tokens to IpfsUndefined
+  -- when key changed.
+  let dIsKeyTheSame = zipDynWith (==) dOldLoadedKey dNewLoadedKey
+  pure (eNewLoadedKey, dIsKeyTheSame)
 
 fetchAesKey :: MonadWidget t m
   => Maybe PasswordRaw
@@ -242,15 +246,6 @@ fetchAesKey :: MonadWidget t m
   -> Event t ()
   -> m (Dynamic t (Maybe AesKeyRaw))
 fetchAesKey mPass resId ev = loadAppData mPass ipfsCacheKey resId ev id Nothing
-
-resetIpfsStatus :: MonadWidget t m
-  => Maybe PasswordRaw
-  -> Event t ()
-  -> m (Event t ())
-resetIpfsStatus mPass ev = do
-  dTokens <- loadAppData mPass encoinsV3 "resetIpfsStatus_load_tokens" ev id []
-  let dResetTokens = map (\t -> t{ tcIpfsStatus = IpfsUndefined }) <$> dTokens
-  saveAppData mPass encoinsV3 $ updated dResetTokens
 
 -- restore tokens from ipfs
 -- that are minted and pinned only
@@ -328,7 +323,7 @@ ipfsSettingsWindow :: MonadWidget t m
   -> Dynamic t Bool
   -> Dynamic t IpfsIconStatus
   -> Event t ()
-  -> m (Dynamic t Bool, Dynamic t (Maybe AesKeyRaw))
+  -> m (Dynamic t Bool, Dynamic t (Maybe AesKeyRaw), Dynamic t Bool)
 ipfsSettingsWindow mPass ipfsCacheFlag dIpfsSaveStatus eOpen = do
   dialogWindow
     True
@@ -340,17 +335,24 @@ ipfsSettingsWindow mPass ipfsCacheFlag dIpfsSaveStatus eOpen = do
       let eIpfsChangeVal = ffilter id $ tagPromptlyDyn dIsIpfsOn eIpfsChange
       eIpfsChangeValDelayed <- delay 0.1 eIpfsChangeVal
       ipfsIconStatus dIpfsSaveStatus dIsIpfsOn
-      emKey <- switchHoldDyn dIsIpfsOn $ \case
+      emKeyAndIsTheSame <- switchHoldDyn dIsIpfsOn $ \case
         False -> pure never
         True -> do
-          emKey <- getAesKey mPass $ leftmost [() <$ eIpfsChangeValDelayed, eOpen]
+          (emKey, dKeySame) <- getAesKey mPass $ leftmost [() <$ eIpfsChangeValDelayed, eOpen]
           dmKey <- holdDyn Nothing emKey
           divClass "app-Ipfs_AesKey_Title" $
             text "Your AES key for restoring encoins. Save it to a file and keep it secure!"
           showKeyWidget dmKey
-          pure emKey
-      dmKey <- holdDyn Nothing emKey
-      pure (dIsIpfsOn, dmKey)
+          let emKeyAndIsTheSame = attachPromptlyDyn dKeySame emKey
+          pure emKeyAndIsTheSame
+      (dKeyTheSame, dmKey) <- splitDynPure <$> holdDyn (True, Nothing) emKeyAndIsTheSame
+      pure (dIsIpfsOn, dmKey, dKeyTheSame)
+
+resetTokens :: Reflex t => Dynamic t (Maybe [TokenCacheV3]) -> Dynamic t Bool -> Dynamic t (Maybe [TokenCacheV3])
+resetTokens dmTokens dKeyIsTheSame = zipDynWith
+  (\mTokens isKeySame -> if isKeySame then mTokens else map (\t -> t{ tcIpfsStatus = IpfsUndefined }) <$> mTokens)
+  dmTokens
+  dKeyIsTheSame
 
 ipfsCheckbox :: MonadWidget t m
   => Dynamic t Bool

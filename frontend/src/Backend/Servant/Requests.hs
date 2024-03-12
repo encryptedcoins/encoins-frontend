@@ -189,7 +189,7 @@ ipfsPingRequest :: MonadWidget t m
 ipfsPingRequest e = do
   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsServerUrl
   ePingRes <- fmap mkTextOrResponse <$> ipfsPing e
-  logEvent "ipfsPingRequest: ping response" ePingRes
+  logEvent "ipfs ping: ping response" ePingRes
   pure ePingRes
 
 ipfsPinRequest :: MonadWidget t m
@@ -200,7 +200,7 @@ ipfsPinRequest dToken e = do
   let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsServerUrl
   eResp <- ipfsPin (Right <$> dToken) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "ipfsMinted response" $ () <$ eRespUnwrapped
+  logEvent "ipfs pin response" $ () <$ eRespUnwrapped
   pure eRespUnwrapped
 
 restoreRequest :: MonadWidget t m

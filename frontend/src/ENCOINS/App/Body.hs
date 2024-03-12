@@ -62,6 +62,7 @@ bodyContentWidget mPass = mdo
     dIsDisableButtons
     dIpfsOn
     dmKey
+    dKeyTheSame
 
   let eReEncrypt = leftmost [eNewPass, Nothing <$ eCleanOk]
 
@@ -76,7 +77,7 @@ bodyContentWidget mPass = mdo
   copiedNotification
 
   dIpfsCache <- loadAppDataE Nothing isIpfsOn "app-body-load-is-ipfs-on-key" id False
-  (dIpfsWindow, dAesKeyWindow) <- ipfsSettingsWindow
+  (dIpfsWindow, dAesKeyWindow, dKeyTheSame) <- ipfsSettingsWindow
     mPass
     dIpfsCache
     dIpfsSaveStatus
@@ -84,10 +85,7 @@ bodyContentWidget mPass = mdo
   dIpfsOn <- holdDyn False $ leftmost $ map updated [dIpfsCache, dIpfsWindow]
 
   dmKeyCache <- loadAppDataE mPass ipfsCacheKey "app-body-load-of-aes-key" id Nothing
-  logDyn "body: dmKeyCache" dmKeyCache
-  logDyn "body: dAesKeyWindow" dAesKeyWindow
   dmKey <- holdUniqDyn =<< (holdDyn Nothing $ leftmost $ map updated [dmKeyCache, dAesKeyWindow])
-  logDyn "body: dmKey" dmKey
 
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
 
