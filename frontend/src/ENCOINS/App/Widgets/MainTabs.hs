@@ -99,7 +99,6 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
             -- IPFS begin
             dTokensUpdated <- handleMinted dIpfsOn dmKey dTokenCache dSecretsInTheWallet
             -- IPFS end
-            -- logDyn "walletTab: dTokensUpdated" $ showTokens <$> dTokensUpdated
 
             -- save unique changes only
             dTokensUpdatedUniq <- holdUniqDyn dTokensUpdated
@@ -299,7 +298,6 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
 
             -- IPFS begin
             dTokensUpdated <- handleMinted dIpfsOn dmKey dTokenCache dSecretsInTheWallet
-            -- logDyn "ledgerTab: dTokensUpdated" $ showTokens <$> dTokensUpdated
             -- IPFS end
 
             -- save unique changes only
@@ -398,12 +396,12 @@ handleMinted :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t [TokenCacheV3]
   -> m (Dynamic t [TokenCacheV3])
 handleMinted dIpfsOn dmKey dTokenCache dTokensInWallet = do
+  dTokenCacheUniq <- holdUniqDyn dTokenCache
   dTokensInWalletUniq <- holdUniqDyn dTokensInWallet
-  eTokenWithNewState <- saveTokensOnIpfs dIpfsOn dmKey dTokensInWalletUniq
-  -- accumulate token saved on ipfs.
-  -- The place of error prone.
-  -- If in tx A token was not pinned (in wallet mode) and in tx B was pinned (ledger mode), then
-  -- both of them will be included to the dynamic accumulator.
+  -- fire saving token cache to ipfs when left column loaded
+  let eTokenCacheUniqFired = tagPromptlyDyn dTokenCacheUniq $ updated dTokensInWalletUniq
+  dTokenCacheUniqFired <- holdDyn [] eTokenCacheUniqFired
+  eTokenWithNewState <- saveTokensOnIpfs dIpfsOn dmKey dTokenCacheUniqFired
   -- TODO: consider better union method for eliminating duplicates.
   dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
   -- Synchronize a status state of dTokenCache with dTokenIpfsSynched before saving first one.

@@ -16,7 +16,7 @@ import           ENCOINS.App.Widgets.Basic       (elementResultJS, loadAppData,
                                                   saveAppData, saveAppData_,
                                                   tellIpfsStatus)
 import           ENCOINS.Bulletproofs            (Secret (..))
-import           ENCOINS.Common.Cache            (encoinsV3, ipfsCacheKey,
+import           ENCOINS.Common.Cache            (ipfsCacheKey,
                                                   isIpfsOn)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (toJsonStrict)
@@ -47,7 +47,7 @@ import           Reflex.Dom
 
 
 -- IPFS saving launches
--- when first page load for unpinned token on the left
+-- when first page loaded
 -- and
 -- when new token(s) appear on the left
 saveTokensOnIpfs :: (MonadWidget t m, EventWriter t [AppStatus] m)
@@ -55,16 +55,12 @@ saveTokensOnIpfs :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t (Maybe AesKeyRaw)
   -> Dynamic t [TokenCacheV3]
   -> m (Event t [TokenCacheV3])
-saveTokensOnIpfs dIpfsOn dmKey dTokenInWallet = mdo
+saveTokensOnIpfs dIpfsOn dmKey dTokens = mdo
   let dIpfsConditions = zipDynWith (,) dIpfsOn dmKey
   -- Select unpinned tokens in wallet
-  let dmUnpinnedTokens = selectUnpinnedTokens <$> dTokenInWallet
-  -- Wait until tokens in wallet/ledger are loaded
-  eInTokensFired <- delay 1 $ updated dTokenInWallet
-  let emValidTokensFired = tagPromptlyDyn dmUnpinnedTokens eInTokensFired
-  dmValidTokensInWalletFired <- holdDyn Nothing emValidTokensFired
+  let dmUnpinnedTokens = selectUnpinnedTokens <$> dTokens
   -- Combine all condition in a tuple
-  let dFullConditions = combineConditions dIpfsConditions dmValidTokensInWalletFired
+  let dFullConditions = combineConditions dIpfsConditions dmUnpinnedTokens
 
   (ePinError, eTokenPinAttemptOne) <- fanThese <$> pinEncryptedTokens dFullConditions
 
