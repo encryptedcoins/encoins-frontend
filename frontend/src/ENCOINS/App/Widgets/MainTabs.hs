@@ -40,7 +40,7 @@ import           ENCOINS.App.Widgets.ImportWindow       (exportWindow,
                                                          importFileWindow,
                                                          importWindow)
 import           ENCOINS.App.Widgets.InputAddressWindow (inputAddressWindow)
-import           ENCOINS.App.Widgets.IPFS
+import           ENCOINS.App.Widgets.Save
 import           ENCOINS.App.Widgets.SendRequestButton  (sendRequestButtonLedger,
                                                          sendRequestButtonWallet)
 import           ENCOINS.App.Widgets.SendToWalletWindow (sendToWalletWindow)
@@ -67,7 +67,7 @@ walletTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
   -> m (Dynamic t [TokenCacheV3])
-walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
+walletTab mpass dWallet dTokenCacheOld dSaveOn dmKey = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -96,9 +96,9 @@ walletTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   $ map coinV3
                   <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
-            -- IPFS begin
-            dTokensUpdated <- handleMinted dIpfsOn dmKey dTokenCache dSecretsInTheWallet
-            -- IPFS end
+            -- Save begin
+            dTokensUpdated <- handleMinted dSaveOn dmKey dTokenCache dSecretsInTheWallet
+            -- Save end
 
             -- save unique changes only
             dTokensUpdatedUniq <- holdUniqDyn dTokensUpdated
@@ -171,7 +171,7 @@ transferTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
   -> m (Dynamic t [TokenCacheV3])
-transferTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
+transferTab mpass dWallet dTokenCacheOld dSaveOn dmKey = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -186,9 +186,9 @@ transferTab mpass dWallet dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         let dTokenCache = nub <$> zipDynWith (++) dTokenCacheOld (map coinV3 <$> dImportedSecrets)
 
-        -- IPFS begin
-        dTokenCacheUpdated <- handleMinted dIpfsOn dmKey dTokenCache dSecretsInTheWallet
-        -- IPFS end
+        -- Save begin
+        dTokenCacheUpdated <- handleMinted dSaveOn dmKey dTokenCache dSecretsInTheWallet
+        -- Save end
 
         -- save unique changes only
         dTokensUpdatedUniq <- holdUniqDyn dTokenCacheUpdated
@@ -265,7 +265,7 @@ ledgerTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
   -> m (Dynamic t [TokenCacheV3])
-ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
+ledgerTab mpass dTokenCacheOld dSaveOn dmKey = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -296,9 +296,9 @@ ledgerTab mpass dTokenCacheOld dIpfsOn dmKey = sectionApp "" "" $ mdo
                   $ zipDynWith (++) dTokenCacheOld
                   $ map coinV3 <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
-            -- IPFS begin
-            dTokensUpdated <- handleMinted dIpfsOn dmKey dTokenCache dSecretsInTheWallet
-            -- IPFS end
+            -- Save begin
+            dTokensUpdated <- handleMinted dSaveOn dmKey dTokenCache dSecretsInTheWallet
+            -- Save end
 
             -- save unique changes only
             dTokensUpdatedUniq <- holdUniqDyn dTokensUpdated
@@ -395,18 +395,18 @@ handleMinted :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t [TokenCacheV3]
   -> Dynamic t [TokenCacheV3]
   -> m (Dynamic t [TokenCacheV3])
-handleMinted dIpfsOn dmKey dTokenCache dTokensInWallet = do
+handleMinted dSaveOn dmKey dTokenCache dTokensInWallet = do
   dTokenCacheUniq <- holdUniqDyn dTokenCache
   dTokensInWalletUniq <- holdUniqDyn dTokensInWallet
-  -- fire saving token cache to ipfs when left column loaded
+  -- fire saving token cache to server when left column is loaded
   let eTokenCacheUniqFired = tagPromptlyDyn dTokenCacheUniq $ updated dTokensInWalletUniq
   dTokenCacheUniqFired <- holdDyn [] eTokenCacheUniqFired
-  eTokenWithNewState <- saveTokensOnIpfs dIpfsOn dmKey dTokenCacheUniqFired
+  eTokenWithNewState <- saveTokens dSaveOn dmKey dTokenCacheUniqFired
   -- TODO: consider better union method for eliminating duplicates.
-  dTokenIpfsSynched <- foldDyn union [] eTokenWithNewState
-  -- Synchronize a status state of dTokenCache with dTokenIpfsSynched before saving first one.
+  dTokenSaveSynched <- foldDyn union [] eTokenWithNewState
+  -- Synchronize a status state of dTokenCache with dTokenSaveSynched before saving first one.
   let dTokenCacheUpdated = zipDynWith
         updateMintedTokens
         dTokenCache
-        dTokenIpfsSynched
+        dTokenSaveSynched
   pure dTokenCacheUpdated

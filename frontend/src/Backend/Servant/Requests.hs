@@ -5,7 +5,7 @@ module Backend.Servant.Requests where
 import           Backend.Protocol.Types
 import           Backend.Servant.Client
 import           Backend.Utility        (normalizeCurrentUrl, normalizePingUrl)
-import           Config.Config          (ipfsServerUrl)
+import           Config.Config          (saveServerUrl)
 import           ENCOINS.Common.Events
 import           JS.App                 (pingServer)
 
@@ -179,37 +179,35 @@ shuffle ev xs = performEvent $ ev $> (liftIO $ do
     newArr :: Int -> [a] -> IO (IOArray Int a)
     newArr n ls =  newListArray (1,n) ls
 
--- IPFS
+-- Saving
 
--- Ipfs request to backend
+-- Save request to backend
 
-ipfsPingRequest :: MonadWidget t m
+savePingRequest :: MonadWidget t m
   => Event t ()
   -> m (Event t (Either Text NoContent))
-ipfsPingRequest e = do
-  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsServerUrl
-  ePingRes <- fmap mkTextOrResponse <$> ipfsPing e
-  logEvent "ipfs ping: ping response" ePingRes
+savePingRequest e = do
+  let MkSaveApiClient{..} = mkSaveApiClient saveServerUrl
+  ePingRes <- fmap mkTextOrResponse <$> sacPing e
+  logEvent "save ping response" ePingRes
   pure ePingRes
 
-ipfsPinRequest :: MonadWidget t m
-  => Dynamic t (AesKeyHash, [PinRequest])
+saveRequest :: MonadWidget t m
+  => Dynamic t [SaveRequest]
   -> Event t ()
   -> m (Event t (Either Text (Map AssetName StatusResponse)))
-ipfsPinRequest dToken e = do
-  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsServerUrl
-  eResp <- ipfsPin (Right <$> dToken) e
+saveRequest dToken e = do
+  let MkSaveApiClient{..} = mkSaveApiClient saveServerUrl
+  eResp <- sacSave (Right <$> dToken) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "ipfs pin response" $ () <$ eRespUnwrapped
+  logEvent "save response" $ () <$ eRespUnwrapped
   pure eRespUnwrapped
 
 restoreRequest :: MonadWidget t m
-  => Dynamic t AesKeyHash
-  -> Event t ()
+  => Event t ()
   -> m (Event t (Either Text [RestoreResponse]))
-restoreRequest dClientId e = do
-  let MkBackIpfsApiClient{..} = mkBackIpfsApiClient ipfsServerUrl
-  eResp <- ipfsRestore (Right <$> dClientId) e
-  let eRespUnwrapped = mkTextOrResponse <$> eResp
+restoreRequest e = do
+  let MkSaveApiClient{..} = mkSaveApiClient saveServerUrl
+  eRespUnwrapped <- fmap mkTextOrResponse <$> sacRestore e
   logEvent "restore response" eRespUnwrapped
   pure eRespUnwrapped

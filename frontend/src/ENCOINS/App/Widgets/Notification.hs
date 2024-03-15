@@ -7,8 +7,8 @@ import           Data.Text                 (Text)
 import qualified Data.Text                 as T
 import           Reflex.Dom
 
-import           Backend.Status            (AppStatus, IpfsIconStatus (..),
-                                            Status (..), isIpfsSaveStatus,
+import           Backend.Status            (AppStatus, SaveIconStatus (..),
+                                            Status (..), isSaveStatus,
                                             isReady, isStatus,
                                             isStatusWantBlockButtons,
                                             isStatusWantReload)
@@ -46,10 +46,10 @@ unexpectedNetworkApp =
 handleAppStatus :: MonadWidget t m
   => Dynamic t Wallet
   -> Event t [AppStatus]
-  -> m (Dynamic t Text, Dynamic t Bool, Dynamic t IpfsIconStatus)
+  -> m (Dynamic t Text, Dynamic t Bool, Dynamic t SaveIconStatus)
 handleAppStatus dWallet elAppStatus = do
   logEvent "AppStatus" elAppStatus
-  let (eStatus, eIpfsStatus) = partitionAppStatus elAppStatus
+  let (eStatus, eSaveStatus) = partitionAppStatus elAppStatus
   dWalletNetworkStatus <- fetchWalletNetworkStatus dWallet
 
   dStatus <- foldDynMaybe
@@ -65,16 +65,16 @@ handleAppStatus dWallet elAppStatus = do
   let dIsDisableButtons = (isStatusWantBlockButtons . snd) <$> dStatus
   let dStatusT = flatStatus <$> dStatus
 
-  dIpfsStatus <- holdDyn NoTokens eIpfsStatus
+  dSaveStatus <- holdDyn NoTokens eSaveStatus
 
-  pure (dStatusT, dIsDisableButtons, dIpfsStatus)
+  pure (dStatusT, dIsDisableButtons, dSaveStatus)
 
 partitionAppStatus :: Reflex t
   => Event t [AppStatus]
-  -> (Event t (Text, Status), Event t IpfsIconStatus)
+  -> (Event t (Text, Status), Event t SaveIconStatus)
 partitionAppStatus ev =
     ( filterMost ("", Ready) isStatus <$> ev
-    , filterMost NoTokens isIpfsSaveStatus <$> ev
+    , filterMost NoTokens isSaveStatus <$> ev
     )
   where
     filterMost defStatus f = maybe defStatus NE.last . NE.nonEmpty . mapMaybe f

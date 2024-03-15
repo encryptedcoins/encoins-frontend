@@ -604,7 +604,7 @@ function handle_dao_error (e) {
   }
 }
 
-// IPFS
+// Save
 
 // Function to generate a random AES key
 async function generateAESKey(resId) {

@@ -57,30 +57,27 @@ mkApiClient host = ApiClient{..}
       infoRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
 
 
--- Ipfs request to  delegate backend
+-- Save request to  delegate backend
 
-type BackIpfsApi =
+type SaveApi =
          "ping" :> Get '[JSON] NoContent
-    -- 'pin' endpoint used for pinning minted actual tokens
-    :<|> "pin"
-              :> ReqBody '[JSON] (AesKeyHash, [PinRequest])
+    :<|> "save"
+              :> ReqBody '[JSON] [SaveRequest]
               :> Post '[JSON] (Map AssetName StatusResponse)
 
-    :<|> "restore"
-              :> Capture "client_id" AesKeyHash
-              :> Get '[JSON] [RestoreResponse]
+    :<|> "restore" :> Get '[JSON] [RestoreResponse]
 
-data BackIpfsApiClient t m = MkBackIpfsApiClient
-  { ipfsPing    :: Res t m NoContent
-  , ipfsPin     :: ReqRes t m (AesKeyHash, [PinRequest]) (Map AssetName StatusResponse)
-  , ipfsRestore :: Dynamic t (Either Text AesKeyHash) -> Res t m [RestoreResponse]
+data SaveApiClient t m = MkSaveApiClient
+  { sacPing    :: Res t m NoContent
+  , sacSave    :: ReqRes t m [SaveRequest] (Map AssetName StatusResponse)
+  , sacRestore :: Res t m [RestoreResponse]
   }
 
-mkBackIpfsApiClient :: forall t m . MonadWidget t m
+mkSaveApiClient :: forall t m . MonadWidget t m
   => BaseUrl
-  -> BackIpfsApiClient t m
-mkBackIpfsApiClient host = MkBackIpfsApiClient{..}
+  -> SaveApiClient t m
+mkSaveApiClient host = MkSaveApiClient{..}
   where
-    ( ipfsPing :<|>
-      ipfsPin :<|>
-      ipfsRestore) = client (Proxy @BackIpfsApi) (Proxy @m) (Proxy @()) (pure host)
+    ( sacPing :<|>
+      sacSave :<|>
+      sacRestore) = client (Proxy @SaveApi) (Proxy @m) (Proxy @()) (pure host)

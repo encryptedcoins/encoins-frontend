@@ -18,8 +18,8 @@ encoinsV1 = "encoins"
 currentWallet :: Text
 currentWallet = "current-wallet"
 
-ipfsCacheKey :: Text
-ipfsCacheKey = "encoins-aes-key"
+saveKey :: Text
+saveKey = "encoins-aes-key"
 
-isIpfsOn :: Text
-isIpfsOn = "encoins-ipfs-on"
+isSaveOn :: Text
+isSaveOn = "encoins-save-on"

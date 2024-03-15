@@ -14,7 +14,7 @@ import           Backend.Wallet                     (walletsSupportedInApp)
 import           ENCOINS.App.Widgets.Basic          (loadAppDataE,
                                                      waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
-import           ENCOINS.App.Widgets.IPFS
+import           ENCOINS.App.Widgets.Save
 import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
 import           ENCOINS.App.Widgets.Navbar         (navbarWidget)
 import           ENCOINS.App.Widgets.Notification
@@ -22,8 +22,8 @@ import           ENCOINS.App.Widgets.PasswordWindow
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWallet,
                                                      welcomeWindow,
                                                      welcomeWindowWalletStorageKey)
-import           ENCOINS.Common.Cache               (encoinsV3, ipfsCacheKey,
-                                                     isIpfsOn)
+import           ENCOINS.Common.Cache               (encoinsV3, saveKey,
+                                                     isSaveOn)
 import           ENCOINS.Common.Utils               (toJsonText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           ENCOINS.Common.Widgets.Basic       (notification)
@@ -37,14 +37,14 @@ bodyContentWidget :: MonadWidget t m
   => Maybe PasswordRaw
   -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mPass = mdo
-  (ePassOpen, eConnectOpen, eOpenIpfsWindow) <- navbarWidget
+  (ePassOpen, eConnectOpen, eOpenSaveWindow) <- navbarWidget
     dWallet
     dIsDisableButtons
     mPass
-    dIpfsOn
-    dIpfsSaveStatus
+    dSaveOn
+    dSaveStatus
 
-  (dStatusT, dIsDisableButtons, dIpfsSaveStatus) <-
+  (dStatusT, dIsDisableButtons, dSaveStatus) <-
     handleAppStatus dWallet evStatusList
   notification dStatusT
 
@@ -60,7 +60,7 @@ bodyContentWidget mPass = mdo
     mPass
     dWallet
     dIsDisableButtons
-    dIpfsOn
+    dSaveOn
     dmKey
     dKeyTheSame
 
@@ -71,20 +71,20 @@ bodyContentWidget mPass = mdo
     $ attachPromptlyDyn dTokensV3 eReEncrypt
 
   performEvent_
-    $ fmap (reEncrypt ipfsCacheKey)
+    $ fmap (reEncrypt saveKey)
     $ attachPromptlyDynWithMaybe (\mKey e -> (,e) <$> mKey) dmKey eReEncrypt
 
   copiedNotification
 
-  dIpfsCache <- loadAppDataE Nothing isIpfsOn "app-body-load-is-ipfs-on-key" id False
-  (dIpfsWindow, dAesKeyWindow, dKeyTheSame) <- ipfsSettingsWindow
+  dSaveOnFromCache <- loadAppDataE Nothing isSaveOn "app-body-load-is-save-on-key" id False
+  (dSaveWindow, dAesKeyWindow, dKeyTheSame) <- saveSettingsWindow
     mPass
-    dIpfsCache
-    dIpfsSaveStatus
-    eOpenIpfsWindow
-  dIpfsOn <- holdDyn False $ leftmost $ map updated [dIpfsCache, dIpfsWindow]
+    dSaveOnFromCache
+    dSaveStatus
+    eOpenSaveWindow
+  dSaveOn <- holdDyn False $ leftmost $ map updated [dSaveOnFromCache, dSaveWindow]
 
-  dmKeyCache <- loadAppDataE mPass ipfsCacheKey "app-body-load-of-aes-key" id Nothing
+  dmKeyCache <- loadAppDataE mPass saveKey "app-body-load-of-aes-key" id Nothing
   dmKey <- holdUniqDyn =<< (holdDyn Nothing $ leftmost $ map updated [dmKeyCache, dAesKeyWindow])
 
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]

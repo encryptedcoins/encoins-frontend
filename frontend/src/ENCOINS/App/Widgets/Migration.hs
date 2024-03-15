@@ -21,7 +21,7 @@ Evolutions of encoins cache by key
 1. encoins - first version of cache that contains Secrets only
 2. encoins-with-cache - second version of cache that contains (Secret, AssetName)
 3. encoins-v3 - third version of the cache
-   that contains record with AssetName, Secret, IpfsStatus (pinned/unpinned) and CoinStatus (minted/burned)
+   that contains record with AssetName, Secret, SaveStatus
 -}
 
 -- Update cache only when

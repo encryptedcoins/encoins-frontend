@@ -17,7 +17,6 @@ import           Data.Version         (Version)
 import           GHC.Generics         (Generic)
 import           PlutusTx.Builtins
 import           Reflex.Dom           (decodeText)
-import           Servant.API          (ToHttpApiData)
 import           Text.Hex             (decodeHex, encodeHex)
 
 import           CSL                  (TransactionUnspentOutputs, Value)
@@ -125,9 +124,9 @@ newtype PasswordRaw = PasswordRaw { getPassRaw :: Text } deriving (Eq, Show)
 
 newtype PasswordHash = PasswordHash { getPassHash :: Text } deriving (Eq, Show)
 
--- IPFS
+-- Save types
 
--- Secret hash is used to save on IPFS
+-- Secret hash is used to save
 newtype EncryptedSecret = MkEncryptedSecret { getEncryptedSecret :: Text }
   deriving newtype (Eq, Show, ToJSON, FromJSON)
   deriving stock (Generic)
@@ -137,38 +136,35 @@ newtype AssetName = MkAssetName { getAssetName :: Text }
   deriving stock (Generic)
 
 -- Request body from frontend to backend
-data PinRequest = MkPinRequest
-  { ppAssetName :: AssetName
-  , ppSecretKey :: EncryptedSecret
+data SaveRequest = MkSaveRequest
+  { srAssetName :: AssetName
+  , srSecretKey :: EncryptedSecret
   }
   deriving stock (Show, Eq, Generic)
 
-instance ToJSON PinRequest where
+instance ToJSON SaveRequest where
    toJSON = genericToJSON $ aesonPrefix snakeCase
 
 data StatusResponse = MkStatusResponse
-  { spStatusResponse :: IpfsStatus
+  { spStatusResponse :: SaveStatus
   }
   deriving stock (Show, Eq, Generic)
 
 instance FromJSON StatusResponse where
    parseJSON = genericParseJSON $ aesonPrefix snakeCase
 
--- Client sets IpfsUndefined status only
+-- Client sets SaveUndefined status only
 -- Server sets all other statuses
-data IpfsStatus
-  = Pinned
-  | Unpinned
-  | IpfsError
-  | IpfsUndefined
-  | Discarded
-  deriving stock (Eq, Show, Generic)
+data SaveStatus = SaveUndefined | SaveError | Saved | Discarded
+  deriving stock (Show, Eq, Generic)
 
-instance FromJSON IpfsStatus where
-   parseJSON = genericParseJSON $ defaultOptions{tagSingleConstructors = True}
+instance ToJSON SaveStatus where
+  toJSON = genericToJSON $
+    defaultOptions{tagSingleConstructors = True}
 
-instance ToJSON IpfsStatus where
-   toJSON = genericToJSON $ defaultOptions{tagSingleConstructors = True}
+instance FromJSON SaveStatus where
+   parseJSON = genericParseJSON $
+    defaultOptions{tagSingleConstructors = True}
 
 data RestoreResponse = MkRestoreResponse
   { rrAssetName       :: AssetName
@@ -179,26 +175,17 @@ data RestoreResponse = MkRestoreResponse
 instance FromJSON RestoreResponse where
    parseJSON = genericParseJSON $ aesonPrefix snakeCase
 
--- Randomly generated aes256 key for encrypting Secrets before saving on ipfs
+-- Randomly generated aes256 key for encrypting Secrets before saving them
 newtype AesKeyRaw = MkAesKeyRaw { getAesKeyRaw :: Text }
   deriving newtype (Eq, Show, ToJSON, FromJSON)
   deriving stock (Generic)
-
--- Hash of aes key to save it in metadata field as clientId on IPFS
--- For identifying which token to fetch
-newtype AesKeyHash = MkAesKeyHash { getAesKeyHash :: Text }
-  deriving newtype (Eq, Show, ToJSON, FromJSON, ToHttpApiData)
-  deriving stock (Generic)
-
-data IpfsUpdateStatus = Processing | Complete | Failed
-  deriving stock (Eq, Show)
 
 -- Cache
 
 data TokenCacheV3 = MkTokenCacheV3
   { tcAssetName  :: AssetName
   , tcSecret     :: Secret
-  , tcIpfsStatus :: IpfsStatus
+  , tcSaveStatus :: SaveStatus
   }
   deriving stock (Eq, Show, Generic)
 
@@ -209,8 +196,8 @@ instance ToJSON TokenCacheV3 where
    toJSON = genericToJSON $ aesonPrefix snakeCase
 
 -- For readable logs
-showToken :: TokenCacheV3 -> (AssetName, IpfsStatus)
+showToken :: TokenCacheV3 -> (AssetName, SaveStatus)
 showToken (MkTokenCacheV3 n _ i) = (n,i)
 
-showTokens :: (Foldable t, Functor t) => t TokenCacheV3 -> t (AssetName, IpfsStatus)
+showTokens :: (Foldable t, Functor t) => t TokenCacheV3 -> t (AssetName, SaveStatus)
 showTokens = fmap showToken

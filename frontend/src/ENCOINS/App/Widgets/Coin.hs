@@ -18,7 +18,7 @@ import           Text.Read                       (readMaybe)
 import           Backend.Protocol.Setup          (bulletproofSetup,
                                                   encoinsCurrencySymbol)
 import           Backend.Protocol.Types          (AssetName (..),
-                                                  IpfsStatus (..),
+                                                  SaveStatus (..),
                                                   TokenCacheV3 (..))
 import           Backend.Protocol.Utility        (secretToHex)
 import           Backend.Utility                 (toText)
@@ -73,8 +73,8 @@ coinV3 s =
           . snd
           . fromSecret bulletproofSetup
           $ s
-    in MkTokenCacheV3 assetName s IpfsUndefined
-    -- ^ IpfsUndefined are default statuses that client set
+    in MkTokenCacheV3 assetName s SaveUndefined
+    -- ^ SaveUndefined are default statuses that client set
 
 coinCollectionV3 :: MonadWidget t m
   => Dynamic t Secrets

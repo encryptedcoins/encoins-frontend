@@ -10,7 +10,7 @@ import           Backend.Status                    (AppStatus)
 import           Backend.Utility                   (switchHoldDyn)
 import           Backend.Wallet                    (Wallet (..))
 import           ENCOINS.App.Widgets.Basic         (loadAppDataME)
-import           ENCOINS.App.Widgets.IPFS          (resetTokens)
+import           ENCOINS.App.Widgets.Save          (resetTokens)
 import           ENCOINS.App.Widgets.MainTabs      (ledgerTab, transferTab,
                                                     walletTab)
 import           ENCOINS.App.Widgets.Migration     (updateCacheV3)
@@ -26,14 +26,14 @@ mainWindow :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t (Maybe AesKeyRaw)
   -> Dynamic t Bool
   -> m (Dynamic t [TokenCacheV3])
-mainWindow mPass dWallet dIsDisableButtons dIpfsOn dmKey dKeyTheSame = mdo
+mainWindow mPass dWallet dIsDisableButtons dSaveOn dmKey dKeyTheSame = mdo
     eTab <- tabsSection dTab dIsDisableButtons
     dTab <- holdDyn WalletTab eTab
     eNewTokensV3 <- switchHoldDyn dTab $ \tab -> mdo
       dmOldTokensV3 :: Dynamic t (Maybe [TokenCacheV3]) <- loadAppDataME
           mPass encoinsV3 "mainWindow-key-encoinsV3"
 
-      -- Reset tokens to IpfsUndefined status when aes key changed
+      -- Reset tokens to SaveUndefined status when aes key changed
       let dmOldTokensV3StatusUpdated = resetTokens dmOldTokensV3 dKeyTheSame
 
       -- Migrate from old token structure to version 3
@@ -41,8 +41,8 @@ mainWindow mPass dWallet dIsDisableButtons dIpfsOn dmKey dKeyTheSame = mdo
       dOldTokensMigrated <- updateCacheV3 mPass dmOldTokensV3StatusUpdated
 
       dUpdatedTokensV3 <- case tab of
-        WalletTab   -> walletTab mPass dWallet dOldTokensMigrated dIpfsOn dmKey
-        TransferTab -> transferTab mPass dWallet dOldTokensMigrated dIpfsOn dmKey
-        LedgerTab   -> ledgerTab mPass dOldTokensMigrated dIpfsOn dmKey
+        WalletTab   -> walletTab mPass dWallet dOldTokensMigrated dSaveOn dmKey
+        TransferTab -> transferTab mPass dWallet dOldTokensMigrated dSaveOn dmKey
+        LedgerTab   -> ledgerTab mPass dOldTokensMigrated dSaveOn dmKey
       return $ updated dUpdatedTokensV3
     holdDyn [] eNewTokensV3

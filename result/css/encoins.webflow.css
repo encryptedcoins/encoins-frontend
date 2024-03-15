@@ -1919,23 +1919,23 @@ body {
   }
 }
 
-.app-Ipfs_IconPinning {
-  background-image: url('../images/ipfs_pinning.svg');
+.app-Save_IconSaving {
+  background-image: url('../images/save_yellow.svg');
 }
 
-.app-Ipfs_IconPinnedAll {
-  background-image: url('../images/ipfs_pinned.svg');
+.app-Save_IconAllSaved {
+  background-image: url('../images/save_green.svg');
 }
 
-.app-Ipfs_IconAttemptExcess {
-  background-image: url('../images/ipfs_excess.svg');
+.app-Save_IconAttemptExcess {
+  background-image: url('../images/save_red.svg');
 }
 
-.app-Ipfs_IconTurnOff {
-  background-image: url('../images/ipfs.svg');
+.app-Save_IconTurnOff {
+  background-image: url('../images/save_blank.svg');
 }
 
-.app-Ipfs_IconContainer {
+.app-Save_IconContainer {
   height: 31px;
   max-height: 31px;
   width: 27px;
@@ -1948,21 +1948,21 @@ body {
 }
 
 @media screen and (min-width: 767px) {
-  .app-Ipfs_IconContainer {
+  .app-Save_IconContainer {
     margin-bottom: 0px;
     margin-top: 10px;
   }
 }
 
-.app-Ipfs_IconContainer:hover {
+.app-Save_IconContainer:hover {
   cursor: pointer;
 }
 
-.app-Ipfs_IconContainer:hover .app-Nav_IpfsPopup {
+.app-Save_IconContainer:hover .app-Nav_SavePopup {
   display: inline-block;
 }
 
-.app-Nav_IpfsPopup {
+.app-Nav_SavePopup {
   display: flex;
   top: auto;
   right: 83px;
@@ -1974,18 +1974,18 @@ body {
 }
 
 @media screen and (min-width: 767px) {
-  .app-Nav_IpfsPopup {
+  .app-Nav_SavePopup {
     display: none;
     top: 50px;
     position: absolute;
   }
 }
 
-.app-Ipfs_CheckboxContainer {
+.app-Save_CheckboxContainer {
   display: flex;
 }
 
-.app-Ipfs_CheckboxDescription {
+.app-Save_CheckboxDescription {
   margin-left: 10px;
   display: flex;
   align-items: center;
@@ -1994,7 +1994,7 @@ body {
   line-height: 32px;
 }
 
-.app-Ipfs_AesKey_Title {
+.app-Save_AesKey_Title {
   margin-top: 10px;
   display: flex;
   align-items: center;
@@ -2003,12 +2003,12 @@ body {
   line-height: 32px;
 }
 
-.app-Ipfs_KeyContainer {
+.app-Save_KeyContainer {
   display: flex;
   gap: 10px;
 }
 
-.app-Ipfs_Status_Title {
+.app-Save_Status_Title {
   margin-top: 10px;
   display: flex;
   align-items: center;
@@ -2017,7 +2017,7 @@ body {
   line-height: 32px;
 }
 
-.app-Ipfs_CheckboxToggle {
+.app-Save_CheckboxToggle {
   position: relative;
   -webkit-transition: .4s;
   transition: .4s;
@@ -2032,7 +2032,7 @@ body {
   box-shadow: inset -20px 0 0 0 #6a6a6a;
 }
 
-.app-Ipfs_CheckboxToggle:after {
+.app-Save_CheckboxToggle:after {
   content: "off";
   text-align: center;
   font-size: 10px;
@@ -2046,12 +2046,12 @@ body {
   border-radius: 30%;
 }
 
-.app-Ipfs_CheckboxToggle:checked {
+.app-Save_CheckboxToggle:checked {
   box-shadow: inset 20px 0 0 0 #6BB6BB;
   border-color: #6BB6BB;
 }
 
-.app-Ipfs_CheckboxToggle:checked:after {
+.app-Save_CheckboxToggle:checked:after {
   text-align: center;
   font-size: 10px;
   text-transform: uppercase;
@@ -2060,7 +2060,7 @@ body {
   left: 22px;
 }
 
-.app-Ipfs_Window {
+.app-Save_Window {
   min-width: 750px;
   height: 20%;
   min-height: 250px;
@@ -2152,7 +2152,7 @@ body {
   width: 400px;
 }
 
-.app-IpfsWindow_KeyTip {
+.app-SaveWindow_KeyTip {
   left: 100px;
   top: -90px;
   min-width: 420px;

@@ -173,7 +173,7 @@ addrLoad :: MonadIO m => Text -> m ()
 addrLoad = const $ error "GHCJS is required!"
 #endif
 
------------------------------ for IPFS -------------------------------------
+----------------------------- for Save -------------------------------------
 #ifdef __GHCJS__
 foreign import javascript unsafe
   "generateAESKey($1)" generateAESKey_js :: JSString -> JSM ()
