@@ -97,6 +97,7 @@ walletTab mpass dWallet dTokenCacheOld dSaveOn dmKey = sectionApp "" "" $ mdo
                   <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
             -- Save begin
+            logDyn "walletTab: dTokenCache" $ showTokens <$> dTokenCache
             dTokensUpdated <- handleMinted dSaveOn dmKey dTokenCache dSecretsInTheWallet
             -- Save end
 
@@ -192,6 +193,7 @@ transferTab mpass dWallet dTokenCacheOld dSaveOn dmKey = sectionApp "" "" $ mdo
 
         -- save unique changes only
         dTokensUpdatedUniq <- holdUniqDyn dTokenCacheUpdated
+        logDyn "transferTab: dTokensUpdatedUniq" $ showTokens <$> dTokensUpdatedUniq
         saveCacheLocally mpass "trasferTab" dTokensUpdatedUniq
 
         (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
@@ -396,17 +398,30 @@ handleMinted :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t [TokenCacheV3]
   -> m (Dynamic t [TokenCacheV3])
 handleMinted dSaveOn dmKey dTokenCache dTokensInWallet = do
-  dTokenCacheUniq <- holdUniqDyn dTokenCache
+  -- dTokenCacheUniq <- holdUniqDyn dTokenCache
   dTokensInWalletUniq <- holdUniqDyn dTokensInWallet
   -- fire saving token cache to server when left column is loaded
-  let eTokenCacheUniqFired = tagPromptlyDyn dTokenCacheUniq $ updated dTokensInWalletUniq
+  logDyn "handleMinted: start cache" $ showTokens <$> dTokenCache
+  logDyn "handleMinted: left" $ showTokens <$> dTokensInWalletUniq
+  -- create event when 2 conditions are true
+  -- 1. Left column is fired
+  -- 2. Left column has tokens that are valid for saving
+  -- let eTokenCacheUniqFired = attachPromptlyDynWithMaybe
+  --       (\tokens lTokens -> tokens <$ selectUnsavedTokens lTokens)
+  --       dTokenCacheUniq
+  --       (updated dTokensInWalletUniq)
+
+  let eTokenCacheUniqFired = tagPromptlyDyn dTokenCache (updated dTokensInWalletUniq)
   dTokenCacheUniqFired <- holdDyn [] eTokenCacheUniqFired
+  logDyn "handleMinted: in" $ showTokens <$> dTokenCacheUniqFired
   eTokenWithNewState <- saveTokens dSaveOn dmKey dTokenCacheUniqFired
   -- TODO: consider better union method for eliminating duplicates.
   dTokenSaveSynched <- foldDyn union [] eTokenWithNewState
+  logDyn "handleMinted: out" $ showTokens <$> dTokenSaveSynched
   -- Synchronize a status state of dTokenCache with dTokenSaveSynched before saving first one.
   let dTokenCacheUpdated = zipDynWith
         updateMintedTokens
         dTokenCache
         dTokenSaveSynched
+  logDyn "handleMinted: final cache" $ showTokens <$> dTokenCacheUpdated
   pure dTokenCacheUpdated

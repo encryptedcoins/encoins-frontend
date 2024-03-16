@@ -4,8 +4,7 @@ module ENCOINS.App.Widgets.MainWindow where
 
 import           Reflex.Dom
 
-import           Backend.Protocol.Types            (AesKeyRaw, PasswordRaw (..),
-                                                    TokenCacheV3 (..))
+import           Backend.Protocol.Types
 import           Backend.Status                    (AppStatus)
 import           Backend.Utility                   (switchHoldDyn)
 import           Backend.Wallet                    (Wallet (..))
@@ -32,13 +31,17 @@ mainWindow mPass dWallet dIsDisableButtons dSaveOn dmKey dKeyTheSame = mdo
     eNewTokensV3 <- switchHoldDyn dTab $ \tab -> mdo
       dmOldTokensV3 :: Dynamic t (Maybe [TokenCacheV3]) <- loadAppDataME
           mPass encoinsV3 "mainWindow-key-encoinsV3"
+      -- logDyn "mainWindow: dmOldTokensV3" $ fmap showTokens <$> dmOldTokensV3
 
       -- Reset tokens to SaveUndefined status when aes key changed
-      let dmOldTokensV3StatusUpdated = resetTokens dmOldTokensV3 dKeyTheSame
+      -- logDyn "mainWindow: dKeyTheSame" dKeyTheSame
+      -- let dmOldTokensV3StatusUpdated = resetTokens dmOldTokensV3 dKeyTheSame
+      -- logDyn "mainWindow: dmOldTokensV3StatusUpdated" $ fmap showTokens <$> dmOldTokensV3StatusUpdated
 
       -- Migrate from old token structure to version 3
       -- if tokensV3 are not found in cache
-      dOldTokensMigrated <- updateCacheV3 mPass dmOldTokensV3StatusUpdated
+      -- dOldTokensMigrated <- updateCacheV3 mPass dmOldTokensV3StatusUpdated
+      dOldTokensMigrated <- updateCacheV3 mPass dmOldTokensV3
 
       dUpdatedTokensV3 <- case tab of
         WalletTab   -> walletTab mPass dWallet dOldTokensMigrated dSaveOn dmKey

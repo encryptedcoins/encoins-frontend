@@ -62,16 +62,16 @@ saveTokens dSaveOn dmKey dTokens = mdo
   -- Combine all condition in a tuple
   let dFullConditions = combineConditions dSaveConditions dmUnpinnedTokens
 
-  (eSaveError, eTokenPinAttemptOne) <- fanThese <$> saveEncryptedTokens dFullConditions
+  (eSaveError, eTokenSaveAttemptOne) <- fanThese <$> saveEncryptedTokens dFullConditions
 
   -- BEGIN
   -- retry to pin tokens extra 5 times
   (eAttemptExcess, eTokenPinComplete) <- fanThese <$>
-    retrySaveEncryptedTokens dSaveConditions eTokenPinAttemptOne
+    retrySaveEncryptedTokens dSaveConditions eTokenSaveAttemptOne
   -- END
 
   -- The results of the first pinning is saved anyway
-  let eTokensToSave = leftmost [eTokenPinAttemptOne, eTokenPinComplete]
+  let eTokensToSave = leftmost [eTokenSaveAttemptOne, eTokenPinComplete]
 
   let emValidTokens = leftmost [selectUnsavedTokens <$> eTokensToSave, updated dmUnpinnedTokens]
   tellSaveStatus $ leftmost
@@ -206,7 +206,6 @@ getAesKey :: MonadWidget t m
   -> m (Event t (Maybe AesKeyRaw), Dynamic t Bool)
 getAesKey mPass ev1 = do
   -- ev1 <- newEventWithDelay 0.1
-  logEvent "getAesKey: ev1" ev1
   dOldLoadedKey <- fetchAesKey mPass "first-load-of-aes-key" ev1
   let ev2 = () <$ updated dOldLoadedKey
   ev3 <- delay 0.1 ev2
