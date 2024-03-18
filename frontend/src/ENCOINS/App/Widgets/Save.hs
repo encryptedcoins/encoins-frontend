@@ -15,7 +15,7 @@ import           ENCOINS.App.Widgets.Basic       (elementResultJS, loadAppData,
                                                   saveAppData, saveAppData_,
                                                   tellSaveStatus)
 import           ENCOINS.Bulletproofs            (Secret (..))
-import           ENCOINS.Common.Cache            (isSaveOn, saveKey)
+import           ENCOINS.Common.Cache            (isSaveOn, aesKey)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (toJsonStrict)
 import           ENCOINS.Common.Widgets.Advanced (copyEvent, dialogWindow,
@@ -231,24 +231,23 @@ mkSaveRequest cache encryptedSecret = MkSaveRequest
 
 -- Generate aes 256 length key with function builtin any browser
 -- And save it to local cache
-getAesKey :: MonadWidget t m
+genAesKey :: MonadWidget t m
   => Maybe PasswordRaw
   -> Dynamic t (Maybe AesKeyRaw)
+  -> Event t ()
   -> m (Dynamic t (Maybe AesKeyRaw))
-getAesKey mPass dmCachedKey = do
-  -- ev1 <- newEventWithDelay 0.1
-  let ev2 = () <$ updated dmCachedKey
-  ev3 <- delay 0.1 ev2
+genAesKey mPass dmCachedKey ev1 = do
+  ev2 <- delay 0.1 ev1
   eNewLoadedKey <- switchHoldDyn dmCachedKey $ \case
     Nothing -> do
         let genElId = "genAESKeyId"
-        performEvent_ $ JS.generateAESKey genElId <$ ev3
+        performEvent_ $ JS.generateAESKey genElId <$ ev2
         eAesKeyText <- updated <$> elementResultJS genElId id
         let eAesKey = MkAesKeyRaw <$> eAesKeyText
-        ev4 <- saveAppData mPass saveKey eAesKey
-        eLoadedKey <- updated <$> fetchAesKey mPass "second-load-of-aes-key" ev4
+        ev3 <- saveAppData mPass aesKey eAesKey
+        eLoadedKey <- updated <$> fetchAesKey mPass "second-load-of-aes-key" ev3
         pure eLoadedKey
-    Just loadedKey -> pure $ (Just loadedKey) <$ ev3
+    Just loadedKey -> pure $ (Just loadedKey) <$ ev2
   dNewLoadedKey <- holdDyn Nothing eNewLoadedKey
   pure dNewLoadedKey
 
@@ -257,7 +256,7 @@ fetchAesKey :: MonadWidget t m
   -> Text
   -> Event t ()
   -> m (Dynamic t (Maybe AesKeyRaw))
-fetchAesKey mPass resId ev = loadAppData mPass saveKey resId ev id Nothing
+fetchAesKey mPass resId ev = loadAppData mPass aesKey resId ev id Nothing
 
 -- restore tokens from save server
 -- that are minted and saved only
@@ -334,7 +333,7 @@ saveSettingsWindow :: MonadWidget t m
   -> Dynamic t Bool
   -> Dynamic t SaveIconStatus
   -> Event t ()
-  -> m (Dynamic t Bool, Dynamic t (Maybe AesKeyRaw), Dynamic t Bool)
+  -> m (Dynamic t Bool, Dynamic t (Maybe AesKeyRaw), Dynamic t (Maybe AesKeyRaw))
 saveSettingsWindow mPass saveCacheFlag dSaveStatus eOpen = do
   dialogWindow
     True
@@ -348,18 +347,18 @@ saveSettingsWindow mPass saveCacheFlag dSaveStatus eOpen = do
       let eSaveChangeVal = ffilter id $ tagPromptlyDyn dIsSaveOn eSaveChange
       eSaveChangeValDelayed <- delay 0.1 eSaveChangeVal
 
-      dmCachedKeyFirstTry <- fetchAesKey mPass "first-load-of-aes-key" $ leftmost [() <$ eSaveChangeValDelayed, eOpen]
-
+      dmOldKey <- fetchAesKey mPass "first-load-of-aes-key" $ leftmost [() <$ eSaveChangeValDelayed, eOpen]
+      -- logDyn "saveSettingsWindow: dmOldKey" dmOldKey
       emKey <- switchHoldDyn dIsSaveOn $ \case
         False -> pure never
         True -> do
-          dmKey <- getAesKey mPass dmCachedKeyFirstTry
+          dmNewKey <- genAesKey mPass dmOldKey $ leftmost [() <$ eSaveChangeValDelayed, eOpen]
           divClass "app-Save_AesKey_Title" $
             text "Your AES key for restoring encoins. Save it to a file and keep it secure!"
-          showKeyWidget dmKey
-          pure $ updated dmKey
-      dmKey <- holdDyn Nothing emKey
-      pure (dIsSaveOn, dmKey, isNothing <$> dmCachedKeyFirstTry)
+          showKeyWidget dmNewKey
+          pure $ updated dmNewKey
+      dmNewKey <- holdDyn Nothing emKey
+      pure (dIsSaveOn, dmNewKey, dmOldKey)
 
 resetTokens :: Reflex t => Dynamic t (Maybe [TokenCacheV3]) -> Dynamic t Bool -> Dynamic t (Maybe [TokenCacheV3])
 resetTokens dmTokens dKeyWasReset =

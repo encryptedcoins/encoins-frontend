@@ -18,8 +18,8 @@ encoinsV1 = "encoins"
 currentWallet :: Text
 currentWallet = "current-wallet"
 
-saveKey :: Text
-saveKey = "encoins-aes-key"
+aesKey :: Text
+aesKey = "encoins-aes-key"
 
 isSaveOn :: Text
 isSaveOn = "encoins-save-on"

@@ -5,6 +5,7 @@ module ENCOINS.App.Body (bodyWidget) where
 import           Control.Monad.IO.Class             (MonadIO (..))
 import           Data.Aeson                         (ToJSON)
 import           Data.Bifunctor                     (first)
+import           Data.Maybe                         (isNothing)
 import           Data.Text                          (Text)
 import           Reflex.Dom
 
@@ -14,15 +15,15 @@ import           Backend.Wallet                     (walletsSupportedInApp)
 import           ENCOINS.App.Widgets.Basic          (loadAppDataE,
                                                      waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
-import           ENCOINS.App.Widgets.Save
 import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
 import           ENCOINS.App.Widgets.Navbar         (navbarWidget)
 import           ENCOINS.App.Widgets.Notification
 import           ENCOINS.App.Widgets.PasswordWindow
+import           ENCOINS.App.Widgets.Save
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWallet,
                                                      welcomeWindow,
                                                      welcomeWindowWalletStorageKey)
-import           ENCOINS.Common.Cache               (encoinsV3, saveKey,
+import           ENCOINS.Common.Cache               (aesKey, encoinsV3,
                                                      isSaveOn)
 import           ENCOINS.Common.Utils               (toJsonText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
@@ -62,7 +63,7 @@ bodyContentWidget mPass = mdo
     dIsDisableButtons
     dSaveOn
     dmKey
-    dmKeyWasReset
+    dResetTokens
 
   let eReEncrypt = leftmost [eNewPass, Nothing <$ eCleanOk]
 
@@ -71,21 +72,25 @@ bodyContentWidget mPass = mdo
     $ attachPromptlyDyn dTokensV3 eReEncrypt
 
   performEvent_
-    $ fmap (reEncrypt saveKey)
+    $ fmap (reEncrypt aesKey)
     $ attachPromptlyDynWithMaybe (\mKey e -> (,e) <$> mKey) dmKey eReEncrypt
 
   copiedNotification
 
   dSaveOnFromCache <- loadAppDataE Nothing isSaveOn "app-body-load-is-save-on-key" id False
-  (dSaveWindow, dAesKeyWindow, dmKeyWasReset) <- saveSettingsWindow
+  dmOldKeyBody <- loadAppDataE mPass aesKey "app-body-load-of-aes-key" id Nothing
+  -- logDyn "body: dmOldKeyBody" dmOldKeyBody
+
+  (dSaveWindow, dNewKeyWindow, dOldKeyWindow) <- saveSettingsWindow
     mPass
     dSaveOnFromCache
     dSaveStatus
     eOpenSaveWindow
   dSaveOn <- holdDyn False $ leftmost $ map updated [dSaveOnFromCache, dSaveWindow]
 
-  dmKeyCache <- loadAppDataE mPass saveKey "app-body-load-of-aes-key" id Nothing
-  dmKey <- holdUniqDyn =<< (holdDyn Nothing $ leftmost $ map updated [dmKeyCache, dAesKeyWindow])
+  dResetTokens <- holdDyn False $ leftmost $ map (updated . fmap isNothing) [dmOldKeyBody, dOldKeyWindow]
+
+  dmKey <- holdUniqDyn =<< (holdDyn Nothing $ leftmost $ map updated [dmOldKeyBody, dNewKeyWindow])
 
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
 
