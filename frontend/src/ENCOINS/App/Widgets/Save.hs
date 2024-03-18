@@ -15,7 +15,7 @@ import           ENCOINS.App.Widgets.Basic       (elementResultJS, loadAppData,
                                                   saveAppData, saveAppData_,
                                                   tellSaveStatus)
 import           ENCOINS.Bulletproofs            (Secret (..))
-import           ENCOINS.Common.Cache            (isSaveOn, aesKey)
+import           ENCOINS.Common.Cache            (aesKey, isSaveOn)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (toJsonStrict)
 import           ENCOINS.Common.Widgets.Advanced (copyEvent, dialogWindow,
@@ -25,18 +25,19 @@ import           ENCOINS.Crypto.Field            (Field (F))
 import qualified JS.App                          as JS
 import           JS.Website                      (copyText)
 
-import           Control.Monad                   (void)
+import           Control.Monad                   (void, (<=<))
 import           Control.Monad.IO.Class          (MonadIO (..))
 import qualified Crypto.Hash                     as Hash
 import           Data.Aeson                      (eitherDecodeStrict')
 import           Data.Align                      (align)
 import           Data.Either                     (partitionEithers)
+import           Data.Functor                    ((<&>))
 import           Data.List                       (find, foldl', union)
 import           Data.List.NonEmpty              (NonEmpty)
 import qualified Data.List.NonEmpty              as NE
 import           Data.Map                        (Map)
 import qualified Data.Map                        as Map
-import           Data.Maybe                      (catMaybes, isJust, isNothing)
+import           Data.Maybe                      (catMaybes)
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
@@ -53,28 +54,28 @@ handleUnsavedTokens :: (MonadWidget t m, EventWriter t [AppStatus] m)
 handleUnsavedTokens dSaveOn dmKey dTokenCache dTokensInWallet = mdo
   dTokenCacheUniq <- holdUniqDyn dTokenCache
   dTokensInWalletUniq <- holdUniqDyn dTokensInWallet
-  -- logDyn "handleUnsavedTokens: start cache" $ showTokens <$> dTokenCacheUpdated
-  -- logDyn "handleUnsavedTokens: left" $ showTokens <$> dTokensInWalletUniq
   -- create event when 2 conditions are true
   -- 1. Left column is fired
-  -- 2. Left column has tokens that are valid for saving
+  -- 2. Left column has tokens that are unsaved
   let eTokenCacheUniqFired = attachPromptlyDynWithMaybe
-        (\tokens lTokens -> tokens <$ selectUnsavedTokens lTokens)
+        (\tokens tokensInWallet -> tokens <$ selectUnsavedTokens tokensInWallet)
         dTokenCacheUpdated
         (updated dTokensInWalletUniq)
 
   dTokenCacheUniqFired <- holdDyn [] eTokenCacheUniqFired
-  -- logDyn "handleUnsavedTokens: in" $ showTokens <$> dTokenCacheUniqFired
   eTokenWithNewState <- saveTokens dSaveOn dmKey dTokenCacheUniqFired
   -- TODO: consider better union method for eliminating duplicates.
   dTokenSaveSynched <- foldDyn union [] eTokenWithNewState
-  -- logDyn "handleUnsavedTokens: out" $ showTokens <$> dTokenSaveSynched
   -- Update statuses of dTokenCache before saving on server first one.
   let dTokenCacheUpdated = zipDynWith
         updateMintedTokens
         dTokenCacheUniq
         dTokenSaveSynched
-  -- logDyn "handleUnsavedTokens: final cache" $ showTokens <$> dTokenCacheUpdated
+  let eUnsavedTokens = updated $ selectUnsavedTokens <$> dTokenCacheUpdated
+  tellSaveStatus $ leftmost
+    [ AllSaved <$ ffilter null eUnsavedTokens
+    , FailedSave <$ ffilter (not . null) eUnsavedTokens
+    ]
   pure dTokenCacheUpdated
 
 -- Saving launches
@@ -94,33 +95,35 @@ saveTokens dSaveOn dmKey dTokens = mdo
   let dFullConditions = combineConditions dSaveConditions dmUnpinnedTokens
 
   (eSaveError, eTokenSaveAttemptOne) <- fanThese <$> saveEncryptedTokens dFullConditions
+  logEvent "save error" eSaveError
 
   -- BEGIN
   -- retry to pin tokens extra 5 times
   (eAttemptExcess, eTokenPinComplete) <- fanThese <$>
     retrySaveEncryptedTokens dSaveConditions eTokenSaveAttemptOne
   -- END
+  logEvent "excess of save attempts" eAttemptExcess
 
   -- The results of the first pinning is saved anyway
   let eTokensToSave = leftmost [eTokenSaveAttemptOne, eTokenPinComplete]
 
-  let emValidTokens = leftmost [selectUnsavedTokens <$> eTokensToSave, updated dmUnpinnedTokens]
-  tellSaveStatus $ leftmost
-    [ AllSaved <$ ffilter isNothing emValidTokens
-    , Saving <$ ffilter isJust emValidTokens
-    , FailedSave <$ leftmost [eSaveError, eAttemptExcess]
-    ]
-
   pure eTokensToSave
 
-saveEncryptedTokens :: MonadWidget t m
+switchHoldDynWriter :: (MonadWidget t m, EventWriter t [AppStatus] m)
+  => Dynamic t a
+  -> (a -> m (Event t b))
+  -> m (Event t b)
+switchHoldDynWriter da f = switchHold never <=< dyn $ da <&> f
+
+saveEncryptedTokens :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Dynamic t (Bool, Maybe AesKeyRaw, Maybe (NonEmpty TokenCacheV3))
   -> m (Event t (These () [TokenCacheV3]))
 saveEncryptedTokens dConditions = do
-  switchHoldDyn dConditions $ \case
+  switchHoldDynWriter dConditions $ \case
     (True, Just key, Just (NE.toList -> tokenCache)) -> do
         dCloudTokens <- encryptTokens key tokenCache
         let eFireCaching = ffilter (not . null) $ updated dCloudTokens
+        tellSaveStatus $ Saving <$ eFireCaching
         eePing <- savePingRequest $ () <$ eFireCaching
         let (ePingError, ePingResponse) = eventEither eePing
 
@@ -134,7 +137,7 @@ saveEncryptedTokens dConditions = do
     _ -> pure never
 
 -- if some Tokens are unpinned try to pin them 5 times with 10 seconds delay.
-retrySaveEncryptedTokens :: MonadWidget t m
+retrySaveEncryptedTokens :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Dynamic t (Bool, Maybe AesKeyRaw)
   -> Event t [TokenCacheV3]
   -> m (Event t (These () [TokenCacheV3]))

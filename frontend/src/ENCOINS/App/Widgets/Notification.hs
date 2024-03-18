@@ -12,7 +12,7 @@ import           Backend.Status            (AppStatus, SaveIconStatus (..),
                                             isReady, isStatus,
                                             isStatusWantBlockButtons,
                                             isStatusWantReload)
-import           Backend.Utility           (column, space, toText)
+import           Backend.Utility           (column, space, toText, switchHoldDyn)
 import           Backend.Wallet            (Wallet (..))
 import           Config.Config             (NetworkConfig (..), networkConfig)
 import           ENCOINS.App.Widgets.Basic (elementResultJS)
@@ -49,7 +49,8 @@ handleAppStatus :: MonadWidget t m
   -> m (Dynamic t Text, Dynamic t Bool, Dynamic t SaveIconStatus)
 handleAppStatus dWallet elAppStatus = do
   logEvent "AppStatus" elAppStatus
-  let (eStatus, eSaveStatus) = partitionAppStatus elAppStatus
+  eSaveStatus <- fromEventList isSaveStatus elAppStatus
+  eStatus <- fromEventList isStatus elAppStatus
   dWalletNetworkStatus <- fetchWalletNetworkStatus dWallet
 
   dStatus <- foldDynMaybe
@@ -69,12 +70,12 @@ handleAppStatus dWallet elAppStatus = do
 
   pure (dStatusT, dIsDisableButtons, dSaveStatus)
 
-partitionAppStatus :: Reflex t
-  => Event t [AppStatus]
-  -> (Event t (Text, Status), Event t SaveIconStatus)
-partitionAppStatus ev =
-    ( filterMost ("", Ready) isStatus <$> ev
-    , filterMost NoTokens isSaveStatus <$> ev
-    )
-  where
-    filterMost defStatus f = maybe defStatus NE.last . NE.nonEmpty . mapMaybe f
+fromEventList :: MonadWidget t m => (a -> Maybe b) -> Event t [a] -> m (Event t b)
+fromEventList f eList = do
+  let emOneStatus = fmap NE.last . NE.nonEmpty . mapMaybe f <$> eList
+  dmOneStatus <- holdDyn Nothing emOneStatus
+  switchHoldDyn dmOneStatus $ \case
+    Nothing -> pure never
+    Just s -> do
+      ev <- newEvent
+      pure $ s <$ ev

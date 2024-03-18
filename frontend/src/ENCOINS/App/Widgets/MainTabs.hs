@@ -193,7 +193,6 @@ transferTab mpass dWallet dTokenCacheOld dSaveOn dmKey = sectionApp "" "" $ mdo
 
         -- save unique changes only
         dTokensUpdatedUniq <- holdUniqDyn dTokenCacheUpdated
-        logDyn "transferTab: dTokensUpdatedUniq" $ showTokens <$> dTokensUpdatedUniq
         saveCacheLocally mpass "trasferTab" dTokensUpdatedUniq
 
         (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do

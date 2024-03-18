@@ -31,12 +31,10 @@ mainWindow mPass dWallet dIsDisableButtons dSaveOn dmKey dKeyWasReset = mdo
     eNewTokensV3 <- switchHoldDyn dTab $ \tab -> mdo
       dmOldTokensV3 :: Dynamic t (Maybe [TokenCacheV3]) <- loadAppDataME
           mPass encoinsV3 "mainWindow-key-encoinsV3"
-      -- logDyn "mainWindow: dmOldTokensV3" $ fmap showTokens <$> dmOldTokensV3
 
       -- Reset tokens to SaveUndefined status when aes key changed
-      -- logDyn "mainWindow: dKeyWasReset" dKeyWasReset
-      let dmOldTokensV3StatusUpdated = resetTokens dmOldTokensV3 dKeyWasReset
-      -- logDyn "mainWindow: dmOldTokensV3StatusUpdated" $ fmap showTokens <$> dmOldTokensV3StatusUpdated
+      dKeyWasResetFired <- holdDyn False $ tagPromptlyDyn dKeyWasReset $ updated dKeyWasReset
+      let dmOldTokensV3StatusUpdated = resetTokens dmOldTokensV3 dKeyWasResetFired
 
       -- Migrate from old token structure to version 3
       -- if tokensV3 are not found in cache

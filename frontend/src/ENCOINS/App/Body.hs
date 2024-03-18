@@ -79,7 +79,6 @@ bodyContentWidget mPass = mdo
 
   dSaveOnFromCache <- loadAppDataE Nothing isSaveOn "app-body-load-is-save-on-key" id False
   dmOldKeyBody <- loadAppDataE mPass aesKey "app-body-load-of-aes-key" id Nothing
-  -- logDyn "body: dmOldKeyBody" dmOldKeyBody
 
   (dSaveWindow, dNewKeyWindow, dOldKeyWindow) <- saveSettingsWindow
     mPass
