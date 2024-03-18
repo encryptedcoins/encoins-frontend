@@ -25,7 +25,7 @@ mainWindow :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t (Maybe AesKeyRaw)
   -> Dynamic t Bool
   -> m (Dynamic t [TokenCacheV3])
-mainWindow mPass dWallet dIsDisableButtons dSaveOn dmKey dKeyTheSame = mdo
+mainWindow mPass dWallet dIsDisableButtons dSaveOn dmKey dKeyWasReset = mdo
     eTab <- tabsSection dTab dIsDisableButtons
     dTab <- holdDyn WalletTab eTab
     eNewTokensV3 <- switchHoldDyn dTab $ \tab -> mdo
@@ -34,14 +34,11 @@ mainWindow mPass dWallet dIsDisableButtons dSaveOn dmKey dKeyTheSame = mdo
       -- logDyn "mainWindow: dmOldTokensV3" $ fmap showTokens <$> dmOldTokensV3
 
       -- Reset tokens to SaveUndefined status when aes key changed
-      -- logDyn "mainWindow: dKeyTheSame" dKeyTheSame
-      -- let dmOldTokensV3StatusUpdated = resetTokens dmOldTokensV3 dKeyTheSame
-      -- logDyn "mainWindow: dmOldTokensV3StatusUpdated" $ fmap showTokens <$> dmOldTokensV3StatusUpdated
+      let dmOldTokensV3StatusUpdated = resetTokens dmOldTokensV3 dKeyWasReset
 
       -- Migrate from old token structure to version 3
       -- if tokensV3 are not found in cache
-      -- dOldTokensMigrated <- updateCacheV3 mPass dmOldTokensV3StatusUpdated
-      dOldTokensMigrated <- updateCacheV3 mPass dmOldTokensV3
+      dOldTokensMigrated <- updateCacheV3 mPass dmOldTokensV3StatusUpdated
 
       dUpdatedTokensV3 <- case tab of
         WalletTab   -> walletTab mPass dWallet dOldTokensMigrated dSaveOn dmKey

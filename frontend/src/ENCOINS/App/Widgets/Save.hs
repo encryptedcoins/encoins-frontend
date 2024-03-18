@@ -4,9 +4,8 @@
 module ENCOINS.App.Widgets.Save where
 
 import           Backend.Protocol.Types
-import           Backend.Servant.Requests        (saveRequest,
-                                                  savePingRequest,
-                                                  restoreRequest)
+import           Backend.Servant.Requests        (restoreRequest,
+                                                  savePingRequest, saveRequest)
 import           Backend.Status                  (AppStatus,
                                                   SaveIconStatus (..))
 import           Backend.Utility                 (eventEither, eventMaybeDynDef,
@@ -16,8 +15,7 @@ import           ENCOINS.App.Widgets.Basic       (elementResultJS, loadAppData,
                                                   saveAppData, saveAppData_,
                                                   tellSaveStatus)
 import           ENCOINS.Bulletproofs            (Secret (..))
-import           ENCOINS.Common.Cache            (saveKey,
-                                                  isSaveOn)
+import           ENCOINS.Common.Cache            (isSaveOn, saveKey)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (toJsonStrict)
 import           ENCOINS.Common.Widgets.Advanced (copyEvent, dialogWindow,
@@ -33,7 +31,7 @@ import qualified Crypto.Hash                     as Hash
 import           Data.Aeson                      (eitherDecodeStrict')
 import           Data.Align                      (align)
 import           Data.Either                     (partitionEithers)
-import           Data.List                       (find, foldl')
+import           Data.List                       (find, foldl', union)
 import           Data.List.NonEmpty              (NonEmpty)
 import qualified Data.List.NonEmpty              as NE
 import           Data.Map                        (Map)
@@ -45,6 +43,39 @@ import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
 import           Data.These                      (These)
 import           Reflex.Dom
 
+
+handleUnsavedTokens :: (MonadWidget t m, EventWriter t [AppStatus] m)
+  => Dynamic t Bool
+  -> Dynamic t (Maybe AesKeyRaw)
+  -> Dynamic t [TokenCacheV3]
+  -> Dynamic t [TokenCacheV3]
+  -> m (Dynamic t [TokenCacheV3])
+handleUnsavedTokens dSaveOn dmKey dTokenCache dTokensInWallet = mdo
+  dTokenCacheUniq <- holdUniqDyn dTokenCache
+  dTokensInWalletUniq <- holdUniqDyn dTokensInWallet
+  -- logDyn "handleUnsavedTokens: start cache" $ showTokens <$> dTokenCacheUpdated
+  -- logDyn "handleUnsavedTokens: left" $ showTokens <$> dTokensInWalletUniq
+  -- create event when 2 conditions are true
+  -- 1. Left column is fired
+  -- 2. Left column has tokens that are valid for saving
+  let eTokenCacheUniqFired = attachPromptlyDynWithMaybe
+        (\tokens lTokens -> tokens <$ selectUnsavedTokens lTokens)
+        dTokenCacheUpdated
+        (updated dTokensInWalletUniq)
+
+  dTokenCacheUniqFired <- holdDyn [] eTokenCacheUniqFired
+  -- logDyn "handleUnsavedTokens: in" $ showTokens <$> dTokenCacheUniqFired
+  eTokenWithNewState <- saveTokens dSaveOn dmKey dTokenCacheUniqFired
+  -- TODO: consider better union method for eliminating duplicates.
+  dTokenSaveSynched <- foldDyn union [] eTokenWithNewState
+  -- logDyn "handleUnsavedTokens: out" $ showTokens <$> dTokenSaveSynched
+  -- Update statuses of dTokenCache before saving on server first one.
+  let dTokenCacheUpdated = zipDynWith
+        updateMintedTokens
+        dTokenCacheUniq
+        dTokenSaveSynched
+  -- logDyn "handleUnsavedTokens: final cache" $ showTokens <$> dTokenCacheUpdated
+  pure dTokenCacheUpdated
 
 -- Saving launches
 -- when first page loaded
@@ -202,14 +233,13 @@ mkSaveRequest cache encryptedSecret = MkSaveRequest
 -- And save it to local cache
 getAesKey :: MonadWidget t m
   => Maybe PasswordRaw
-  -> Event t ()
-  -> m (Event t (Maybe AesKeyRaw), Dynamic t Bool)
-getAesKey mPass ev1 = do
+  -> Dynamic t (Maybe AesKeyRaw)
+  -> m (Dynamic t (Maybe AesKeyRaw))
+getAesKey mPass dmCachedKey = do
   -- ev1 <- newEventWithDelay 0.1
-  dOldLoadedKey <- fetchAesKey mPass "first-load-of-aes-key" ev1
-  let ev2 = () <$ updated dOldLoadedKey
+  let ev2 = () <$ updated dmCachedKey
   ev3 <- delay 0.1 ev2
-  eNewLoadedKey <- switchHoldDyn dOldLoadedKey $ \case
+  eNewLoadedKey <- switchHoldDyn dmCachedKey $ \case
     Nothing -> do
         let genElId = "genAESKeyId"
         performEvent_ $ JS.generateAESKey genElId <$ ev3
@@ -220,10 +250,7 @@ getAesKey mPass ev1 = do
         pure eLoadedKey
     Just loadedKey -> pure $ (Just loadedKey) <$ ev3
   dNewLoadedKey <- holdDyn Nothing eNewLoadedKey
-  -- dIsKeyTheSame flag is used to reset status of tokens to SaveUndefined
-  -- when key changed.
-  let dIsKeyTheSame = zipDynWith (==) dOldLoadedKey dNewLoadedKey
-  pure (eNewLoadedKey, dIsKeyTheSame)
+  pure dNewLoadedKey
 
 fetchAesKey :: MonadWidget t m
   => Maybe PasswordRaw
@@ -316,27 +343,31 @@ saveSettingsWindow mPass saveCacheFlag dSaveStatus eOpen = do
     "app-Save_Window"
     "Encoins Cloud Backup" $ do
       (dIsSaveOn, eSaveChange) <- saveCheckbox saveCacheFlag
+      saveIconStatus dSaveStatus dIsSaveOn
+
       let eSaveChangeVal = ffilter id $ tagPromptlyDyn dIsSaveOn eSaveChange
       eSaveChangeValDelayed <- delay 0.1 eSaveChangeVal
-      saveIconStatus dSaveStatus dIsSaveOn
-      emKeyAndIsTheSame <- switchHoldDyn dIsSaveOn $ \case
+
+      dmCachedKeyFirstTry <- fetchAesKey mPass "first-load-of-aes-key" $ leftmost [() <$ eSaveChangeValDelayed, eOpen]
+
+      emKey <- switchHoldDyn dIsSaveOn $ \case
         False -> pure never
         True -> do
-          (emKey, dKeySame) <- getAesKey mPass $ leftmost [() <$ eSaveChangeValDelayed, eOpen]
-          dmKey <- holdDyn Nothing emKey
+          dmKey <- getAesKey mPass dmCachedKeyFirstTry
           divClass "app-Save_AesKey_Title" $
             text "Your AES key for restoring encoins. Save it to a file and keep it secure!"
           showKeyWidget dmKey
-          let emKeyAndIsTheSame = attachPromptlyDyn dKeySame emKey
-          pure emKeyAndIsTheSame
-      (dKeyTheSame, dmKey) <- splitDynPure <$> holdDyn (True, Nothing) emKeyAndIsTheSame
-      pure (dIsSaveOn, dmKey, dKeyTheSame)
+          pure $ updated dmKey
+      dmKey <- holdDyn Nothing emKey
+      pure (dIsSaveOn, dmKey, isNothing <$> dmCachedKeyFirstTry)
 
 resetTokens :: Reflex t => Dynamic t (Maybe [TokenCacheV3]) -> Dynamic t Bool -> Dynamic t (Maybe [TokenCacheV3])
-resetTokens dmTokens dKeyIsTheSame = zipDynWith
-  (\mTokens isKeySame -> if isKeySame then mTokens else map (\t -> t{ tcSaveStatus = SaveUndefined }) <$> mTokens)
-  dmTokens
-  dKeyIsTheSame
+resetTokens dmTokens dKeyWasReset =
+  let resetToken t = t{ tcSaveStatus = SaveUndefined }
+  in zipDynWith
+    (\mTokens wasReset -> if wasReset then map resetToken <$> mTokens else mTokens)
+    dmTokens
+    dKeyWasReset
 
 saveCheckbox :: MonadWidget t m
   => Dynamic t Bool

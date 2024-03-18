@@ -4,7 +4,7 @@ module ENCOINS.App.Widgets.MainTabs where
 
 import           Control.Monad                          (void)
 import           Data.Bool                              (bool)
-import           Data.List                              (nub, union)
+import           Data.List                              (nub)
 import           Data.Text                              (Text)
 import           Reflex.Dom
 import           Witherable                             (catMaybes)
@@ -95,10 +95,10 @@ walletTab mpass dWallet dTokenCacheOld dSaveOn dmKey = sectionApp "" "" $ mdo
                   $ zipDynWith (++) dTokenCacheOld
                   $ map coinV3
                   <$> zipDynWith (++) dImportedSecrets dNewSecrets
+            -- logDyn "walletTab: dTokenCache" $ showTokens <$> dTokenCache
 
             -- Save begin
-            logDyn "walletTab: dTokenCache" $ showTokens <$> dTokenCache
-            dTokensUpdated <- handleMinted dSaveOn dmKey dTokenCache dSecretsInTheWallet
+            dTokensUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache dSecretsInTheWallet
             -- Save end
 
             -- save unique changes only
@@ -188,7 +188,7 @@ transferTab mpass dWallet dTokenCacheOld dSaveOn dmKey = sectionApp "" "" $ mdo
         let dTokenCache = nub <$> zipDynWith (++) dTokenCacheOld (map coinV3 <$> dImportedSecrets)
 
         -- Save begin
-        dTokenCacheUpdated <- handleMinted dSaveOn dmKey dTokenCache dSecretsInTheWallet
+        dTokenCacheUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache dSecretsInTheWallet
         -- Save end
 
         -- save unique changes only
@@ -299,7 +299,7 @@ ledgerTab mpass dTokenCacheOld dSaveOn dmKey = sectionApp "" "" $ mdo
                   $ map coinV3 <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
             -- Save begin
-            dTokensUpdated <- handleMinted dSaveOn dmKey dTokenCache dSecretsInTheWallet
+            dTokensUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache dSecretsInTheWallet
             -- Save end
 
             -- save unique changes only
@@ -390,38 +390,3 @@ saveCacheLocally mPass name cache = do
   eSave <- saveAppData mPass encoinsV3 $ updated cache
   logEvent (name <> " saved cache") eSave
   pure ()
-
-handleMinted :: (MonadWidget t m, EventWriter t [AppStatus] m)
-  => Dynamic t Bool
-  -> Dynamic t (Maybe AesKeyRaw)
-  -> Dynamic t [TokenCacheV3]
-  -> Dynamic t [TokenCacheV3]
-  -> m (Dynamic t [TokenCacheV3])
-handleMinted dSaveOn dmKey dTokenCache dTokensInWallet = do
-  -- dTokenCacheUniq <- holdUniqDyn dTokenCache
-  dTokensInWalletUniq <- holdUniqDyn dTokensInWallet
-  -- fire saving token cache to server when left column is loaded
-  logDyn "handleMinted: start cache" $ showTokens <$> dTokenCache
-  logDyn "handleMinted: left" $ showTokens <$> dTokensInWalletUniq
-  -- create event when 2 conditions are true
-  -- 1. Left column is fired
-  -- 2. Left column has tokens that are valid for saving
-  -- let eTokenCacheUniqFired = attachPromptlyDynWithMaybe
-  --       (\tokens lTokens -> tokens <$ selectUnsavedTokens lTokens)
-  --       dTokenCacheUniq
-  --       (updated dTokensInWalletUniq)
-
-  let eTokenCacheUniqFired = tagPromptlyDyn dTokenCache (updated dTokensInWalletUniq)
-  dTokenCacheUniqFired <- holdDyn [] eTokenCacheUniqFired
-  logDyn "handleMinted: in" $ showTokens <$> dTokenCacheUniqFired
-  eTokenWithNewState <- saveTokens dSaveOn dmKey dTokenCacheUniqFired
-  -- TODO: consider better union method for eliminating duplicates.
-  dTokenSaveSynched <- foldDyn union [] eTokenWithNewState
-  logDyn "handleMinted: out" $ showTokens <$> dTokenSaveSynched
-  -- Synchronize a status state of dTokenCache with dTokenSaveSynched before saving first one.
-  let dTokenCacheUpdated = zipDynWith
-        updateMintedTokens
-        dTokenCache
-        dTokenSaveSynched
-  logDyn "handleMinted: final cache" $ showTokens <$> dTokenCacheUpdated
-  pure dTokenCacheUpdated

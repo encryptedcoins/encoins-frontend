@@ -75,6 +75,7 @@ saveIconWidget :: MonadWidget  t m
   -> Dynamic t SaveIconStatus
   -> m (Element EventResult (DomBuilderSpace m) t)
 saveIconWidget dIsSaveOn dIsBlock dSaveStatus = do
+  -- logDyn "saveIconWidget: dSaveStatus" dSaveStatus
   let dPopup = bool
         "Save sync is off"
         "Save sync is on"

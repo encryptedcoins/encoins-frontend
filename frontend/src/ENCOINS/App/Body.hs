@@ -62,7 +62,7 @@ bodyContentWidget mPass = mdo
     dIsDisableButtons
     dSaveOn
     dmKey
-    dKeyTheSame
+    dmKeyWasReset
 
   let eReEncrypt = leftmost [eNewPass, Nothing <$ eCleanOk]
 
@@ -77,7 +77,7 @@ bodyContentWidget mPass = mdo
   copiedNotification
 
   dSaveOnFromCache <- loadAppDataE Nothing isSaveOn "app-body-load-is-save-on-key" id False
-  (dSaveWindow, dAesKeyWindow, dKeyTheSame) <- saveSettingsWindow
+  (dSaveWindow, dAesKeyWindow, dmKeyWasReset) <- saveSettingsWindow
     mPass
     dSaveOnFromCache
     dSaveStatus
