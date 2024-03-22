@@ -52,6 +52,8 @@ handleUnsavedTokens :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t [TokenCacheV3]
   -> m (Dynamic t [TokenCacheV3])
 handleUnsavedTokens dSaveOn dmKey dTokenCache dTokensInWallet = mdo
+  logDyn "handleUnsavedTokens: dSaveOn" $ showTokens <$> dSaveOn
+  logDyn "handleUnsavedTokens: dmKey" $ showTokens <$> dmKey
   dTokenCacheUniq <- holdUniqDyn dTokenCache
   dTokensInWalletUniq <- holdUniqDyn dTokensInWallet
   -- create event when 2 conditions are true
@@ -63,14 +65,17 @@ handleUnsavedTokens dSaveOn dmKey dTokenCache dTokensInWallet = mdo
         (updated dTokensInWalletUniq)
 
   dTokenCacheUniqFired <- holdDyn [] eTokenCacheUniqFired
+  logDyn "handleUnsavedTokens: in" $ showTokens <$> dTokenCacheUniqFired
   eTokenWithNewState <- saveTokens dSaveOn dmKey dTokenCacheUniqFired
   -- TODO: consider better union method for eliminating duplicates.
   dTokenSaveSynched <- foldDyn union [] eTokenWithNewState
+  logDyn "handleUnsavedTokens: out" $ showTokens <$> dTokenSaveSynched
   -- Update statuses of dTokenCache before saving on server first one.
   let dTokenCacheUpdated = zipDynWith
         updateMintedTokens
         dTokenCacheUniq
         dTokenSaveSynched
+  logDyn "handleUnsavedTokens: final cache" $ showTokens <$> dTokenCacheUpdated
   let eUnsavedTokens = updated $ selectUnsavedTokens <$> dTokenCacheUpdated
   tellSaveStatus $ leftmost
     [ AllSaved <$ ffilter null eUnsavedTokens
