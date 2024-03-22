@@ -50,23 +50,31 @@ handleUnsavedTokens :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t (Maybe AesKeyRaw)
   -> Dynamic t [TokenCacheV3]
   -> Dynamic t [TokenCacheV3]
+  -> Event t ()
   -> m (Dynamic t [TokenCacheV3])
-handleUnsavedTokens dSaveOn dmKey dTokenCache dTokensInWallet = mdo
+handleUnsavedTokens dSaveOn dmKey dTokenCache dTokensInWallet eWasMigration = mdo
   logDyn "handleUnsavedTokens: dSaveOn" dSaveOn
   logDyn "handleUnsavedTokens: dmKey" dmKey
   dTokenCacheUniq <- holdUniqDyn dTokenCache
   dTokensInWalletUniq <- holdUniqDyn dTokensInWallet
   logDyn "handleUnsavedTokens: left" $ showTokens <$> dTokensInWalletUniq
-  -- create event when 2 conditions are true
+  -- create trigger of saving when 2 conditions are true
   -- 1. Left column is fired
   -- 2. Left column has tokens that are unsaved
   let eTokenCacheUniqFired = attachPromptlyDynWithMaybe
         (\tokens tokensInWallet -> tokens <$ selectUnsavedTokens tokensInWallet)
         dTokenCacheUpdated
         (updated dTokensInWalletUniq)
+  logEvent "handleUnsavedTokens: left column refreshed" $ () <$ eTokenCacheUniqFired
 
-  dTokenCacheUniqFired <- holdDyn [] eTokenCacheUniqFired
+  -- or create trigger of saving when migration was occurred
+  let eTokenCacheMigrated = tagPromptlyDyn dTokenCacheUpdated eWasMigration
+  logEvent "handleUnsavedTokens: migration occurred" $ () <$ eTokenCacheMigrated
+
+  let eSaveTrigger = leftmost [eTokenCacheMigrated, eTokenCacheUniqFired]
+  dTokenCacheUniqFired <- holdDyn [] eSaveTrigger
   logDyn "handleUnsavedTokens: in" $ showTokens <$> dTokenCacheUniqFired
+
   eTokenWithNewState <- saveTokens dSaveOn dmKey dTokenCacheUniqFired
   -- TODO: consider better union method for eliminating duplicates.
   dTokenSaveSynched <- foldDyn union [] eTokenWithNewState

@@ -66,8 +66,9 @@ walletTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t [TokenCacheV3] -- consider use Map or Set
   -> Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
+  -> Event t ()
   -> m (Dynamic t [TokenCacheV3])
-walletTab mpass dWallet dTokenCacheOld dSaveOn dmKey = sectionApp "" "" $ mdo
+walletTab mpass dWallet dTokenCacheOld dSaveOn dmKey eWasMigration = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -98,7 +99,7 @@ walletTab mpass dWallet dTokenCacheOld dSaveOn dmKey = sectionApp "" "" $ mdo
             -- logDyn "walletTab: dTokenCache" $ showTokens <$> dTokenCache
 
             -- Save begin
-            dTokensUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache dSecretsInTheWallet
+            dTokensUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache dSecretsInTheWallet eWasMigration
             -- Save end
 
             -- save unique changes only
@@ -171,8 +172,9 @@ transferTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t [TokenCacheV3]
   -> Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
+  -> Event t ()
   -> m (Dynamic t [TokenCacheV3])
-transferTab mpass dWallet dTokenCacheOld dSaveOn dmKey = sectionApp "" "" $ mdo
+transferTab mpass dWallet dTokenCacheOld dSaveOn dmKey eWasMigration = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -188,7 +190,7 @@ transferTab mpass dWallet dTokenCacheOld dSaveOn dmKey = sectionApp "" "" $ mdo
         let dTokenCache = nub <$> zipDynWith (++) dTokenCacheOld (map coinV3 <$> dImportedSecrets)
 
         -- Save begin
-        dTokenCacheUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache dSecretsInTheWallet
+        dTokenCacheUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache dSecretsInTheWallet eWasMigration
         -- Save end
 
         -- save unique changes only
@@ -265,8 +267,9 @@ ledgerTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t [TokenCacheV3]
   -> Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
+  -> Event t ()
   -> m (Dynamic t [TokenCacheV3])
-ledgerTab mpass dTokenCacheOld dSaveOn dmKey = sectionApp "" "" $ mdo
+ledgerTab mpass dTokenCacheOld dSaveOn dmKey eWasMigration = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -298,7 +301,7 @@ ledgerTab mpass dTokenCacheOld dSaveOn dmKey = sectionApp "" "" $ mdo
                   $ map coinV3 <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
             -- Save begin
-            dTokensUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache dSecretsInTheWallet
+            dTokensUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache dSecretsInTheWallet eWasMigration
             -- Save end
 
             -- save unique changes only
