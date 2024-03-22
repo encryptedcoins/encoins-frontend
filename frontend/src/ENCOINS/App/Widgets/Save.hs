@@ -56,6 +56,7 @@ handleUnsavedTokens dSaveOn dmKey dTokenCache dTokensInWallet = mdo
   logDyn "handleUnsavedTokens: dmKey" $ showTokens <$> dmKey
   dTokenCacheUniq <- holdUniqDyn dTokenCache
   dTokensInWalletUniq <- holdUniqDyn dTokensInWallet
+  logDyn "handleUnsavedTokens: left" $ showTokens <$> dTokensInWalletUniq
   -- create event when 2 conditions are true
   -- 1. Left column is fired
   -- 2. Left column has tokens that are unsaved
