@@ -52,8 +52,8 @@ handleUnsavedTokens :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t [TokenCacheV3]
   -> m (Dynamic t [TokenCacheV3])
 handleUnsavedTokens dSaveOn dmKey dTokenCache dTokensInWallet = mdo
-  logDyn "handleUnsavedTokens: dSaveOn" $ showTokens <$> dSaveOn
-  logDyn "handleUnsavedTokens: dmKey" $ showTokens <$> dmKey
+  logDyn "handleUnsavedTokens: dSaveOn" dSaveOn
+  logDyn "handleUnsavedTokens: dmKey" dmKey
   dTokenCacheUniq <- holdUniqDyn dTokenCache
   dTokensInWalletUniq <- holdUniqDyn dTokensInWallet
   logDyn "handleUnsavedTokens: left" $ showTokens <$> dTokensInWalletUniq
