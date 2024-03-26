@@ -99,7 +99,7 @@ walletTab mpass dWallet dTokenCacheOld dSaveOn dmKey eWasMigration = sectionApp 
             -- logDyn "walletTab: dTokenCache" $ showTokens <$> dTokenCache
 
             -- Save begin
-            dTokensUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache dSecretsInTheWallet eWasMigration
+            dTokensUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache eWasMigration
             -- Save end
 
             -- save unique changes only
@@ -190,7 +190,7 @@ transferTab mpass dWallet dTokenCacheOld dSaveOn dmKey eWasMigration = sectionAp
         let dTokenCache = nub <$> zipDynWith (++) dTokenCacheOld (map coinV3 <$> dImportedSecrets)
 
         -- Save begin
-        dTokenCacheUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache dSecretsInTheWallet eWasMigration
+        dTokenCacheUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache eWasMigration
         -- Save end
 
         -- save unique changes only
@@ -301,7 +301,7 @@ ledgerTab mpass dTokenCacheOld dSaveOn dmKey eWasMigration = sectionApp "" "" $ 
                   $ map coinV3 <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
             -- Save begin
-            dTokensUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache dSecretsInTheWallet eWasMigration
+            dTokensUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache eWasMigration
             -- Save end
 
             -- save unique changes only

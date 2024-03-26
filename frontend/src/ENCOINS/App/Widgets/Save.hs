@@ -49,23 +49,19 @@ handleUnsavedTokens :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
   -> Dynamic t [TokenCacheV3]
-  -> Dynamic t [TokenCacheV3]
   -> Event t ()
   -> m (Dynamic t [TokenCacheV3])
-handleUnsavedTokens dSaveOn dmKey dTokenCache dTokensInWallet eWasMigration = mdo
+handleUnsavedTokens dSaveOn dmKey dTokenCache eWasMigration = mdo
   logDyn "handleUnsavedTokens: dSaveOn" dSaveOn
   logDyn "handleUnsavedTokens: dmKey" dmKey
   dTokenCacheUniq <- holdUniqDyn dTokenCache
-  dTokensInWalletUniq <- holdUniqDyn dTokensInWallet
-  logDyn "handleUnsavedTokens: left" $ showTokens <$> dTokensInWalletUniq
-  -- create trigger of saving when 2 conditions are true
-  -- 1. Left column is fired
-  -- 2. Left column has tokens that are unsaved
+
+  -- create save trigger when cache contains un-saved tokens
   let eTokenCacheUniqFired = attachPromptlyDynWithMaybe
-        (\tokens tokensInWallet -> tokens <$ selectUnsavedTokens tokensInWallet)
+        (\updatedTokens tokensInCache -> updatedTokens <$ selectUnsavedTokens tokensInCache)
         dTokenCacheUpdated
-        (updated dTokensInWalletUniq)
-  logEvent "handleUnsavedTokens: left column refreshed" $ () <$ eTokenCacheUniqFired
+        (updated dTokenCacheUniq)
+  logEvent "handleUnsavedTokens: cache has unsaved tokens" $ () <$ eTokenCacheUniqFired
 
   -- or create trigger of saving when migration was occurred
   let eTokenCacheMigrated = tagPromptlyDyn dTokenCacheUpdated eWasMigration
@@ -78,13 +74,13 @@ handleUnsavedTokens dSaveOn dmKey dTokenCache dTokensInWallet eWasMigration = md
   eTokenWithNewState <- saveTokens dSaveOn dmKey dTokenCacheUniqFired
   -- TODO: consider better union method for eliminating duplicates.
   dTokenSaveSynched <- foldDyn union [] eTokenWithNewState
-  logDyn "handleUnsavedTokens: out" $ showTokens <$> dTokenSaveSynched
+  -- logDyn "handleUnsavedTokens: out" $ showTokens <$> dTokenSaveSynched
   -- Update statuses of dTokenCache before saving on server first one.
   let dTokenCacheUpdated = zipDynWith
         updateMintedTokens
         dTokenCacheUniq
         dTokenSaveSynched
-  logDyn "handleUnsavedTokens: final cache" $ showTokens <$> dTokenCacheUpdated
+  -- logDyn "handleUnsavedTokens: final cache" $ showTokens <$> dTokenCacheUpdated
   let eUnsavedTokens = updated $ selectUnsavedTokens <$> dTokenCacheUpdated
   tellSaveStatus $ leftmost
     [ AllSaved <$ ffilter null eUnsavedTokens
@@ -308,6 +304,7 @@ decryptTokens :: MonadWidget t m
   -> Dynamic t [RestoreResponse]
   -> m (Dynamic t [TokenCacheV3])
 decryptTokens key dRestores = do
+  logDyn "decryptTokens: received tokens" $ length <$> dRestores
   eTokens <- switchHoldDyn dRestores $ \case
     [] -> pure never
     restores -> do
@@ -318,6 +315,7 @@ decryptTokens key dRestores = do
           pure deToken
   let (eErrors, eResponses) = eventTuple $ partitionEithers <$> eTokens
   dErrors <- holdDyn [] eErrors
+  logDyn "decryptTokens: un-decrypted tokens" $ length <$> dErrors
   void $ switchHoldDyn dErrors $ \case
     [] -> pure never
     errs  -> do
@@ -328,6 +326,8 @@ decryptTokens key dRestores = do
   dRes <- foldDynMaybe
     (\(ac,ar) _ -> if length ar == ac then Just (ac,ar) else Nothing) (0,[]) $
     attachPromptlyDyn dValidLength eResponses
+  logDyn "decryptTokens: decrypted tokens" $ length <$> dRes
+
   pure $ snd <$> dRes
 
 mkTokenCacheV3 :: AssetName -> Text -> Either String TokenCacheV3

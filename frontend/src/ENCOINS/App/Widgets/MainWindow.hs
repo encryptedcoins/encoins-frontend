@@ -37,6 +37,8 @@ mainWindow mPass dWallet dIsDisableButtons dSaveOn dmKey dKeyWasReset = mdo
       dKeyWasResetFired <- holdDyn False $ tagPromptlyDyn dKeyWasReset $ updated dKeyWasReset
       let dmOldTokensStatusUpdated = resetTokens dmOldTokensV3 dKeyWasResetFired
 
+      -- logDyn "mainWindow: dmOldTokensStatusUpdated" $ fmap showTokens <$> dmOldTokensStatusUpdated
+
       -- Migrate from old token structure to version 3
       -- if tokensV3 are not found in cache
       dOldTokensMigratedUniq <- holdUniqDyn =<< updateCacheV3 mPass dmOldTokensStatusUpdated
@@ -45,7 +47,7 @@ mainWindow mPass dWallet dIsDisableButtons dSaveOn dmKey dKeyWasReset = mdo
       let eWasMigration = () <$ (ffilter isNothing
             $ tagPromptlyDyn dmOldTokensStatusUpdated
             $ updated dOldTokensMigratedUniq)
-      logEvent "mainWindow: eWasMigration" eWasMigration
+      -- logEvent "mainWindow: eWasMigration" eWasMigration
 
       dUpdatedTokensV3 <- case tab of
         WalletTab   -> walletTab mPass dWallet dOldTokensMigratedUniq dSaveOn dmKey eWasMigration

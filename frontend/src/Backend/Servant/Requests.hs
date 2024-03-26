@@ -209,5 +209,5 @@ restoreRequest :: MonadWidget t m
 restoreRequest e = do
   let MkSaveApiClient{..} = mkSaveApiClient saveServerUrl
   eRespUnwrapped <- fmap mkTextOrResponse <$> sacRestore e
-  logEvent "restore response" eRespUnwrapped
+  logEvent "restore response" $ () <$ eRespUnwrapped
   pure eRespUnwrapped
