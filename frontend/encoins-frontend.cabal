@@ -33,7 +33,8 @@ library
     ENCOINS.App.Widgets.Basic
     ENCOINS.App.Widgets.Coin
     ENCOINS.App.Widgets.ConnectWindow
-    ENCOINS.App.Widgets.Save
+    ENCOINS.App.Widgets.Cloud
+    ENCOINS.App.Widgets.CloudWindow
     ENCOINS.App.Widgets.ISPO
     ENCOINS.App.Widgets.ImportWindow
     ENCOINS.App.Widgets.InputAddressWindow

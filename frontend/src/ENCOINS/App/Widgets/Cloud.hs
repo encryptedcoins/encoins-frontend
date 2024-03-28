@@ -1,48 +1,38 @@
 {-# LANGUAGE LambdaCase  #-}
 {-# LANGUAGE RecursiveDo #-}
 
-module ENCOINS.App.Widgets.Save where
+module ENCOINS.App.Widgets.Cloud where
 
 import           Backend.Protocol.Types
-import           Backend.Servant.Requests        (restoreRequest,
-                                                  savePingRequest, saveRequest)
-import           Backend.Status                  (AppStatus,
-                                                  SaveIconStatus (..))
-import           Backend.Utility                 (dynTuple, eventEither,
-                                                  eventMaybeDynDef, eventTuple,
-                                                  space, switchHoldDyn, toText)
-import           ENCOINS.App.Widgets.Basic       (elementResultJS, loadAppData,
-                                                  saveAppData, saveAppData_,
-                                                  tellSaveStatus)
-import           ENCOINS.Bulletproofs            (Secret (..))
-import           ENCOINS.Common.Cache            (aesKey, isSaveOn)
+import           Backend.Servant.Requests  (restoreRequest, savePingRequest,
+                                            saveRequest)
+import           Backend.Status            (AppStatus, CloudStatusIcon (..))
+import           Backend.Utility           (eventEither, eventMaybeDynDef,
+                                            switchHoldDyn, toText)
+import           ENCOINS.App.Widgets.Basic (elementResultJS, loadAppData,
+                                            saveAppData, tellSaveStatus)
+import           ENCOINS.Bulletproofs      (Secret (..))
+import           ENCOINS.Common.Cache      (aesKey)
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils            (toJsonStrict)
-import           ENCOINS.Common.Widgets.Advanced (copyEvent, dialogWindow,
-                                                  withTooltip)
-import           ENCOINS.Common.Widgets.Basic    (image)
-import           ENCOINS.Crypto.Field            (Field (F))
-import qualified JS.App                          as JS
-import           JS.Website                      (copyText)
+import           ENCOINS.Common.Utils      (toJsonStrict)
+import           ENCOINS.Crypto.Field      (Field (F))
+import qualified JS.App                    as JS
 
-import           Control.Monad                   (void, (<=<))
-import           Control.Monad.IO.Class          (MonadIO (..))
-import qualified Crypto.Hash                     as Hash
-import           Data.Aeson                      (eitherDecodeStrict', eitherDecodeStrict, decodeStrict)
-import           Data.Align                      (align)
-import           Data.ByteString                 (ByteString)
--- import           Data.Either                     (partitionEithers)
-import           Data.Functor                    ((<&>))
-import           Data.List                       (find, foldl', union)
-import           Data.List.NonEmpty              (NonEmpty)
-import qualified Data.List.NonEmpty              as NE
-import           Data.Map                        (Map)
-import qualified Data.Map                        as Map
-import           Data.Maybe                      (catMaybes)
-import           Data.Text                       (Text)
-import qualified Data.Text                       as T
-import           Data.Text.Encoding              (decodeUtf8, encodeUtf8)
-import           Data.These                      (These)
+import           Control.Monad             ((<=<))
+import qualified Crypto.Hash               as Hash
+import           Data.Aeson                (decodeStrict)
+import           Data.Align                (align)
+import           Data.Functor              ((<&>))
+import           Data.List                 (find, foldl', union)
+import           Data.List.NonEmpty        (NonEmpty)
+import qualified Data.List.NonEmpty        as NE
+import           Data.Map                  (Map)
+import qualified Data.Map                  as Map
+import           Data.Maybe                (catMaybes)
+import           Data.Text                 (Text)
+import qualified Data.Text                 as T
+import           Data.Text.Encoding        (decodeUtf8, encodeUtf8)
+import           Data.These                (These)
 import           Reflex.Dom
 
 
@@ -52,9 +42,9 @@ handleUnsavedTokens :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t [TokenCacheV3]
   -> Event t ()
   -> m (Dynamic t [TokenCacheV3])
-handleUnsavedTokens dSaveOn dmKey dTokenCache eWasMigration = mdo
-  -- logDyn "handleUnsavedTokens: dSaveOn" dSaveOn
-  -- logDyn "handleUnsavedTokens: dmKey" dmKey
+handleUnsavedTokens dCloudOn dmKey dTokenCache eWasMigration = mdo
+  logDyn "handleUnsavedTokens: dCloudOn" dCloudOn
+  logDyn "handleUnsavedTokens: dmKey" dmKey
   dTokenCacheUniq <- holdUniqDyn dTokenCache
 
   -- create save trigger when cache contains un-saved tokens
@@ -72,7 +62,7 @@ handleUnsavedTokens dSaveOn dmKey dTokenCache eWasMigration = mdo
   dTokenCacheUniqFired <- holdDyn [] eSaveTrigger
   -- logDyn "handleUnsavedTokens: in" $ showTokens <$> dTokenCacheUniqFired
 
-  eTokenWithNewState <- saveTokens dSaveOn dmKey dTokenCacheUniqFired
+  eTokenWithNewState <- saveTokens dCloudOn dmKey dTokenCacheUniqFired
   -- TODO: consider better union method for eliminating duplicates.
   dTokenSaveSynched <- foldDyn union [] eTokenWithNewState
   -- logDyn "handleUnsavedTokens: out" $ showTokens <$> dTokenSaveSynched
@@ -90,17 +80,15 @@ handleUnsavedTokens dSaveOn dmKey dTokenCache eWasMigration = mdo
   pure dTokenCacheUpdated
 
 -- Saving launches
--- when first page loaded
--- and
--- when new token(s) appear on the left
+-- when there are unsaved tokens in cache appear
 saveTokens :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
   -> Dynamic t [TokenCacheV3]
   -> m (Event t [TokenCacheV3])
-saveTokens dSaveOn dmKey dTokens = mdo
-  let dSaveConditions = zipDynWith (,) dSaveOn dmKey
-  -- Select unpinned tokens in wallet
+saveTokens dCloudOn dmKey dTokens = mdo
+  let dSaveConditions = zipDynWith (,) dCloudOn dmKey
+  -- Select unpinned tokens in cache
   let dmUnpinnedTokens = selectUnsavedTokens <$> dTokens
   -- Combine all condition in a tuple
   let dFullConditions = combineConditions dSaveConditions dmUnpinnedTokens
@@ -272,8 +260,32 @@ fetchAesKey :: MonadWidget t m
   -> m (Dynamic t (Maybe AesKeyRaw))
 fetchAesKey mPass resId ev = loadAppData mPass aesKey resId ev id Nothing
 
--- restore tokens from save server
--- that are minted and saved only
+resetTokens :: Reflex t => Dynamic t (Maybe [TokenCacheV3]) -> Dynamic t Bool -> Dynamic t (Maybe [TokenCacheV3])
+resetTokens dmTokens dKeyWasReset =
+  let resetToken t = t{ tcSaveStatus = SaveUndefined }
+  in zipDynWith
+    (\mTokens wasReset -> if wasReset then map resetToken <$> mTokens else mTokens)
+    dmTokens
+    dKeyWasReset
+
+-- With saving wallet and ledger modes have two dynamics for token
+-- and save each of them separately
+-- This function synchronize them.
+-- Otherwise dynamic with old tokens rewrite new one.
+-- TODO: consider use MVar or TWar to manage state.
+-- O(n^2)
+updateMintedTokens :: [TokenCacheV3] -> [TokenCacheV3] -> [TokenCacheV3]
+updateMintedTokens old new = foldl' (update new) [] old
+  where
+    update ns acc o =
+      case find (\n -> tcAssetName o == tcAssetName n) ns of
+        Nothing -> o : acc
+        Just n' -> n' : acc
+
+
+-- RESTORE
+
+-- restore tokens saved on cloud server
 restoreValidTokens :: MonadWidget t m
   => Dynamic t (Maybe AesKeyRaw)
   -> m (Dynamic t (Maybe [TokenCacheV3]))
@@ -289,6 +301,7 @@ restoreValidTokens dmKey = do
       updated <$> decryptTokens key dRestoreResponses
   holdDyn Nothing eTokens
 
+-- Return the tokens that the aes key is able to decrypt
 decryptTokens :: MonadWidget t m
   => AesKeyRaw
   -> Dynamic t [(Text,Text)]
@@ -315,7 +328,7 @@ decryptTokens key dRestores = do
   pure dRes
 
 mkTokenCacheV3 :: AssetName -> Secret -> Maybe TokenCacheV3
-mkTokenCacheV3 name secret =  if F 0 <= v && v < F (2^(20 :: Integer))
+mkTokenCacheV3 name secret =  if F 0 <= v && v < F (2^(20 :: Int))
   then Just $ MkTokenCacheV3
     { tcAssetName  = name
     , tcSecret     = secret
@@ -323,114 +336,3 @@ mkTokenCacheV3 name secret =  if F 0 <= v && v < F (2^(20 :: Integer))
     }
   else Nothing
     where v = secretV secret
-
-saveSettingsWindow :: MonadWidget t m
-  => Maybe PasswordRaw
-  -> Dynamic t Bool
-  -> Dynamic t SaveIconStatus
-  -> Event t ()
-  -> m (Dynamic t Bool, Dynamic t (Maybe AesKeyRaw), Dynamic t (Maybe AesKeyRaw))
-saveSettingsWindow mPass saveCacheFlag dSaveStatus eOpen = do
-  dialogWindow
-    True
-    eOpen
-    never
-    "app-Save_Window"
-    "Encoins Cloud Backup" $ do
-      (dIsSaveOn, eSaveChange) <- saveCheckbox saveCacheFlag
-      saveIconStatus dSaveStatus dIsSaveOn
-
-      let eSaveChangeVal = ffilter id $ tagPromptlyDyn dIsSaveOn eSaveChange
-      eSaveChangeValDelayed <- delay 0.1 eSaveChangeVal
-
-      dmOldKey <- fetchAesKey mPass "first-load-of-aes-key" $ leftmost [() <$ eSaveChangeValDelayed, eOpen]
-      -- logDyn "saveSettingsWindow: dmOldKey" dmOldKey
-      emKey <- switchHoldDyn dIsSaveOn $ \case
-        False -> pure never
-        True -> do
-          dmNewKey <- genAesKey mPass dmOldKey $ leftmost [() <$ eSaveChangeValDelayed, eOpen]
-          divClass "app-Save_AesKey_Title" $
-            text "Your AES key for restoring encoins. Save it to a file and keep it secure!"
-          showKeyWidget dmNewKey
-          pure $ updated dmNewKey
-      dmNewKey <- holdDyn Nothing emKey
-      pure (dIsSaveOn, dmNewKey, dmOldKey)
-
-resetTokens :: Reflex t => Dynamic t (Maybe [TokenCacheV3]) -> Dynamic t Bool -> Dynamic t (Maybe [TokenCacheV3])
-resetTokens dmTokens dKeyWasReset =
-  let resetToken t = t{ tcSaveStatus = SaveUndefined }
-  in zipDynWith
-    (\mTokens wasReset -> if wasReset then map resetToken <$> mTokens else mTokens)
-    dmTokens
-    dKeyWasReset
-
-saveCheckbox :: MonadWidget t m
-  => Dynamic t Bool
-  -> m (Dynamic t Bool, Event t Bool)
-saveCheckbox saveCacheFlag = do
-  (dIsChecked, eSaveChange) <- checkboxWidget (updated saveCacheFlag) "app-Save_CheckboxToggle"
-  saveAppData_ Nothing isSaveOn $ updated dIsChecked
-  pure (dIsChecked, eSaveChange)
-
-saveIconStatus :: MonadWidget t m
-  => Dynamic t SaveIconStatus
-  -> Dynamic t Bool
-  -> m ()
-saveIconStatus dSaveStatus dIsSave = do
-  divClass "app-Save_Status_Title" $
-    text "Save synchronization status"
-  divClass "app-Save_StatusText" $
-    dynText $ zipDynWith selectSaveStatusNote dSaveStatus dIsSave
-
-selectSaveStatusNote :: SaveIconStatus -> Bool -> Text
-selectSaveStatusNote status isSave =
-  let t = case (status, isSave) of
-        (_, False)         -> "is turned off"
-        (NoTokens, _)      -> "is impossible. There are not tokens in the local cache"
-        (Saving, _)       -> "is in progress..."
-        (AllSaved, _)     -> "is completed successfully."
-        (FailedSave, _) -> "failed"
-  in "The synchronization" <> space <> t
-
-checkboxWidget :: MonadWidget t m
-  => Event t Bool
-  -> Text
-  -> m (Dynamic t Bool, Event t Bool)
-checkboxWidget initial checkBoxClass = divClass "w-row app-Save_CheckboxContainer" $ do
-    inp <- inputElement $ def
-      & initialAttributes .~
-          ( "class" =: checkBoxClass <>
-            "type" =: "checkbox"
-          )
-      & inputElementConfig_setChecked .~ initial
-    divClass "app-Save_CheckboxDescription" $ text "Save encoins on cloud"
-    pure (_inputElement_checked inp, _inputElement_checkedChange inp)
-
-showKeyWidget :: MonadWidget t m
-  => Dynamic t (Maybe AesKeyRaw)
-  -> m ()
-showKeyWidget dmKey = do
-  let dKey = maybe "Save key is not generated" getAesKeyRaw <$> dmKey
-  let keyIcon = do
-        e <- image "Key.svg" "inverted" "22px"
-        void $ copyEvent e
-        let eKey = tagPromptlyDyn dKey e
-        performEvent_ (liftIO . copyText <$> eKey)
-  divClass "app-Save_KeyContainer" $ do
-    divClass "key-div" $ withTooltip keyIcon "app-SaveWindow_KeyTip" 0 0 $ do
-      text "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
-    dynText dKey
-
--- With saving wallet and ledger modes have two dynamics for token
--- and save each of them separately
--- This function synchronize them.
--- Otherwise dynamic with old tokens rewrite new one.
--- TODO: consider use MVar or TWar to manage state.
--- O(n^2)
-updateMintedTokens :: [TokenCacheV3] -> [TokenCacheV3] -> [TokenCacheV3]
-updateMintedTokens old new = foldl' (update new) [] old
-  where
-    update ns acc o =
-      case find (\n -> tcAssetName o == tcAssetName n) ns of
-        Nothing -> o : acc
-        Just n' -> n' : acc

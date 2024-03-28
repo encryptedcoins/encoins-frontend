@@ -13,11 +13,11 @@ import           ENCOINS.App.Widgets.Basic         (loadAppDataME)
 import           ENCOINS.App.Widgets.MainTabs      (ledgerTab, transferTab,
                                                     walletTab)
 import           ENCOINS.App.Widgets.Migration     (updateCacheV3)
-import           ENCOINS.App.Widgets.Save          (resetTokens)
+import           ENCOINS.App.Widgets.Cloud          (resetTokens)
 import           ENCOINS.App.Widgets.TabsSelection (AppTab (..), tabsSection)
 import           ENCOINS.Common.Cache              (encoinsV3)
 import           ENCOINS.Common.Events
-import ENCOINS.App.Widgets.Save (restoreValidTokens)
+import ENCOINS.App.Widgets.Cloud (restoreValidTokens)
 
 
 mainWindow :: (MonadWidget t m, EventWriter t [AppStatus] m)
@@ -28,7 +28,7 @@ mainWindow :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t (Maybe AesKeyRaw)
   -> Dynamic t Bool
   -> m (Dynamic t [TokenCacheV3])
-mainWindow mPass dWallet dIsDisableButtons dSaveOn dmKey dKeyWasReset = mdo
+mainWindow mPass dWallet dIsDisableButtons dCloudOn dmKey dKeyWasReset = mdo
     eTab <- tabsSection dTab dIsDisableButtons
     dTab <- holdDyn WalletTab eTab
     eNewTokensV3 <- switchHoldDyn dTab $ \tab -> mdo
@@ -53,8 +53,8 @@ mainWindow mPass dWallet dIsDisableButtons dSaveOn dmKey dKeyWasReset = mdo
       -- logEvent "mainWindow: eWasMigration" eWasMigration
 
       dUpdatedTokensV3 <- case tab of
-        WalletTab   -> walletTab mPass dWallet dOldTokensMigratedUniq dSaveOn dmKey eWasMigration
-        TransferTab -> transferTab mPass dWallet dOldTokensMigratedUniq dSaveOn dmKey eWasMigration
-        LedgerTab   -> ledgerTab mPass dOldTokensMigratedUniq dSaveOn dmKey eWasMigration
+        WalletTab   -> walletTab mPass dWallet dOldTokensMigratedUniq dCloudOn dmKey eWasMigration
+        TransferTab -> transferTab mPass dWallet dOldTokensMigratedUniq dCloudOn dmKey eWasMigration
+        LedgerTab   -> ledgerTab mPass dOldTokensMigratedUniq dCloudOn dmKey eWasMigration
       return $ updated dUpdatedTokensV3
     holdDyn [] eNewTokensV3
