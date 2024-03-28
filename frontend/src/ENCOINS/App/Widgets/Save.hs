@@ -276,7 +276,7 @@ fetchAesKey mPass resId ev = loadAppData mPass aesKey resId ev id Nothing
 -- that are minted and saved only
 restoreValidTokens :: MonadWidget t m
   => Dynamic t (Maybe AesKeyRaw)
-  -> m (Dynamic t (Either String [(Text, Text)]))
+  -> m (Dynamic t (Maybe [TokenCacheV3]))
 restoreValidTokens dmKey = do
   eTokens <- switchHoldDyn dmKey $ \case
     Nothing -> pure never
@@ -287,46 +287,29 @@ restoreValidTokens dmKey = do
       dRestoreResponses <- holdDyn [] eRestoreResponses
       -- logDyn "restoreValidTokens: dRestoreResponses" dRestoreResponses
       updated <$> decryptTokens key dRestoreResponses
-  holdDyn (Left "") eTokens
-
-decryptToken :: MonadWidget t m
-  => AesKeyRaw
-  -> RestoreResponse
-  -> m (Dynamic t (Maybe TokenCacheV3))
-decryptToken (MkAesKeyRaw key) (MkRestoreResponse name (MkEncryptedSecret encryptedHex)) = do
-  let resId = toText $ Hash.hash @Hash.SHA256 $ encodeUtf8 encryptedHex
-  ev <- newEventWithDelay 1
-  performEvent_ $ JS.decryptAES (key, resId, encryptedHex) <$ ev
-  let f t = do
-        s <- (decodeStrict :: ByteString -> Maybe Secret) $ encodeUtf8 t
-        mkTokenCacheV3 name s
-  dmDecryptedToken <- elementResultJS resId f
-  pure dmDecryptedToken
+  holdDyn Nothing eTokens
 
 decryptTokens :: MonadWidget t m
   => AesKeyRaw
-  -> Dynamic t [RestoreResponse]
-  -> m (Dynamic t (Either String [(Text, Text)]))
+  -> Dynamic t [(Text,Text)]
+  -> m (Dynamic t (Maybe [TokenCacheV3]))
 decryptTokens key dRestores = do
   let dValidLength = length <$> dRestores
   logDyn "decryptTokens: number of received tokens" dValidLength
   emlmTokens <- switchHoldDyn dRestores $ \case
     [] -> pure never
     restores -> do
-        let nameSecrets = map (\(MkRestoreResponse (MkAssetName name) (MkEncryptedSecret encryptedHex)) -> (name, encryptedHex)) restores
         ev <- newEventWithDelay 1
         let resId = "decryptTokens-resId"
-        performEvent_ $ JS.decryptListAES (getAesKeyRaw key, resId, nameSecrets) <$ ev
-        let f = eitherDecodeStrict' . encodeUtf8 :: Text -> Either String [(Text, Text)]
-        --       -- map (uncurry mkTokenCacheV3)
-        --         (decodeStrict :: ByteString -> Maybe [(Text, Text)])
-        --          $ encodeUtf8 t
+        performEvent_ $ JS.decryptListAES (getAesKeyRaw key, resId, restores) <$ ev
+        let f = fmap (mapMaybe (\(n,s) -> mkTokenCacheV3 n =<< (decodeStrict $ encodeUtf8 s :: Maybe Secret)))
+              . (decodeStrict . encodeUtf8 :: Text -> Maybe [(AssetName, Text)])
         dmDecryptedTokens <- elementResultJS resId f
         -- logDyn "decryptTokens: dmDecryptedTokens" dmDecryptedTokens
         pure $ updated dmDecryptedTokens
 
   logEvent "decryptTokens: emlmTokens" emlmTokens
-  dRes <- holdDyn (Left "") emlmTokens
+  dRes <- holdDyn Nothing emlmTokens
   -- logDyn "decryptTokens: number of tokens" $ length <$> dRes
   -- logDyn "decryptTokens: decrypted tokens" $ showTokens <$> dRes
   pure dRes
