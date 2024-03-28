@@ -1,12 +1,14 @@
 module ENCOINS.Common.Widgets.Basic where
 
-import           Control.Monad  (void)
-import           Data.Bool      (bool)
-import           Data.Text      (Text, unpack)
-import qualified Data.Text      as T
+import           Control.Monad   (void)
+import           Data.Bool       (bool)
+import           Data.Text       (Text, unpack)
+import qualified Data.Text       as T
 import           Reflex.Dom
 
-import           Backend.Status (Status (..))
+import           Backend.Status  (Status (..))
+import           Backend.Utility (space)
+
 
 h1 :: MonadWidget t m => Text -> m ()
 h1 = elClass "h1" "h1" . text
@@ -107,12 +109,6 @@ divClassId cls elId = elAttr "div" ("class" =: cls <> "id" =: elId)
 errDiv :: MonadWidget t m => Text -> m ()
 errDiv = elAttr "div" ("class" =: "w-file-upload-error w-file-upload-error-msg"
   <> "style" =: "margin-top: 0px;margin-bottom: 10px;") . text
-
-space :: Text
-space = " "
-
-column :: Text
-column = ":"
 
 notification :: MonadWidget t m => Dynamic t Text -> m ()
 notification dNotification = do

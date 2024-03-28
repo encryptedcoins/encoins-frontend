@@ -24,10 +24,10 @@ import           Reflex.Dom
 import           Backend.Protocol.Types
 import           Backend.Servant.Requests     (infoRequestWrapper,
                                                serversRequestWrapper)
-import           Backend.Utility              (switchHoldDyn)
+import           Backend.Utility              (switchHoldDyn, toText)
 import           Config.Config                (delegateServerUrl)
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils         (stripHostOrRelay, toText)
+import           ENCOINS.Common.Utils         (stripHostOrRelay)
 import           ENCOINS.Common.Widgets.Basic (btnWithBlock)
 
 relayAmountWidget :: MonadWidget t m

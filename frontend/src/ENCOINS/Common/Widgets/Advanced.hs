@@ -13,8 +13,8 @@ import           GHCJS.DOM.Node                (contains)
 import qualified GHCJS.DOM.Types               as DOM
 import           Reflex.Dom
 
+import           Backend.Utility               (space, toText)
 import           Config.Config                 (NetworkId)
-import           ENCOINS.Common.Utils          (toText)
 import           JS.Website                    (setElementStyle)
 
 copyEvent :: MonadWidget t m => Event t () -> m (Dynamic t Bool)
@@ -63,7 +63,7 @@ checkboxButton = mdo
   return d
 
 dialogWindow :: MonadWidget t m => Bool -> Event t () -> Event t () -> Text -> Text -> m a -> m a
-dialogWindow close eOpen eClose style title tags = mdo
+dialogWindow close eOpen eClose customClass title tags = mdo
   eClickOuside <- if close
       then clickOutside (_element_raw e)
       else pure never
@@ -77,7 +77,7 @@ dialogWindow close eOpen eClose style title tags = mdo
     eClose' = leftmost [eClose, eClickOuside, eCross, eEscape]
   dWindowIsOpen <- holdDyn False $ leftmost [True <$ eOpenDelayed, False <$ eClose']
   (e, (ret, eCross)) <- elDynAttr "div" (fmap mkClass dWindowIsOpen) $
-      elAttr' "div" ("class" =: "dialog-window" <> "style" =: style) $ do
+      elAttr' "div" ("class" =: ("dialog-window" <> space <> customClass)) $ do
         let titleCls = if close then "dialog-window-title" else "dialog-window-title-without-cross"
         crossClick <- divClass titleCls $ do
           elAttr "div" ("style" =: "width: 20px;") blank
@@ -111,7 +111,7 @@ withTooltip :: MonadWidget t m =>
   -> m ()
   -- ^ Inner content of the tooltip
   -> m a
-withTooltip mainW style delay1 delay2 innerW = mdo
+withTooltip mainW tipClass delay1 delay2 innerW = mdo
   (e, ret) <- elClass' "div" "div-tooltip-wrapper" $ do
     ret' <- mainW
     let
@@ -127,9 +127,9 @@ withTooltip mainW style delay1 delay2 innerW = mdo
     return ret'
   return ret
   where
-    constAttrs = "class" =: "div-tooltip top"
-    showAttrs = constAttrs <> "style" =: ("display:inline-block;" <> style)
-    hideAttrs = constAttrs <> "style" =: ("display:none;" <> style)
+    constAttrs = "class" =: ("div-tooltip top " <> tipClass)
+    showAttrs = constAttrs <> "style" =: "display:inline-block;"
+    hideAttrs = constAttrs <> "style" =: "display:none;"
 
 foldDynamicAny :: Reflex t => [Dynamic t Bool] -> Dynamic t Bool
 foldDynamicAny = foldr (zipDynWith (||)) (constDyn False)

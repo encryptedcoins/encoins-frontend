@@ -5,7 +5,7 @@ module ENCOINS.App.Widgets.Coin where
 import           Control.Monad                   (join, void)
 import           Control.Monad.IO.Class          (MonadIO (..))
 import           Data.Bool                       (bool)
-import           Data.List                       (delete)
+import           Data.List                       (delete, partition)
 import           Data.Maybe                      (catMaybes, fromMaybe)
 import           Data.Text                       (Text, unpack)
 import qualified Data.Text                       as Text
@@ -17,11 +17,14 @@ import           Text.Read                       (readMaybe)
 
 import           Backend.Protocol.Setup          (bulletproofSetup,
                                                   encoinsCurrencySymbol)
+import           Backend.Protocol.Types          (AssetName (..),
+                                                  SaveStatus (..),
+                                                  TokenCacheV3 (..))
 import           Backend.Protocol.Utility        (secretToHex)
+import           Backend.Utility                 (toText)
 import           ENCOINS.BaseTypes               (FieldElement)
 import           ENCOINS.Bulletproofs            (Secret (..), Secrets,
                                                   fromSecret)
-import           ENCOINS.Common.Utils            (toText)
 import           ENCOINS.Common.Widgets.Advanced (checkboxButton, copyButton,
                                                   copyEvent, withTooltip)
 import           ENCOINS.Common.Widgets.Basic    (image)
@@ -40,25 +43,46 @@ data CoinUpdate = AddCoin Secret | RemoveCoin Secret | ClearCoins
 -- coinsWithNames :: Secrets -> [(Secret, Text)]
 -- coinsWithNames = map coinWithName
 
-coinWithName :: Secret -> (Secret, Text)
-coinWithName s =
-    let bsHex = encodeHex . fromBuiltin . snd . fromSecret bulletproofSetup $ s
-    in (s, bsHex)
+-- coinWithName :: Secret -> (Secret, Text)
+-- coinWithName s =
+--     let bsHex = encodeHex . fromBuiltin . snd . fromSecret bulletproofSetup $ s
+--     in (s, bsHex)
 
 -- TODO: fix recalculation on addition/deletion of secrets
-coinCollectionWithNames :: MonadWidget t m => Dynamic t Secrets -> m (Dynamic t [(Secret, Text)])
-coinCollectionWithNames dSecrets = do
-    eCoinWithNameWidgets <- dyn $ fmap (mapM (pure . pure . coinWithName)) dSecrets
-    -- mapM coinWithName :: (a -> m b) -> t a -> m (t b)
-    -- mapM coinWithName :: (Secret -> m (Dynamic t (Secret, Text))) -> [Secret] -> m [Dynamic t (Secret, Text)]
-    -- fmap (mapM coinWithName) dSecrets :: Dynamic t (m [Dynamic t (Secret, Text)])
-    -- dyn :: Dynamic t (m a) -> m (Event t a)
-    -- dyn $ fmap (mapM coinWithName) dSecrets :: m (Event t [Dynamic t (Secret, Text)])
-    let eCoinsWithNames = fmap sequenceA eCoinWithNameWidgets
-    -- sequenceA :: t (f a) -> f (t a)
-    -- sequenceA :: [Dynamic t (Secret, Text)] -> Dynamic t [(Secret, Text)]
-    -- fmap sequenceA eCoinWithNameWidgets :: Event t (Dynamic t [(Secret, Text)])
-    join <$> holdDyn (pure []) eCoinsWithNames
+-- coinCollectionWithNames :: MonadWidget t m
+--   => Dynamic t Secrets
+--   -> m (Dynamic t [(Secret, Text)])
+-- coinCollectionWithNames dSecrets = do
+--     eCoinWithNameWidgets <- dyn $ fmap (mapM (pure . pure . coinWithName)) dSecrets
+--     -- mapM coinWithName :: (a -> m b) -> t a -> m (t b)
+--     -- mapM coinWithName :: (Secret -> m (Dynamic t (Secret, Text))) -> [Secret] -> m [Dynamic t (Secret, Text)]
+--     -- fmap (mapM coinWithName) dSecrets :: Dynamic t (m [Dynamic t (Secret, Text)])
+--     -- dyn :: Dynamic t (m a) -> m (Event t a)
+--     -- dyn $ fmap (mapM coinWithName) dSecrets :: m (Event t [Dynamic t (Secret, Text)])
+--     let eCoinsWithNames = fmap sequenceA eCoinWithNameWidgets
+--     -- sequenceA :: t (f a) -> f (t a)
+--     -- sequenceA :: [Dynamic t (Secret, Text)] -> Dynamic t [(Secret, Text)]
+--     -- fmap sequenceA eCoinWithNameWidgets :: Event t (Dynamic t [(Secret, Text)])
+--     join <$> holdDyn (pure []) eCoinsWithNames
+
+coinV3 :: Secret -> TokenCacheV3
+coinV3 s =
+    let assetName = MkAssetName
+          . encodeHex
+          . fromBuiltin
+          . snd
+          . fromSecret bulletproofSetup
+          $ s
+    in MkTokenCacheV3 assetName s SaveUndefined
+    -- ^ SaveUndefined are default statuses that client set
+
+coinCollectionV3 :: MonadWidget t m
+  => Dynamic t Secrets
+  -> m (Dynamic t [TokenCacheV3])
+coinCollectionV3 dSecrets = do
+    eCoinV3Widgets <- dyn $ fmap (mapM (pure . pure . coinV3)) dSecrets
+    let eCoinsV3 = fmap sequenceA eCoinV3Widgets
+    join <$> holdDyn (pure []) eCoinsV3
 
 shortenCoinName :: Text -> Text
 shortenCoinName txt = Text.take 4 txt `Text.append` "..." `Text.append` Text.takeEnd 4 txt
@@ -66,24 +90,40 @@ shortenCoinName txt = Text.take 4 txt `Text.append` "..." `Text.append` Text.tak
 coinValue :: Secret -> Text
 coinValue = toText . fst . fromSecret bulletproofSetup
 
-filterKnownCoinNames :: [Text] -> [(Secret, Text)] -> [(Secret, Text)]
-filterKnownCoinNames knownNames = filter (\(_, name) -> name `elem` knownNames)
+filterByKnownCoinNames :: [AssetName] -> [TokenCacheV3] -> [TokenCacheV3]
+filterByKnownCoinNames knownNames =
+  filter (\(MkTokenCacheV3 name _ _) -> name `elem` knownNames)
+
+filterByUnknownCoinNames :: [AssetName] -> [TokenCacheV3] -> [TokenCacheV3]
+filterByUnknownCoinNames knownNames =
+  filter (\(MkTokenCacheV3 name _ _) -> name `notElem` knownNames)
+
+partitionByWalletCoinNames :: [AssetName] -> [TokenCacheV3] -> ([TokenCacheV3],[TokenCacheV3])
+partitionByWalletCoinNames knownNames =
+  partition (\(MkTokenCacheV3 name _ _) -> name `elem` knownNames)
 
 -------------------------------------------- Coins in the Wallet ----------------------------------------
 
-coinBurnWidget :: MonadWidget t m => (Secret, Text) -> m (Dynamic t (Maybe Secret))
-coinBurnWidget (s, name) = mdo
+coinBurnWidget :: MonadWidget t m
+  => TokenCacheV3
+  -> m (Dynamic t (Maybe (Secret, TokenCacheV3)))
+coinBurnWidget tokenV3@(MkTokenCacheV3 name s _) = mdo
     (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
         dChecked <- divClass "" checkboxButton -- withTooltip checkboxButton mempty 0 0 $
             -- divClass "app-text-normal" $ text "Select to burn this coin."
-        (txt,_) <- withTooltip (elClass' "div" "app-text-normal" $ text $ shortenCoinName name) mempty 0 0 $ do
+        (txt,_) <- withTooltip
+          (elClass' "div" "app-text-normal" $ text $ shortenCoinName $ getAssetName name)
+          mempty
+          0
+          0
+          $ do
             elAttr "div" ("class" =: "app-text-normal" <> "style" =: "width: 350px;") $ text "Click to see the full token name."
         divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
         let keyIcon = do
                 e <- image "Key.svg" "" "22px"
                 void $ copyEvent e
                 performEvent_ (liftIO (copyText secretText) <$ e)
-        divClass "key-div" $ withTooltip keyIcon "left: -400px; width: 400px;" 0 0 $ do
+        divClass "key-div" $ withTooltip keyIcon "app-CoinBurn_KeyTip" 0 0 $ do
             divClass "app-text-semibold" $ text "Minting Key"
             divClass "app-ToolTip_MintingKey" $ do
                 e <- copyButton
@@ -92,7 +132,7 @@ coinBurnWidget (s, name) = mdo
         return (txt, dChecked)
     dTooltipVis <- toggle False (domEvent Click elTxt)
     dyn_ $ bool blank (coinTooltip name) <$> dTooltipVis
-    return $ fmap (bool Nothing (Just s)) ret
+    return $ fmap (bool Nothing (Just (s, tokenV3))) ret
     where
         mkAttrs = ("class" =: "coin-entry-burn-div" <>) . bool mempty ("style" =: "background:rgb(50 50 50);")
         secretText = secretToHex s
@@ -100,14 +140,18 @@ coinBurnWidget (s, name) = mdo
 noCoinsFoundWidget :: MonadWidget t m => [a] -> m ()
 noCoinsFoundWidget = bool blank (divClass "coin-entry-burn-div-no-coins" $ divClass "app-text-normal" $ text "No coins found.") . null
 
-coinBurnCollectionWidget :: MonadWidget t m => Dynamic t [(Secret, Text)] -> m (Dynamic t Secrets)
-coinBurnCollectionWidget dSecretsWithNames = do
-    eCoinBurnWidgets <- dyn $ fmap (mapM coinBurnWidget) dSecretsWithNames
-    let eCoinsToBurn = fmap (fmap catMaybes . sequenceA) eCoinBurnWidgets
-    join <$> holdDyn (pure []) eCoinsToBurn
+coinBurnCollectionWidget :: MonadWidget t m
+  => Dynamic t [TokenCacheV3]
+  -> m (Dynamic t Secrets)
+coinBurnCollectionWidget dlToken = do
+    eldmToken <- dyn $ fmap (mapM coinBurnWidget) dlToken
+    let edlmToken = fmap sequenceA eldmToken
+    let edlToken = fmap (fmap catMaybes) edlmToken
+    dSt <- join <$> holdDyn (constDyn []) edlToken
+    pure (map fst <$> dSt)
 
-coinTooltip :: MonadWidget t m => Text -> m ()
-coinTooltip name = elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visible" <>
+coinTooltip :: MonadWidget t m => AssetName -> m ()
+coinTooltip (MkAssetName name) = elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visible" <>
     "style" =: "border-top-left-radius: 0px; border-top-right-radius: 0px") $ do
     divClass "app-text-semibold" $ text "Full token name"
     elAttr "div" ("class" =: "app-text-normal" <> "style" =: "font-size:16px;overflow-wrap: anywhere;") $ do
@@ -122,11 +166,11 @@ coinTooltip name = elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visi
         text fp
 --------------------------------- Coins to Mint -------------------------------
 
-coinMintWidget :: MonadWidget t m => (Secret, Text) -> m (Event t Secret)
-coinMintWidget (s, name) = mdo
+coinV3MintWidget :: MonadWidget t m => TokenCacheV3 -> m (Event t Secret)
+coinV3MintWidget (MkTokenCacheV3 name s _) = mdo
     (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
         eCross <- domEvent Click . fst <$> elClass' "div" "cross-div" blank
-        (txt, _) <- elClass' "div" "app-text-normal" $ text $ shortenCoinName name
+        (txt, _) <- elClass' "div" "app-text-normal" $ text $ shortenCoinName $ getAssetName name
         divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
         return (txt, eCross)
     dTooltipVis <- toggle False (domEvent Click elTxt)
@@ -135,14 +179,16 @@ coinMintWidget (s, name) = mdo
     where
         mkAttrs = ("class" =: "coin-entry-mint-div" <>) . bool mempty ("style" =: "background:rgb(50 50 50);")
 
-coinMintCollectionWidget :: MonadWidget t m => Event t CoinUpdate -> m (Dynamic t Secrets)
-coinMintCollectionWidget eCoinUpdate = mdo
+coinMintCollectionV3Widget :: MonadWidget t m => Event t CoinUpdate -> m (Dynamic t Secrets)
+coinMintCollectionV3Widget eCoinUpdate = mdo
     let f (AddCoin s)    lst = lst ++ [s]
         f (RemoveCoin s) lst = s `delete` lst
         f ClearCoins     _   = []
-    dCoinsToMintWithNames <-  foldDyn f [] (leftmost [eCoinUpdate, fmap RemoveCoin eRemoveSecret]) >>= coinCollectionWithNames
-    eRemoveSecret <- dyn (fmap (mapM coinMintWidget) dCoinsToMintWithNames) >>= switchHold never . fmap leftmost
-    return $ fmap (map fst) dCoinsToMintWithNames
+    dCoinsToMintV3 <- foldDyn f []
+      (leftmost [eCoinUpdate, fmap RemoveCoin eRemoveSecret]) >>= coinCollectionV3
+    eRemoveSecret <- dyn (fmap (mapM coinV3MintWidget) dCoinsToMintV3)
+        >>= switchHold never . fmap leftmost
+    return $ fmap (map tcSecret) dCoinsToMintV3
 
 --------------------------------- New coin input ------------------------------
 

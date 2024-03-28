@@ -9,9 +9,10 @@ import           Data.Time                    (LocalTime (LocalTime), UTCTime,
                                                makeTimeOfDayValid, utc)
 import           Reflex.Dom
 
-import           ENCOINS.Common.Utils         (toText)
-import           ENCOINS.Common.Widgets.Basic (br, column, lnkInline, space)
+import           Backend.Utility              (column, space, toText)
+import           ENCOINS.Common.Widgets.Basic (br, lnkInline)
 import           ENCOINS.DAO.PollResults
+
 
 data Poll m = Poll
   { pollNumber      :: Int

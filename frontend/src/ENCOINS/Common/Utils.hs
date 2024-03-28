@@ -2,14 +2,19 @@
 
 module ENCOINS.Common.Utils where
 
+import           Backend.Utility             (toText)
+
 import           Control.Lens                ((^.))
 import           Control.Monad               (guard)
+import           Data.Aeson                  (ToJSON, encode)
 import           Data.Attoparsec.Text        (Parser, char, choice, parseOnly,
                                               sepBy1, takeWhile1, (<?>))
 import qualified Data.Attoparsec.Text        as A
 import           Data.ByteString             (ByteString)
+import           Data.ByteString.Lazy        (toStrict)
 import           Data.Text                   (Text)
 import qualified Data.Text                   as T
+import           Data.Text.Encoding          (decodeUtf8)
 import           Data.Vector                 (Vector)
 import qualified Data.Vector                 as V
 import qualified Foreign.JavaScript.Utils    as Utils
@@ -29,8 +34,11 @@ import           Text.Regex.TDFA             (CompOption (lastStarGreedy),
                                               matchTest)
 import           Text.Regex.TDFA.Text        (compile)
 
-toText :: Show a => a -> Text
-toText = T.pack . show
+toJsonText :: ToJSON a => a -> Text
+toJsonText = decodeUtf8 . toJsonStrict
+
+toJsonStrict :: ToJSON a => a -> ByteString
+toJsonStrict = toStrict . encode
 
 safeIndex :: [a] -> Int -> Maybe a
 safeIndex zs n = guard (n >= 0) >> go zs n

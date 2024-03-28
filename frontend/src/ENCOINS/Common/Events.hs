@@ -5,7 +5,7 @@ import           Data.Text                   (Text)
 import           Data.Time                   (NominalDiffTime)
 import           Reflex.Dom
 
-import           ENCOINS.Common.Utils        (toText)
+import           Backend.Utility             (toText)
 import           JS.Website                  (logInfo)
 import           Language.Javascript.JSaddle (MonadJSM, liftJSM, toJSVal, (#))
 
@@ -16,7 +16,7 @@ newEventWithDelay :: MonadWidget t m => NominalDiffTime -> m (Event t ())
 newEventWithDelay t = newEvent >>= delay t
 
 logEvent :: (MonadWidget t m, Show a) => Text -> Event t a -> m ()
-logEvent title e = performEvent_ $ liftIO . logInfo . ((title <> ": ") <>) . toText <$> e
+logEvent title e = performEvent_ $ liftIO . logInfo . ((title <> ": \n") <>) . toText <$> e
 
 logDyn :: (MonadWidget t m, Show a) => Text -> Dynamic t a -> m ()
 logDyn title d = logEvent title $ updated d

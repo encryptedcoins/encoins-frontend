@@ -3,9 +3,7 @@
 
 module ENCOINS.DAO.PollResults where
 
-import           Data.Aeson           (FromJSON (..), ToJSON (..), encode)
-import           Data.ByteString      (ByteString)
-import qualified Data.ByteString.Lazy as BL
+import           Data.Aeson           (FromJSON (..), ToJSON (..))
 import           Data.Text            (Text)
 import           GHC.Generics         (Generic)
 import           Text.RawString.QQ    (r)
@@ -16,9 +14,6 @@ data VoteResult = VoteResult
   }
   deriving stock (Show, Eq, Generic)
   deriving anyclass (FromJSON, ToJSON)
-
-toJsonResult :: VoteResult -> ByteString
-toJsonResult = BL.toStrict . encode
 
 result1 :: VoteResult
 result1 = VoteResult 95.88470922943088 4.1152907705691115

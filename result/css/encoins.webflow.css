@@ -1083,7 +1083,7 @@ body {
   position: absolute;
   z-index: 500;
   display: none;
-  padding: 10px 40px;
+  padding: 10px 20px;
   border-radius: 6px;
   background-color: #fff;
   -webkit-filter: brightness(75%);
@@ -1534,6 +1534,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+
   @media screen and (min-width: 767px) {
     flex-direction: row;
   }
@@ -1579,6 +1580,14 @@ body {
   filter: brightness(35%);
   cursor: default;
   pointer-events: none;
+}
+
+.app-Nav_LockerContainer {
+  margin-left: 10px;
+  -webkit-align-self: center;
+  -ms-flex-item-align: center;
+  -ms-grid-row-align: center;
+  align-self: center;
 }
 
 .app-Nav_Locker-close {
@@ -1656,14 +1665,6 @@ body {
   display: inline-block;
 }
 
-.app-Nav_LockerContainer {
-  margin-left: 10px;
-  -webkit-align-self: center;
-  -ms-flex-item-align: center;
-  -ms-grid-row-align: center;
-  align-self: center;
-}
-
 .app-ImportExportButton {
   margin-right: 0px;
   -webkit-align-self: center;
@@ -1705,9 +1706,9 @@ body {
 }
 
 .app-EnterPassword_ButtonContainer {
-  display:flex;
+  display: flex;
   flex-direction: column;
-  justify-content:center;
+  justify-content: center;
   gap: 10px;
   margin-left: 5%;
   margin-right: 5%;
@@ -1715,30 +1716,30 @@ body {
 
 @media screen and (min-width: 662px) {
   .app-EnterPassword_ButtonContainer {
-    display:flex;
+    display: flex;
     flex-direction: row;
   }
 }
 
 .app-PasswordSetting_ButtonContainer {
   display: flex;
-  justify-content:center;
+  justify-content: center;
   flex-direction: column;
   gap: 10px;
   margin-left: 5%;
   margin-right: 5%;
 }
 
-  @media screen and (min-width: 860px) {
-    .app-PasswordSetting_ButtonContainer {
-      display:flex;
-      flex-direction: row;
-    }
+@media screen and (min-width: 860px) {
+  .app-PasswordSetting_ButtonContainer {
+    display: flex;
+    flex-direction: row;
   }
+}
 
 .app-CleanCache_ButtonContainer {
   display: flex;
-  justify-content:center;
+  justify-content: center;
   flex-direction: column;
   gap: 10px;
   margin-left: 5%;
@@ -1746,11 +1747,11 @@ body {
 }
 
 @media screen and (min-width: 900px) {
-    .app-CleanCache_ButtonContainer {
-      display:flex;
-      flex-direction: row;
-    }
+  .app-CleanCache_ButtonContainer {
+    display: flex;
+    flex-direction: row;
   }
+}
 
 .app-CleanCache_Description {
   font-family: Poppins, sans-serif;
@@ -1776,7 +1777,7 @@ body {
 .dao-DelegateWindow_ButtonStatusContainer {
   display: flex;
   flex-direction: column;
-  justify-content:center;
+  justify-content: center;
   gap: 10px;
   margin-left: 5%;
   margin-right: 5%;
@@ -1786,19 +1787,19 @@ body {
 
 @media screen and (min-width: 767px) {
   .dao-DelegateWindow_ButtonStatusContainer {
-    display:flex;
+    display: flex;
     flex-direction: row;
-    justify-content:space-between;
+    justify-content: space-between;
     margin-left: 0%;
     margin-right: 0%;
-    }
   }
+}
 
 .dao-DelegateWindow_TableWrapper {
-    margin-top: 20px;
-    margin-bottom: 20px;
-    max-height: 300px;
-    overflow: auto;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  max-height: 300px;
+  overflow: auto;
 }
 
 .dao-DelegateWindow_Table {
@@ -1880,7 +1881,7 @@ body {
 .dao-VoteDownload {
   display: flex;
   flex-direction: row;
-  justify-content:center;
+  justify-content: center;
   gap: 10px;
   margin-left: 5%;
   margin-right: 5%;
@@ -1903,7 +1904,7 @@ body {
 .app-WelcomeBody_ButtonOkContainer {
   display: flex;
   flex-direction: column;
-  justify-content:center;
+  justify-content: center;
   gap: 10px;
   margin-left: 5%;
   margin-right: 5%;
@@ -1911,9 +1912,249 @@ body {
 
 @media screen and (min-width: 767px) {
   .app-WelcomeBody_ButtonOkContainer {
-    display:flex;
+    display: flex;
     flex-direction: row;
     margin-left: 0%;
     margin-right: 0%;
-    }
   }
+}
+
+.app-Save_IconSaving {
+  background-image: url('../images/save_yellow.svg');
+}
+
+.app-Save_IconAllSaved {
+  background-image: url('../images/save_green.svg');
+}
+
+.app-Save_IconAttemptExcess {
+  background-image: url('../images/save_red.svg');
+}
+
+.app-Save_IconTurnOff {
+  background-image: url('../images/save_blank.svg');
+}
+
+.app-Save_IconContainer {
+  height: 31px;
+  max-height: 31px;
+  width: 27px;
+  min-width: 27px;
+  margin-left: 10px;
+  align-self: center;
+  background-position: 0px 0px;
+  background-size: auto;
+  margin-bottom: 40px;
+}
+
+@media screen and (min-width: 767px) {
+  .app-Save_IconContainer {
+    margin-bottom: 0px;
+    margin-top: 10px;
+  }
+}
+
+.app-Save_IconContainer:hover {
+  cursor: pointer;
+}
+
+.app-Save_IconContainer:hover .app-Nav_SavePopup {
+  display: inline-block;
+}
+
+.app-Nav_SavePopup {
+  display: flex;
+  top: auto;
+  right: 83px;
+  margin-top: 10px;
+  padding-top: 30px;
+  position: relative;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+@media screen and (min-width: 767px) {
+  .app-Nav_SavePopup {
+    display: none;
+    top: 50px;
+    position: absolute;
+  }
+}
+
+.app-Save_CheckboxContainer {
+  display: flex;
+}
+
+.app-Save_CheckboxDescription {
+  margin-left: 10px;
+  display: flex;
+  align-items: center;
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+}
+
+.app-Save_AesKey_Title {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+}
+
+.app-Save_KeyContainer {
+  display: flex;
+  gap: 10px;
+}
+
+.app-Save_Status_Title {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+}
+
+.app-Save_CheckboxToggle {
+  position: relative;
+  -webkit-transition: .4s;
+  transition: .4s;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  width: 50px;
+  height: 30px;
+  background-color: #fff;
+  border: 1px solid #6a6a6a;
+  border-radius: 10px;
+  box-shadow: inset -20px 0 0 0 #6a6a6a;
+}
+
+.app-Save_CheckboxToggle:after {
+  content: "off";
+  text-align: center;
+  font-size: 10px;
+  text-transform: uppercase;
+  position: absolute;
+  top: 9px;
+  left: 1px;
+  background: transparent;
+  width: 26px;
+  height: 26px;
+  border-radius: 30%;
+}
+
+.app-Save_CheckboxToggle:checked {
+  box-shadow: inset 20px 0 0 0 #6BB6BB;
+  border-color: #6BB6BB;
+}
+
+.app-Save_CheckboxToggle:checked:after {
+  text-align: center;
+  font-size: 10px;
+  text-transform: uppercase;
+  content: "on";
+  top: 9px;
+  left: 22px;
+}
+
+.app-Save_Window {
+  min-width: 750px;
+  height: 20%;
+  min-height: 250px;
+  padding-left: min(5%, 70px);
+  padding-right: min(5%, 70px);
+  padding-top: min(5%, 30px);
+  padding-bottom: min(5%, 30px);
+}
+
+.app-ImportWindow {
+  width: 90%;
+  min-width: 470px;
+  padding-left: min(5%, 70px);
+  padding-right: min(5%, 70px);
+  padding-top: min(5%, 30px);
+  padding-bottom: min(5%, 30px);
+}
+
+.app-ImportFileWindow {
+  width: 90%;
+  min-width: 470px;
+  padding-left: min(5%, 70px);
+  padding-right: min(5%, 70px);
+  padding-top: min(5%, 30px);
+  padding-bottom: min(5%, 30px);
+}
+
+.app-ExportWindow {
+  width: 90%;
+  min-width: 470px;
+  padding-left: min(5%, 70px);
+  padding-right: min(5%, 70px);
+  padding-top: min(5%, 30px);
+  padding-bottom: min(5%, 30px);
+}
+
+.app-InputAddressWindow {
+  width: 950px;
+  padding-left: 70px;
+  padding-right: 70px;
+  padding-top: 30px;
+  padding-bottom: 30px;
+}
+
+.app-CleanCacheWindow {
+  width: 60%;
+}
+
+.app-PasswordSettingsWindow {
+  width: 90%;
+  min-width: 500px;
+  padding-left: min(5%, 70px);
+  padding-right: min(5%, 70px);
+  padding-top: min(5%, 30px);
+  padding-bottom: min(5%, 30px);
+}
+
+.app-SendToWalletWindow {
+  width: 950px;
+  padding-left: 70px;
+  padding-right: 70px;
+  padding-top: 30px;
+  padding-bottom: 30px;
+}
+
+.app-WelcomeWindow {
+  overflow: auto;
+  max-width: 700px;
+  max-height: 500px;
+  padding-left: 30px;
+  padding-right: 30px;
+  padding-top: 30px;
+  padding-bottom: 30px;
+  top: 10px;
+  position: absolute;
+}
+
+.app-DelegateWindow {
+  width: 90%;
+  min-width: 550px;
+  padding-left: min(5%, 70px);
+  padding-right: min(5%, 70px);
+  padding-top: min(5%, 30px);
+  padding-bottom: min(5%, 30px);
+}
+
+.app-CoinBurn_KeyTip {
+  left: -400px;
+  width: 400px;
+}
+
+.app-SaveWindow_KeyTip {
+  left: 100px;
+  top: -90px;
+  min-width: 420px;
+  height: 60px;
+}

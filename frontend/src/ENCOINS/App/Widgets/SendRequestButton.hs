@@ -10,10 +10,11 @@ import           Backend.Protocol.TxValidity     (TxValidity (..),
                                                   txValidityLedger,
                                                   txValidityWallet)
 import           Backend.Protocol.Types
-import           Backend.Servant.Requests        (eventEither, getRelayUrlE,
+import           Backend.Servant.Requests        (getRelayUrlE,
                                                   statusRequestWrapper)
 import           Backend.Status                  (Status (..))
-import           Backend.Utility                 (switchHoldDyn, toEither)
+import           Backend.Utility                 (eventEither, switchHoldDyn,
+                                                  toEither)
 import           Backend.Wallet                  (Wallet (..))
 import           ENCOINS.Bulletproofs            (Secrets)
 import           ENCOINS.Common.Widgets.Advanced (updateUrls)

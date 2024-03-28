@@ -14,19 +14,18 @@ import qualified Data.Text                       as T
 import           Reflex.Dom
 
 import           Backend.Status                  (UrlStatus (..), isNotValidUrl)
+import           Backend.Utility                 (toText)
 import           Backend.Wallet                  (LucidConfig (..), Wallet (..),
                                                   lucidConfigDao, toJS)
 import           ENCOINS.App.Widgets.Basic       (containerApp)
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils            (checkUrl, stripHostOrRelay,
-                                                  toText)
+import           ENCOINS.Common.Utils            (checkUrl, stripHostOrRelay)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn, btnWithBlock, divClassId)
 import           ENCOINS.DAO.Widgets.RelayTable  (fetchDelegatedByAddress,
                                                   fetchRelayTable,
                                                   relayAmountWidget, unStakeUrl)
 import qualified JS.DAO                          as JS
-
 
 delegateWindow :: MonadWidget t m
   => Event t ()
@@ -35,13 +34,14 @@ delegateWindow :: MonadWidget t m
   -> m ()
 delegateWindow eOpen dWallet dRelayNames = mdo
   eDelay <- delay 0.05 eOpen
+
   eeRelays <- fetchRelayTable eDelay
   emDelegated <- fetchDelegatedByAddress (walletChangeAddress <$> dWallet) eDelay
   eUrlOk <- dialogWindow
     True
     eOpen
     (leftmost [void eUrlOk])
-    delegateWindowStyle
+    "app-DelegateWindow"
     "Delegate ENCS" $ mdo
       eUrlTable <- relayAmountWidget eeRelays emDelegated dRelayNames
       divClass "dao-DelegateWindow_EnterUrl" $ text "Choose a relay URL above or enter a new one below:"
@@ -70,9 +70,6 @@ delegateWindow eOpen dWallet dRelayNames = mdo
         <$> attachPromptlyDyn (fmap (toJS . walletName) dWallet) eUrl
       return eUrl
   pure ()
-
-delegateWindowStyle :: Text
-delegateWindowStyle = "width: min(90%, 950px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px);"
 
 inputWidget :: MonadWidget t m
   => Event t ()
