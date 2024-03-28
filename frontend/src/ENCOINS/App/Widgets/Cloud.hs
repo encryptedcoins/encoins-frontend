@@ -237,21 +237,19 @@ genAesKey :: MonadWidget t m
   => Maybe PasswordRaw
   -> Dynamic t (Maybe AesKeyRaw)
   -> Event t ()
-  -> m (Dynamic t (Maybe AesKeyRaw))
+  -> m (Event t ())
 genAesKey mPass dmCachedKey ev1 = do
   ev2 <- delay 0.1 ev1
-  eNewLoadedKey <- switchHoldDyn dmCachedKey $ \case
+  eNewKeySaved <- switchHoldDyn dmCachedKey $ \case
     Nothing -> do
         let genElId = "genAESKeyId"
         performEvent_ $ JS.generateAESKey genElId <$ ev2
         eAesKeyText <- updated <$> elementResultJS genElId id
         let eAesKey = MkAesKeyRaw <$> eAesKeyText
-        ev3 <- saveAppData mPass aesKey eAesKey
-        eLoadedKey <- updated <$> fetchAesKey mPass "second-load-of-aes-key" ev3
-        pure eLoadedKey
-    Just loadedKey -> pure $ (Just loadedKey) <$ ev2
-  dNewLoadedKey <- holdDyn Nothing eNewLoadedKey
-  pure dNewLoadedKey
+        eKeySaved <- saveAppData mPass aesKey eAesKey
+        pure eKeySaved
+    Just _ -> pure never
+  pure eNewKeySaved
 
 fetchAesKey :: MonadWidget t m
   => Maybe PasswordRaw
@@ -288,13 +286,13 @@ updateMintedTokens old new = foldl' (update new) [] old
 -- restore tokens saved on cloud server
 restoreValidTokens :: MonadWidget t m
   => Dynamic t (Maybe AesKeyRaw)
+  -> Event t ()
   -> m (Dynamic t (Maybe [TokenCacheV3]))
-restoreValidTokens dmKey = do
+restoreValidTokens dmKey eRestore = do
   eTokens <- switchHoldDyn dmKey $ \case
     Nothing -> pure never
     Just key -> do
-      ev <- newEvent
-      eeResotres <- restoreRequest ev
+      eeResotres <- restoreRequest eRestore
       let (eRestoreError, eRestoreResponses) = eventEither eeResotres
       dRestoreResponses <- holdDyn [] eRestoreResponses
       -- logDyn "restoreValidTokens: dRestoreResponses" dRestoreResponses
@@ -321,7 +319,7 @@ decryptTokens key dRestores = do
         -- logDyn "decryptTokens: dmDecryptedTokens" dmDecryptedTokens
         pure $ updated dmDecryptedTokens
 
-  logEvent "decryptTokens: emlmTokens" emlmTokens
+  -- logEvent "decryptTokens: emlmTokens" emlmTokens
   dRes <- holdDyn Nothing emlmTokens
   -- logDyn "decryptTokens: number of tokens" $ length <$> dRes
   -- logDyn "decryptTokens: decrypted tokens" $ showTokens <$> dRes

@@ -5,7 +5,7 @@ import           Backend.Status         (AppStatus (..), CloudStatusIcon (..),
                                          Status (..))
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils   (toJsonText)
-import           JS.Website             (loadJSON, saveJSON)
+import           JS.Website             (loadJSON, saveJSON, removeKey)
 
 
 import           Control.Monad          (void)
@@ -102,6 +102,11 @@ saveAppData mPass key eVal = do
     let eEncodedValue = toJsonText <$> eVal
     let mPassT = (getPassRaw <$> mPass)
     performEvent (saveJSON mPassT key <$> eEncodedValue)
+
+removeCacheKey :: MonadWidget t m
+  => Event t Text
+  -> m (Event t ())
+removeCacheKey eKey = performEvent (removeKey <$> eKey)
 
 loadJsonFromStorage :: (MonadDOM m, FromJSON a) => Text -> m (Maybe a)
 loadJsonFromStorage elId = do

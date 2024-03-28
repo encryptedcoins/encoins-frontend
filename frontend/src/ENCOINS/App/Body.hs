@@ -63,6 +63,7 @@ bodyContentWidget mPass = mdo
     dCloudOn
     dmKey
     dResetTokens
+    eRestore
 
   let eReEncrypt = leftmost [eNewPass, Nothing <$ eCleanOk]
 
@@ -79,14 +80,14 @@ bodyContentWidget mPass = mdo
   dSaveOnFromCache <- loadAppDataE Nothing isCloudOn "app-body-load-is-save-on-key" id False
   dmOldKeyBody <- loadAppDataE mPass aesKey "app-body-load-of-aes-key" id Nothing
 
-  (dSaveWindow, dNewKeyWindow, dOldKeyWindow) <- cloudSettingsWindow
+  (dSaveWindow, dNewKeyWindow, eRestore) <- cloudSettingsWindow
     mPass
     dSaveOnFromCache
     dCloudStatus
     eOpenSaveWindow
   dCloudOn <- holdDyn False $ leftmost $ map updated [dSaveOnFromCache, dSaveWindow]
 
-  dResetTokens <- holdDyn False $ leftmost $ map (updated . fmap isNothing) [dmOldKeyBody, dOldKeyWindow]
+  dResetTokens <- holdDyn False $ updated $ isNothing <$> dmOldKeyBody
 
   dmKey <- holdUniqDyn =<< (holdDyn Nothing $ leftmost $ map updated [dmOldKeyBody, dNewKeyWindow])
 

@@ -68,6 +68,13 @@ function loadJSON(key, resId, pass, decr) {
   }
 }
 
+
+function removeKey(key) {
+  localStorage.removeItem(key);
+  console.log("key", key, "removed");
+  return
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////// App functions //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -597,6 +604,7 @@ async function generateAESKey(resId) {
     ["encrypt", "decrypt"]
   );
   const exportedKeyHex = await exportAESKey(key);
+  console.log("exportedKeyHex", exportedKeyHex.length)
   setInputValue(resId, exportedKeyHex);
 }
 

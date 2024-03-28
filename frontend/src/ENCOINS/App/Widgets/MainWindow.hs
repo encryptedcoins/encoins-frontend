@@ -27,8 +27,9 @@ mainWindow :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t Bool
   -> Dynamic t (Maybe AesKeyRaw)
   -> Dynamic t Bool
+  -> Event t ()
   -> m (Dynamic t [TokenCacheV3])
-mainWindow mPass dWallet dIsDisableButtons dCloudOn dmKey dKeyWasReset = mdo
+mainWindow mPass dWallet dIsDisableButtons dCloudOn dmKey dKeyWasReset eRestore = mdo
     eTab <- tabsSection dTab dIsDisableButtons
     dTab <- holdDyn WalletTab eTab
     eNewTokensV3 <- switchHoldDyn dTab $ \tab -> mdo
@@ -39,8 +40,8 @@ mainWindow mPass dWallet dIsDisableButtons dCloudOn dmKey dKeyWasReset = mdo
       dKeyWasResetFired <- holdDyn False $ tagPromptlyDyn dKeyWasReset $ updated dKeyWasReset
       let dmOldTokensStatusUpdated = resetTokens dmOldTokensV3 dKeyWasResetFired
 
-      dRestoreResponse <- restoreValidTokens dmKey
-      -- logDyn "mainWindow: dRestoreResponse" $ length <$> dRestoreResponse
+      dRestoreResponse <- restoreValidTokens dmKey eRestore
+      logDyn "mainWindow: dRestoreResponse" $ fmap showTokens <$> dRestoreResponse
 
       -- Migrate from old token structure to version 3
       -- if tokensV3 are not found in cache

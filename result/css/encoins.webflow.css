@@ -2006,6 +2006,8 @@ body {
 .app-Cloud_KeyContainer {
   display: flex;
   gap: 10px;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 
 .app-Cloud_Status_Title {
@@ -2063,7 +2065,7 @@ body {
 .app-Cloud_Window {
   min-width: 750px;
   height: 20%;
-  min-height: 250px;
+  min-height: 450px;
   padding-left: min(5%, 70px);
   padding-right: min(5%, 70px);
   padding-top: min(5%, 30px);
@@ -2166,4 +2168,37 @@ body {
   font-family: Poppins, sans-serif;
   font-size: 18px;
   line-height: 32px;
+}
+
+
+.app-Cloud_Restore_ButtonContainer {
+  display: flex;
+  justify-content: left;
+  flex-direction: column;
+  /* gap: 10px; */
+  /* margin-left: 5%; */
+  margin-right: 5%;
+}
+
+@media screen and (min-width: 860px) {
+  .app-Cloud_Restore_ButtonContainer {
+    display: flex;
+    flex-direction: row;
+  }
+}
+
+.app-Cloud_Key_ButtonContainer {
+  display: flex;
+  justify-content: left;
+  flex-direction: column;
+  gap: 10px;
+  /* margin-left: 5%; */
+  margin-right: 5%;
+}
+
+@media screen and (min-width: 860px) {
+  .app-Cloud_Key_ButtonContainer {
+    display: flex;
+    flex-direction: row;
+  }
 }
