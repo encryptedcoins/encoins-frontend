@@ -17,6 +17,8 @@ import           ENCOINS.App.Widgets.Save          (resetTokens)
 import           ENCOINS.App.Widgets.TabsSelection (AppTab (..), tabsSection)
 import           ENCOINS.Common.Cache              (encoinsV3)
 import           ENCOINS.Common.Events
+import ENCOINS.App.Widgets.Save (restoreValidTokens)
+
 
 mainWindow :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Maybe PasswordRaw
@@ -37,7 +39,8 @@ mainWindow mPass dWallet dIsDisableButtons dSaveOn dmKey dKeyWasReset = mdo
       dKeyWasResetFired <- holdDyn False $ tagPromptlyDyn dKeyWasReset $ updated dKeyWasReset
       let dmOldTokensStatusUpdated = resetTokens dmOldTokensV3 dKeyWasResetFired
 
-      -- logDyn "mainWindow: dmOldTokensStatusUpdated" $ fmap showTokens <$> dmOldTokensStatusUpdated
+      dRestoreResponse <- restoreValidTokens dmKey
+      -- logDyn "mainWindow: dRestoreResponse" $ length <$> dRestoreResponse
 
       -- Migrate from old token structure to version 3
       -- if tokensV3 are not found in cache

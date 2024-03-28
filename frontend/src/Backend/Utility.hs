@@ -67,6 +67,16 @@ eventEither ev = (filterLeft ev, filterRight ev)
 eventTuple :: Reflex t => Event t (a,b) -> (Event t a, Event t b)
 eventTuple ev  = (fst <$> ev, snd <$> ev)
 
+dynTuple :: MonadWidget t m
+  => a
+  -> b
+  -> Event t (a,b)
+  -> m (Dynamic t a, Dynamic t b)
+dynTuple aDef bDef eAB = do
+  da <- holdDyn aDef $ fst <$> eAB
+  db <- holdDyn bDef $ snd <$> eAB
+  pure (da, db)
+
 space :: Text
 space = " "
 

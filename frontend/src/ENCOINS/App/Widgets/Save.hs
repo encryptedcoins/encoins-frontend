@@ -8,9 +8,9 @@ import           Backend.Servant.Requests        (restoreRequest,
                                                   savePingRequest, saveRequest)
 import           Backend.Status                  (AppStatus,
                                                   SaveIconStatus (..))
-import           Backend.Utility                 (eventEither, eventMaybeDynDef,
-                                                  eventTuple, space,
-                                                  switchHoldDyn, toText)
+import           Backend.Utility                 (dynTuple, eventEither,
+                                                  eventMaybeDynDef, eventTuple,
+                                                  space, switchHoldDyn, toText)
 import           ENCOINS.App.Widgets.Basic       (elementResultJS, loadAppData,
                                                   saveAppData, saveAppData_,
                                                   tellSaveStatus)
@@ -28,9 +28,10 @@ import           JS.Website                      (copyText)
 import           Control.Monad                   (void, (<=<))
 import           Control.Monad.IO.Class          (MonadIO (..))
 import qualified Crypto.Hash                     as Hash
-import           Data.Aeson                      (eitherDecodeStrict')
+import           Data.Aeson                      (eitherDecodeStrict', eitherDecodeStrict, decodeStrict)
 import           Data.Align                      (align)
-import           Data.Either                     (partitionEithers)
+import           Data.ByteString                 (ByteString)
+-- import           Data.Either                     (partitionEithers)
 import           Data.Functor                    ((<&>))
 import           Data.List                       (find, foldl', union)
 import           Data.List.NonEmpty              (NonEmpty)
@@ -275,7 +276,7 @@ fetchAesKey mPass resId ev = loadAppData mPass aesKey resId ev id Nothing
 -- that are minted and saved only
 restoreValidTokens :: MonadWidget t m
   => Dynamic t (Maybe AesKeyRaw)
-  -> m (Dynamic t [TokenCacheV3])
+  -> m (Dynamic t (Either String [(Text, Text)]))
 restoreValidTokens dmKey = do
   eTokens <- switchHoldDyn dmKey $ \case
     Nothing -> pure never
@@ -284,66 +285,61 @@ restoreValidTokens dmKey = do
       eeResotres <- restoreRequest ev
       let (eRestoreError, eRestoreResponses) = eventEither eeResotres
       dRestoreResponses <- holdDyn [] eRestoreResponses
+      -- logDyn "restoreValidTokens: dRestoreResponses" dRestoreResponses
       updated <$> decryptTokens key dRestoreResponses
-  holdDyn [] eTokens
+  holdDyn (Left "") eTokens
 
 decryptToken :: MonadWidget t m
   => AesKeyRaw
-  -> Event t ()
-  -> EncryptedSecret
-  -> m (Dynamic t Text)
-decryptToken (MkAesKeyRaw key) ev (MkEncryptedSecret encryptedHex) = do
-  let elementId = toText $ Hash.hash @Hash.SHA256 $ encodeUtf8 encryptedHex
-  performEvent_ $ JS.decryptAES (key, elementId, encryptedHex) <$ ev
-  dDecryptedToken <- elementResultJS elementId id
-  -- logDyn "decryptToken: dDecryptedToken" dDecryptedToken
-  pure dDecryptedToken
+  -> RestoreResponse
+  -> m (Dynamic t (Maybe TokenCacheV3))
+decryptToken (MkAesKeyRaw key) (MkRestoreResponse name (MkEncryptedSecret encryptedHex)) = do
+  let resId = toText $ Hash.hash @Hash.SHA256 $ encodeUtf8 encryptedHex
+  ev <- newEventWithDelay 1
+  performEvent_ $ JS.decryptAES (key, resId, encryptedHex) <$ ev
+  let f t = do
+        s <- (decodeStrict :: ByteString -> Maybe Secret) $ encodeUtf8 t
+        mkTokenCacheV3 name s
+  dmDecryptedToken <- elementResultJS resId f
+  pure dmDecryptedToken
 
 decryptTokens :: MonadWidget t m
   => AesKeyRaw
   -> Dynamic t [RestoreResponse]
-  -> m (Dynamic t [TokenCacheV3])
+  -> m (Dynamic t (Either String [(Text, Text)]))
 decryptTokens key dRestores = do
-  logDyn "decryptTokens: received tokens" $ length <$> dRestores
-  eTokens <- switchHoldDyn dRestores $ \case
+  let dValidLength = length <$> dRestores
+  logDyn "decryptTokens: number of received tokens" dValidLength
+  emlmTokens <- switchHoldDyn dRestores $ \case
     [] -> pure never
     restores -> do
-      fmap (updated . sequence) $ flip traverse restores $ \r -> do
-          ev <- newEvent
-          deDecryptedSecret <- decryptToken key ev $ rrEncryptedSecret r
-          let deToken = mkTokenCacheV3 (rrAssetName r) <$> deDecryptedSecret
-          pure deToken
-  let (eErrors, eResponses) = eventTuple $ partitionEithers <$> eTokens
-  dErrors <- holdDyn [] eErrors
-  logDyn "decryptTokens: un-decrypted tokens" $ length <$> dErrors
-  void $ switchHoldDyn dErrors $ \case
-    [] -> pure never
-    errs  -> do
-      logDyn "decryptTokens: json decode errors" (constDyn errs)
-      pure never
-  let dValidLength = length <$> dRestores
-  -- Wait until all tokens are decrypted and return them
-  dRes <- foldDynMaybe
-    (\(ac,ar) _ -> if length ar == ac then Just (ac,ar) else Nothing) (0,[]) $
-    attachPromptlyDyn dValidLength eResponses
-  logDyn "decryptTokens: decrypted tokens" $ length <$> dRes
+        let nameSecrets = map (\(MkRestoreResponse (MkAssetName name) (MkEncryptedSecret encryptedHex)) -> (name, encryptedHex)) restores
+        ev <- newEventWithDelay 1
+        let resId = "decryptTokens-resId"
+        performEvent_ $ JS.decryptListAES (getAesKeyRaw key, resId, nameSecrets) <$ ev
+        let f = eitherDecodeStrict' . encodeUtf8 :: Text -> Either String [(Text, Text)]
+        --       -- map (uncurry mkTokenCacheV3)
+        --         (decodeStrict :: ByteString -> Maybe [(Text, Text)])
+        --          $ encodeUtf8 t
+        dmDecryptedTokens <- elementResultJS resId f
+        -- logDyn "decryptTokens: dmDecryptedTokens" dmDecryptedTokens
+        pure $ updated dmDecryptedTokens
 
-  pure $ snd <$> dRes
+  logEvent "decryptTokens: emlmTokens" emlmTokens
+  dRes <- holdDyn (Left "") emlmTokens
+  -- logDyn "decryptTokens: number of tokens" $ length <$> dRes
+  -- logDyn "decryptTokens: decrypted tokens" $ showTokens <$> dRes
+  pure dRes
 
-mkTokenCacheV3 :: AssetName -> Text -> Either String TokenCacheV3
-mkTokenCacheV3 name decrypted = case eSecret of
-  Left err -> Left err
-  Right secret ->
-    let v = secretV secret
-    in if F 0 <= v && v < F (2^(20 :: Integer))
-          then Right $ MkTokenCacheV3
-            { tcAssetName  = name
-            , tcSecret     = secret
-            , tcSaveStatus = Saved
-            }
-          else Left "Invalid amount in the Secret from save server"
-  where
-    eSecret = eitherDecodeStrict' $ encodeUtf8 decrypted
+mkTokenCacheV3 :: AssetName -> Secret -> Maybe TokenCacheV3
+mkTokenCacheV3 name secret =  if F 0 <= v && v < F (2^(20 :: Integer))
+  then Just $ MkTokenCacheV3
+    { tcAssetName  = name
+    , tcSecret     = secret
+    , tcSaveStatus = Saved
+    }
+  else Nothing
+    where v = secretV secret
 
 saveSettingsWindow :: MonadWidget t m
   => Maybe PasswordRaw
