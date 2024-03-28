@@ -214,3 +214,17 @@ decryptAES (key, resId, encryptedTxt) = liftIO $ decryptAES_js
 decryptAES :: MonadIO m => (Text, Text, Text) -> m ()
 decryptAES _ = error "GHCJS is required!"
 #endif
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
+  "decryptListAES($1, $2, $3)"
+  decryptListAES_js :: JSString -> JSString -> JSVal -> JSM ()
+
+decryptListAES :: MonadIO m => (Text, Text, [(Text,Text)]) -> m ()
+decryptListAES (key, resId, list) = liftIO $ do
+  list_js <- toJSVal list
+  decryptListAES_js (textToStr key) (textToStr resId) list_js
+#else
+decryptListAES :: MonadIO m => (Text, Text, [(Text,Text)]) -> m ()
+decryptListAES _ = error "GHCJS is required!"
+#endif
