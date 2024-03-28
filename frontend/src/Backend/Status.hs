@@ -98,13 +98,13 @@ isNotValidUrl UrlEmpty   = True
 isNotValidUrl UrlInvalid = True
 isNotValidUrl UrlValid   = False
 
-data SaveIconStatus = NoTokens | Saving | AllSaved | FailedSave
+data CloudStatusIcon = NoTokens | Saving | AllSaved | FailedSave
   deriving stock (Eq, Show)
 
-data AppStatus = Save SaveIconStatus | Tx (Text, Status)
+data AppStatus = Save CloudStatusIcon | Tx (Text, Status)
   deriving stock (Eq, Show)
 
-isSaveStatus :: AppStatus -> Maybe SaveIconStatus
+isSaveStatus :: AppStatus -> Maybe CloudStatusIcon
 isSaveStatus (Save s) = Just s
 isSaveStatus _        = Nothing
 

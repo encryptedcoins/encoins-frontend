@@ -7,7 +7,7 @@ import           Prelude                       hiding (take)
 import           Reflex.Dom
 
 import           Backend.Protocol.Types        (PasswordRaw)
-import           Backend.Status                (SaveIconStatus (..))
+import           Backend.Status                (CloudStatusIcon (..))
 import           Backend.Utility               (space)
 import           Backend.Wallet                (Wallet (..), WalletName (..),
                                                 currentNetworkApp)
@@ -25,9 +25,9 @@ navbarWidget :: MonadWidget t m
   -> Dynamic t Bool
   -> Maybe PasswordRaw
   -> Dynamic t Bool
-  -> Dynamic t SaveIconStatus
+  -> Dynamic t CloudStatusIcon
   -> m (Event t (), Event t (), Event t ())
-navbarWidget w dIsBlock mPass dIsSaveOn dSaveStatus= do
+navbarWidget w dIsBlock mPass dIsCloudOn dCloudStatus= do
   elAttr "div" ("data-animation" =: "default" <> "data-collapse" =: "none" <> "data-duration" =: "400" <> "id" =: "Navbar"
     <> "data-easing" =: "ease" <> "data-easing2" =: "ease" <> "role" =: "banner" <> "class" =: "navbar w-nav") $
     divClass "navbar-container w-container" $ do
@@ -40,7 +40,7 @@ navbarWidget w dIsBlock mPass dIsSaveOn dSaveStatus= do
             divClass "menu-div-empty" blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do
                 elLocker <- lockerWidget mPass dIsBlock
-                elSave <- saveIconWidget dIsSaveOn dIsBlock dSaveStatus
+                elSave <- saveIconWidget dIsCloudOn dIsBlock dCloudStatus
                 eConnect <- divClass "menu-item-button-left" $
                     btnWithBlock "button-switching flex-center" "" dIsBlock $ do
                         dyn_ $ fmap (walletIcon . walletName) w
@@ -72,15 +72,15 @@ lockerDiv dClassMap popupText
 saveIconWidget :: MonadWidget  t m
   => Dynamic t Bool
   -> Dynamic t Bool
-  -> Dynamic t SaveIconStatus
+  -> Dynamic t CloudStatusIcon
   -> m (Element EventResult (DomBuilderSpace m) t)
-saveIconWidget dIsSaveOn dIsBlock dSaveStatus = do
+saveIconWidget dIsCloudOn dIsBlock dCloudStatus = do
   let dPopup = bool
         "Save sync is off"
         "Save sync is on"
-        <$> dIsSaveOn
+        <$> dIsCloudOn
   let defaultClass = "menu-item app-Save_IconContainer"
-  let dPreIconClass = zipDynWith selectIconClass dSaveStatus dIsSaveOn
+  let dPreIconClass = zipDynWith selectIconClass dCloudStatus dIsCloudOn
   let dIconClass = (\iCl -> defaultClass <> space <> iCl) <$> dPreIconClass
   let dClass = zipDynWith
         (\isBlock cl -> bool cl (cl <> space <> "click-disabled") isBlock )
@@ -98,7 +98,7 @@ savePopup dClassMap dPopup
       $ divClass "app-Nav_SavePopup"
       $ el "p" $ dynText dPopup
 
-selectIconClass :: SaveIconStatus -> Bool -> Text
+selectIconClass :: CloudStatusIcon -> Bool -> Text
 selectIconClass status isOn = case (status, isOn) of
   (_, False)     -> "app-Save_IconTurnOff"
   (NoTokens, _)  -> "app-Save_IconTurnOff"

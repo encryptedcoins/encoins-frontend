@@ -1981,7 +1981,7 @@ body {
   }
 }
 
-.app-Save_CheckboxContainer {
+.app-Cloud_CheckboxContainer {
   display: flex;
 }
 
@@ -1994,7 +1994,7 @@ body {
   line-height: 32px;
 }
 
-.app-Save_AesKey_Title {
+.app-Cloud_AesKey_Title {
   margin-top: 10px;
   display: flex;
   align-items: center;
@@ -2003,12 +2003,12 @@ body {
   line-height: 32px;
 }
 
-.app-Save_KeyContainer {
+.app-Cloud_KeyContainer {
   display: flex;
   gap: 10px;
 }
 
-.app-Save_Status_Title {
+.app-Cloud_Status_Title {
   margin-top: 10px;
   display: flex;
   align-items: center;
@@ -2017,7 +2017,7 @@ body {
   line-height: 32px;
 }
 
-.app-Save_CheckboxToggle {
+.app-Cloud_CheckboxToggle {
   position: relative;
   -webkit-transition: .4s;
   transition: .4s;
@@ -2032,7 +2032,7 @@ body {
   box-shadow: inset -20px 0 0 0 #6a6a6a;
 }
 
-.app-Save_CheckboxToggle:after {
+.app-Cloud_CheckboxToggle:after {
   content: "off";
   text-align: center;
   font-size: 10px;
@@ -2046,12 +2046,12 @@ body {
   border-radius: 30%;
 }
 
-.app-Save_CheckboxToggle:checked {
+.app-Cloud_CheckboxToggle:checked {
   box-shadow: inset 20px 0 0 0 #6BB6BB;
   border-color: #6BB6BB;
 }
 
-.app-Save_CheckboxToggle:checked:after {
+.app-Cloud_CheckboxToggle:checked:after {
   text-align: center;
   font-size: 10px;
   text-transform: uppercase;
@@ -2060,7 +2060,7 @@ body {
   left: 22px;
 }
 
-.app-Save_Window {
+.app-Cloud_Window {
   min-width: 750px;
   height: 20%;
   min-height: 250px;
@@ -2152,9 +2152,18 @@ body {
   width: 400px;
 }
 
-.app-SaveWindow_KeyTip {
+.app-CloudWindow_KeyTip {
   left: 100px;
   top: -90px;
   min-width: 420px;
   height: 60px;
+}
+
+.app-Cloud_Restore_Title {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
 }

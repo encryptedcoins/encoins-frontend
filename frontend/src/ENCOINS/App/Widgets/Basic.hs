@@ -1,7 +1,7 @@
 module ENCOINS.App.Widgets.Basic where
 
 import           Backend.Protocol.Types (PasswordRaw (..))
-import           Backend.Status         (AppStatus (..), SaveIconStatus (..),
+import           Backend.Status         (AppStatus (..), CloudStatusIcon (..),
                                          Status (..))
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils   (toJsonText)
@@ -134,7 +134,7 @@ tellTxStatus title ev =
       (\x -> singletonL . Tx . bool (title, x) (T.empty, Ready) $ x == Ready) <$> ev
 
 tellSaveStatus :: (MonadWidget t m, EventWriter t [AppStatus] m)
-  => Event t SaveIconStatus
+  => Event t CloudStatusIcon
   -> m ()
 tellSaveStatus ev = tellEvent $ (singletonL . Save) <$> ev
 

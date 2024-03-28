@@ -7,7 +7,7 @@ import           Data.Text                 (Text)
 import qualified Data.Text                 as T
 import           Reflex.Dom
 
-import           Backend.Status            (AppStatus, SaveIconStatus (..),
+import           Backend.Status            (AppStatus, CloudStatusIcon (..),
                                             Status (..), isSaveStatus,
                                             isReady, isStatus,
                                             isStatusWantBlockButtons,
@@ -46,7 +46,7 @@ unexpectedNetworkApp =
 handleAppStatus :: MonadWidget t m
   => Dynamic t Wallet
   -> Event t [AppStatus]
-  -> m (Dynamic t Text, Dynamic t Bool, Dynamic t SaveIconStatus)
+  -> m (Dynamic t Text, Dynamic t Bool, Dynamic t CloudStatusIcon)
 handleAppStatus dWallet elAppStatus = do
   logEvent "AppStatus" elAppStatus
   eSaveStatus <- fromEventList isSaveStatus elAppStatus
@@ -66,9 +66,9 @@ handleAppStatus dWallet elAppStatus = do
   let dIsDisableButtons = (isStatusWantBlockButtons . snd) <$> dStatus
   let dStatusT = flatStatus <$> dStatus
 
-  dSaveStatus <- holdDyn NoTokens eSaveStatus
+  dCloudStatus <- holdDyn NoTokens eSaveStatus
 
-  pure (dStatusT, dIsDisableButtons, dSaveStatus)
+  pure (dStatusT, dIsDisableButtons, dCloudStatus)
 
 fromEventList :: MonadWidget t m => (a -> Maybe b) -> Event t [a] -> m (Event t b)
 fromEventList f eList = do

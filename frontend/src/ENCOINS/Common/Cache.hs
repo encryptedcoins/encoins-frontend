@@ -21,5 +21,5 @@ currentWallet = "current-wallet"
 aesKey :: Text
 aesKey = "encoins-aes-key"
 
-isSaveOn :: Text
-isSaveOn = "encoins-save-on"
+isCloudOn :: Text
+isCloudOn = "encoins-save-on"
