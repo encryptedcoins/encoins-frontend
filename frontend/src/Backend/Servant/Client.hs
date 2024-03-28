@@ -65,12 +65,12 @@ type SaveApi =
               :> ReqBody '[JSON] [SaveRequest]
               :> Post '[JSON] (Map AssetName StatusResponse)
 
-    :<|> "restore" :> Get '[JSON] [RestoreResponse]
+    :<|> "restore" :> Get '[JSON] [(Text,Text)]
 
 data SaveApiClient t m = MkSaveApiClient
   { sacPing    :: Res t m NoContent
   , sacSave    :: ReqRes t m [SaveRequest] (Map AssetName StatusResponse)
-  , sacRestore :: Res t m [RestoreResponse]
+  , sacRestore :: Res t m [(Text,Text)]
   }
 
 mkSaveApiClient :: forall t m . MonadWidget t m

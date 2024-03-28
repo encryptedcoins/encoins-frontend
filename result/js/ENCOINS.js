@@ -636,7 +636,6 @@ async function decryptAES(hexKey, resId, encryptedDataHex) {
 }
 
 async function decryptListAES(hexKey, resId, encryptedDataHexList) {
-  // console.log("encryptedDataHexList", encryptedDataHexList)
   const key = await importAESKey(hexKey);
   const decryptedTextList = [];
 
@@ -654,17 +653,14 @@ async function decryptListAES(hexKey, resId, encryptedDataHexList) {
         decryptedData.ciphertext
       )
     );
-    // console.log("decryptedText", decryptedText)
 
     decryptedTextList.push([encryptedDataHex[0], decryptedText]);
   } catch (e) {
-      console.log("Decode error:", e)
-      decryptedTextList.push([encryptedDataHex[0], ""]);
+      console.log("Decrypt error:", e)
     }
 
   }
   const decryptedJSON = JSON.stringify(decryptedTextList);
-  // console.log("decryptedTextList", decryptedJSON)
   setInputValue(resId, decryptedJSON)
 
 }
