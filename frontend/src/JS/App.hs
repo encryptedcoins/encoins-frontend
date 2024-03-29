@@ -172,3 +172,45 @@ addrLoad = liftIO . addrLoad_js . textToStr
 addrLoad :: MonadIO m => Text -> m ()
 addrLoad = const $ error "GHCJS is required!"
 #endif
+
+----------------------------- for Save -------------------------------------
+#ifdef __GHCJS__
+foreign import javascript unsafe
+  "generateAESKey($1)" generateAESKey_js :: JSString -> JSM ()
+
+generateAESKey :: MonadIO m => Text -> m ()
+generateAESKey = liftIO . generateAESKey_js . textToStr
+#else
+generateAESKey :: MonadIO m => Text -> m ()
+generateAESKey = const $ error "GHCJS is required!"
+#endif
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
+  "encryptAES($1, $2, $3)"
+  encryptAES_js :: JSString -> JSString -> JSString -> JSM ()
+
+encryptAES :: MonadIO m => (Text, Text, Text) -> m ()
+encryptAES (key, resId, txt) = liftIO $ encryptAES_js
+  (textToStr key)
+  (textToStr resId)
+  (textToStr txt)
+#else
+encryptAES :: MonadIO m => (Text, Text, Text)  -> m ()
+encryptAES _ = error "GHCJS is required!"
+#endif
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
+  "decryptAES($1, $2, $3)"
+  decryptAES_js :: JSString -> JSString -> JSString -> JSM ()
+
+decryptAES :: MonadIO m => (Text, Text, Text) -> m ()
+decryptAES (key, resId, encryptedTxt) = liftIO $ decryptAES_js
+  (textToStr key)
+  (textToStr resId)
+  (textToStr encryptedTxt)
+#else
+decryptAES :: MonadIO m => (Text, Text, Text) -> m ()
+decryptAES _ = error "GHCJS is required!"
+#endif

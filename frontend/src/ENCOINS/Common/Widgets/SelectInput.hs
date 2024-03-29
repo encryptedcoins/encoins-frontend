@@ -6,7 +6,8 @@ import           Reflex.Dom
 import           Text.Read            (readMaybe)
 import           Witherable           (catMaybes)
 
-import           ENCOINS.Common.Utils (safeIndex, toText)
+import           Backend.Utility      (toText)
+import           ENCOINS.Common.Utils (safeIndex)
 
 -- TODO: complete and move this to ENCOINS.App.Widgets
 -- Title of the input element along with a hint about the expected input

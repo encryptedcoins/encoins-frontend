@@ -2,129 +2,114 @@
 
 module ENCOINS.App.Body (bodyWidget) where
 
-import           Data.Aeson                         (encode)
+import           Control.Monad.IO.Class             (MonadIO (..))
+import           Data.Aeson                         (ToJSON)
 import           Data.Bifunctor                     (first)
-import           Data.ByteString.Lazy               (toStrict)
+import           Data.Maybe                         (isNothing)
 import           Data.Text                          (Text)
-import qualified Data.Text                          as T
-import           Data.Text.Encoding                 (decodeUtf8)
 import           Reflex.Dom
 
-import           Backend.Status                     (Status (..), isNoRelay,
-                                                     isReady,
-                                                     isTxProcessOrCriticalError)
+import           Backend.Protocol.Types
 import           Backend.Utility                    (switchHoldDyn)
-import           Backend.Wallet                     (Wallet (..),
-                                                     walletsSupportedInApp)
-import           Config.Config                      (NetworkConfig (..),
-                                                     networkConfig)
-import           ENCOINS.App.Widgets.Basic          (elementResultJS,
+import           Backend.Wallet                     (walletsSupportedInApp)
+import           ENCOINS.App.Widgets.Basic          (loadAppDataE,
                                                      waitForScripts)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
 import           ENCOINS.App.Widgets.Navbar         (navbarWidget)
+import           ENCOINS.App.Widgets.Notification
 import           ENCOINS.App.Widgets.PasswordWindow
+import           ENCOINS.App.Widgets.Save
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWallet,
                                                      welcomeWindow,
                                                      welcomeWindowWalletStorageKey)
-import           ENCOINS.Common.Utils               (toText)
+import           ENCOINS.Common.Cache               (aesKey, encoinsV3,
+                                                     isSaveOn)
+import           ENCOINS.Common.Utils               (toJsonText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
-import           ENCOINS.Common.Widgets.Basic       (column, notification,
-                                                     space)
+import           ENCOINS.Common.Widgets.Basic       (notification)
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
 
--- import           ENCOINS.Common.Events
+import           ENCOINS.Common.Events
 
-bodyContentWidget :: MonadWidget t m => Maybe PasswordRaw -> m (Event t (Maybe PasswordRaw))
-bodyContentWidget mpass = mdo
-  (eSettingsOpen, eConnectOpen) <- navbarWidget dWallet dIsDisableButtons mpass
+bodyContentWidget :: MonadWidget t m
+  => Maybe PasswordRaw
+  -> m (Event t (Maybe PasswordRaw))
+bodyContentWidget mPass = mdo
+  (ePassOpen, eConnectOpen, eOpenSaveWindow) <- navbarWidget
+    dWallet
+    dIsDisableButtons
+    mPass
+    dSaveOn
+    dSaveStatus
 
-  (dStatusT, dIsDisableButtons) <- handleAppStatus dWallet evEvStatus
+  (dStatusT, dIsDisableButtons, dSaveStatus) <-
+    handleAppStatus dWallet evStatusList
   notification dStatusT
 
   dWallet <- connectWindow walletsSupportedInApp eConnectOpen
 
-  (eNewPass, eResetPass) <- passwordSettingsWindow eSettingsOpen
-  eCleanOk <- cleanCacheDialog eResetPass
-
+  (eNewPass, eClearCache) <- passwordSettingsWindow ePassOpen
+  eCleanOk <- cleanCacheDialog eClearCache
   welcomeWindow welcomeWindowWalletStorageKey welcomeWallet
 
   divClass "section-app section-app-empty wf-section" blank
 
-  (dSecrets, evEvStatus) <- runEventWriterT $ mainWindow mpass dWallet dIsDisableButtons
+  (dTokensV3, evStatusList) <- runEventWriterT $ mainWindow
+    mPass
+    dWallet
+    dIsDisableButtons
+    dSaveOn
+    dmKey
+    dResetTokens
 
-  performEvent_ (reEncryptEncoins <$> attachPromptlyDyn dSecrets (leftmost
-    [eNewPass, Nothing <$ eCleanOk]))
+  let eReEncrypt = leftmost [eNewPass, Nothing <$ eCleanOk]
+
+  performEvent_
+    $ fmap (reEncrypt encoinsV3)
+    $ attachPromptlyDyn dTokensV3 eReEncrypt
+
+  performEvent_
+    $ fmap (reEncrypt aesKey)
+    $ attachPromptlyDynWithMaybe (\mKey e -> (,e) <$> mKey) dmKey eReEncrypt
 
   copiedNotification
 
+  dSaveOnFromCache <- loadAppDataE Nothing isSaveOn "app-body-load-is-save-on-key" id False
+  dmOldKeyBody <- loadAppDataE mPass aesKey "app-body-load-of-aes-key" id Nothing
+
+  (dSaveWindow, dNewKeyWindow, dOldKeyWindow) <- saveSettingsWindow
+    mPass
+    dSaveOnFromCache
+    dSaveStatus
+    eOpenSaveWindow
+  dSaveOn <- holdDyn False $ leftmost $ map updated [dSaveOnFromCache, dSaveWindow]
+
+  dResetTokens <- holdDyn False $ leftmost $ map (updated . fmap isNothing) [dmOldKeyBody, dOldKeyWindow]
+
+  dmKey <- holdUniqDyn =<< (holdDyn Nothing $ leftmost $ map updated [dmOldKeyBody, dNewKeyWindow])
+
   pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
 
-  where
-    reEncryptEncoins (d, mNewPass) = saveJSON (getPassRaw <$> mNewPass) "encoins-with-name"
-      . decodeUtf8 .  toStrict . encode $ d
+-- ReEncryption functions wanted every time when
+-- wherever some key is saved with password.
+reEncrypt :: (ToJSON a, MonadIO m) => Text -> (a, Maybe PasswordRaw) -> m ()
+reEncrypt key (d, mNewPass) = saveJSON
+      (getPassRaw <$> mNewPass) key . toJsonText $ d
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo
   mPass <- fmap PasswordHash <$> loadHashedPassword passwordSotrageKey
-  (ePassOk, eReset) <- case mPass of
+  (ePassOk, eCleanCache) <- case mPass of
     Just pass -> first (Just <$>) <$> enterPasswordWindow pass eCleanOk
     Nothing -> do
       ePb <- getPostBuild
       pure (Nothing <$ ePb, never)
-  eCleanOk <- cleanCacheDialog eReset
+  eCleanOk <- cleanCacheDialog eCleanCache
   dmmPass <- holdDyn Nothing $ Just <$> leftmost [ePassOk, Nothing <$ eCleanOk, eNewPass]
   eNewPass <- switchHoldDyn dmmPass $ \case
-    Nothing    -> pure never
-    Just mpass -> bodyContentWidget mpass
-
+    Nothing   -> pure never
+    Just pass -> bodyContentWidget pass
   jQueryWidget
-
-fetchWalletNetworkStatus :: MonadWidget t m
-  => Dynamic t Wallet
-  -> m (Dynamic t (Text, Status))
-fetchWalletNetworkStatus dWallet = do
-  dWalletLoad <- elementResultJS "EndWalletLoad" id
-  let eLoadedWallet = tagPromptlyDyn dWallet $ updated dWalletLoad
-  let eUnexpectedNetworkB = fmap
-        (\w -> walletNetworkId w /= app networkConfig)
-        eLoadedWallet
-  let mkNetworkMessage isInvalidNetwork message =
-        case (isInvalidNetwork, message) of
-          (True,_) -> Just ("NetworkId status", WalletNetworkError unexpectedNetworkApp)
-          (False, ("", Ready)) -> Nothing
-          (False, _) -> Just (T.empty, Ready)
-  foldDynMaybe mkNetworkMessage (T.empty, Ready) eUnexpectedNetworkB
-
-unexpectedNetworkApp :: Text
-unexpectedNetworkApp =
-           "Unexpected network! Please switch the wallet to"
-        <> space
-        <> toText (app networkConfig)
-        <> space
-        <> "mode."
-
-handleAppStatus :: MonadWidget t m
-  => Dynamic t Wallet
-  -> Event t [Event t (Text, Status)]
-  -> m (Dynamic t Text, Dynamic t Bool)
-handleAppStatus dWallet evEvStatus = do
-  let eStatus = coincidence $ leftmost <$> evEvStatus
-  dWalletNetworkStatus <- fetchWalletNetworkStatus dWallet
-
-  dStatus <- foldDynMaybe
-    -- Hold NoRelay status once it fired until page reloading.
-    (\ev (_, accS) -> if isNoRelay accS then Nothing else Just ev)
-    (T.empty, Ready) $ leftmost [eStatus, updated dWalletNetworkStatus]
-
-  let flatStatus (t, s)
-        | isReady s = T.empty
-        | T.null $ T.strip t = toText s
-        | otherwise = t <> column <> space <> toText s
-
-  let dIsDisableButtons = (isTxProcessOrCriticalError . snd) <$> dStatus
-  let dStatusT = flatStatus <$> dStatus
-
-  pure (dStatusT, dIsDisableButtons)

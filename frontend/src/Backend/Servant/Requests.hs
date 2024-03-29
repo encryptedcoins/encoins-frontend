@@ -2,6 +2,13 @@
 
 module Backend.Servant.Requests where
 
+import           Backend.Protocol.Types
+import           Backend.Servant.Client
+import           Backend.Utility        (normalizeCurrentUrl, normalizePingUrl)
+import           Config.Config          (saveServerUrl)
+import           ENCOINS.Common.Events
+import           JS.App                 (pingServer)
+
 import           Control.Lens           (view)
 import           Control.Monad          (forM)
 import           Control.Monad.IO.Class (MonadIO (..))
@@ -10,18 +17,12 @@ import           Data.Array.IO
 import           Data.Functor           (($>))
 import           Data.List              (delete)
 import           Data.Map               (Map)
-import           Data.Maybe             (isNothing)
 import           Data.Text              (Text)
-import           Reflex.Dom             hiding (Value)
+import           Reflex.Dom             hiding (Request, Value)
+import           Servant.API            (NoContent)
 import           Servant.Reflex         (BaseUrl (..), ReqResult (..))
 import           System.Random          (randomRIO)
-import           Witherable             (catMaybes)
 
-import           Backend.Protocol.Types
-import           Backend.Servant.Client
-import           Backend.Utility        (normalizeCurrentUrl, normalizePingUrl)
-import           ENCOINS.Common.Events
-import           JS.App                 (pingServer)
 
 newTxRequestWrapper :: MonadWidget t m
   => BaseUrl
@@ -32,7 +33,7 @@ newTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- newTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "newTx request" $ () <$ eRespUnwrapped
+  logEvent "newTx response" $ () <$ eRespUnwrapped
   pure eRespUnwrapped
 
 submitTxRequestWrapper :: MonadWidget t m
@@ -44,7 +45,7 @@ submitTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- submitTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = (() <$) . mkTextOrResponse <$> eResp
-  logEvent "submitTx request" eRespUnwrapped
+  logEvent "submitTx response" eRespUnwrapped
   return eRespUnwrapped
 
 pingRequestWrapper :: MonadWidget t m
@@ -53,8 +54,7 @@ pingRequestWrapper :: MonadWidget t m
   -> m (Event t (Maybe BaseUrl))
 pingRequestWrapper baseUrl e = do
   let ApiClient{..} = mkApiClient baseUrl
-  delayed <- delay 0.2 e
-  ePingRes <- fmap makeResponse <$> pingRequest delayed
+  ePingRes <- fmap makeResponse <$> pingRequest e
   logEvent "pingRequestWrapper: ping response" ePingRes
   let eRes = (\p -> baseUrl <$ p) <$> ePingRes
   pure eRes
@@ -68,7 +68,7 @@ serverTxRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- serverTxRequest (Right <$> dReqBody) e
   let eRespUnwrapped = (() <$) . mkTextOrResponse <$> eResp
-  logEvent "serverTx request" eRespUnwrapped
+  logEvent "serverTx response" eRespUnwrapped
   return eRespUnwrapped
 
 statusRequestWrapper :: MonadWidget t m
@@ -80,7 +80,7 @@ statusRequestWrapper baseUrl dReqBody e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- statusRequest (Right <$> dReqBody) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "status request" $ fmap showStatus <$> eRespUnwrapped
+  logEvent "status response" $ fmap showStatus <$> eRespUnwrapped
   return eRespUnwrapped
 
 versionRequestWrapper :: MonadWidget t m
@@ -90,7 +90,7 @@ versionRequestWrapper :: MonadWidget t m
 versionRequestWrapper baseUrl e = do
   let ApiClient{..} = mkApiClient baseUrl
   eVersionRes <- fmap makeResponse <$> versionRequest e
-  logEvent "Version" eVersionRes
+  logEvent "version response" eVersionRes
   return eVersionRes
 
 -- Fetch servers that are selected for delegation
@@ -102,7 +102,7 @@ serversRequestWrapper baseUrl e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- serversRequest e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "servers request" eRespUnwrapped
+  logEvent "servers response" eRespUnwrapped
   return eRespUnwrapped
 
 -- Fetch available servers for app
@@ -114,7 +114,7 @@ currentRequestWrapper baseUrl e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- currentRequest e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "current servers request" eRespUnwrapped
+  logEvent "current response" eRespUnwrapped
   return $ fmap (fmap normalizeCurrentUrl) <$> eRespUnwrapped
 
 -- Fetch how much encoins and which relay the particular wallet delegated.
@@ -127,7 +127,7 @@ infoRequestWrapper baseUrl addr e = do
   let ApiClient{..} = mkApiClient baseUrl
   eResp <- infoRequest (Right <$> addr) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "info request" eRespUnwrapped
+  logEvent "info response" eRespUnwrapped
   return eRespUnwrapped
 
 ---------------------------------------------- Utilities ----------------------------------------
@@ -163,26 +163,6 @@ mkStatusOrResponse (ResponseSuccess _ a _) = Right a
 mkStatusOrResponse (ResponseFailure _ _ xhr) = Left $ fromIntegral $ view xhrResponse_status xhr
 mkStatusOrResponse (RequestFailure _ _) = Left $ -1
 
-eventMaybe :: Reflex t => e -> Event t (Maybe a) -> (Event t e, Event t a)
-eventMaybe errValue ev = (errValue <$ ffilter isNothing ev, catMaybes ev)
-
-eventEither :: Reflex t => Event t (Either e a) -> (Event t e, Event t a)
-eventEither ev = (filterLeft ev, filterRight ev)
-
-hasStatusZero :: Int -> Either Int Int
-hasStatusZero = \case
-  0 -> Left 0
-  n -> Right n
-
-fromRelayResponse :: Reflex t
-  => Event t (Either Int a)
-  -> (Event t Int, Event t Int, Event t a) -- Relay disconnected, failed or responded
-fromRelayResponse eeResp =
-  let (eStatus, eRespOk) = eventEither eeResp
-      eeStatus = hasStatusZero <$> eStatus
-      (eRelayDown, eRelayError) = (filterLeft eeStatus, filterRight eeStatus)
-  in (eRelayDown, eRelayError, eRespOk)
-
 -- | Randomly shuffle a list on event fires
 --   /O(N)/
 shuffle :: MonadWidget t m => Event t () -> [a] -> m (Event t [a])
@@ -198,3 +178,36 @@ shuffle ev xs = performEvent $ ev $> (liftIO $ do
     xsLength = length xs
     newArr :: Int -> [a] -> IO (IOArray Int a)
     newArr n ls =  newListArray (1,n) ls
+
+-- Saving
+
+-- Save request to backend
+
+savePingRequest :: MonadWidget t m
+  => Event t ()
+  -> m (Event t (Either Text NoContent))
+savePingRequest e = do
+  let MkSaveApiClient{..} = mkSaveApiClient saveServerUrl
+  ePingRes <- fmap mkTextOrResponse <$> sacPing e
+  logEvent "save ping response" ePingRes
+  pure ePingRes
+
+saveRequest :: MonadWidget t m
+  => Dynamic t [SaveRequest]
+  -> Event t ()
+  -> m (Event t (Either Text (Map AssetName StatusResponse)))
+saveRequest dToken e = do
+  let MkSaveApiClient{..} = mkSaveApiClient saveServerUrl
+  eResp <- sacSave (Right <$> dToken) e
+  let eRespUnwrapped = mkTextOrResponse <$> eResp
+  logEvent "save response" $ () <$ eRespUnwrapped
+  pure eRespUnwrapped
+
+restoreRequest :: MonadWidget t m
+  => Event t ()
+  -> m (Event t (Either Text [RestoreResponse]))
+restoreRequest e = do
+  let MkSaveApiClient{..} = mkSaveApiClient saveServerUrl
+  eRespUnwrapped <- fmap mkTextOrResponse <$> sacRestore e
+  logEvent "restore response" $ () <$ eRespUnwrapped
+  pure eRespUnwrapped

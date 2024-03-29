@@ -1,17 +1,19 @@
 module ENCOINS.App.Widgets.Navbar (navbarWidget) where
 
-import           Data.Bool                          (bool)
-import           Data.Map                           (Map)
-import           Data.Text                          (Text, take, takeEnd)
-import           Prelude                            hiding (take)
+import           Data.Bool                     (bool)
+import           Data.Map                      (Map)
+import           Data.Text                     (Text, take, takeEnd)
+import           Prelude                       hiding (take)
 import           Reflex.Dom
 
-import           Backend.Wallet                     (Wallet (..),
-                                                     WalletName (..),
-                                                     currentNetworkApp)
-import           ENCOINS.App.Widgets.PasswordWindow (PasswordRaw)
-import           ENCOINS.Common.Widgets.Basic       (btnWithBlock, logo, space)
-import           ENCOINS.Common.Widgets.Wallet      (walletIcon)
+import           Backend.Protocol.Types        (PasswordRaw)
+import           Backend.Status                (SaveIconStatus (..))
+import           Backend.Utility               (space)
+import           Backend.Wallet                (Wallet (..), WalletName (..),
+                                                currentNetworkApp)
+import           ENCOINS.Common.Events
+import           ENCOINS.Common.Widgets.Basic  (btnWithBlock, logo)
+import           ENCOINS.Common.Widgets.Wallet (walletIcon)
 
 connectText :: Wallet -> Text
 connectText w = case w of
@@ -22,8 +24,10 @@ navbarWidget :: MonadWidget t m
   => Dynamic t Wallet
   -> Dynamic t Bool
   -> Maybe PasswordRaw
-  -> m (Event t (), Event t ())
-navbarWidget w dIsBlock mPass = do
+  -> Dynamic t Bool
+  -> Dynamic t SaveIconStatus
+  -> m (Event t (), Event t (), Event t ())
+navbarWidget w dIsBlock mPass dIsSaveOn dSaveStatus= do
   elAttr "div" ("data-animation" =: "default" <> "data-collapse" =: "none" <> "data-duration" =: "400" <> "id" =: "Navbar"
     <> "data-easing" =: "ease" <> "data-easing2" =: "ease" <> "role" =: "banner" <> "class" =: "navbar w-nav") $
     divClass "navbar-container w-container" $ do
@@ -36,11 +40,12 @@ navbarWidget w dIsBlock mPass = do
             divClass "menu-div-empty" blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do
                 elLocker <- lockerWidget mPass dIsBlock
+                elSave <- saveIconWidget dIsSaveOn dIsBlock dSaveStatus
                 eConnect <- divClass "menu-item-button-left" $
                     btnWithBlock "button-switching flex-center" "" dIsBlock $ do
                         dyn_ $ fmap (walletIcon . walletName) w
                         dynText $ fmap connectText w
-                return (domEvent Click elLocker, eConnect)
+                return (domEvent Click elLocker, eConnect, domEvent Click elSave)
 
 lockerWidget :: MonadWidget  t m
   => Maybe PasswordRaw
@@ -63,3 +68,40 @@ lockerDiv dClassMap popupText
   = fmap fst $ elDynAttr' "div" dClassMap
       $ divClass "app-Nav_CachePopup"
       $ el "p" $ text $ "Cache" <> space <> popupText
+
+saveIconWidget :: MonadWidget  t m
+  => Dynamic t Bool
+  -> Dynamic t Bool
+  -> Dynamic t SaveIconStatus
+  -> m (Element EventResult (DomBuilderSpace m) t)
+saveIconWidget dIsSaveOn dIsBlock dSaveStatus = do
+  let dPopup = bool
+        "Save sync is off"
+        "Save sync is on"
+        <$> dIsSaveOn
+  let defaultClass = "menu-item app-Save_IconContainer"
+  let dPreIconClass = zipDynWith selectIconClass dSaveStatus dIsSaveOn
+  let dIconClass = (\iCl -> defaultClass <> space <> iCl) <$> dPreIconClass
+  let dClass = zipDynWith
+        (\isBlock cl -> bool cl (cl <> space <> "click-disabled") isBlock )
+        dIsBlock
+        dIconClass
+  let dClassMap = (\cl -> "class" =: cl) <$> dClass
+  savePopup dClassMap dPopup
+
+savePopup :: MonadWidget t m
+  => Dynamic t (Map Text Text)
+  -> Dynamic t Text
+  -> m (Element EventResult (DomBuilderSpace m) t)
+savePopup dClassMap dPopup
+  = fmap fst $ elDynAttr' "div" dClassMap
+      $ divClass "app-Nav_SavePopup"
+      $ el "p" $ dynText dPopup
+
+selectIconClass :: SaveIconStatus -> Bool -> Text
+selectIconClass status isOn = case (status, isOn) of
+  (_, False)     -> "app-Save_IconTurnOff"
+  (NoTokens, _)  -> "app-Save_IconTurnOff"
+  (Saving, _)   -> "app-Save_IconSaving"
+  (AllSaved, _) -> "app-Save_IconAllSaved"
+  (FailedSave, _)  -> "app-Save_IconAttemptExcess"

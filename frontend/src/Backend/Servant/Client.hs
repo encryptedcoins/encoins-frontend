@@ -5,7 +5,8 @@ import           Data.Proxy             (Proxy (..))
 import           Data.Text              (Text)
 import           Reflex.Dom             hiding (Value)
 import           Servant.API
-import           Servant.Reflex         (BaseUrl, ReqResult (..), client)
+import           Servant.Reflex         (BaseUrl, ReqResult (..),
+                                         client)
 
 import           Backend.Protocol.Types
 import           CSL                    (TransactionInputs)
@@ -54,3 +55,29 @@ mkApiClient host = ApiClient{..}
       serversRequest :<|>
       currentRequest :<|>
       infoRequest) = client (Proxy @API) (Proxy @m) (Proxy @()) (pure host)
+
+
+-- Save request to  delegate backend
+
+type SaveApi =
+         "ping" :> Get '[JSON] NoContent
+    :<|> "save"
+              :> ReqBody '[JSON] [SaveRequest]
+              :> Post '[JSON] (Map AssetName StatusResponse)
+
+    :<|> "restore" :> Get '[JSON] [RestoreResponse]
+
+data SaveApiClient t m = MkSaveApiClient
+  { sacPing    :: Res t m NoContent
+  , sacSave    :: ReqRes t m [SaveRequest] (Map AssetName StatusResponse)
+  , sacRestore :: Res t m [RestoreResponse]
+  }
+
+mkSaveApiClient :: forall t m . MonadWidget t m
+  => BaseUrl
+  -> SaveApiClient t m
+mkSaveApiClient host = MkSaveApiClient{..}
+  where
+    ( sacPing :<|>
+      sacSave :<|>
+      sacRestore) = client (Proxy @SaveApi) (Proxy @m) (Proxy @()) (pure host)

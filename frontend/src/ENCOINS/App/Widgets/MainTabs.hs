@@ -3,12 +3,9 @@
 module ENCOINS.App.Widgets.MainTabs where
 
 import           Control.Monad                          (void)
-import           Data.Aeson                             (encode)
 import           Data.Bool                              (bool)
-import           Data.ByteString.Lazy                   (toStrict)
 import           Data.List                              (nub)
 import           Data.Text                              (Text)
-import           Data.Text.Encoding                     (decodeUtf8)
 import           Reflex.Dom
 import           Witherable                             (catMaybes)
 
@@ -16,33 +13,34 @@ import           Backend.EncoinsTx                      (encoinsTxLedgerMode,
                                                          encoinsTxTransferMode,
                                                          encoinsTxWalletMode)
 import           Backend.Environment                    (getEnvironment)
-import           Backend.Protocol.Setup                 (ledgerAddress, emergentChangeAddress)
+import           Backend.Protocol.Setup                 (emergentChangeAddress,
+                                                         ledgerAddress)
 import           Backend.Protocol.TxValidity            (getAda, getCoinNumber,
                                                          getDeposit)
 import           Backend.Protocol.Types
 import           Backend.Servant.Requests               (currentRequestWrapper)
-import           Backend.Status                         (Status (..),
-                                                         isTxProcessOrCriticalError)
+import           Backend.Status                         (AppStatus, Status (..),
+                                                         isStatusWantBlockButtons)
 import           Backend.Wallet                         (Wallet (..))
 import           Config.Config                          (delegateServerUrl)
 import           ENCOINS.App.Widgets.Basic              (containerApp,
                                                          elementResultJS,
+                                                         saveAppData,
                                                          sectionApp,
                                                          tellTxStatus,
                                                          walletError)
 import           ENCOINS.App.Widgets.Coin               (CoinUpdate (..),
                                                          coinBurnCollectionWidget,
-                                                         coinMintCollectionWidget,
+                                                         coinMintCollectionV3Widget,
                                                          coinNewButtonWidget,
-                                                         coinNewWidget,
-                                                         coinWithName,
-                                                         filterKnownCoinNames,
+                                                         coinNewWidget, coinV3,
+                                                         filterByKnownCoinNames,
                                                          noCoinsFoundWidget)
 import           ENCOINS.App.Widgets.ImportWindow       (exportWindow,
                                                          importFileWindow,
                                                          importWindow)
 import           ENCOINS.App.Widgets.InputAddressWindow (inputAddressWindow)
-import           ENCOINS.App.Widgets.PasswordWindow     (PasswordRaw (..))
+import           ENCOINS.App.Widgets.Save
 import           ENCOINS.App.Widgets.SendRequestButton  (sendRequestButtonLedger,
                                                          sendRequestButtonWallet)
 import           ENCOINS.App.Widgets.SendToWalletWindow (sendToWalletWindow)
@@ -53,22 +51,24 @@ import           ENCOINS.App.Widgets.WelcomeWindow      (welcomeLedger,
                                                          welcomeWindow,
                                                          welcomeWindowLedgerStorageKey,
                                                          welcomeWindowTransferStorageKey)
-import           ENCOINS.Bulletproofs                   (Secret)
+import           ENCOINS.Common.Cache                   (encoinsV3)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Widgets.Basic           (btn, divClassId)
-import           JS.Website                             (saveJSON)
 
 mainWindowColumnHeader :: MonadWidget t m => Text -> m ()
 mainWindowColumnHeader title =
     divClass "app-column-head-div" $
         divClass "app-text-semibold" $ text title
 
-walletTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+walletTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
-  -> Dynamic t [(Secret, Text)]
-  -> m ()
-walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
+  -> Dynamic t [TokenCacheV3] -- consider use Map or Set
+  -> Dynamic t Bool
+  -> Dynamic t (Maybe AesKeyRaw)
+  -> Event t ()
+  -> m (Dynamic t [TokenCacheV3])
+walletTab mpass dWallet dTokenCacheOld dSaveOn dmKey eWasMigration = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -88,28 +88,35 @@ walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
           0
           0
     containerApp "" $ transactionBalanceWidget formula (Just WalletMode) ""
-    (dToBurn, dToMint, eStatusUpdate) <- containerApp "" $
+    (dToBurn, dToMint, eStatusUpdate, dNewTokensV3) <- containerApp "" $
         divClass "app-columns w-row" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
             dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
-            let dSecretsWithNames = fmap nub
-                  $ zipDynWith (++) dOldSecretsWithNames
-                  $ map coinWithName
+            let dTokenCache = fmap nub
+                  $ zipDynWith (++) dTokenCacheOld
+                  $ map coinV3
                   <$> zipDynWith (++) dImportedSecrets dNewSecrets
+            -- logDyn "walletTab: dTokenCache" $ showTokens <$> dTokenCache
 
-            performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins-with-name" . decodeUtf8 . toStrict . encode <$> updated dSecretsWithNames)
+            -- Save begin
+            dTokensUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache eWasMigration
+            -- Save end
+
+            -- save unique changes only
+            dTokensUpdatedUniq <- holdUniqDyn dTokensUpdated
+            saveCacheLocally mpass "walletTab" dTokensUpdatedUniq
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do
                   mainWindowColumnHeader "Coins in the Wallet"
-                  dSecretsWithNamesUniq <- holdUniqDyn dSecretsWithNamesInTheWallet
-                  dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesUniq
-                  coinBurnCollectionWidget dSecretsWithNamesUniq
+                  dSecretsUniq <- holdUniqDyn dSecretsInTheWallet
+                  dyn_ $ fmap noCoinsFoundWidget dSecretsUniq
+                  coinBurnCollectionWidget dSecretsUniq
                 eImp <- divClassId "" "welcome-import-export" $ do
                     (eImport, eImportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Import" <*> menuButton " Import All"
                     (eExport, eExportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Export" <*> menuButton " Export All"
                     exportWindow eExport dCTB
-                    exportWindow eExportAll $ map fst <$> dSecretsWithNames
+                    exportWindow eExportAll $ map tcSecret <$> dTokenCache
                     eIS    <- fmap pure . catMaybes <$> importWindow eImport
                     eISAll <- importFileWindow eImportAll
                     return $ leftmost [eIS, eISAll]
@@ -119,7 +126,7 @@ walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
               divClass "app-CoinColumnRight w-col w-col-6" $ mdo
                 dCoinsToMint' <- divClassId "" "welcome-coins-mint" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
-                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost
+                    dCoinsToMint'' <- coinMintCollectionV3Widget $ leftmost
                       [ fmap AddCoin eNewSecret
                       , ClearCoins <$ ffilter (== Ready) eStatusUpdate
                       ]
@@ -143,24 +150,31 @@ walletTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
                   dCoinsToMint
                   eSend
                   dUrls
-            let dSecretsWithNamesInTheWallet =
-                  zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
-            pure (dCoinsToBurn, dCoinsToMint, leftmost [eStatusUpdate, eSendStatus])
+            let dSecretsInTheWallet = zipDynWith
+                  filterByKnownCoinNames
+                  dAssetNamesInTheWallet
+                  dTokensUpdated
+
+            pure (dCoinsToBurn, dCoinsToMint, leftmost [eStatusUpdate, eSendStatus], dTokensUpdated)
     eWalletError <- walletError
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Wallet mode" eStatus
+    pure dNewTokensV3
   where
     menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
         "margin-top:20px;min-width:unset" . text
 
-transferTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+transferTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Maybe PasswordRaw
   -> Dynamic t Wallet
-  -> Dynamic t [(Secret, Text)]
-  -> m ()
-transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
+  -> Dynamic t [TokenCacheV3]
+  -> Dynamic t Bool
+  -> Dynamic t (Maybe AesKeyRaw)
+  -> Event t ()
+  -> m (Dynamic t [TokenCacheV3])
+transferTab mpass dWallet dTokenCacheOld dSaveOn dmKey eWasMigration = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -171,20 +185,27 @@ transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     containerApp "" $ transactionBalanceWidget (Formula 0 0 0 0 0 0) Nothing " (to Wallet)"
     let formula = Formula dDepositBalance 0 0 0 (getCoinNumber <$> dCoins) 0
     containerApp "" $ transactionBalanceWidget formula (Just TransferMode) " (to Ledger)"
-    (dCoins, eSendToLedger, eAddr, dSecretsName) <- containerApp "" $ divClass "app-columns w-row" $ mdo
+    (dCoins, eSendToLedger, eAddr, dTokensV3) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
-        let dSecretsWithNames = nub <$> zipDynWith (++) dOldSecretsWithNames (map coinWithName <$> dImportedSecrets)
-        performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins-with-name" . decodeUtf8 . toStrict . encode <$> updated dSecretsWithNames)
+        let dTokenCache = nub <$> zipDynWith (++) dTokenCacheOld (map coinV3 <$> dImportedSecrets)
+
+        -- Save begin
+        dTokenCacheUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache eWasMigration
+        -- Save end
+
+        -- save unique changes only
+        dTokensUpdatedUniq <- holdUniqDyn dTokenCacheUpdated
+        saveCacheLocally mpass "trasferTab" dTokensUpdatedUniq
 
         (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
             dCTB <- divClassId "" "welcome-coins-transfer" $ do
                 mainWindowColumnHeader "Coins in the Wallet"
-                dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesInTheWallet
-                coinBurnCollectionWidget dSecretsWithNamesInTheWallet
+                dyn_ $ fmap noCoinsFoundWidget dSecretsInTheWallet
+                coinBurnCollectionWidget dSecretsInTheWallet
             (eImport, eImportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Import" <*> menuButton " Import All"
             (eExport, eExportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Export" <*> menuButton " Export All"
             exportWindow eExport dCTB
-            exportWindow eExportAll $ map fst <$> dSecretsWithNames
+            exportWindow eExportAll $ map tcSecret <$> dTokenCache
             eIS    <- fmap pure . catMaybes <$> importWindow eImport
             eISAll <- importFileWindow eImportAll
             return (dCTB, leftmost [eIS, eISAll])
@@ -193,36 +214,36 @@ transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
             (zipDynWith
               (&&)
               (fmap (not . null) dCoinsToBurn)
-              (fmap (not . isTxProcessOrCriticalError) dStatus)
+              (fmap (not . isStatusWantBlockButtons) dStatus)
             ) "" " Send to Wallet"
           eLedger <- sendButton
             (zipDynWith
               (&&)
               (fmap (not . null) dCoinsToBurn)
-              (fmap (not . isTxProcessOrCriticalError) dStatus)
+              (fmap (not . isStatusWantBlockButtons) dStatus)
             ) "margin-top: 20px" " Send to Ledger"
           eWalletOk    <- sendToWalletWindow eWallet dCoinsToBurn
           (eAddrOk, _) <- inputAddressWindow eWalletOk
-          return (dCoinsToBurn, eLedger, eAddrOk, dSecretsWithNames)
+          return (dCoinsToBurn, eLedger, eAddrOk, dTokenCacheUpdated)
     dAddr <- holdDyn Nothing (Just <$> eAddr)
     dWalletSignature <- elementResultJS "walletSignatureElement" decodeWitness
     (dAssetNamesInTheWallet, eStatusUpdate1, _) <-
       encoinsTxTransferMode
         dWallet
         dCoins
-        dSecretsWithNamesInTheWallet
+        dSecretsInTheWallet
         dAddr
         (void eAddr)
         dWalletSignature
         dUrls
 
-    let dSecretsWithNamesInTheWallet =
-          zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsName
+    let dSecretsInTheWallet = zipDynWith
+          filterByKnownCoinNames dAssetNamesInTheWallet dTokensV3
     (_, eStatusUpdate2, _) <-
       encoinsTxTransferMode
         dWallet
         dCoins
-        dSecretsWithNamesInTheWallet
+        dSecretsInTheWallet
         (pure Nothing)
         eSendToLedger
         dWalletSignature
@@ -233,6 +254,7 @@ transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
           [eWalletError, eStatusUpdate1, eStatusUpdate2, NoRelay <$ eUrlError]
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Transfer mode" eStatus
+    pure dTokensV3
   where
     menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
@@ -240,11 +262,14 @@ transferTab mpass dWallet dOldSecretsWithNames = sectionApp "" "" $ mdo
     sendButton dActive stl = divClass "app-SendTransferButton" .
       btn (("button-switching flex-center " <>) . bool "button-disabled" "" <$> dActive) stl . text
 
-ledgerTab :: (MonadWidget t m, EventWriter t [Event t (Text, Status)] m)
+ledgerTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Maybe PasswordRaw
-  -> Dynamic t [(Secret, Text)]
-  -> m ()
-ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
+  -> Dynamic t [TokenCacheV3]
+  -> Dynamic t Bool
+  -> Dynamic t (Maybe AesKeyRaw)
+  -> Event t ()
+  -> m (Dynamic t [TokenCacheV3])
+ledgerTab mpass dTokenCacheOld dSaveOn dmKey eWasMigration = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -267,24 +292,33 @@ ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
           (getCoinNumber <$> dToMint)
     containerApp "" $ transactionBalanceWidget formula (Just LedgerMode) ""
 
-    (dToBurn, dToMint, dAddr, eStatusUpdate) <- containerApp "" $
+    (dToBurn, dToMint, dAddr, eStatusUpdate, dNewTokensV3) <- containerApp "" $
         divClassId "app-columns w-row" "welcome-ledger" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
             dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
-            let dSecretsWithNames = fmap nub $ zipDynWith (++) dOldSecretsWithNames $ map coinWithName <$> zipDynWith (++) dImportedSecrets dNewSecrets
-            performEvent_ (saveJSON (getPassRaw <$> mpass) "encoins-with-name" . decodeUtf8 . toStrict . encode <$> updated dSecretsWithNames)
+            let dTokenCache = fmap nub
+                  $ zipDynWith (++) dTokenCacheOld
+                  $ map coinV3 <$> zipDynWith (++) dImportedSecrets dNewSecrets
+
+            -- Save begin
+            dTokensUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache eWasMigration
+            -- Save end
+
+            -- save unique changes only
+            dTokensUpdatedUniq <- holdUniqDyn dTokensUpdated
+            saveCacheLocally mpass "ledgerTab" dTokensUpdatedUniq
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-ledger-coins" $ do
                   mainWindowColumnHeader "Coins in the Ledger"
-                  dSecretsWithNamesUniq <- holdUniqDyn dSecretsWithNamesInTheWallet
-                  dyn_ $ fmap noCoinsFoundWidget dSecretsWithNamesUniq
-                  coinBurnCollectionWidget dSecretsWithNamesUniq
+                  dSecretsUniq <- holdUniqDyn dSecretsInTheWallet
+                  dyn_ $ fmap noCoinsFoundWidget dSecretsUniq
+                  coinBurnCollectionWidget dSecretsUniq
                 eImp <- divClass "" $ do
                   (eImport, eImportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Import" <*> menuButton " Import All"
                   (eExport, eExportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Export" <*> menuButton " Export All"
                   exportWindow eExport dCTB
-                  exportWindow eExportAll $ map fst <$> dSecretsWithNames
+                  exportWindow eExportAll $ map tcSecret <$> dTokenCache
                   eIS    <- fmap pure . catMaybes <$> importWindow eImport
                   eISAll <- importFileWindow eImportAll
                   return $ leftmost [eIS, eISAll]
@@ -293,7 +327,7 @@ ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
               divClassId "app-CoinColumnRight w-col w-col-6" "welcome-ledger-mint" $ mdo
                 dCoinsToMint' <- divClass "" $ mdo
                     mainWindowColumnHeader "Coins to Mint"
-                    dCoinsToMint'' <- coinMintCollectionWidget $ leftmost
+                    dCoinsToMint'' <- coinMintCollectionV3Widget $ leftmost
                       [ AddCoin <$> eNewSecret
                       , ClearCoins <$ ffilter (== Submitted) eStatusUpdate
                       , AddCoin <$> eAddChange
@@ -327,12 +361,17 @@ ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
               dCoinsToMint
               eSend
               dUrls
-            let dSecretsWithNamesInTheWallet = zipDynWith filterKnownCoinNames dAssetNamesInTheWallet dSecretsWithNames
-            pure (dCoinsToBurn, dCoinsToMint, dChangeAddr, leftmost [eStatusUpdate, eSendStatus])
+            let dSecretsInTheWallet = zipDynWith
+                  filterByKnownCoinNames
+                  dAssetNamesInTheWallet
+                  dTokensUpdated
+
+            pure (dCoinsToBurn, dCoinsToMint, dChangeAddr, leftmost [eStatusUpdate, eSendStatus], dTokensUpdated)
     eWalletError <- walletError
     let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
     dStatus <- holdDyn Ready eStatus
     tellTxStatus "Ledger status" eStatus
+    pure dNewTokensV3
   where
     menuButton = divClass "w-col w-col-6" .
       divClass "app-ImportExportButton" . btn "button-switching flex-center"
@@ -342,3 +381,14 @@ ledgerTab mpass dOldSecretsWithNames = sectionApp "" "" $ mdo
       then "button-switching flex-center"
       else "button-not-selected button-disabled flex-center"
     addChangeButton dBal = btn (f <$> dBal) "margin-top: 10px;" $ text "ADD CHANGE"
+
+
+saveCacheLocally :: MonadWidget t m
+  => Maybe PasswordRaw
+  -> Text
+  -> Dynamic t [TokenCacheV3]
+  -> m ()
+saveCacheLocally mPass name cache = do
+  eSave <- saveAppData mPass encoinsV3 $ updated cache
+  -- logEvent (name <> " saved cache") eSave
+  pure ()

@@ -5,6 +5,7 @@ module Backend.EncoinsTx where
 import           Control.Monad                   (void)
 import           Control.Monad.IO.Class          (MonadIO (..))
 import qualified CSL
+import           Data.List                       (find)
 import qualified Data.Map                        as Map
 import           Data.Maybe                      (fromJust, fromMaybe)
 import           Data.Text                       (Text)
@@ -24,13 +25,14 @@ import           Backend.Protocol.Utility        (getEncoinsInUtxos,
                                                   mkWalletRedeemer)
 import           Backend.Servant.Requests
 import           Backend.Status                  (Status (..))
-import           Backend.Utility                 (switchHoldDyn, toEither)
+import           Backend.Utility                 (eventEither, eventMaybe,
+                                                  switchHoldDyn, toEither,
+                                                  toText)
 import           Backend.Wallet                  (Wallet (..), toJS)
 import           ENCOINS.App.Widgets.Basic       (elementResultJS)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils            (toText)
 import           ENCOINS.Common.Widgets.Advanced (updateUrls)
 
 encoinsTxWalletMode :: MonadWidget t m
@@ -41,7 +43,7 @@ encoinsTxWalletMode :: MonadWidget t m
   -> Dynamic t Secrets
   -> Event t ()
   -> Dynamic t [Text]
-  -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
+  -> m (Dynamic t [AssetName], Event t Status, Dynamic t Text)
 encoinsTxWalletMode
   dWallet
   dBulletproofParams
@@ -127,22 +129,21 @@ encoinsTxWalletMode
           , (BackendError . ("Relay returned error: " <>)) <$>
             leftmost [eNewTxError, eSubmitError]
           ]
-    logEvent "encoinsTxWalletMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
 
 encoinsTxTransferMode :: MonadWidget t m
   => Dynamic t Wallet
   -> Dynamic t Secrets
-  -> Dynamic t [(Secret, Text)]
+  -> Dynamic t [TokenCacheV3]
   -> Dynamic t (Maybe Address)
   -> Event t ()
   -> Dynamic t [(Text, Text)]
   -> Dynamic t [Text]
-  -> m (Dynamic t [Text], Event t Status, Dynamic t Text)
+  -> m (Dynamic t [AssetName], Event t Status, Dynamic t Text)
 encoinsTxTransferMode
   dWallet
   dCoins
-  dNames
+  dTokenCache
   dmAddr
   eSend
   dWalletSignature
@@ -165,7 +166,7 @@ encoinsTxTransferMode
 
     -- Create transaction
     let dNewTxReqBody = zipDyn
-          (InputSending <$> dAddr <*> zipDynWith mkValue dCoins dNames <*> dAddrWallet)
+          (InputSending <$> dAddr <*> zipDynWith mkValue dCoins dTokenCache <*> dAddrWallet)
           dInputs
     eeNewTxResponse <- switchHoldDyn dmUrl $ \case
       Nothing -> pure never
@@ -205,15 +206,15 @@ encoinsTxTransferMode
           , (BackendError . ("Relay returned error: " <>)) <$>
              leftmost [eNewTxError, eSubmitError]
           ]
-    logEvent "encoinsTxTransferMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
   where
-    mkValue coins names = CSL.Value (toText $ minAdaTxOutInLedger * length coins)
+    mkValue :: Secrets -> [TokenCacheV3] -> CSL.Value
+    mkValue coins tokenCaches = CSL.Value (toText $ minAdaTxOutInLedger * length coins)
       . Just
       . CSL.MultiAsset
       . Map.singleton encoinsCurrencySymbol
       . Map.fromList
-      . mapMaybe (\s -> (,"1") <$> lookup s names)
+      . mapMaybe (\s -> (,"1") . getAssetName . tcAssetName <$> find (\tc -> s == tcSecret tc) tokenCaches)
       $ coins
 
 encoinsTxLedgerMode :: MonadWidget t m
@@ -224,7 +225,7 @@ encoinsTxLedgerMode :: MonadWidget t m
   -> Dynamic t Secrets
   -> Event t ()
   -> Dynamic t [Text]
-  -> m (Dynamic t [Text], Event t Status)
+  -> m (Dynamic t [AssetName], Event t Status)
 encoinsTxLedgerMode
   dBulletproofParams
   bRandomness
@@ -310,5 +311,4 @@ encoinsTxLedgerMode
           , (BackendError . ("Relay returned error: " <>)) <$>
               leftmost [eStatusError, eServerError]
           ]
-    logEvent "encoinsTxLedgerMode: eStatus" eStatus
     return (fmap getEncoinsInUtxos dUTXOs, eStatus)

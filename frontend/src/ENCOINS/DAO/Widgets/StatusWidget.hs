@@ -7,8 +7,9 @@ import           Reflex.Dom
 
 import           Backend.Status                  (Status (..), isBuffer,
                                                   isReadyOrNoError, isTxProcess,
-                                                  isTxProcessOrCriticalError,
+                                                  isStatusWantBlockButtons,
                                                   isWalletError)
+import           Backend.Utility                 (column, space, toText)
 import           Backend.Wallet                  (LucidConfig (..), Wallet (..),
                                                   WalletName (..), fromJS,
                                                   hasToken, lucidConfigDao)
@@ -16,9 +17,8 @@ import           Config.Config                   (NetworkConfig (dao),
                                                   networkConfig)
 import           ENCOINS.App.Widgets.Basic       (elementResultJS, walletError)
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Utils            (toText)
 import           ENCOINS.Common.Widgets.Advanced (foldDynamicAny)
-import           ENCOINS.Common.Widgets.Basic    (column, space)
+
 
 handleStatus :: MonadWidget t m
   => Dynamic t Wallet
@@ -157,8 +157,8 @@ handleEncToken dWallet = do
 
 processStatus :: (Text, Status) -> (Text, Status) -> (Text, Status)
 processStatus newSt oldSt =
-  case ( isTxProcessOrCriticalError $ snd oldSt
-       , isTxProcessOrCriticalError (snd newSt) || isBuffer (snd newSt)
+  case ( isStatusWantBlockButtons $ snd oldSt
+       , isStatusWantBlockButtons (snd newSt) || isBuffer (snd newSt)
        ) of
     (True, False) -> oldSt
     _             -> newSt

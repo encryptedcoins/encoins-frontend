@@ -52,13 +52,20 @@ function saveJSON(key, val, encr, pass) {
   setInputValue(key, "");
 }
 
-function loadJSON(key, resId, decr, pass) {
+function loadJSON(key, resId, pass, decr) {
   const val = localStorage.getItem(key);
   var res = val;
-  if (decr) {
-    res = CryptoJS.AES.decrypt(val, pass).toString(CryptoJS.enc.Utf8);
+  try {
+    if (val !== null) {
+      if (decr) {
+        res = CryptoJS.AES.decrypt(val, pass).toString(CryptoJS.enc.Utf8);
+      }
+    };
+    setInputValue(resId, res);
+  } catch (e) {
+    console.log("loadJSON: decrypt error: ", e);
+    return;
   }
-  setInputValue(resId, res);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -595,4 +602,88 @@ function handle_dao_error (e) {
           console.log("Error in daoDelegateTx: " + e.info);
       break;
   }
+}
+
+// Save
+
+// Function to generate a random AES key
+async function generateAESKey(resId) {
+  const key =  await crypto.subtle.generateKey(
+    {
+      name: "AES-GCM",
+      length: 256
+    },
+    true,
+    ["encrypt", "decrypt"]
+  );
+  const exportedKeyHex = await exportAESKey(key);
+  setInputValue(resId, exportedKeyHex);
+}
+
+// Function to encrypt plaintext using AES-GCM
+async function encryptAES(hexKey, resId, plaintext) {
+  const key = await importAESKey(hexKey);
+  const iv = crypto.getRandomValues(new Uint8Array(16)); // Generate a random IV
+  const encrypted = await crypto.subtle.encrypt(
+    {
+      name: "AES-GCM",
+      iv: iv
+    },
+    key,
+    new TextEncoder().encode(plaintext)
+    );
+  const encryptedData = { iv: iv, ciphertext: new Uint8Array(encrypted) };
+  const encryptedDataHex = encryptedObjectToHexString(encryptedData);
+  setInputValue(resId, encryptedDataHex)
+}
+
+// Function to decrypt ciphertext using AES-GCM
+async function decryptAES(hexKey, resId, encryptedDataHex) {
+  const key = await importAESKey(hexKey);
+  const decryptedData = hexStringToEncryptedObject(encryptedDataHex);
+  const decryptedText =  new TextDecoder().decode(
+    await crypto.subtle.decrypt(
+      {
+        name: "AES-GCM",
+        iv: decryptedData.iv
+      },
+      key,
+      decryptedData.ciphertext
+    )
+  );
+  setInputValue(resId, decryptedText)
+}
+
+// Function to convert encryption result to hex string
+function encryptedObjectToHexString(result) {
+  const ivHex = Array.from(result.iv)
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+  const ciphertextHex = Array.from(result.ciphertext)
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+  return ivHex + ciphertextHex;
+}
+
+// Function to convert hex string to encryption result object
+function hexStringToEncryptedObject(hexString) {
+  const ivHex = hexString.slice(0, 32);
+  const ciphertextHex = hexString.slice(32);
+  const iv = new Uint8Array(ivHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+  const ciphertext = new Uint8Array(ciphertextHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+  return { iv: iv, ciphertext: ciphertext };
+}
+
+async function importAESKey(hexKey) {
+  const keyBytes = new Uint8Array(hexKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+  return crypto.subtle.importKey("raw", keyBytes, { name: "AES-GCM" }, true, ["encrypt", "decrypt"]);
+}
+
+// Function to export a CryptoKey to a hex string
+async function exportAESKey(cryptoKey) {
+  const keyExported = await crypto.subtle.exportKey("raw", cryptoKey);
+  const keyBytes = new Uint8Array(keyExported);
+  return Array.from(keyBytes)
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
 }

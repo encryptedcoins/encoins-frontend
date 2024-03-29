@@ -31,4 +31,5 @@ source-repository-package
 
 constraints:
   clock == 0.8.3,
-  some == 1.0.5
+  some == 1.0.5,
+  unordered-containers == 0.2.19.1

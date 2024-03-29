@@ -4,7 +4,11 @@
 
 module Backend.Protocol.Types where
 
-import           Data.Aeson           (FromJSON (..), ToJSON (..))
+import           Data.Aeson           (FromJSON (..), FromJSONKey, ToJSON (..),
+                                       ToJSONKey, defaultOptions,
+                                       genericParseJSON, genericToJSON,
+                                       tagSingleConstructors)
+import           Data.Aeson.Casing    (aesonPrefix, snakeCase)
 import           Data.Maybe           (fromJust)
 import           Data.Text            (Text)
 import qualified Data.Text            as Text
@@ -17,7 +21,8 @@ import           Text.Hex             (decodeHex, encodeHex)
 
 import           CSL                  (TransactionUnspentOutputs, Value)
 import           ENCOINS.BaseTypes    (MintingPolarity)
-import           ENCOINS.Bulletproofs (Proof)
+import           ENCOINS.Bulletproofs (Proof, Secret)
+
 
 type TxParams = (Address, Address, Integer)
 
@@ -114,3 +119,85 @@ data ServerVersion = ServerVersion
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (ToJSON, FromJSON)
+
+newtype PasswordRaw = PasswordRaw { getPassRaw :: Text } deriving (Eq, Show)
+
+newtype PasswordHash = PasswordHash { getPassHash :: Text } deriving (Eq, Show)
+
+-- Save types
+
+-- Secret hash is used to save
+newtype EncryptedSecret = MkEncryptedSecret { getEncryptedSecret :: Text }
+  deriving newtype (Eq, Show, ToJSON, FromJSON)
+  deriving stock (Generic)
+
+newtype AssetName = MkAssetName { getAssetName :: Text }
+  deriving newtype (Eq, Show, Ord, ToJSON, FromJSON, ToJSONKey, FromJSONKey)
+  deriving stock (Generic)
+
+-- Request body from frontend to backend
+data SaveRequest = MkSaveRequest
+  { srAssetName :: AssetName
+  , srSecretKey :: EncryptedSecret
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance ToJSON SaveRequest where
+   toJSON = genericToJSON $ aesonPrefix snakeCase
+
+data StatusResponse = MkStatusResponse
+  { spStatusResponse :: SaveStatus
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance FromJSON StatusResponse where
+   parseJSON = genericParseJSON $ aesonPrefix snakeCase
+
+-- Client sets SaveUndefined status only
+-- Server sets all other statuses
+data SaveStatus = SaveUndefined | SaveError | Saved | Discarded
+  deriving stock (Show, Eq, Generic)
+
+instance ToJSON SaveStatus where
+  toJSON = genericToJSON $
+    defaultOptions{tagSingleConstructors = True}
+
+instance FromJSON SaveStatus where
+   parseJSON = genericParseJSON $
+    defaultOptions{tagSingleConstructors = True}
+
+data RestoreResponse = MkRestoreResponse
+  { rrAssetName       :: AssetName
+  , rrEncryptedSecret :: EncryptedSecret
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance FromJSON RestoreResponse where
+   parseJSON = genericParseJSON $ aesonPrefix snakeCase
+
+-- Randomly generated aes256 key for encrypting Secrets before saving them
+newtype AesKeyRaw = MkAesKeyRaw { getAesKeyRaw :: Text }
+  deriving newtype (Eq, Show, ToJSON, FromJSON)
+  deriving stock (Generic)
+
+-- Cache
+
+data TokenCacheV3 = MkTokenCacheV3
+  { tcAssetName  :: AssetName
+  , tcSecret     :: Secret
+  , tcSaveStatus :: SaveStatus
+  }
+  deriving stock (Eq, Show, Generic)
+
+instance FromJSON TokenCacheV3 where
+   parseJSON = genericParseJSON $ aesonPrefix snakeCase
+
+instance ToJSON TokenCacheV3 where
+   toJSON = genericToJSON $ aesonPrefix snakeCase
+
+-- For readable logs
+showToken :: TokenCacheV3 -> (AssetName, SaveStatus)
+showToken (MkTokenCacheV3 n _ i) = (n,i)
+
+showTokens :: (Foldable t, Functor t) => t TokenCacheV3 -> t (AssetName, SaveStatus)
+showTokens = fmap showToken

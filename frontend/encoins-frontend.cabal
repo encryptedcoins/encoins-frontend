@@ -1,16 +1,19 @@
 cabal-version: 3.0
-name:          encoins-frontend
-version:       0.1.0.0
-build-type:    Simple
+name: encoins-frontend
+version: 0.1.0.0
+build-type: Simple
 author:
   Vladimir Sinyakov
   Catherine Galkina
 
-maintainer:    team@encoins.io
+maintainer: team@encoins.io
 
 library
-  default-language:   Haskell2010
-  ghc-options:        -Wall -Wno-unrecognised-pragmas
+  default-language: Haskell2010
+  ghc-options:
+    -Wall
+    -Wno-unrecognised-pragmas
+
   exposed-modules:
     Backend.EncoinsTx
     Backend.Environment
@@ -30,18 +33,22 @@ library
     ENCOINS.App.Widgets.Basic
     ENCOINS.App.Widgets.Coin
     ENCOINS.App.Widgets.ConnectWindow
+    ENCOINS.App.Widgets.Save
+    ENCOINS.App.Widgets.ISPO
     ENCOINS.App.Widgets.ImportWindow
     ENCOINS.App.Widgets.InputAddressWindow
-    ENCOINS.App.Widgets.ISPO
     ENCOINS.App.Widgets.MainTabs
     ENCOINS.App.Widgets.MainWindow
+    ENCOINS.App.Widgets.Migration
     ENCOINS.App.Widgets.Navbar
+    ENCOINS.App.Widgets.Notification
     ENCOINS.App.Widgets.PasswordWindow
     ENCOINS.App.Widgets.SendRequestButton
     ENCOINS.App.Widgets.SendToWalletWindow
     ENCOINS.App.Widgets.TabsSelection
     ENCOINS.App.Widgets.TransactionBalance
     ENCOINS.App.Widgets.WelcomeWindow
+    ENCOINS.Common.Cache
     ENCOINS.Common.Events
     ENCOINS.Common.Language
     ENCOINS.Common.Utils
@@ -75,42 +82,45 @@ library
     Reflex.ScriptDependent
 
   build-depends:
-    , aeson                       ^>=1.4.6
-    , array
-    , attoparsec
-    , base                        ^>=4.12.0.0
-    , base16-bytestring           ^>=1.0.2.0
-    , bytestring                  ^>=0.10.8.2
-    , containers                  ^>=0.6.0.1
-    , csl-types
-    , encoins-bulletproofs
-    , extra                       ^>=1.7.14
-    , file-embed                  ^>=0.0.15.0
-    , ghcjs-dom                   ^>=0.9.5.0
-    , hashing
-    , hex-text                    ^>=0.1.0.7
-    , http-api-data               ^>=0.4.3
-    , ilist                       ^>=0.4.0.1
-    , jsaddle                     ^>=0.9.8.2
-    , jsaddle-dom                 ^>=0.9.5.0
-    , lens
-    , plutus-tx-extra
-    , plutus-tx-js
-    , random                      ^>=1.2.1.1
-    , raw-strings-qq
-    , reflex-dom                  ==0.6.1.1
-    , reflex-dom-core             ^>=0.7.0.3
-    , regex-tdfa
-    , servant                     ^>=0.18.3
-    , servant-checked-exceptions  ^>=2.2.0.1
-    , servant-reflex              ^>=0.4.0
-    , stm                         ^>=2.5.1.0
-    , text                        ^>=1.2.3.1
-    , time                        ^>=1.8.0.2
-    , tuple                       ^>=0.3.0.2
-    , uuid                        ^>=1.3.15
-    , vector
-    , witherable                  ^>=0.4.2
+    aeson ^>=1.4.6,
+    aeson-casing,
+    array,
+    attoparsec,
+    base ^>=4.12.0.0,
+    base16-bytestring ^>=1.0.2.0,
+    bytestring ^>=0.10.8.2,
+    containers ^>=0.6.0.1,
+    csl-types,
+    encoins-bulletproofs,
+    extra ^>=1.7.14,
+    file-embed ^>=0.0.15.0,
+    ghcjs-dom ^>=0.9.5.0,
+    hashing,
+    hex-text ^>=0.1.0.7,
+    http-api-data ^>=0.4.3,
+    ilist ^>=0.4.0.1,
+    jsaddle ^>=0.9.8.2,
+    jsaddle-dom ^>=0.9.5.0,
+    lens,
+    plutus-tx-extra,
+    plutus-tx-js,
+    random ^>=1.2.1.1,
+    raw-strings-qq,
+    reflex-dom ==0.6.1.1,
+    reflex-dom-core ^>=0.7.0.3,
+    regex-tdfa,
+    semialign,
+    servant ^>=0.18.3,
+    servant-checked-exceptions ^>=2.2.0.1,
+    servant-reflex ^>=0.4.0,
+    stm ^>=2.5.1.0,
+    text ^>=1.2.3.1,
+    these,
+    time ^>=1.8.0.2,
+    tuple ^>=0.3.0.2,
+    uuid,
+    vector,
+    witherable ^>=0.4.2,
 
   if impl(ghcjs)
     build-depends: ghcjs-base ^>=0.2.1.0
@@ -152,75 +162,85 @@ library
     UndecidableInstances
     ViewPatterns
 
-  hs-source-dirs:     src
+  hs-source-dirs: src
 
 executable encoins-website
-  main-is:          Website.hs
-  hs-source-dirs:   apps
+  main-is: Website.hs
+  hs-source-dirs: apps
   default-language: Haskell2010
-  ghc-options:      -Wall -Wno-unrecognised-pragmas
+  ghc-options:
+    -Wall
+    -Wno-unrecognised-pragmas
 
   if impl(ghcjs)
     ghc-options: -dedupe
 
   build-depends:
-    , base              ^>=4.12.0.0
-    , encoins-frontend
+    base ^>=4.12.0.0,
+    encoins-frontend,
 
   if impl(ghcjs)
     build-depends: ghcjs-base ^>=0.2.1.0
 
 executable encoins-app
-  main-is:          App.hs
-  hs-source-dirs:   apps
+  main-is: App.hs
+  hs-source-dirs: apps
   default-language: Haskell2010
-  ghc-options:      -Wall -Wno-unrecognised-pragmas
+  ghc-options:
+    -Wall
+    -Wno-unrecognised-pragmas
 
   if impl(ghcjs)
     ghc-options: -dedupe
 
   build-depends:
-    , base              ^>=4.12.0.0
-    , encoins-frontend
+    base ^>=4.12.0.0,
+    encoins-frontend,
 
   if impl(ghcjs)
     build-depends: ghcjs-base ^>=0.2.1.0
 
 executable encoins-dao
-  main-is:          DAO.hs
-  hs-source-dirs:   apps
+  main-is: DAO.hs
+  hs-source-dirs: apps
   default-language: Haskell2010
-  ghc-options:      -Wall -Wno-unrecognised-pragmas
+  ghc-options:
+    -Wall
+    -Wno-unrecognised-pragmas
 
   if impl(ghcjs)
     ghc-options: -dedupe
 
   build-depends:
-    , base              ^>=4.12.0.0
-    , encoins-frontend
+    base ^>=4.12.0.0,
+    encoins-frontend,
 
   if impl(ghcjs)
     build-depends: ghcjs-base ^>=0.2.1.0
 
 test-suite frontend
-  type:               exitcode-stdio-1.0
-  default-language:   Haskell2010
-  hs-source-dirs:     test
-  main-is:            Spec.hs
+  type: exitcode-stdio-1.0
+  default-language: Haskell2010
+  hs-source-dirs: test
+  main-is: Spec.hs
   build-depends:
-    , base              ^>=4.12.0.0
-    , bytestring
-    , encoins-frontend
-    , hspec
-    , text
+    base ^>=4.12.0.0,
+    bytestring,
+    encoins-frontend,
+    hspec,
+    text,
 
-  ghc-options:        -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
+
   default-extensions: OverloadedStrings
 
 flag predao
   description: Configure dao in test preprod mode
-  default:     False
+  default: False
 
 flag preapp
   description: Configure app in test preprod mode
-  default:     False
+  default: False
