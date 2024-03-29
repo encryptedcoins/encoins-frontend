@@ -52,8 +52,8 @@ handleUnsavedTokens :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Event t ()
   -> m (Dynamic t [TokenCacheV3])
 handleUnsavedTokens dSaveOn dmKey dTokenCache eWasMigration = mdo
-  logDyn "handleUnsavedTokens: dSaveOn" dSaveOn
-  logDyn "handleUnsavedTokens: dmKey" dmKey
+  -- logDyn "handleUnsavedTokens: dSaveOn" dSaveOn
+  -- logDyn "handleUnsavedTokens: dmKey" dmKey
   dTokenCacheUniq <- holdUniqDyn dTokenCache
 
   -- create save trigger when cache contains un-saved tokens
@@ -61,15 +61,15 @@ handleUnsavedTokens dSaveOn dmKey dTokenCache eWasMigration = mdo
         (\updatedTokens tokensInCache -> updatedTokens <$ selectUnsavedTokens tokensInCache)
         dTokenCacheUpdated
         (updated dTokenCacheUniq)
-  logEvent "handleUnsavedTokens: cache has unsaved tokens" $ () <$ eTokenCacheUniqFired
+  -- logEvent "handleUnsavedTokens: cache has unsaved tokens" $ () <$ eTokenCacheUniqFired
 
   -- or create trigger of saving when migration was occurred
   let eTokenCacheMigrated = tagPromptlyDyn dTokenCacheUpdated eWasMigration
-  logEvent "handleUnsavedTokens: migration occurred" $ () <$ eTokenCacheMigrated
+  -- logEvent "handleUnsavedTokens: migration occurred" $ () <$ eTokenCacheMigrated
 
   let eSaveTrigger = leftmost [eTokenCacheMigrated, eTokenCacheUniqFired]
   dTokenCacheUniqFired <- holdDyn [] eSaveTrigger
-  logDyn "handleUnsavedTokens: in" $ showTokens <$> dTokenCacheUniqFired
+  -- logDyn "handleUnsavedTokens: in" $ showTokens <$> dTokenCacheUniqFired
 
   eTokenWithNewState <- saveTokens dSaveOn dmKey dTokenCacheUniqFired
   -- TODO: consider better union method for eliminating duplicates.

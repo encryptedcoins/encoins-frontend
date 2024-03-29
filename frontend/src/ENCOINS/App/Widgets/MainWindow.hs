@@ -42,7 +42,7 @@ mainWindow mPass dWallet dIsDisableButtons dSaveOn dmKey dKeyWasReset = mdo
       -- Migrate from old token structure to version 3
       -- if tokensV3 are not found in cache
       dOldTokensMigratedUniq <- holdUniqDyn =<< updateCacheV3 mPass dmOldTokensStatusUpdated
-      logDyn "mainWindow: dOldTokensMigratedUniq" $ showTokens <$> dOldTokensMigratedUniq
+      -- logDyn "mainWindow: dOldTokensMigratedUniq" $ showTokens <$> dOldTokensMigratedUniq
 
       let eWasMigration = () <$ (ffilter isNothing
             $ tagPromptlyDyn dmOldTokensStatusUpdated
