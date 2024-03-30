@@ -1709,7 +1709,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 10px;
+  gap: 20px;
   margin-left: 5%;
   margin-right: 5%;
 }
@@ -1725,9 +1725,7 @@ body {
   display: flex;
   justify-content: center;
   flex-direction: column;
-  gap: 10px;
-  margin-left: 5%;
-  margin-right: 5%;
+  gap: 20px;
 }
 
 @media screen and (min-width: 860px) {
@@ -1741,7 +1739,7 @@ body {
   display: flex;
   justify-content: center;
   flex-direction: column;
-  gap: 10px;
+  gap: 20px;
   margin-left: 5%;
   margin-right: 5%;
 }
@@ -1758,6 +1756,8 @@ body {
   font-size: 18px;
   line-height: 32px;
   text-align: center;
+  padding-top: min(5%, 20px);
+  padding-bottom: min(5%, 20px);
 }
 
 .app-ToolTip_MintingKey {
@@ -2109,14 +2109,14 @@ body {
 
 .app-CleanCacheWindow {
   min-width: 450px;
-  min-height: 150px;
+  min-height: 230px;
 }
 
 .app-PasswordSettingsWindow {
-  width: 90%;
-  min-width: 500px;
-  padding-left: min(5%, 70px);
-  padding-right: min(5%, 70px);
+  width: 800px;
+  min-width: 300px;
+  padding-left: min(5%, 30px);
+  padding-right: min(5%, 30px);
   padding-top: min(5%, 30px);
   padding-bottom: min(5%, 30px);
 }
@@ -2230,4 +2230,9 @@ body {
     display: flex;
     flex-direction: row;
   }
+}
+
+.app-PasswordProtect_Window {
+  display:flex;
+  flex-direction: column;
 }
