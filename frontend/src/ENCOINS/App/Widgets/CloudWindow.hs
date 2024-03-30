@@ -7,14 +7,14 @@ module ENCOINS.App.Widgets.CloudWindow where
 import           Backend.Protocol.Types
 import           Backend.Status                  (CloudStatusIcon (..))
 import           Backend.Utility                 (space, switchHoldDyn)
-import           ENCOINS.App.Widgets.Basic       (removeCacheKey, saveAppData,containerApp,
+import           ENCOINS.App.Widgets.Basic       (removeCacheKey, saveAppData,
                                                   saveAppData_)
 import           ENCOINS.App.Widgets.Cloud       (fetchAesKey, genAesKey)
 import           ENCOINS.Common.Cache            (aesKey, isCloudOn)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Widgets.Advanced (copyEvent, dialogWindow,
                                                   withTooltip)
-import           ENCOINS.Common.Widgets.Basic    (btnWithBlock, image, divClassId)
+import           ENCOINS.Common.Widgets.Basic    (btn, btnWithBlock, br, image)
 import           JS.Website                      (copyText)
 
 import           Control.Monad                   (void)
@@ -156,11 +156,9 @@ cloudKeyWidget mPass eFirstLoadKey = mdo
       "button-switching inverted flex-center" "" dBlockEnter (text "Enter")
     pure (eGen, eDel, eEnt)
   logEvent "cloudKeyWidget: eGenerate" eGenerate
-  -- TODO: add alert message
-  eKeyRemoved <- removeCacheKey $ aesKey <$ eDelete
+  eKeyRemoved <- deleteKeyDialog eDelete
   logEvent "cloudKeyWidget: eKeyRemoved" eKeyRemoved
   logEvent "cloudKeyWidget: eEnter" eEnter
-
   pure dmKey
 
 inputCloudKeyWidget :: MonadWidget t m
@@ -187,6 +185,25 @@ checkUserKeyValid key = if T.length key == 64 && isJust (decodeHex key)
 
 selectBorderColor :: Maybe AesKeyRaw -> Maybe AesKeyRaw -> Text
 selectBorderColor mKey mCorrectKey = case (mKey, mCorrectKey) of
-  (Just _, _) -> "display: inline-block;"
+  (Just _, _)        -> "display: inline-block;"
   (Nothing, Nothing) -> "display: inline-block; border-color: #ff3e31;"
-  (Nothing, Just _) -> "display: inline-block; border-color: #00cb7a;"
+  (Nothing, Just _)  -> "display: inline-block; border-color: #00cb7a;"
+
+deleteKeyDialog :: MonadWidget t m => Event t () -> m (Event t ())
+deleteKeyDialog eDelete = mdo
+  (eOk, eCancel) <- dialogWindow
+    True
+    eDelete
+    (leftmost [eOk,eCancel])
+    "app-DeleteKeyWindow"
+    "Delete Cloud Key" $ do
+      divClass "app-DeleteKey_Description" $ do
+          text "This action will remove cloud key from the cache! If you won't remember the key you can't recover encoins from remote server!"
+          br
+          text "Are you sure?"
+      elAttr "div" ("class" =: "app-columns w-row app-DeleteKey_ButtonContainer") $ do
+        btnOk <- btn "button-switching inverted flex-center" "" $ text "Delete"
+        btnCancel <- btn "button-switching flex-center" "" $ text "Cancel"
+        return (btnOk, btnCancel)
+  eKeyRemoved <- removeCacheKey $ aesKey <$ eOk
+  return eKeyRemoved
