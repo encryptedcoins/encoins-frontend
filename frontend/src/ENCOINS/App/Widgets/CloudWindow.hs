@@ -7,14 +7,14 @@ module ENCOINS.App.Widgets.CloudWindow where
 import           Backend.Protocol.Types
 import           Backend.Status                  (CloudStatusIcon (..))
 import           Backend.Utility                 (space, switchHoldDyn)
-import           ENCOINS.App.Widgets.Basic       (removeCacheKey, saveAppData,
+import           ENCOINS.App.Widgets.Basic       (removeCacheKey, saveAppData,containerApp,
                                                   saveAppData_)
 import           ENCOINS.App.Widgets.Cloud       (fetchAesKey, genAesKey)
 import           ENCOINS.Common.Cache            (aesKey, isCloudOn)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Widgets.Advanced (copyEvent, dialogWindow,
                                                   withTooltip)
-import           ENCOINS.Common.Widgets.Basic    (btnWithBlock, image)
+import           ENCOINS.Common.Widgets.Basic    (btnWithBlock, image, divClassId)
 import           JS.Website                      (copyText)
 
 import           Control.Monad                   (void)
@@ -52,7 +52,7 @@ cloudSettingsWindow mPass cloudCacheFlag dCloudStatus eOpen = do
           let eFirstKeyLoad = leftmost [() <$ eCloudChangeValDelayed, eOpen]
           dmNewKey <- cloudKeyWidget mPass eFirstKeyLoad
           divClass "app-Cloud_Restore_Title" $
-            text "Restore all unburned encoins that saved remotely and that your aes key is able to decrypt"
+            text "Restore all unburned encoins from cloud with your current key"
           eRestore <- restoreButton dmNewKey
           pure $ align (updated dmNewKey) eRestore
       dmNewKey <- holdDyn Nothing emNewKey
@@ -134,8 +134,9 @@ cloudKeyWidget mPass eFirstLoadKey = mdo
   logDyn "cloudKeyWidget: dmKey" dmKey
   showKeyWidget dmKey
 
-  dInputCloudKey <- inputCloudKeyWidget eFirstLoadKey
   let dmCorrectKey = checkUserKeyValid <$> dInputCloudKey
+  let dBorderLine = zipDynWith selectBorderColor dmKey  dmCorrectKey
+  dInputCloudKey <- inputCloudKeyWidget dBorderLine eFirstLoadKey
   logDyn "cloudKeyWidget: dmCorrectKey" dmCorrectKey
   let eKeyInputByUser = attachPromptlyDynWithMaybe const dmCorrectKey eEnter
   logEvent "cloudKeyWidget: eKeyInputByUser" eKeyInputByUser
@@ -163,9 +164,10 @@ cloudKeyWidget mPass eFirstLoadKey = mdo
   pure dmKey
 
 inputCloudKeyWidget :: MonadWidget t m
-  => Event t ()
+  => Dynamic t Text
+  -> Event t ()
   -> m (Dynamic t Text)
-inputCloudKeyWidget eOpen = divClass "w-row" $ do
+inputCloudKeyWidget dBorder eOpen = divClass "w-row" $ do
     inp <- inputElement $ def
       & initialAttributes .~
           ( "class" =: "w-input"
@@ -173,6 +175,8 @@ inputCloudKeyWidget eOpen = divClass "w-row" $ do
           <> "placeholder" =: "cloud key should be exactly 64 hexadecimal digits"
           )
       & inputElementConfig_setValue .~ ("" <$ eOpen)
+      & inputElementConfig_elementConfig . elementConfig_modifyAttributes .~
+          (("style" =:) . Just <$> updated dBorder)
     setFocusDelayOnEvent inp eOpen
     return $ value inp
 
@@ -180,3 +184,9 @@ checkUserKeyValid :: Text -> Maybe AesKeyRaw
 checkUserKeyValid key = if T.length key == 64 && isJust (decodeHex key)
   then Just $ MkAesKeyRaw key
   else Nothing
+
+selectBorderColor :: Maybe AesKeyRaw -> Maybe AesKeyRaw -> Text
+selectBorderColor mKey mCorrectKey = case (mKey, mCorrectKey) of
+  (Just _, _) -> "display: inline-block;"
+  (Nothing, Nothing) -> "display: inline-block; border-color: #ff3e31;"
+  (Nothing, Just _) -> "display: inline-block; border-color: #00cb7a;"

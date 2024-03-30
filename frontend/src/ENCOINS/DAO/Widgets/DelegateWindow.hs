@@ -41,7 +41,7 @@ delegateWindow eOpen dWallet dRelayNames = mdo
     True
     eOpen
     (leftmost [void eUrlOk])
-    "app-DelegateWindow"
+    "dao-DelegateWindow"
     "Delegate ENCS" $ mdo
       eUrlTable <- relayAmountWidget eeRelays emDelegated dRelayNames
       divClass "dao-DelegateWindow_EnterUrl" $ text "Choose a relay URL above or enter a new one below:"

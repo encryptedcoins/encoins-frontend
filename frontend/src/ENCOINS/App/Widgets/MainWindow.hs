@@ -10,14 +10,15 @@ import           Backend.Status                    (AppStatus)
 import           Backend.Utility                   (switchHoldDyn)
 import           Backend.Wallet                    (Wallet (..))
 import           ENCOINS.App.Widgets.Basic         (loadAppDataME)
+import           ENCOINS.App.Widgets.Cloud         (resetTokens,
+                                                    restoreValidTokens,
+                                                    syncRestoreWithCache)
 import           ENCOINS.App.Widgets.MainTabs      (ledgerTab, transferTab,
                                                     walletTab)
-import           ENCOINS.App.Widgets.Migration     (updateCacheV3)
-import           ENCOINS.App.Widgets.Cloud          (resetTokens)
+import           ENCOINS.App.Widgets.Migration     (migrateTokenCacheV3)
 import           ENCOINS.App.Widgets.TabsSelection (AppTab (..), tabsSection)
 import           ENCOINS.Common.Cache              (encoinsV3)
 import           ENCOINS.Common.Events
-import ENCOINS.App.Widgets.Cloud (restoreValidTokens)
 
 
 mainWindow :: (MonadWidget t m, EventWriter t [AppStatus] m)
@@ -40,12 +41,9 @@ mainWindow mPass dWallet dIsDisableButtons dCloudOn dmKey dKeyWasReset eRestore 
       dKeyWasResetFired <- holdDyn False $ tagPromptlyDyn dKeyWasReset $ updated dKeyWasReset
       let dmOldTokensStatusUpdated = resetTokens dmOldTokensV3 dKeyWasResetFired
 
-      dRestoreResponse <- restoreValidTokens dmKey eRestore
-      logDyn "mainWindow: dRestoreResponse" $ fmap showTokens <$> dRestoreResponse
-
       -- Migrate from old token structure to version 3
       -- if tokensV3 are not found in cache
-      dOldTokensMigratedUniq <- holdUniqDyn =<< updateCacheV3 mPass dmOldTokensStatusUpdated
+      dOldTokensMigratedUniq <- holdUniqDyn =<< migrateTokenCacheV3 mPass dmOldTokensStatusUpdated
       -- logDyn "mainWindow: dOldTokensMigratedUniq" $ showTokens <$> dOldTokensMigratedUniq
 
       let eWasMigration = () <$ (ffilter isNothing
@@ -53,9 +51,16 @@ mainWindow mPass dWallet dIsDisableButtons dCloudOn dmKey dKeyWasReset eRestore 
             $ updated dOldTokensMigratedUniq)
       -- logEvent "mainWindow: eWasMigration" eWasMigration
 
+      -- Restore tokens from remote server and sync it with local cache
+      dRestoreResponse <- restoreValidTokens dmKey eRestore
+      logDyn "mainWindow: dRestoreResponse" $ showTokens <$> dRestoreResponse
+
+      let dTokens = zipDynWith syncRestoreWithCache dRestoreResponse dOldTokensMigratedUniq
+      logDyn "mainWindow: dTokens" $ showTokens <$> dTokens
+
       dUpdatedTokensV3 <- case tab of
-        WalletTab   -> walletTab mPass dWallet dOldTokensMigratedUniq dCloudOn dmKey eWasMigration
-        TransferTab -> transferTab mPass dWallet dOldTokensMigratedUniq dCloudOn dmKey eWasMigration
-        LedgerTab   -> ledgerTab mPass dOldTokensMigratedUniq dCloudOn dmKey eWasMigration
+        WalletTab   -> walletTab mPass dWallet dTokens dCloudOn dmKey eWasMigration
+        TransferTab -> transferTab mPass dWallet dTokens dCloudOn dmKey eWasMigration
+        LedgerTab   -> ledgerTab mPass dTokens dCloudOn dmKey eWasMigration
       return $ updated dUpdatedTokensV3
     holdDyn [] eNewTokensV3

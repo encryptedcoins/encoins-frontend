@@ -22,19 +22,19 @@ import           Control.Monad             ((<=<))
 import qualified Crypto.Hash               as Hash
 import           Data.Aeson                (decodeStrict)
 import           Data.Align                (align)
+import           Data.Function             (on)
 import           Data.Functor              ((<&>))
-import           Data.List                 (find, foldl', union)
+import           Data.List                 (find, foldl', union, unionBy)
 import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty        as NE
 import           Data.Map                  (Map)
 import qualified Data.Map                  as Map
-import           Data.Maybe                (catMaybes)
+import           Data.Maybe                (catMaybes, fromMaybe)
 import           Data.Text                 (Text)
 import qualified Data.Text                 as T
 import           Data.Text.Encoding        (decodeUtf8, encodeUtf8)
 import           Data.These                (These)
 import           Reflex.Dom
-
 
 handleUnsavedTokens :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Dynamic t Bool
@@ -287,7 +287,7 @@ updateMintedTokens old new = foldl' (update new) [] old
 restoreValidTokens :: MonadWidget t m
   => Dynamic t (Maybe AesKeyRaw)
   -> Event t ()
-  -> m (Dynamic t (Maybe [TokenCacheV3]))
+  -> m (Dynamic t [TokenCacheV3])
 restoreValidTokens dmKey eRestore = do
   eTokens <- switchHoldDyn dmKey $ \case
     Nothing -> pure never
@@ -297,7 +297,7 @@ restoreValidTokens dmKey eRestore = do
       dRestoreResponses <- holdDyn [] eRestoreResponses
       -- logDyn "restoreValidTokens: dRestoreResponses" dRestoreResponses
       updated <$> decryptTokens key dRestoreResponses
-  holdDyn Nothing eTokens
+  holdDyn [] $ fromMaybe [] <$> eTokens
 
 -- Return the tokens that the aes key is able to decrypt
 decryptTokens :: MonadWidget t m
@@ -334,3 +334,10 @@ mkTokenCacheV3 name secret =  if F 0 <= v && v < F (2^(20 :: Int))
     }
   else Nothing
     where v = secretV secret
+
+-- First parameter must be list of restored tokens!
+-- List of restored tokens has to avoid duplicated tokens.
+-- If assetName and secret are equal then leave token with restored status only.
+-- If asset names are equal and secrets are not then add them both.
+syncRestoreWithCache :: [TokenCacheV3] -> [TokenCacheV3] -> [TokenCacheV3]
+syncRestoreWithCache = unionBy (\a b -> on (==) tcAssetName a b && on (==) tcSecret a b)

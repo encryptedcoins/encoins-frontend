@@ -30,11 +30,11 @@ Evolutions of encoins cache by key
 -- "encoins-with-name" cache exists
 --  or
 -- "encoins" cache exists.
-updateCacheV3 :: (MonadWidget t m, EventWriter t [AppStatus] m)
+migrateTokenCacheV3 :: (MonadWidget t m, EventWriter t [AppStatus] m)
   => Maybe PasswordRaw
   -> Dynamic t (Maybe [TokenCacheV3])
   -> m (Dynamic t [TokenCacheV3])
-updateCacheV3 mPass dmTokensV3 = do
+migrateTokenCacheV3 mPass dmTokensV3 = do
   eTokensMigrated <- switchHoldDyn dmTokensV3 $ \case
     -- when tokenV3 is empty, try to migrate from previous versions
     Nothing -> do

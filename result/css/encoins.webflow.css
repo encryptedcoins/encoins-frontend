@@ -1920,19 +1920,19 @@ body {
 }
 
 .app-Save_IconSaving {
-  background-image: url('../images/save_yellow.svg');
+  background-image: url('../images/cloud_yellow.svg');
 }
 
 .app-Save_IconAllSaved {
-  background-image: url('../images/save_green.svg');
+  background-image: url('../images/cloud_green.svg');
 }
 
 .app-Save_IconAttemptExcess {
-  background-image: url('../images/save_red.svg');
+  background-image: url('../images/cloud_red.svg');
 }
 
 .app-Save_IconTurnOff {
-  background-image: url('../images/save_blank.svg');
+  background-image: url('../images/cloud_blank.svg');
 }
 
 .app-Save_IconContainer {
@@ -2049,8 +2049,8 @@ body {
 }
 
 .app-Cloud_CheckboxToggle:checked {
-  box-shadow: inset 20px 0 0 0 #6BB6BB;
-  border-color: #6BB6BB;
+  box-shadow: inset 20px 0 0 0 #00cb7a;
+  border-color: #00cb7a;
 }
 
 .app-Cloud_CheckboxToggle:checked:after {
@@ -2140,9 +2140,8 @@ body {
   position: absolute;
 }
 
-.app-DelegateWindow {
-  width: 90%;
-  min-width: 550px;
+.dao-DelegateWindow {
+  min-width: 950px;
   padding-left: min(5%, 70px);
   padding-right: min(5%, 70px);
   padding-top: min(5%, 30px);
