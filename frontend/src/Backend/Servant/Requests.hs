@@ -189,7 +189,7 @@ savePingRequest :: MonadWidget t m
 savePingRequest e = do
   let MkSaveApiClient{..} = mkSaveApiClient saveServerUrl
   ePingRes <- fmap mkTextOrResponse <$> sacPing e
-  logEvent "save ping response" ePingRes
+  logEvent "save ping response" $ () <$ ePingRes
   pure ePingRes
 
 saveRequest :: MonadWidget t m
