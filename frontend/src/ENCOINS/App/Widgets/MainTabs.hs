@@ -40,7 +40,7 @@ import           ENCOINS.App.Widgets.ImportWindow       (exportWindow,
                                                          importFileWindow,
                                                          importWindow)
 import           ENCOINS.App.Widgets.InputAddressWindow (inputAddressWindow)
-import           ENCOINS.App.Widgets.Save
+import           ENCOINS.App.Widgets.Cloud
 import           ENCOINS.App.Widgets.SendRequestButton  (sendRequestButtonLedger,
                                                          sendRequestButtonWallet)
 import           ENCOINS.App.Widgets.SendToWalletWindow (sendToWalletWindow)
@@ -68,7 +68,7 @@ walletTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t (Maybe AesKeyRaw)
   -> Event t ()
   -> m (Dynamic t [TokenCacheV3])
-walletTab mpass dWallet dTokenCacheOld dSaveOn dmKey eWasMigration = sectionApp "" "" $ mdo
+walletTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -99,7 +99,7 @@ walletTab mpass dWallet dTokenCacheOld dSaveOn dmKey eWasMigration = sectionApp 
             -- logDyn "walletTab: dTokenCache" $ showTokens <$> dTokenCache
 
             -- Save begin
-            dTokensUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache eWasMigration
+            dTokensUpdated <- handleUnsavedTokens dCloudOn dmKey dTokenCache eWasMigration
             -- Save end
 
             -- save unique changes only
@@ -174,7 +174,7 @@ transferTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t (Maybe AesKeyRaw)
   -> Event t ()
   -> m (Dynamic t [TokenCacheV3])
-transferTab mpass dWallet dTokenCacheOld dSaveOn dmKey eWasMigration = sectionApp "" "" $ mdo
+transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -190,7 +190,7 @@ transferTab mpass dWallet dTokenCacheOld dSaveOn dmKey eWasMigration = sectionAp
         let dTokenCache = nub <$> zipDynWith (++) dTokenCacheOld (map coinV3 <$> dImportedSecrets)
 
         -- Save begin
-        dTokenCacheUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache eWasMigration
+        dTokenCacheUpdated <- handleUnsavedTokens dCloudOn dmKey dTokenCache eWasMigration
         -- Save end
 
         -- save unique changes only
@@ -269,7 +269,7 @@ ledgerTab :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Dynamic t (Maybe AesKeyRaw)
   -> Event t ()
   -> m (Dynamic t [TokenCacheV3])
-ledgerTab mpass dTokenCacheOld dSaveOn dmKey eWasMigration = sectionApp "" "" $ mdo
+ledgerTab mpass dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp "" "" $ mdo
     eFetchUrls <- newEvent
     eeUrls <- currentRequestWrapper delegateServerUrl eFetchUrls
     let (eUrlError, eUrls) = (filterLeft eeUrls, filterRight eeUrls)
@@ -301,7 +301,7 @@ ledgerTab mpass dTokenCacheOld dSaveOn dmKey eWasMigration = sectionApp "" "" $ 
                   $ map coinV3 <$> zipDynWith (++) dImportedSecrets dNewSecrets
 
             -- Save begin
-            dTokensUpdated <- handleUnsavedTokens dSaveOn dmKey dTokenCache eWasMigration
+            dTokensUpdated <- handleUnsavedTokens dCloudOn dmKey dTokenCache eWasMigration
             -- Save end
 
             -- save unique changes only
@@ -390,5 +390,5 @@ saveCacheLocally :: MonadWidget t m
   -> m ()
 saveCacheLocally mPass name cache = do
   eSave <- saveAppData mPass encoinsV3 $ updated cache
-  -- logEvent (name <> " saved cache") eSave
+  logEvent (name <> " saved cache") eSave
   pure ()

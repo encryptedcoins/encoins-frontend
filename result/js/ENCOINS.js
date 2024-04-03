@@ -68,6 +68,13 @@ function loadJSON(key, resId, pass, decr) {
   }
 }
 
+
+function removeKey(key) {
+  localStorage.removeItem(key);
+  console.log("key", key, "removed");
+  return
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////// App functions //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -84,71 +91,61 @@ function setWalletNone() {
 async function walletAPI(walletName) {
   switch (walletName) {
     case "nami":
-      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.nami !== 'undefined'))
-      {
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.nami !== 'undefined')) {
         return window.cardano.nami.enable();
       }
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.nami is not found"); });
     case "eternl":
-      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.eternl !== 'undefined'))
-      {
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.eternl !== 'undefined')) {
         return window.cardano.eternl.enable();
       }
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.eternl is not found"); });
     case "flint":
-      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.flint !== 'undefined'))
-      {
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.flint !== 'undefined')) {
         return window.cardano.flint.enable();
       }
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.flint is not found"); });
     case "nufi":
-      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.nufi !== 'undefined'))
-      {
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.nufi !== 'undefined')) {
         return window.cardano.nufi.enable();
       }
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.nufi is not found"); });
     case "gerowallet":
-      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.gerowallet !== 'undefined'))
-      {
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.gerowallet !== 'undefined')) {
         return window.cardano.gerowallet.enable();
       }
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.gerowallet is not found"); });
     case "begin":
-      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.begin !== 'undefined'))
-      {
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.begin !== 'undefined')) {
         return window.cardano.begin.enable();
       }
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.begin is not found"); });
     case "begin-nightly":
-      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano["begin-nightly"] !== 'undefined'))
-      {
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano["begin-nightly"] !== 'undefined')) {
         return window.cardano["begin-nightly"].enable();
       }
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.begin-nightly is not found"); });
     case "typhon":
-      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.typhon !== 'undefined'))
-      {
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.typhon !== 'undefined')) {
         return window.cardano.typhon.enable();
       }
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.typhon is not found"); });
     case "lace":
-      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.lace !== 'undefined'))
-      {
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.lace !== 'undefined')) {
         return window.cardano.lace.enable();
       }
       else
         return new Promise(() => { throw new Error("window.cardano or window.cardano.lace is not found"); });
     case "yoroi":
-      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.yoroi !== 'undefined'))
-      {
+      if ((typeof window.cardano !== 'undefined') || (typeof window.cardano.yoroi !== 'undefined')) {
         return window.cardano.yoroi.enable();
       }
       else
@@ -158,8 +155,7 @@ async function walletAPI(walletName) {
   }
 }
 
-async function walletLoad(walletName)
-{
+async function walletLoad(walletName) {
   console.log("begin walletLoad");
   await loader.load();
   const CardanoWasm = loader.Cardano;
@@ -169,15 +165,15 @@ async function walletLoad(walletName)
     setInputValue("walletNameElement", walletName);
     setInputValue("daoWalletNameNotConnected", walletName);
 
-    const networkId           = await api.getNetworkId();
+    const networkId = await api.getNetworkId();
     setInputValue("networkIdElement", networkId);
 
     // const balance             = await api.getBalance();
     // setInputValue(balanceElement, balance);
 
-    const changeAddress       = CardanoWasm.Address.from_bytes(fromHexString(await api.getChangeAddress()));
+    const changeAddress = CardanoWasm.Address.from_bytes(fromHexString(await api.getChangeAddress()));
     const changeAddressBech32 = changeAddress.to_bech32();
-    const baseAddress         = CardanoWasm.BaseAddress.from_address(changeAddress);
+    const baseAddress = CardanoWasm.BaseAddress.from_address(changeAddress);
     changeAddress.free();
     const pubKeyHashCred = baseAddress.payment_cred();
     const stakeKeyHashCred = baseAddress.stake_cred();
@@ -189,8 +185,8 @@ async function walletLoad(walletName)
     }
     pubKeyHashCred.free();
     stakeKeyHashCred.free();
-    const pubKeyHashHex          = toHexString(pubKeyHash.to_bytes());
-    const stakeKeyHashHex        = toHexString(stakeKeyHash.to_bytes());
+    const pubKeyHashHex = toHexString(pubKeyHash.to_bytes());
+    const stakeKeyHashHex = toHexString(stakeKeyHash.to_bytes());
     pubKeyHash.free();
     stakeKeyHash.free();
     setInputValue("changeAddressBech32Element", changeAddressBech32);
@@ -200,10 +196,9 @@ async function walletLoad(walletName)
     // const collateral          = await api.experimental.getCollateral();
     // setInputValue(collateralElement, collateral);
 
-    const utxos               = await api.getUtxos();
-    const utxosJSON           = [];
-    for (i = 0; i<utxos.length; i++)
-    {
+    const utxos = await api.getUtxos();
+    const utxosJSON = [];
+    for (i = 0; i < utxos.length; i++) {
       const utxo = CardanoWasm.TransactionUnspentOutput.from_bytes(fromHexString(utxos[i]));
       utxosJSON.push(utxo.to_json());
       utxo.free();
@@ -226,8 +221,7 @@ async function walletLoad(walletName)
   }
 }
 
-async function walletSignTx(walletName, partialTxHex)
-{
+async function walletSignTx(walletName, partialTxHex) {
   // loading CardanoWasm
   await loader.load();
   const CardanoWasm = loader.Cardano;
@@ -245,8 +239,7 @@ async function walletSignTx(walletName, partialTxHex)
     walletSignatureWitnessSet.free();
 
     const resultJSON = [];
-    for (i=0; i<walletSignatures.len(); i++)
-    {
+    for (i = 0; i < walletSignatures.len(); i++) {
       const walletSignature = walletSignatures.get(i);
       const vkey = walletSignature.vkey();
       const public_key = vkey.public_key();
@@ -269,38 +262,33 @@ async function walletSignTx(walletName, partialTxHex)
   }
 };
 
-async function walletSubmitTx(walletName, txHex)
-{
+async function walletSubmitTx(walletName, txHex) {
   const api = await walletAPI(walletName);
   return api.signTx(txHex);
 }
 
 // Convert a hex string to a byte array
-function fromHexString(hex)
-{
+function fromHexString(hex) {
   for (var bytes = [], c = 0; c < hex.length; c += 2)
     bytes.push(parseInt(hex.substr(c, 2), 16));
   return bytes;
 }
 
 // Convert a byte array to a hex string
-function toHexString(byteArray)
-{
+function toHexString(byteArray) {
   return Array.from(byteArray, function (byte) {
     return ('0' + (byte & 0xFF).toString(16)).slice(-2);
   }).join('')
 }
 
 // takes a hex string 'str' and puts the hash as a hex string into an element 'resId'
-async function sha2_256(str, resId)
-{
+async function sha2_256(str, resId) {
   const hashBuffer = await crypto.subtle.digest('SHA-256', new Uint8Array(fromHexString(str)));
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   setInputValue(resId, toHexString(hashArray));
 }
 
-async function ed25519Sign(prvKey, msg, resId)
-{
+async function ed25519Sign(prvKey, msg, resId) {
   const sig = await window.nobleEd25519.sign(msg, prvKey);
   setInputValue(resId, toHexString(sig));
 }
@@ -308,7 +296,7 @@ async function ed25519Sign(prvKey, msg, resId)
 function setElementStyle(elId, prop, val) {
   var el = document.getElementById(elId);
   if (el != null) {
-    el.style.setProperty(prop,val);
+    el.style.setProperty(prop, val);
   };
 };
 
@@ -317,7 +305,7 @@ function pingServer(baseUrl) {
   request.open('GET', baseUrl + 'ping', false);  // `false` makes the request synchronous
   try {
     request.send(null);
-  } catch(e) {
+  } catch (e) {
     console.log('ping ' + baseUrl + ' ====> ' + 'failed to send request');
     return false;
   }
@@ -342,8 +330,7 @@ function checkPassword(hash, raw) {
   return (hash == CryptoJS.SHA3(raw));
 }
 
-async function addrLoad(addrInput)
-{
+async function addrLoad(addrInput) {
   await loader.load();
   const CardanoWasm = loader.Cardano;
   try {
@@ -389,31 +376,31 @@ async function addrLoad(addrInput)
 
 function toUTF8Array(str) {
   var utf8 = [];
-  for (var i=0; i < str.length; i++) {
-      var charcode = str.charCodeAt(i);
-      if (charcode < 0x80) utf8.push(charcode);
-      else if (charcode < 0x800) {
-          utf8.push(0xc0 | (charcode >> 6),
-                    0x80 | (charcode & 0x3f));
-      }
-      else if (charcode < 0xd800 || charcode >= 0xe000) {
-          utf8.push(0xe0 | (charcode >> 12),
-                    0x80 | ((charcode>>6) & 0x3f),
-                    0x80 | (charcode & 0x3f));
-      }
-      // surrogate pair
-      else {
-          i++;
-          // UTF-16 encodes 0x10000-0x10FFFF by
-          // subtracting 0x10000 and splitting the
-          // 20 bits of 0x0-0xFFFFF into two halves
-          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
-                    | (str.charCodeAt(i) & 0x3ff));
-          utf8.push(0xf0 | (charcode >>18),
-                    0x80 | ((charcode>>12) & 0x3f),
-                    0x80 | ((charcode>>6) & 0x3f),
-                    0x80 | (charcode & 0x3f));
-      }
+  for (var i = 0; i < str.length; i++) {
+    var charcode = str.charCodeAt(i);
+    if (charcode < 0x80) utf8.push(charcode);
+    else if (charcode < 0x800) {
+      utf8.push(0xc0 | (charcode >> 6),
+        0x80 | (charcode & 0x3f));
+    }
+    else if (charcode < 0xd800 || charcode >= 0xe000) {
+      utf8.push(0xe0 | (charcode >> 12),
+        0x80 | ((charcode >> 6) & 0x3f),
+        0x80 | (charcode & 0x3f));
+    }
+    // surrogate pair
+    else {
+      i++;
+      // UTF-16 encodes 0x10000-0x10FFFF by
+      // subtracting 0x10000 and splitting the
+      // 20 bits of 0x0-0xFFFFF into two halves
+      charcode = 0x10000 + (((charcode & 0x3ff) << 10)
+        | (str.charCodeAt(i) & 0x3ff));
+      utf8.push(0xf0 | (charcode >> 18),
+        0x80 | ((charcode >> 12) & 0x3f),
+        0x80 | ((charcode >> 6) & 0x3f),
+        0x80 | (charcode & 0x3f));
+    }
   }
   return utf8;
 }
@@ -427,18 +414,18 @@ async function daoPollVoteTx(n, apiKey, net, walletName, answer, policyId, asset
   const lucid = await lucidLoader.Lucid.new(
     new lucidLoader.Blockfrost(blockfrostAddress, apiKey),
     net,
-    );
+  );
 
   try {
     //loading wallet
     const api = await walletAPI(walletName);
     lucid.selectWallet(api);
 
-    const changeAddress    = CardanoWasm.Address.from_bytes(fromHexString(await api.getChangeAddress()));
-    const baseAddress      = CardanoWasm.BaseAddress.from_address(changeAddress);
+    const changeAddress = CardanoWasm.Address.from_bytes(fromHexString(await api.getChangeAddress()));
+    const baseAddress = CardanoWasm.BaseAddress.from_address(changeAddress);
     const stakeKeyHashCred = baseAddress.stake_cred();
-    const stakeKeyHash     = stakeKeyHashCred.to_keyhash();
-    const utxos            = await api.getUtxos();
+    const stakeKeyHash = stakeKeyHashCred.to_keyhash();
+    const utxos = await api.getUtxos();
 
     const plc_lst = CardanoWasm.PlutusList.new();
     const tag1 = CardanoWasm.PlutusData.new_bytes(toUTF8Array("ENCOINS"));
@@ -475,7 +462,7 @@ async function daoPollVoteTx(n, apiKey, net, walletName, answer, policyId, asset
     setInputValue("elementPoll" + n, "Thank you for voting! Come back later to see the results.");
 
     // Check wallets's utxos are changed and then send VoteReadyTx
-    await check_utxos_changed( "VoteReadyTx", api, utxos, { wait: 1000, retries: 20 })
+    await check_utxos_changed("VoteReadyTx", api, utxos, { wait: 1000, retries: 20 })
 
     changeAddress.free();
     baseAddress.free();
@@ -506,7 +493,7 @@ async function daoDelegateTx(apiKey, net, walletName, url, policyId, assetName) 
     // TODO: check url below
     new lucidLoader.Blockfrost(blockfrostAddress, apiKey),
     net,
-    );
+  );
 
   try {
     //loading wallet
@@ -514,11 +501,11 @@ async function daoDelegateTx(apiKey, net, walletName, url, policyId, assetName) 
     lucid.selectWallet(api);
 
 
-    const changeAddress    = CardanoWasm.Address.from_bytes(fromHexString(await api.getChangeAddress()));
-    const baseAddress      = CardanoWasm.BaseAddress.from_address(changeAddress);
+    const changeAddress = CardanoWasm.Address.from_bytes(fromHexString(await api.getChangeAddress()));
+    const baseAddress = CardanoWasm.BaseAddress.from_address(changeAddress);
     const stakeKeyHashCred = baseAddress.stake_cred();
-    const stakeKeyHash     = stakeKeyHashCred.to_keyhash();
-    const utxos            = await api.getUtxos();
+    const stakeKeyHash = stakeKeyHashCred.to_keyhash();
+    const utxos = await api.getUtxos();
 
     const plc_lst = CardanoWasm.PlutusList.new();
     const tag1 = CardanoWasm.PlutusData.new_bytes(toUTF8Array("ENCOINS"));
@@ -572,7 +559,7 @@ async function daoDelegateTx(apiKey, net, walletName, url, policyId, assetName) 
   }
 };
 
-async function check_utxos_changed (elementId, api, utxosOld, { wait, retries }) {
+async function check_utxos_changed(elementId, api, utxosOld, { wait, retries }) {
   await setTimeout(wait)
   const utxosNew = await api.getUtxos();
 
@@ -582,12 +569,12 @@ async function check_utxos_changed (elementId, api, utxosOld, { wait, retries })
   }
 
   if (retries)
-  return check_utxos_changed(elementId, api, utxosOld, {wait, retries: --retries })
+    return check_utxos_changed(elementId, api, utxosOld, { wait, retries: --retries })
 
   throw new Error('Retry attempts exhausted')
 }
 
-function handle_dao_error (e) {
+function handle_dao_error(e) {
   switch (e) {
     case "InputsExhaustedError":
       setInputValue("DelegateError", "Not enough ADA");
@@ -595,11 +582,11 @@ function handle_dao_error (e) {
       break;
     default:
       if (e.info === undefined) {
-          setInputValue("DelegateError", e);
-          console.log("Raw error in daoDelegateTx: " + e);
+        setInputValue("DelegateError", e);
+        console.log("Raw error in daoDelegateTx: " + e);
       } else
-          setInputValue("DelegateError", e.info);
-          console.log("Error in daoDelegateTx: " + e.info);
+        setInputValue("DelegateError", e.info);
+      console.log("Error in daoDelegateTx: " + e.info);
       break;
   }
 }
@@ -608,7 +595,7 @@ function handle_dao_error (e) {
 
 // Function to generate a random AES key
 async function generateAESKey(resId) {
-  const key =  await crypto.subtle.generateKey(
+  const key = await crypto.subtle.generateKey(
     {
       name: "AES-GCM",
       length: 256
@@ -617,6 +604,7 @@ async function generateAESKey(resId) {
     ["encrypt", "decrypt"]
   );
   const exportedKeyHex = await exportAESKey(key);
+  console.log("exportedKeyHex", exportedKeyHex.length)
   setInputValue(resId, exportedKeyHex);
 }
 
@@ -631,7 +619,7 @@ async function encryptAES(hexKey, resId, plaintext) {
     },
     key,
     new TextEncoder().encode(plaintext)
-    );
+  );
   const encryptedData = { iv: iv, ciphertext: new Uint8Array(encrypted) };
   const encryptedDataHex = encryptedObjectToHexString(encryptedData);
   setInputValue(resId, encryptedDataHex)
@@ -641,7 +629,7 @@ async function encryptAES(hexKey, resId, plaintext) {
 async function decryptAES(hexKey, resId, encryptedDataHex) {
   const key = await importAESKey(hexKey);
   const decryptedData = hexStringToEncryptedObject(encryptedDataHex);
-  const decryptedText =  new TextDecoder().decode(
+  const decryptedText = new TextDecoder().decode(
     await crypto.subtle.decrypt(
       {
         name: "AES-GCM",
@@ -651,7 +639,38 @@ async function decryptAES(hexKey, resId, encryptedDataHex) {
       decryptedData.ciphertext
     )
   );
+  console.log("decryptedText", decryptedText);
   setInputValue(resId, decryptedText)
+}
+
+async function decryptListAES(hexKey, resId, encryptedDataHexList) {
+  const key = await importAESKey(hexKey);
+  const decryptedTextList = [];
+
+  for (const encryptedDataHex of encryptedDataHexList) {
+    try {
+
+    const decryptedData = hexStringToEncryptedObject(encryptedDataHex[1]);
+    const decryptedText = new TextDecoder().decode(
+      await crypto.subtle.decrypt(
+        {
+          name: "AES-GCM",
+          iv: decryptedData.iv
+        },
+        key,
+        decryptedData.ciphertext
+      )
+    );
+
+    decryptedTextList.push([encryptedDataHex[0], decryptedText]);
+  } catch (e) {
+      console.log("Decrypt error:", e)
+    }
+
+  }
+  const decryptedJSON = JSON.stringify(decryptedTextList);
+  setInputValue(resId, decryptedJSON)
+
 }
 
 // Function to convert encryption result to hex string

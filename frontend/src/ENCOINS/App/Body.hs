@@ -14,25 +14,24 @@ import           Backend.Utility                    (switchHoldDyn)
 import           Backend.Wallet                     (walletsSupportedInApp)
 import           ENCOINS.App.Widgets.Basic          (loadAppDataE,
                                                      waitForScripts)
+import           ENCOINS.App.Widgets.CloudWindow    (cloudSettingsWindow)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
 import           ENCOINS.App.Widgets.Navbar         (navbarWidget)
 import           ENCOINS.App.Widgets.Notification
 import           ENCOINS.App.Widgets.PasswordWindow
-import           ENCOINS.App.Widgets.Save
 import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWallet,
                                                      welcomeWindow,
                                                      welcomeWindowWalletStorageKey)
 import           ENCOINS.Common.Cache               (aesKey, encoinsV3,
-                                                     isSaveOn)
+                                                     isCloudOn)
+import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils               (toJsonText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           ENCOINS.Common.Widgets.Basic       (notification)
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
 import           JS.App                             (loadHashedPassword)
 import           JS.Website                         (saveJSON)
-
-import           ENCOINS.Common.Events
 
 bodyContentWidget :: MonadWidget t m
   => Maybe PasswordRaw
@@ -42,10 +41,10 @@ bodyContentWidget mPass = mdo
     dWallet
     dIsDisableButtons
     mPass
-    dSaveOn
-    dSaveStatus
+    dCloudOn
+    dCloudStatus
 
-  (dStatusT, dIsDisableButtons, dSaveStatus) <-
+  (dStatusT, dIsDisableButtons, dCloudStatus) <-
     handleAppStatus dWallet evStatusList
   notification dStatusT
 
@@ -61,9 +60,10 @@ bodyContentWidget mPass = mdo
     mPass
     dWallet
     dIsDisableButtons
-    dSaveOn
+    dCloudOn
     dmKey
     dResetTokens
+    eRestore
 
   let eReEncrypt = leftmost [eNewPass, Nothing <$ eCleanOk]
 
@@ -77,17 +77,17 @@ bodyContentWidget mPass = mdo
 
   copiedNotification
 
-  dSaveOnFromCache <- loadAppDataE Nothing isSaveOn "app-body-load-is-save-on-key" id False
+  dSaveOnFromCache <- loadAppDataE Nothing isCloudOn "app-body-load-is-save-on-key" id False
   dmOldKeyBody <- loadAppDataE mPass aesKey "app-body-load-of-aes-key" id Nothing
 
-  (dSaveWindow, dNewKeyWindow, dOldKeyWindow) <- saveSettingsWindow
+  (dSaveWindow, dNewKeyWindow, eRestore) <- cloudSettingsWindow
     mPass
     dSaveOnFromCache
-    dSaveStatus
+    dCloudStatus
     eOpenSaveWindow
-  dSaveOn <- holdDyn False $ leftmost $ map updated [dSaveOnFromCache, dSaveWindow]
+  dCloudOn <- holdDyn False $ leftmost $ map updated [dSaveOnFromCache, dSaveWindow]
 
-  dResetTokens <- holdDyn False $ leftmost $ map (updated . fmap isNothing) [dmOldKeyBody, dOldKeyWindow]
+  dResetTokens <- holdDyn False $ updated $ isNothing <$> dmOldKeyBody
 
   dmKey <- holdUniqDyn =<< (holdDyn Nothing $ leftmost $ map updated [dmOldKeyBody, dNewKeyWindow])
 

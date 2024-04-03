@@ -1,11 +1,11 @@
 module ENCOINS.App.Widgets.Basic where
 
 import           Backend.Protocol.Types (PasswordRaw (..))
-import           Backend.Status         (AppStatus (..), SaveIconStatus (..),
+import           Backend.Status         (AppStatus (..), CloudStatusIcon (..),
                                          Status (..))
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils   (toJsonText)
-import           JS.Website             (loadJSON, saveJSON)
+import           JS.Website             (loadJSON, saveJSON, removeKey)
 
 
 import           Control.Monad          (void)
@@ -103,6 +103,11 @@ saveAppData mPass key eVal = do
     let mPassT = (getPassRaw <$> mPass)
     performEvent (saveJSON mPassT key <$> eEncodedValue)
 
+removeCacheKey :: MonadWidget t m
+  => Event t Text
+  -> m (Event t ())
+removeCacheKey eKey = performEvent (removeKey <$> eKey)
+
 loadJsonFromStorage :: (MonadDOM m, FromJSON a) => Text -> m (Maybe a)
 loadJsonFromStorage elId = do
   lc <- currentWindowUnchecked >>= getLocalStorage
@@ -134,7 +139,7 @@ tellTxStatus title ev =
       (\x -> singletonL . Tx . bool (title, x) (T.empty, Ready) $ x == Ready) <$> ev
 
 tellSaveStatus :: (MonadWidget t m, EventWriter t [AppStatus] m)
-  => Event t SaveIconStatus
+  => Event t CloudStatusIcon
   -> m ()
 tellSaveStatus ev = tellEvent $ (singletonL . Save) <$> ev
 

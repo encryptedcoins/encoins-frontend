@@ -13,41 +13,43 @@ See instruction [GHCJS.md](GHCJS.md)
 ## Development
 
 1. For building just the `frontend-html` part of the project use commands:
-```
+
+```shell
 cabal run --project-file=frontend-html.project frontend-html
 ```
-or
-
-```
-generate-html.sh
-```
-
 They generate html files to `result/` folder.
 
-2. For building just the `frontend` part of the project use commands:
+2. Building `frontend` part of the project for mainnet use commands:
 
-```bash
+```shell
 cabal new-build --ghcjs frontend
 ```
 to build all webpages. Copy `all.js` files to the respective files in `result/`.
 
 Alternatively, simply run
-```
+
+```shell
 ./build-frontend.sh
 ```
 It will compile frontend and copy required files to `result/`.
 
-1. Flags. By default (without any flags) frontend compiling for Mainnet networkId. Add flag `predao` or/and `preapp` to build frontend for functioning within Testnet Preprod networkId.
+1. Building frontend for preprod use flags `predao` and `preapp`
 
-```bash
+```shell
 cabal new-build -f preapp -f predao --ghcjs frontend
 ```
 or simply run
 
-```
+```shell
 ./build-frontend-dev.sh
 ```
 It will compile frontend in dev mode and copy required files to `result/`.
+
+4. Rebuild frontend in dev mode and run it with caddy at once
+
+```shell
+run-dev.sh
+```
 
 ## Setup for local development
 

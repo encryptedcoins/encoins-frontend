@@ -168,6 +168,19 @@ loadJSON _ _ _ = error "GHCJS is required!"
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
+  "removeKey($1);" removeKey_js :: JSString -> IO ()
+
+removeKey :: MonadIO m => Text -> m ()
+removeKey key = liftIO $ removeKey_js (textToStr key)
+#else
+removeKey :: MonadIO m => Text -> m ()
+removeKey _ = error "GHCJS is required!"
+#endif
+
+-----------------------------------------------------------------
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
   "setElementStyle($1, $2, $3);" setElementStyle_js :: JSVal -> JSVal -> JSVal -> IO ()
 
 setElementStyle :: MonadIO m => Text -> Text -> Text -> m ()

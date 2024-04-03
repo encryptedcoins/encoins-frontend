@@ -205,7 +205,7 @@ saveRequest dToken e = do
 
 restoreRequest :: MonadWidget t m
   => Event t ()
-  -> m (Event t (Either Text [RestoreResponse]))
+  -> m (Event t (Either Text [(Text,Text)]))
 restoreRequest e = do
   let MkSaveApiClient{..} = mkSaveApiClient saveServerUrl
   eRespUnwrapped <- fmap mkTextOrResponse <$> sacRestore e
