@@ -53,5 +53,5 @@ delegateServerUrl = case daoNetwork of
 
 saveServerUrl :: BaseUrl
 saveServerUrl = case appNetwork of
-  Mainnet -> BasePath "https://mainnet-server-here"
+  Mainnet -> BasePath "https://lnn4a8aytc.execute-api.eu-central-1.amazonaws.com"
   Testnet -> BasePath "http://localhost:7000"
