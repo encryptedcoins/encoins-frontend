@@ -33,30 +33,31 @@ cloudSettingsWindow :: MonadWidget t m
   -> Dynamic t CloudStatusIcon
   -> Event t ()
   -> m (Dynamic t Bool, Dynamic t (Maybe AesKeyRaw), Event t ())
-cloudSettingsWindow mPass cloudCacheFlag dCloudStatus eOpen = do
-  dialogWindow
-    True
-    eOpen
-    never
-    "app-Cloud_Window"
-    "Encoins Cloud Backup" $ do
-      (dIsCloudOn, eCloudChange) <- cloudCheckbox cloudCacheFlag
-      cloudStatusIcon dCloudStatus dIsCloudOn
+cloudSettingsWindow mPass cloudCacheFlag dCloudStatus eOpen = mdo
+    (dCloudOn, dmKey, eCloseByRestore) <- dialogWindow
+        True
+        eOpen
+        eCloseByRestore
+        "app-Cloud_Window"
+        "Encoins Cloud Backup" $ do
+          (dIsCloudOn, eCloudChange) <- cloudCheckbox cloudCacheFlag
+          cloudStatusIcon dCloudStatus dIsCloudOn
 
-      let eCloudChangeVal = ffilter id $ tagPromptlyDyn dIsCloudOn eCloudChange
-      eCloudChangeValDelayed <- delay 0.1 eCloudChangeVal
+          let eCloudChangeVal = ffilter id $ tagPromptlyDyn dIsCloudOn eCloudChange
+          eCloudChangeValDelayed <- delay 0.1 eCloudChangeVal
 
-      (emNewKey, eRestore) <- fmap fanThese $ switchHoldDyn dIsCloudOn $ \case
-        False -> pure never
-        True -> do
-          let eFirstKeyLoad = leftmost [() <$ eCloudChangeValDelayed, eOpen]
-          dmNewKey <- cloudKeyWidget mPass eFirstKeyLoad
-          divClass "app-Cloud_Restore_Title" $
-            text "Restore all unburned encoins from cloud with your current key"
-          eRestore <- restoreButton dmNewKey
-          pure $ align (updated dmNewKey) eRestore
-      dmNewKey <- holdDyn Nothing emNewKey
-      pure (dIsCloudOn, dmNewKey, eRestore)
+          (emNewKey, eRestore) <- fmap fanThese $ switchHoldDyn dIsCloudOn $ \case
+            False -> pure never
+            True -> do
+              let eFirstKeyLoad = leftmost [() <$ eCloudChangeValDelayed, eOpen]
+              dmNewKey <- cloudKeyWidget mPass eFirstKeyLoad
+              divClass "app-Cloud_Restore_Title" $
+                text "Restore all unburned encoins from cloud with your current key"
+              eRestore <- restoreButton dmNewKey
+              pure $ align (updated dmNewKey) eRestore
+          dmNewKey <- holdDyn Nothing emNewKey
+          pure (dIsCloudOn, dmNewKey, eRestore)
+    pure (dCloudOn, dmKey, eCloseByRestore)
 
 cloudCheckbox :: MonadWidget t m
   => Dynamic t Bool
