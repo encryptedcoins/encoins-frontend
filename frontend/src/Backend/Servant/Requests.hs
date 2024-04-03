@@ -18,6 +18,7 @@ import           Data.Functor           (($>))
 import           Data.List              (delete)
 import           Data.Map               (Map)
 import           Data.Text              (Text)
+import qualified Data.Text              as T
 import           Reflex.Dom             hiding (Request, Value)
 import           Servant.API            (NoContent)
 import           Servant.Reflex         (BaseUrl (..), ReqResult (..))
@@ -187,7 +188,7 @@ savePingRequest :: MonadWidget t m
   => Event t ()
   -> m (Event t (Either Text NoContent))
 savePingRequest e = do
-  let MkSaveApiClient{..} = mkSaveApiClient saveServerUrl
+  let MkSaveApiClient{..} = mkSaveApiClient $ saveServerUrl True
   ePingRes <- fmap mkTextOrResponse <$> sacPing e
   logEvent "save ping response" $ () <$ ePingRes
   pure ePingRes
@@ -197,7 +198,7 @@ saveRequest :: MonadWidget t m
   -> Event t ()
   -> m (Event t (Either Text (Map AssetName StatusResponse)))
 saveRequest dToken e = do
-  let MkSaveApiClient{..} = mkSaveApiClient saveServerUrl
+  let MkSaveApiClient{..} = mkSaveApiClient $ saveServerUrl False
   eResp <- sacSave (Right <$> dToken) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
   logEvent "save response" $ () <$ eRespUnwrapped
@@ -207,7 +208,7 @@ restoreRequest :: MonadWidget t m
   => Event t ()
   -> m (Event t (Either Text [(Text,Text)]))
 restoreRequest e = do
-  let MkSaveApiClient{..} = mkSaveApiClient saveServerUrl
+  let MkSaveApiClient{..} = mkSaveApiClient $ saveServerUrl False
   eRespUnwrapped <- fmap mkTextOrResponse <$> sacRestore e
   logEvent "restore response" $ () <$ eRespUnwrapped
   pure eRespUnwrapped
