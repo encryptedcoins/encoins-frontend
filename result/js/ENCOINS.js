@@ -664,7 +664,7 @@ async function decryptListAES(hexKey, resId, encryptedDataHexList) {
 
     decryptedTextList.push([encryptedDataHex[0], decryptedText]);
   } catch (e) {
-      console.log("Decrypt error:", e)
+      console.log("Token was encrypted with another key.", e)
     }
 
   }

@@ -53,10 +53,10 @@ mainWindow mPass dWallet dIsDisableButtons dCloudOn dmKey dKeyWasReset eRestore 
 
       -- Restore tokens from remote server and sync it with local cache
       dRestoreResponse <- restoreValidTokens dmKey eRestore
-      logDyn "mainWindow: dRestoreResponse" $ showTokens <$> dRestoreResponse
+      -- logDyn "mainWindow: dRestoreResponse" $ showTokens <$> dRestoreResponse
 
       let dTokens = zipDynWith syncRestoreWithCache dRestoreResponse dOldTokensMigratedUniq
-      logDyn "mainWindow: dTokens" $ showTokens <$> dTokens
+      -- logDyn "mainWindow: dTokens" $ showTokens <$> dTokens
 
       dUpdatedTokensV3 <- case tab of
         WalletTab   -> walletTab mPass dWallet dTokens dCloudOn dmKey eWasMigration

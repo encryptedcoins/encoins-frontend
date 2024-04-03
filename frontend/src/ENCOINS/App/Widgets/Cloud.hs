@@ -43,8 +43,8 @@ handleUnsavedTokens :: (MonadWidget t m, EventWriter t [AppStatus] m)
   -> Event t ()
   -> m (Dynamic t [TokenCacheV3])
 handleUnsavedTokens dCloudOn dmKey dTokenCache eWasMigration = mdo
-  logDyn "handleUnsavedTokens: dCloudOn" dCloudOn
-  logDyn "handleUnsavedTokens: dmKey" dmKey
+  -- logDyn "handleUnsavedTokens: dCloudOn" dCloudOn
+  -- logDyn "handleUnsavedTokens: dmKey" dmKey
   dTokenCacheUniq <- holdUniqDyn dTokenCache
 
   -- create save trigger when cache contains un-saved tokens

@@ -130,17 +130,13 @@ cloudKeyWidget mPass eFirstLoadKey = mdo
   divClass "app-Cloud_AesKey_Title" $
     text "Your AES key for restoring encoins. Save it to a file and keep it secure!"
   let eLoadKey = leftmost [eFirstLoadKey, eKeyRemoved, eKeyGenerated, eUserKeySaved]
-  logEvent "cloudKeyWidget: eLoadKey" eLoadKey
   dmKey <- fetchAesKey mPass "cloudKeyWidget-fetchAesKey" eLoadKey
-  logDyn "cloudKeyWidget: dmKey" dmKey
   showKeyWidget dmKey
 
   let dmCorrectKey = checkUserKeyValid <$> dInputCloudKey
   let dBorderLine = zipDynWith selectBorderColor dmKey  dmCorrectKey
   dInputCloudKey <- inputCloudKeyWidget dBorderLine eFirstLoadKey
-  logDyn "cloudKeyWidget: dmCorrectKey" dmCorrectKey
   let eKeyInputByUser = attachPromptlyDynWithMaybe const dmCorrectKey eEnter
-  logEvent "cloudKeyWidget: eKeyInputByUser" eKeyInputByUser
   eUserKeySaved <- saveAppData mPass aesKey eKeyInputByUser
 
   eKeyGenerated <- genAesKey mPass dmKey eGenerate
@@ -156,10 +152,7 @@ cloudKeyWidget mPass eFirstLoadKey = mdo
     eEnt <- btnWithBlock
       "button-switching inverted flex-center" "" dBlockEnter (text "Enter")
     pure (eGen, eDel, eEnt)
-  logEvent "cloudKeyWidget: eGenerate" eGenerate
   eKeyRemoved <- deleteKeyDialog eDelete
-  logEvent "cloudKeyWidget: eKeyRemoved" eKeyRemoved
-  logEvent "cloudKeyWidget: eEnter" eEnter
   pure dmKey
 
 inputCloudKeyWidget :: MonadWidget t m
