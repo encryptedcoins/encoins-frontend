@@ -55,5 +55,5 @@ saveServerUrl :: Bool -> BaseUrl
 saveServerUrl isPing = case appNetwork of
   Mainnet -> BasePath
     $ "https://lnn4a8aytc.execute-api.eu-central-1.amazonaws.com"
-    <> if isPing then "/" else ""
+    <> if isPing then "//" else ""
   Testnet -> BasePath "http://localhost:7000"
