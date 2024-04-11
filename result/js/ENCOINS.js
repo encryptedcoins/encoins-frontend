@@ -314,7 +314,7 @@ function pingServer(baseUrl) {
 };
 
 function saveHashedTextToStorage(key, val) {
-  localStorage.setItem(key, CryptoJS.SHA3(val));
+  localStorage.setItem(key, val);
 }
 
 function loadHashedPassword(key) {
