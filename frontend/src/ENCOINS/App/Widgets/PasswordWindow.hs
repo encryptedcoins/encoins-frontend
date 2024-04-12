@@ -14,20 +14,16 @@ import           Witherable                      (catMaybes)
 
 import           Backend.Protocol.Types          (PasswordHash (..),
                                                   PasswordRaw (..))
-import           Backend.Utility                 (switchHoldDyn, hashKeccak512, checkHash)
+import           Backend.Utility                 (hashKeccak512, isHashOfRaw,
+                                                  switchHoldDyn, toPasswordHash)
 import           ENCOINS.App.Widgets.Basic       (saveAppData_)
-import           ENCOINS.Common.Cache            (encoinsV3)
+import           ENCOINS.Common.Cache            (encoinsV3, passwordSotrageKey)
+import           ENCOINS.Common.Events
 import           ENCOINS.Common.Events           (setFocusDelayOnEvent)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
-import           ENCOINS.Common.Widgets.Basic    (btn, errDiv, br)
-import           JS.App                          (
-                                                  loadHashedPassword,
+import           ENCOINS.Common.Widgets.Basic    (br, btn, errDiv)
+import           JS.App                          (loadHashedPassword,
                                                   saveHashedTextToStorage)
-
-passwordSotrageKey :: Text
-passwordSotrageKey = "password-hash"
-
-
 
 validatePassword :: Text -> Either Text PasswordRaw
 validatePassword txt
@@ -85,7 +81,7 @@ enterPasswordWindow passHash eResetOk = mdo
       bool ("style" =: "display: none") mempty b
     checkPass hash mRaw = do
       raw <- mRaw
-      if checkHash (getPassHash hash) (getPassRaw raw)
+      if isHashOfRaw (getPassHash hash) (getPassRaw raw)
         then Just raw
         else Nothing
 
@@ -93,7 +89,8 @@ passwordSettingsWindow :: MonadWidget t m
   => Event t ()
   -> m (Event t (Maybe PasswordRaw), Event t ())
 passwordSettingsWindow eOpen = do
-  emPassHash <- fmap (fmap PasswordHash) <$> performEvent (loadHashedPassword passwordSotrageKey <$ eOpen)
+  ePassHash <- performEvent (loadHashedPassword passwordSotrageKey <$ eOpen)
+  let emPassHash = toPasswordHash <$> ePassHash
   dmPassHash <- holdDyn Nothing emPassHash
   dialogWindow True eOpen never "app-PasswordSettingsWindow" "Protect cache of Encoins app" $ do
     ePassOk <- switchHoldDyn dmPassHash $ \case
@@ -134,8 +131,8 @@ passwordSettingsWindow eOpen = do
     mkErr _ Nothing                 = blank
     mkErr _ (Just (PasswordRaw "")) = blank
     mkErr c _                       = bool (errDiv "Incorrect password") blank c
-    checkPass hash (Just raw) = checkHash (getPassHash hash) (getPassRaw raw)
-    checkPass _ Nothing = False
+    checkPass hash (Just raw) = isHashOfRaw (getPassHash hash) (getPassRaw raw)
+    checkPass _ Nothing       = False
 
     cls = "button-switching inverted flex-center"
     mkSaveBtnCls Nothing _ (Just _)     = cls

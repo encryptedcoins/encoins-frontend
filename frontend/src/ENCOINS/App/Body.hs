@@ -10,7 +10,8 @@ import           Data.Text                          (Text)
 import           Reflex.Dom
 
 import           Backend.Protocol.Types
-import           Backend.Utility                    (switchHoldDyn)
+import           Backend.Utility                    (toPasswordHash,
+                                                     switchHoldDyn)
 import           Backend.Wallet                     (walletsSupportedInApp)
 import           ENCOINS.App.Widgets.Basic          (loadAppDataE,
                                                      waitForScripts)
@@ -24,7 +25,8 @@ import           ENCOINS.App.Widgets.WelcomeWindow  (welcomeWallet,
                                                      welcomeWindow,
                                                      welcomeWindowWalletStorageKey)
 import           ENCOINS.Common.Cache               (aesKey, encoinsV3,
-                                                     isCloudOn)
+                                                     isCloudOn,
+                                                     passwordSotrageKey)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils               (toJsonText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
@@ -101,7 +103,7 @@ reEncrypt key (d, mNewPass) = saveJSON
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo
-  mPass <- fmap PasswordHash <$> loadHashedPassword passwordSotrageKey
+  mPass <- toPasswordHash <$> loadHashedPassword passwordSotrageKey
   (ePassOk, eCleanCache) <- case mPass of
     Just pass -> first (Just <$>) <$> enterPasswordWindow pass eCleanOk
     Nothing -> do

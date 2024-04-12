@@ -122,6 +122,8 @@ data ServerVersion = ServerVersion
 
 newtype PasswordRaw = PasswordRaw { getPassRaw :: Text } deriving (Eq, Show)
 
+-- TODO: stop exporting constructor PasswordHash
+-- Use smart constructor toPasswordHash or Refined types
 newtype PasswordHash = PasswordHash { getPassHash :: Text } deriving (Eq, Show)
 
 -- Save types

@@ -9,7 +9,6 @@ import           Control.Monad.IO.Class      (MonadIO (..))
 import           Data.Text                   (Text)
 
 #ifdef __GHCJS__
-import           Control.Monad               (guard)
 import qualified Data.Text                   as T
 import           Language.Javascript.JSaddle (FromJSVal (..), JSM, JSString,
                                               JSVal, ToJSVal (..), strToText,
@@ -137,12 +136,11 @@ foreign import javascript unsafe
   "loadHashedPassword($1)"
   loadHashedPassword_js :: JSString -> JSM JSString
 
-loadHashedPassword :: MonadIO m => Text -> m (Maybe Text)
-loadHashedPassword key = do
-  res <- strToText <$> liftIO (loadHashedPassword_js $ textToStr key)
-  return $ res <$ guard (not $ T.null res)
+loadHashedPassword :: MonadIO m => Text -> m Text
+loadHashedPassword key =
+  strToText <$> liftIO (loadHashedPassword_js $ textToStr key)
 #else
-loadHashedPassword :: MonadIO m => Text -> m (Maybe Text)
+loadHashedPassword :: MonadIO m => Text -> m Text
 loadHashedPassword _ = error "GHCJS is required!"
 #endif
 

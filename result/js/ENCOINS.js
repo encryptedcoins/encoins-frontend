@@ -313,16 +313,16 @@ function pingServer(baseUrl) {
   return (request.status === 200);
 };
 
-function saveHashedTextToStorage(key, val) {
-  localStorage.setItem(key, val);
+function saveHashedTextToStorage(key, hash) {
+  localStorage.setItem(key, hash);
 }
 
 function loadHashedPassword(key) {
   const pass = localStorage.getItem(key);
-  if (pass == null || pass == CryptoJS.SHA3("")) {
-    return "";
+  if (pass == null) {
+    return ""
   } else {
-    return pass;
+    return pass
   }
 }
 
