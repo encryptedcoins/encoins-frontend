@@ -14,13 +14,13 @@ import           Witherable                      (catMaybes)
 
 import           Backend.Protocol.Types          (PasswordHash (..),
                                                   PasswordRaw (..))
-import           Backend.Utility                 (switchHoldDyn, hashKeccak512)
+import           Backend.Utility                 (switchHoldDyn, hashKeccak512, checkHash)
 import           ENCOINS.App.Widgets.Basic       (saveAppData_)
 import           ENCOINS.Common.Cache            (encoinsV3)
 import           ENCOINS.Common.Events           (setFocusDelayOnEvent)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn, errDiv, br)
-import           JS.App                          (checkPassword,
+import           JS.App                          (
                                                   loadHashedPassword,
                                                   saveHashedTextToStorage)
 
@@ -61,8 +61,7 @@ enterPasswordWindow passHash eResetOk = mdo
         divClass "w-col w-col-12" $ do
           ePb <- getPostBuild
           dmCurPass <- passwordInput "Enter password:" False True (pure Nothing) ePb
-          emCurPass <- performEvent $ checkPass passHash <$> updated dmCurPass
-          holdDyn Nothing emCurPass
+          pure $ checkPass passHash <$> dmCurPass
       (eClean, eOk) <- elAttr "div" ("class" =: "app-columns w-row app-EnterPassword_ButtonContainer") $ do
         eSave' <- btn
           "button-switching inverted flex-center"
@@ -84,10 +83,11 @@ enterPasswordWindow passHash eResetOk = mdo
         errDiv "Incorrect password"
     mkClass b = "class" =: "dialog-window-wrapper" <>
       bool ("style" =: "display: none") mempty b
-    checkPass hash (Just raw) = do
-      res <- checkPassword (getPassHash hash) (getPassRaw raw)
-      return $ bool Nothing (Just raw) res
-    checkPass _ _ = return Nothing
+    checkPass hash mRaw = do
+      raw <- mRaw
+      if checkHash (getPassHash hash) (getPassRaw raw)
+        then Just raw
+        else Nothing
 
 passwordSettingsWindow :: MonadWidget t m
   => Event t ()
@@ -99,8 +99,7 @@ passwordSettingsWindow eOpen = do
     ePassOk <- switchHoldDyn dmPassHash $ \case
       Just passHash -> divClass "app-columns w-row" $ divClass "w-col w-col-12" $ do
         dmCurPass <- passwordInput "Current password:" False True (pure Nothing) eOpen
-        eCheckedPass <- performEvent $ checkPass passHash <$> updated dmCurPass
-        dCheckedPass <- holdDyn False eCheckedPass
+        let dCheckedPass = checkPass passHash <$> dmCurPass
         dyn_ $ mkErr <$> dCheckedPass <*> dmCurPass
         return (ffilter id $ updated dCheckedPass)
       Nothing -> pure never
@@ -135,8 +134,9 @@ passwordSettingsWindow eOpen = do
     mkErr _ Nothing                 = blank
     mkErr _ (Just (PasswordRaw "")) = blank
     mkErr c _                       = bool (errDiv "Incorrect password") blank c
-    checkPass hash (Just raw) = checkPassword (getPassHash hash) (getPassRaw raw)
-    checkPass _ _ = return False
+    checkPass hash (Just raw) = checkHash (getPassHash hash) (getPassRaw raw)
+    checkPass _ Nothing = False
+
     cls = "button-switching inverted flex-center"
     mkSaveBtnCls Nothing _ (Just _)     = cls
     mkSaveBtnCls (Just _) True (Just _) = cls

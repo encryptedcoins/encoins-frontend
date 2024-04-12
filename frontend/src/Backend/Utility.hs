@@ -95,8 +95,11 @@ genUid :: MonadWidget t m => Event t () -> m (Event t Text)
 genUid ev = performEvent $ (Uid.toText <$> liftIO Uid.nextRandom) <$ ev
 
 hashKeccak512 :: Text -> Text
-hashKeccak512 txt
+hashKeccak512 raw
   = TE.decodeUtf8
   $ BS16.encode
   $ Keccak.keccak512
-  $ TE.encodeUtf8 txt
+  $ TE.encodeUtf8 raw
+
+checkHash :: Text -> Text -> Bool
+checkHash hash raw = hash == hashKeccak512 raw

@@ -18,7 +18,6 @@ import           Data.Functor           (($>))
 import           Data.List              (delete)
 import           Data.Map               (Map)
 import           Data.Text              (Text)
-import qualified Data.Text              as T
 import           Reflex.Dom             hiding (Request, Value)
 import           Servant.API            (NoContent)
 import           Servant.Reflex         (BaseUrl (..), ReqResult (..))

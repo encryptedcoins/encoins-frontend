@@ -326,10 +326,6 @@ function loadHashedPassword(key) {
   }
 }
 
-function checkPassword(hash, raw) {
-  return (hash == CryptoJS.SHA3(raw));
-}
-
 async function addrLoad(addrInput) {
   await loader.load();
   const CardanoWasm = loader.Cardano;

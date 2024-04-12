@@ -150,19 +150,6 @@ loadHashedPassword _ = error "GHCJS is required!"
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
-  "checkPassword($1, $2)"
-  checkPassword_js :: JSString -> JSString -> JSM JSVal
-
-checkPassword :: MonadIO m => Text -> Text -> m Bool
-checkPassword hash raw = liftIO $ checkPassword_js (textToStr hash)
-  (textToStr raw) >>= fromJSValUnchecked
-#else
-checkPassword :: MonadIO m => Text -> Text -> m Bool
-checkPassword _ _ = error "GHCJS is required!"
-#endif
-
-#ifdef __GHCJS__
-foreign import javascript unsafe
   "addrLoad($1)"
   addrLoad_js :: JSString -> JSM ()
 
