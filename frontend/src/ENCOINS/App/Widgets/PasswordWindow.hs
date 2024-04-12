@@ -22,7 +22,7 @@ import           ENCOINS.Common.Events
 import           ENCOINS.Common.Events           (setFocusDelayOnEvent)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (br, btn, errDiv)
-import           JS.App                          (loadHashedPassword,
+import           JS.App                          (loadCacheValue,
                                                   saveHashedTextToStorage)
 
 validatePassword :: Text -> Either Text PasswordRaw
@@ -89,7 +89,7 @@ passwordSettingsWindow :: MonadWidget t m
   => Event t ()
   -> m (Event t (Maybe PasswordRaw), Event t ())
 passwordSettingsWindow eOpen = do
-  ePassHash <- performEvent (loadHashedPassword passwordSotrageKey <$ eOpen)
+  ePassHash <- performEvent (loadCacheValue passwordSotrageKey <$ eOpen)
   let emPassHash = toPasswordHash <$> ePassHash
   dmPassHash <- holdDyn Nothing emPassHash
   dialogWindow True eOpen never "app-PasswordSettingsWindow" "Protect cache of Encoins app" $ do

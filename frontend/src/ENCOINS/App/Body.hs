@@ -32,7 +32,7 @@ import           ENCOINS.Common.Utils               (toJsonText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           ENCOINS.Common.Widgets.Basic       (notification)
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
-import           JS.App                             (loadHashedPassword)
+import           JS.App                             (loadCacheValue)
 import           JS.Website                         (saveJSON)
 
 bodyContentWidget :: MonadWidget t m
@@ -103,7 +103,7 @@ reEncrypt key (d, mNewPass) = saveJSON
 
 bodyWidget :: MonadWidget t m => m ()
 bodyWidget = waitForScripts blank $ mdo
-  mPass <- toPasswordHash <$> loadHashedPassword passwordSotrageKey
+  mPass <- toPasswordHash <$> loadCacheValue passwordSotrageKey
   (ePassOk, eCleanCache) <- case mPass of
     Just pass -> first (Just <$>) <$> enterPasswordWindow pass eCleanOk
     Nothing -> do

@@ -133,15 +133,15 @@ saveHashedTextToStorage _ _ = error "GHCJS is required!"
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
-  "loadHashedPassword($1)"
-  loadHashedPassword_js :: JSString -> JSM JSString
+  "loadCacheValue($1)"
+  loadCacheValue_js:: JSString -> JSM JSString
 
-loadHashedPassword :: MonadIO m => Text -> m Text
-loadHashedPassword key =
-  strToText <$> liftIO (loadHashedPassword_js $ textToStr key)
+loadCacheValue :: MonadIO m => Text -> m Text
+loadCacheValue key =
+  strToText <$> liftIO (loadCacheValue_js$ textToStr key)
 #else
-loadHashedPassword :: MonadIO m => Text -> m Text
-loadHashedPassword _ = error "GHCJS is required!"
+loadCacheValue :: MonadIO m => Text -> m Text
+loadCacheValue _ = error "GHCJS is required!"
 #endif
 
 -----------------------------------------------------------------

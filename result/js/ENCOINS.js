@@ -317,7 +317,7 @@ function saveHashedTextToStorage(key, hash) {
   localStorage.setItem(key, hash);
 }
 
-function loadHashedPassword(key) {
+function loadCacheValue(key) {
   const pass = localStorage.getItem(key);
   if (pass == null) {
     return ""
