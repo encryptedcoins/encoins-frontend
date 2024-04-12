@@ -12,10 +12,11 @@ import qualified Data.Text                       as T
 import           Reflex.Dom
 import           Witherable                      (catMaybes)
 
-import           Backend.Protocol.Types          (PasswordHash (..),
-                                                  PasswordRaw (..))
+import           Backend.Protocol.StrongTypes    (PasswordHash (getPassHash),
+                                                  toPasswordHash)
+import           Backend.Protocol.Types          (PasswordRaw (..))
 import           Backend.Utility                 (hashKeccak512, isHashOfRaw,
-                                                  switchHoldDyn, toPasswordHash)
+                                                  switchHoldDyn)
 import           ENCOINS.App.Widgets.Basic       (saveAppData_)
 import           ENCOINS.Common.Cache            (encoinsV3, passwordSotrageKey)
 import           ENCOINS.Common.Events

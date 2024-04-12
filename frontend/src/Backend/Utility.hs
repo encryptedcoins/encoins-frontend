@@ -1,6 +1,5 @@
 module Backend.Utility where
 
-import           Backend.Protocol.Types (PasswordHash (..))
 import           Config.Config          (NetworkId (..), appNetwork)
 
 import           Control.Monad          (join, (<=<))
@@ -104,9 +103,3 @@ hashKeccak512 raw
 
 isHashOfRaw :: Text -> Text -> Bool
 isHashOfRaw hash raw = hash == hashKeccak512 raw
-
-toPasswordHash :: Text -> Maybe PasswordHash
-toPasswordHash p
-  | p == T.empty = Nothing
-  | p == hashKeccak512 "" = Nothing
-  | otherwise = Just $ PasswordHash p

@@ -9,9 +9,10 @@ import           Data.Maybe                         (isNothing)
 import           Data.Text                          (Text)
 import           Reflex.Dom
 
+import           Backend.Protocol.StrongTypes       (PasswordHash (getPassHash),
+                                                     toPasswordHash)
 import           Backend.Protocol.Types
-import           Backend.Utility                    (toPasswordHash,
-                                                     switchHoldDyn)
+import           Backend.Utility                    (switchHoldDyn)
 import           Backend.Wallet                     (walletsSupportedInApp)
 import           ENCOINS.App.Widgets.Basic          (loadAppDataE,
                                                      waitForScripts)

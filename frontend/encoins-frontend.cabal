@@ -19,6 +19,7 @@ library
     Backend.Environment
     Backend.Protocol.Fees
     Backend.Protocol.Setup
+    Backend.Protocol.StrongTypes
     Backend.Protocol.TxValidity
     Backend.Protocol.Types
     Backend.Protocol.Utility
