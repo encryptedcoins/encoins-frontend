@@ -52,15 +52,17 @@ function saveJSON(key, val, encr, pass) {
   setInputValue(key, "");
 }
 
-function loadJSON(key, resId, pass, decr) {
+async function loadJSON(key, resId, pass, decr) {
   const val = localStorage.getItem(key);
   var res = val;
   try {
     if (val !== null) {
       if (decr) {
-        res = CryptoJS.AES.decrypt(val, pass).toString(CryptoJS.enc.Utf8);
+        // res = CryptoJS.AES.decrypt(val, pass).toString(CryptoJS.enc.Utf8);
+        res = await decryptAesBase64Fallback(pass, val);
       }
     };
+    // console.log("loadJSON: res", res)
     setInputValue(resId, res);
   } catch (e) {
     console.log("loadJSON: decrypt error: ", e);

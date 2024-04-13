@@ -27,6 +27,11 @@ headWidget = do
   eEd25519Loaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/noble-ed25519.js" <> "type" =: "text/javascript") blank
   eCIP14Loaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/cip14.js" <> "type" =: "text/javascript") blank
   eCrypoJSLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/crypto-js.min.js" <> "type" =: "text/javascript") blank
+  eMd5Loaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/crypto/md5.js" <> "type" =: "text/javascript") blank
+  eUtilsLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/crypto/utils.js" <> "type" =: "text/javascript") blank
+  eDecryptCryptoJSLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/crypto/decrypt_crypto_js.js" <> "type" =: "text/javascript") blank
+  eNativeCryptoLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/crypto/native_crypto.js" <> "type" =: "text/javascript") blank
+  eFallbackLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/crypto/fallback.js" <> "type" =: "text/javascript") blank
 
   dWebFontLoaded <- holdDyn False (True <$ eWebFontLoaded)
   dCSLLoaded <- holdDyn False (True <$ eCSLLoaded)
@@ -35,8 +40,25 @@ headWidget = do
   dEd25519Loaded <- holdDyn False (True <$ eEd25519Loaded)
   dCIP14Loaded <- holdDyn False (True <$ eCIP14Loaded)
   dCrypoJSLoaded <- holdDyn False (True <$ eCrypoJSLoaded)
+  dUtilsLoaded <- holdDyn False (True <$ eUtilsLoaded)
+  dDecryptCryptoJSLoaded <- holdDyn False (True <$ eDecryptCryptoJSLoaded)
+  dFallbackLoaded <- holdDyn False (True <$ eFallbackLoaded)
+  dNativeCryptoLoaded <- holdDyn False (True <$ eNativeCryptoLoaded)
+  dMd5Loaded <- holdDyn False (True <$ eMd5Loaded)
   let eScriptsLoaded = ffilter (== True) $ updated $ foldl (zipDynWith (&&)) (pure True)
-        [dWebFontLoaded, dWebpageLoaded, dCSLLoaded, dLucidLoaded, dEd25519Loaded, dCIP14Loaded, dCrypoJSLoaded]
+        [ dWebFontLoaded
+        , dWebpageLoaded
+        , dCSLLoaded
+        , dLucidLoaded
+        , dEd25519Loaded
+        , dCIP14Loaded
+        , dCrypoJSLoaded
+        , dMd5Loaded
+        , dUtilsLoaded
+        , dDecryptCryptoJSLoaded
+        , dNativeCryptoLoaded
+        , dFallbackLoaded
+        ]
 
   performEvent_ (JS.runHeadScripts <$ eScriptsLoaded)
  where
