@@ -189,7 +189,7 @@ savePingRequest :: MonadWidget t m
 savePingRequest e = do
   let MkSaveApiClient{..} = mkSaveApiClient $ saveServerUrl True
   ePingRes <- fmap mkTextOrResponse <$> sacPing e
-  logEvent "save ping response" $ () <$ ePingRes
+  logEvent "cloud ping response" $ () <$ ePingRes
   pure ePingRes
 
 saveRequest :: MonadWidget t m
@@ -200,7 +200,7 @@ saveRequest dToken e = do
   let MkSaveApiClient{..} = mkSaveApiClient $ saveServerUrl False
   eResp <- sacSave (Right <$> dToken) e
   let eRespUnwrapped = mkTextOrResponse <$> eResp
-  logEvent "save response" $ () <$ eRespUnwrapped
+  logEvent "cloud response" $ () <$ eRespUnwrapped
   pure eRespUnwrapped
 
 restoreRequest :: MonadWidget t m
@@ -209,5 +209,5 @@ restoreRequest :: MonadWidget t m
 restoreRequest e = do
   let MkSaveApiClient{..} = mkSaveApiClient $ saveServerUrl False
   eRespUnwrapped <- fmap mkTextOrResponse <$> sacRestore e
-  logEvent "restore response" $ () <$ eRespUnwrapped
+  logEvent "cloud restore response" $ () <$ eRespUnwrapped
   pure eRespUnwrapped

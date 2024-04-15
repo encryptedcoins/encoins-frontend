@@ -59,7 +59,7 @@ async function loadJSON(key, resId, pass, decr) {
     if (val !== null) {
       if (decr) {
         // res = CryptoJS.AES.decrypt(val, pass).toString(CryptoJS.enc.Utf8);
-        res = await decryptAesBase64Fallback(pass, val);
+        res = await CryptoFallback.decryptAesBase64Fallback(pass, val);
       }
     };
     // console.log("loadJSON: res", res)
@@ -589,66 +589,46 @@ function handle_dao_error(e) {
   }
 }
 
-// Save
+// Cloud
 
-// Function to generate a random AES key
-async function generateAESKey(resId) {
-  const key = await crypto.subtle.generateKey(
-    {
-      name: "AES-GCM",
-      length: 256
-    },
-    true,
-    ["encrypt", "decrypt"]
-  );
-  const exportedKeyHex = await exportAESKey(key);
-  console.log("exportedKeyHex", exportedKeyHex.length)
-  setInputValue(resId, exportedKeyHex);
-}
+const CloudCrypto = {
 
-// Function to encrypt plaintext using AES-GCM
-async function encryptAES(hexKey, resId, plaintext) {
-  const key = await importAESKey(hexKey);
-  const iv = crypto.getRandomValues(new Uint8Array(16)); // Generate a random IV
-  const encrypted = await crypto.subtle.encrypt(
-    {
-      name: "AES-GCM",
-      iv: iv
-    },
-    key,
-    new TextEncoder().encode(plaintext)
-  );
-  const encryptedData = { iv: iv, ciphertext: new Uint8Array(encrypted) };
-  const encryptedDataHex = encryptedObjectToHexString(encryptedData);
-  setInputValue(resId, encryptedDataHex)
-}
-
-// Function to decrypt ciphertext using AES-GCM
-async function decryptAES(hexKey, resId, encryptedDataHex) {
-  const key = await importAESKey(hexKey);
-  const decryptedData = hexStringToEncryptedObject(encryptedDataHex);
-  const decryptedText = new TextDecoder().decode(
-    await crypto.subtle.decrypt(
+  // Function to generate a random AES key
+  generateCloudKey: async function (resId) {
+    const key = await crypto.subtle.generateKey(
       {
         name: "AES-GCM",
-        iv: decryptedData.iv
+        length: 256
+      },
+      true,
+      ["encrypt", "decrypt"]
+    );
+    const exportedKeyHex = await this.exportAESKey(key);
+    console.log("exportedKeyHex", exportedKeyHex.length)
+    setInputValue(resId, exportedKeyHex);
+  },
+
+  // Function to encrypt plaintext using AES-GCM
+  encryptSecret: async function (hexKey, resId, plaintext) {
+    const key = await this.importAESKey(hexKey);
+    const iv = crypto.getRandomValues(new Uint8Array(16)); // Generate a random IV
+    const encrypted = await crypto.subtle.encrypt(
+      {
+        name: "AES-GCM",
+        iv: iv
       },
       key,
-      decryptedData.ciphertext
-    )
-  );
-  console.log("decryptedText", decryptedText);
-  setInputValue(resId, decryptedText)
-}
+      new TextEncoder().encode(plaintext)
+    );
+    const encryptedData = { iv: iv, ciphertext: new Uint8Array(encrypted) };
+    const encryptedDataHex = encryptedObjectToHexString(encryptedData);
+    setInputValue(resId, encryptedDataHex)
+  },
 
-async function decryptListAES(hexKey, resId, encryptedDataHexList) {
-  const key = await importAESKey(hexKey);
-  const decryptedTextList = [];
-
-  for (const encryptedDataHex of encryptedDataHexList) {
-    try {
-
-    const decryptedData = hexStringToEncryptedObject(encryptedDataHex[1]);
+  // Function to decrypt ciphertext using AES-GCM
+  decryptSecret: async function (hexKey, resId, encryptedDataHex) {
+    const key = await this.importAESKey(hexKey);
+    const decryptedData = hexStringToEncryptedObject(encryptedDataHex);
     const decryptedText = new TextDecoder().decode(
       await crypto.subtle.decrypt(
         {
@@ -659,48 +639,268 @@ async function decryptListAES(hexKey, resId, encryptedDataHexList) {
         decryptedData.ciphertext
       )
     );
+    console.log("decryptedText", decryptedText);
+    setInputValue(resId, decryptedText)
+  },
 
-    decryptedTextList.push([encryptedDataHex[0], decryptedText]);
-  } catch (e) {
-      console.log("Token was encrypted with another key.", e)
+  decryptSecretList: async function (hexKey, resId, encryptedDataHexList) {
+    const key = await this.importAESKey(hexKey);
+    const decryptedTextList = [];
+
+    for (const encryptedDataHex of encryptedDataHexList) {
+      try {
+
+        const decryptedData = hexStringToEncryptedObject(encryptedDataHex[1]);
+        const decryptedText = new TextDecoder().decode(
+          await crypto.subtle.decrypt(
+            {
+              name: "AES-GCM",
+              iv: decryptedData.iv
+            },
+            key,
+            decryptedData.ciphertext
+          )
+        );
+
+        decryptedTextList.push([encryptedDataHex[0], decryptedText]);
+      } catch (e) {
+        console.log("Token was encrypted with another key.", e)
+      }
+
+    }
+    const decryptedJSON = JSON.stringify(decryptedTextList);
+    setInputValue(resId, decryptedJSON)
+  },
+
+  // Function to convert encryption result to hex string
+  encryptedObjectToHexString: function (result) {
+    const ivHex = Array.from(result.iv)
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+    const ciphertextHex = Array.from(result.ciphertext)
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+    return ivHex + ciphertextHex;
+  },
+
+  // Function to convert hex string to encryption result object
+  hexStringToEncryptedObject: function (hexString) {
+    const ivHex = hexString.slice(0, 32);
+    const ciphertextHex = hexString.slice(32);
+    const iv = new Uint8Array(ivHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+    const ciphertext = new Uint8Array(ciphertextHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+    return { iv: iv, ciphertext: ciphertext };
+  },
+
+  importAESKey: async function (hexKey) {
+    const keyBytes = new Uint8Array(hexKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+    return crypto.subtle.importKey("raw", keyBytes, { name: "AES-GCM" }, true, ["encrypt", "decrypt"]);
+  },
+
+  // Function to export a CryptoKey to a hex string
+  exportAESKey: async function (cryptoKey) {
+    const keyExported = await crypto.subtle.exportKey("raw", cryptoKey);
+    const keyBytes = new Uint8Array(keyExported);
+    return Array.from(keyBytes)
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join('');
+  }
+}
+
+
+// CryptoNative methods replace cryptoJS library and
+// used to (en/de)crypt values in local storage
+const CryptoNative = {
+
+  getMessageEncoding: function (message) {
+    let enc = new TextEncoder();
+    return enc.encode(message);
+  },
+
+  getKeyMaterial: function (password) {
+    let enc = new TextEncoder();
+    return crypto.subtle.importKey(
+      "raw",
+      enc.encode(password),
+      { name: "PBKDF2" },
+      false,
+      ["deriveBits", "deriveKey"]
+    );
+  },
+
+  getKey: function (keyMaterial, salt) {
+    const key = crypto.subtle.deriveKey(
+      {
+        "name": "PBKDF2",
+        salt: salt,
+        "iterations": 100000,
+        "hash": "SHA-256"
+      },
+      keyMaterial,
+      { "name": "AES-GCM", "length": 256 },
+      true,
+      ["encrypt", "decrypt"]
+    );
+    return key
+  },
+
+  encryptAesBase64: async function (password, message) {
+    let keyMaterial = await getKeyMaterial(password);
+    salt = crypto.getRandomValues(new Uint8Array(16));
+    let key = await getKey(keyMaterial, salt);
+    iv = crypto.getRandomValues(new Uint8Array(12));
+    let encoded = getMessageEncoding(message);
+
+    ciphertext = await crypto.subtle.encrypt(
+      {
+        name: "AES-GCM",
+        iv: iv
+      },
+      key,
+      encoded
+    );
+    return arrayBufferToBase64(ciphertext)
+  },
+
+  decryptBase64Aes: async function (password, ciphertext) {
+    let keyMaterial = await getKeyMaterial(password);
+    let key = await getKey(keyMaterial, salt);
+    const decrypted = await crypto.subtle.decrypt(
+      {
+        name: "AES-GCM",
+        iv: iv
+      },
+      key,
+      base64ToArrayBuffer(ciphertext)
+    );
+    const dec = new TextDecoder();
+    const res = dec.decode(decrypted);
+    return res
+  },
+
+  arrayBufferToBase64: function (buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  },
+
+  base64ToArrayBuffer: function (base64) {
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+  }
+}
+
+// CryptoFallback used to migrate from CryptoJS
+const CryptoFallback = {
+
+  decryptAesBase64Fallback: async function (password, message) {
+    try {
+      const firstRes = await CryptoNative.decryptBase64Aes(password, message);
+      // console.log('firstRes');
+      return firstRes
+    } catch (e1) {
+      console.log('Native decryption failed');
+      try {
+        const secondRes = await ReplaceCryptoJS.decryptCryptoJSCipherBase64(password, message);
+        // console.log('secondRes', secondRes);
+        return secondRes
+      } catch (e2) {
+        console.log('fallback failed', e2);
+      }
+    }
+  }
+}
+
+// ReplaceCryptoJS methods used to decrypt values from local storage that
+// were encrypted with cryptoJS library
+const ReplaceCryptoJS = {
+
+  HEAD_SIZE_DWORD: 2,
+  SALT_SIZE_DWORD: 2,
+
+  decryptCryptoJSCipherBase64: async function (
+    password,
+    cryptoJSCipherBase64,
+    { keySizeDWORD = 256 / 32, ivSizeDWORD = 128 / 32, iterations = 1 } = {},
+  ) {
+    const { salt, ciphertext } = this.parseCryptoJSCipherBase64(cryptoJSCipherBase64);
+
+    const { key, iv } = await this.dangerouslyDeriveParameters(password, salt, keySizeDWORD, ivSizeDWORD, iterations);
+    const plaintextArrayBuffer = await crypto.subtle.decrypt({ name: "AES-CBC", iv }, key, ciphertext);
+
+    return new TextDecoder().decode(plaintextArrayBuffer);
+  },
+
+  parseCryptoJSCipherBase64: function (cryptoJSCipherBase64) {
+    let salt;
+    let ciphertext = this.base64ToUint8Array(cryptoJSCipherBase64);
+
+    const [head, body] = this.splitUint8Array(ciphertext, this.HEAD_SIZE_DWORD * 4);
+
+    // This effectively checks if the ciphertext starts with 'Salted__'.
+    // Alternatively we could do `atob(cryptoJSCipherBase64.substr(0, 11)) === "Salted__"`.
+    const headDataView = new DataView(head.buffer);
+    if (headDataView.getInt32(0) === 0x53616c74 && headDataView.getInt32(4) === 0x65645f5f) {
+      [salt, ciphertext] = this.splitUint8Array(body, this.SALT_SIZE_DWORD * 4);
     }
 
-  }
-  const decryptedJSON = JSON.stringify(decryptedTextList);
-  setInputValue(resId, decryptedJSON)
+    return { ciphertext, salt };
+  },
 
-}
+  dangerouslyDeriveParameters: async function (password, salt, keySizeDWORD, ivSizeDWORD, iterations) {
+    const passwordUint8Array = new TextEncoder().encode(password);
 
-// Function to convert encryption result to hex string
-function encryptedObjectToHexString(result) {
-  const ivHex = Array.from(result.iv)
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-  const ciphertextHex = Array.from(result.ciphertext)
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-  return ivHex + ciphertextHex;
-}
+    const keyPlusIV = this.dangerousEVPKDF(passwordUint8Array, salt, keySizeDWORD + ivSizeDWORD, iterations);
+    const [rawKey, iv] = this.splitUint8Array(keyPlusIV, keySizeDWORD * 4);
 
-// Function to convert hex string to encryption result object
-function hexStringToEncryptedObject(hexString) {
-  const ivHex = hexString.slice(0, 32);
-  const ciphertextHex = hexString.slice(32);
-  const iv = new Uint8Array(ivHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
-  const ciphertext = new Uint8Array(ciphertextHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
-  return { iv: iv, ciphertext: ciphertext };
-}
+    const key = await crypto.subtle.importKey("raw", rawKey, "AES-CBC", false, ["decrypt"]);
 
-async function importAESKey(hexKey) {
-  const keyBytes = new Uint8Array(hexKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-  return crypto.subtle.importKey("raw", keyBytes, { name: "AES-GCM" }, true, ["encrypt", "decrypt"]);
-}
+    return { key, iv };
+  },
 
-// Function to export a CryptoKey to a hex string
-async function exportAESKey(cryptoKey) {
-  const keyExported = await crypto.subtle.exportKey("raw", cryptoKey);
-  const keyBytes = new Uint8Array(keyExported);
-  return Array.from(keyBytes)
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('');
+  dangerousEVPKDF: function (passwordUint8Array, saltUint8Array, keySizeDWORD, iterations) {
+    let derivedKey = new Uint8Array();
+    let block = new Uint8Array();
+
+    while (derivedKey.byteLength < keySizeDWORD * 4) {
+      block = md5.arrayBuffer(this.concatUint8Arrays(block, passwordUint8Array, saltUint8Array));
+
+      for (let i = 1; i < iterations; i++) {
+        block = md5.arrayBuffer(block);
+      }
+
+      block = new Uint8Array(block);
+
+      derivedKey = this.concatUint8Arrays(derivedKey, block);
+    }
+
+    return derivedKey;
+  },
+
+  // utils
+
+  concatUint8Arrays: function (...as) {
+    const size = as.reduce((size, a) => size + a.length, 0);
+    const c = new Uint8Array(size);
+    let i = 0;
+    for (const a of as) {
+      c.set(a, i);
+      i += a.length;
+    }
+    return c;
+  },
+
+  splitUint8Array: function (a, i) {
+    return [a.subarray(0, i), a.subarray(i, a.length)];
+  },
+
+  base64ToUint8Array: base64String => Uint8Array.from(atob(base64String), c => c.charCodeAt(0))
+
 }

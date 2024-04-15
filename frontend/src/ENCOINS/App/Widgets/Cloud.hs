@@ -189,7 +189,7 @@ encryptToken :: MonadWidget t m
 encryptToken (MkAesKeyRaw keyText) ev secret = do
   let secretByte = toJsonStrict secret
   let elementId = toText $ Hash.hash @Hash.SHA256 secretByte
-  performEvent_ $ JS.encryptAES (keyText, elementId, decodeUtf8 secretByte) <$ ev
+  performEvent_ $ JS.encryptSecret (keyText, elementId, decodeUtf8 secretByte) <$ ev
   dEncryptedSecretT <- elementResultJS elementId id
   let checkEmpty t = if T.null t then Nothing else Just t
   pure $ fmap MkEncryptedSecret . checkEmpty <$> dEncryptedSecretT
@@ -243,7 +243,7 @@ genAesKey mPass dmCachedKey ev1 = do
   eNewKeySaved <- switchHoldDyn dmCachedKey $ \case
     Nothing -> do
         let genElId = "genAESKeyId"
-        performEvent_ $ JS.generateAESKey genElId <$ ev2
+        performEvent_ $ JS.generateCloudKey genElId <$ ev2
         eAesKeyText <- updated <$> elementResultJS genElId id
         let eAesKey = MkAesKeyRaw <$> eAesKeyText
         eKeySaved <- saveAppData mPass aesKey eAesKey
@@ -312,7 +312,7 @@ decryptTokens key dRestores = do
     restores -> do
         ev <- newEventWithDelay 1
         let resId = "decryptTokens-resId"
-        performEvent_ $ JS.decryptListAES (getAesKeyRaw key, resId, restores) <$ ev
+        performEvent_ $ JS.decryptSecretList (getAesKeyRaw key, resId, restores) <$ ev
         let f = fmap (mapMaybe (\(n,s) -> mkTokenCacheV3 n =<< (decodeStrict $ encodeUtf8 s :: Maybe Secret)))
               . (decodeStrict . encodeUtf8 :: Text -> Maybe [(AssetName, Text)])
         dmDecryptedTokens <- elementResultJS resId f
