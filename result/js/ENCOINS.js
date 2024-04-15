@@ -61,7 +61,6 @@ async function loadJSON(key, resId, pass, decr) {
         res = await CryptoFallback.decryptAesBase64Fallback(pass, val);
       }
     };
-    // console.log("loadJSON: res", res)
     setInputValue(resId, res);
   } catch (e) {
     console.log("loadJSON: decrypt error: ", e);
