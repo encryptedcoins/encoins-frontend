@@ -188,7 +188,7 @@ encryptToken :: MonadWidget t m
   -> m (Dynamic t (Maybe EncryptedSecret))
 encryptToken (MkAesKeyRaw keyText) ev secret = do
   let secretByte = toJsonStrict secret
-  let elementId = toText $ Hash.hash @Hash.SHA256 secretByte
+  let elementId = toText $ Hash.hash @Hash.SHA1 secretByte
   performEvent_ $ JS.encryptSecret (keyText, elementId, decodeUtf8 secretByte) <$ ev
   dEncryptedSecretT <- elementResultJS elementId id
   let checkEmpty t = if T.null t then Nothing else Just t
