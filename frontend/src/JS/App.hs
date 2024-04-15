@@ -134,7 +134,7 @@ saveHashedTextToStorage _ _ = error "GHCJS is required!"
 #ifdef __GHCJS__
 foreign import javascript unsafe
   "loadCacheValue($1)"
-  loadCacheValue_js:: JSString -> JSM JSString
+  loadCacheValue_js :: JSString -> JSM JSString
 
 loadCacheValue :: MonadIO m => Text -> m Text
 loadCacheValue key =

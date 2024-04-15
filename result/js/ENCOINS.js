@@ -636,7 +636,6 @@ const CloudCrypto = {
         decryptedData.ciphertext
       )
     );
-    console.log("decryptedText", decryptedText);
     setInputValue(resId, decryptedText)
   },
 
@@ -757,16 +756,10 @@ const CryptoNative = {
       encoded
     );
     const ciphertextBase64 = this.arrayBufferToBase64(salt) + this.arrayBufferToBase64(iv) + this.arrayBufferToBase64(ciphertext);
-    // console.log ('encrypt salt1:', this.arrayBufferToBase64(salt))
-    // console.log ('encrypt iv:', this.arrayBufferToBase64(iv))
-    // console.log ('encrypt ciphertext:', this.arrayBufferToBase64(ciphertext))
     return ciphertextBase64
   },
 
   decryptBase64Aes: async function (password, ciphertextBase64) {
-    // console.log ('decrypt salt:', ciphertextBase64.slice(0, 24))
-    // console.log ('decrypt iv:', ciphertextBase64.slice(24, 40))
-    // console.log ('decrypt ciphertext:', ciphertextBase64.slice(40))
     const salt = this.base64ToArrayBuffer(ciphertextBase64.slice(0, 24));
     const iv = this.base64ToArrayBuffer(ciphertextBase64.slice(24, 40));
     const ciphertext = this.base64ToArrayBuffer(ciphertextBase64.slice(40));

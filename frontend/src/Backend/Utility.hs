@@ -94,6 +94,8 @@ toText = T.pack . show
 genUid :: MonadWidget t m => Event t () -> m (Event t Text)
 genUid ev = performEvent $ (Uid.toText <$> liftIO Uid.nextRandom) <$ ev
 
+-- Keccak 512 is SHA-3. It is used in cryptoJS
+-- we use it to replace js external library
 hashKeccak512 :: Text -> Text
 hashKeccak512 raw
   = TE.decodeUtf8
