@@ -43,10 +43,10 @@ function setInputValue(elId, val) {
   };
 };
 
-function saveJSON(key, val, encr, pass) {
+async function saveJSON(key, val, encr, pass) {
   var val1 = val;
   if (encr) {
-    val1 = CryptoJS.AES.encrypt(val, pass).toString();
+    val1 = await CryptoNative.encryptAesBase64(pass, val);
   }
   localStorage.setItem(key, val1);
   setInputValue(key, "");
@@ -58,7 +58,6 @@ async function loadJSON(key, resId, pass, decr) {
   try {
     if (val !== null) {
       if (decr) {
-        // res = CryptoJS.AES.decrypt(val, pass).toString(CryptoJS.enc.Utf8);
         res = await CryptoFallback.decryptAesBase64Fallback(pass, val);
       }
     };
@@ -604,7 +603,6 @@ const CloudCrypto = {
       ["encrypt", "decrypt"]
     );
     const exportedKeyHex = await this.exportAESKey(key);
-    console.log("exportedKeyHex", exportedKeyHex.length)
     setInputValue(resId, exportedKeyHex);
   },
 
@@ -621,14 +619,14 @@ const CloudCrypto = {
       new TextEncoder().encode(plaintext)
     );
     const encryptedData = { iv: iv, ciphertext: new Uint8Array(encrypted) };
-    const encryptedDataHex = encryptedObjectToHexString(encryptedData);
+    const encryptedDataHex = this.encryptedObjectToHexString(encryptedData);
     setInputValue(resId, encryptedDataHex)
   },
 
   // Function to decrypt ciphertext using AES-GCM
   decryptSecret: async function (hexKey, resId, encryptedDataHex) {
     const key = await this.importAESKey(hexKey);
-    const decryptedData = hexStringToEncryptedObject(encryptedDataHex);
+    const decryptedData = this.hexStringToEncryptedObject(encryptedDataHex);
     const decryptedText = new TextDecoder().decode(
       await crypto.subtle.decrypt(
         {
@@ -650,7 +648,7 @@ const CloudCrypto = {
     for (const encryptedDataHex of encryptedDataHexList) {
       try {
 
-        const decryptedData = hexStringToEncryptedObject(encryptedDataHex[1]);
+        const decryptedData = this.hexStringToEncryptedObject(encryptedDataHex[1]);
         const decryptedText = new TextDecoder().decode(
           await crypto.subtle.decrypt(
             {
@@ -708,8 +706,8 @@ const CloudCrypto = {
 }
 
 
-// CryptoNative methods replace cryptoJS library and
-// used to (en/de)crypt values in local storage
+// CryptoNative methods for replacing cryptoJS library and
+// using to (en/de)crypt values in local storage
 const CryptoNative = {
 
   getMessageEncoding: function (message) {
@@ -731,10 +729,10 @@ const CryptoNative = {
   getKey: function (keyMaterial, salt) {
     const key = crypto.subtle.deriveKey(
       {
-        "name": "PBKDF2",
+        name: "PBKDF2",
         salt: salt,
-        "iterations": 100000,
-        "hash": "SHA-256"
+        iterations: 100000,
+        hash: "SHA-256"
       },
       keyMaterial,
       { "name": "AES-GCM", "length": 256 },
@@ -745,13 +743,13 @@ const CryptoNative = {
   },
 
   encryptAesBase64: async function (password, message) {
-    let keyMaterial = await getKeyMaterial(password);
-    salt = crypto.getRandomValues(new Uint8Array(16));
-    let key = await getKey(keyMaterial, salt);
-    iv = crypto.getRandomValues(new Uint8Array(12));
-    let encoded = getMessageEncoding(message);
+    const keyMaterial = await this.getKeyMaterial(password);
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const key = await this.getKey(keyMaterial, salt);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encoded = this.getMessageEncoding(message);
 
-    ciphertext = await crypto.subtle.encrypt(
+    const ciphertext = await crypto.subtle.encrypt(
       {
         name: "AES-GCM",
         iv: iv
@@ -759,19 +757,30 @@ const CryptoNative = {
       key,
       encoded
     );
-    return arrayBufferToBase64(ciphertext)
+    const ciphertextBase64 = this.arrayBufferToBase64(salt) + this.arrayBufferToBase64(iv) + this.arrayBufferToBase64(ciphertext);
+    // console.log ('encrypt salt1:', this.arrayBufferToBase64(salt))
+    // console.log ('encrypt iv:', this.arrayBufferToBase64(iv))
+    // console.log ('encrypt ciphertext:', this.arrayBufferToBase64(ciphertext))
+    return ciphertextBase64
   },
 
-  decryptBase64Aes: async function (password, ciphertext) {
-    let keyMaterial = await getKeyMaterial(password);
-    let key = await getKey(keyMaterial, salt);
+  decryptBase64Aes: async function (password, ciphertextBase64) {
+    // console.log ('decrypt salt:', ciphertextBase64.slice(0, 24))
+    // console.log ('decrypt iv:', ciphertextBase64.slice(24, 40))
+    // console.log ('decrypt ciphertext:', ciphertextBase64.slice(40))
+    const salt = this.base64ToArrayBuffer(ciphertextBase64.slice(0, 24));
+    const iv = this.base64ToArrayBuffer(ciphertextBase64.slice(24, 40));
+    const ciphertext = this.base64ToArrayBuffer(ciphertextBase64.slice(40));
+
+    const keyMaterial = await this.getKeyMaterial(password);
+    const key = await this.getKey(keyMaterial, salt);
     const decrypted = await crypto.subtle.decrypt(
       {
         name: "AES-GCM",
         iv: iv
       },
       key,
-      base64ToArrayBuffer(ciphertext)
+      ciphertext
     );
     const dec = new TextDecoder();
     const res = dec.decode(decrypted);
@@ -789,7 +798,7 @@ const CryptoNative = {
 
   base64ToArrayBuffer: function (base64) {
     const binaryString = atob(base64);
-    const bytes = new Uint8Array(binaryString.length);
+    let bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
@@ -797,7 +806,7 @@ const CryptoNative = {
   }
 }
 
-// CryptoFallback used to migrate from CryptoJS
+// CryptoFallback used to migrate from cryptoJS library
 const CryptoFallback = {
 
   decryptAesBase64Fallback: async function (password, message) {
@@ -807,6 +816,7 @@ const CryptoFallback = {
       return firstRes
     } catch (e1) {
       console.log('Native decryption failed');
+      // console.log('Native error:', e1);
       try {
         const secondRes = await ReplaceCryptoJS.decryptCryptoJSCipherBase64(password, message);
         // console.log('secondRes', secondRes);
