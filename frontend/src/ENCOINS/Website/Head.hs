@@ -26,7 +26,6 @@ headWidget = do
   eWebpageLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/Webpage.js" <> "type" =: "text/javascript") blank
   eEd25519Loaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/noble-ed25519.js" <> "type" =: "text/javascript") blank
   eCIP14Loaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/cip14.js" <> "type" =: "text/javascript") blank
-  eCrypoJSLoaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/crypto-js.min.js" <> "type" =: "text/javascript") blank
   eMd5Loaded <- domEvent Load . fst <$> elAttr' "script" ("src" =: "js/md5.js" <> "type" =: "text/javascript") blank
 
   dWebFontLoaded <- holdDyn False (True <$ eWebFontLoaded)
@@ -35,7 +34,6 @@ headWidget = do
   dWebpageLoaded <- holdDyn False (True <$ eWebpageLoaded)
   dEd25519Loaded <- holdDyn False (True <$ eEd25519Loaded)
   dCIP14Loaded <- holdDyn False (True <$ eCIP14Loaded)
-  dCrypoJSLoaded <- holdDyn False (True <$ eCrypoJSLoaded)
   dMd5Loaded <- holdDyn False (True <$ eMd5Loaded)
 
   let eScriptsLoaded = ffilter (== True) $ updated $ foldl (zipDynWith (&&)) (pure True)
@@ -45,7 +43,6 @@ headWidget = do
         , dLucidLoaded
         , dEd25519Loaded
         , dCIP14Loaded
-        , dCrypoJSLoaded
         , dMd5Loaded
         ]
 
