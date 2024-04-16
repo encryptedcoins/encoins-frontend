@@ -1919,23 +1919,23 @@ body {
   }
 }
 
-.app-Save_IconSaving {
+.app-Cloud_IconSaving {
   background-image: url('../images/cloud_yellow.svg');
 }
 
-.app-Save_IconAllSaved {
+.app-Cloud_IconAllSaved {
   background-image: url('../images/cloud_green.svg');
 }
 
-.app-Save_IconAttemptExcess {
+.app-Cloud_IconAttemptExcess {
   background-image: url('../images/cloud_red.svg');
 }
 
-.app-Save_IconTurnOff {
+.app-Cloud_IconTurnOff {
   background-image: url('../images/cloud_blank.svg');
 }
 
-.app-Save_IconContainer {
+.app-Cloud_IconContainer {
   height: 31px;
   max-height: 31px;
   width: 27px;
@@ -1948,21 +1948,21 @@ body {
 }
 
 @media screen and (min-width: 767px) {
-  .app-Save_IconContainer {
+  .app-Cloud_IconContainer {
     margin-bottom: 0px;
     margin-top: 10px;
   }
 }
 
-.app-Save_IconContainer:hover {
+.app-Cloud_IconContainer:hover {
   cursor: pointer;
 }
 
-.app-Save_IconContainer:hover .app-Nav_SavePopup {
+.app-Cloud_IconContainer:hover .app-Nav_CloudPopup {
   display: inline-block;
 }
 
-.app-Nav_SavePopup {
+.app-Nav_CloudPopup {
   display: flex;
   top: auto;
   right: 83px;
@@ -1974,7 +1974,7 @@ body {
 }
 
 @media screen and (min-width: 767px) {
-  .app-Nav_SavePopup {
+  .app-Nav_CloudPopup {
     display: none;
     top: 50px;
     position: absolute;
