@@ -1,3 +1,5 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.App.Widgets.TransactionBalance where
 
 import           Data.Bool                    (bool)
@@ -40,12 +42,13 @@ transactionBalanceWidget formula mMode txt = do
   case mMode of
     Nothing -> divClassId "app-TransactionBalance" "welcome-tx-balance" $
       divClass "app-text-semibold" $ dynText $ fmap balanceADA $ total formula
-    Just mode -> do
+    Just mode -> mdo
       ev <- divClassId "app-TransactionBalance" "welcome-tx-balance" $ do
           divClass "app-text-semibold" $ dynText $ fmap balanceADA $ total formula
-          image "arrow_down.svg" "app-Formula_InfoIcon" ""
-      dTooltipVis <- toggle False ev
-      dyn_ $ bool blank (formulaTooltip formula mode) <$> dTooltipVis
+          let arrowClass = bool "app-Formula_InfoIcon-down" "app-Formula_InfoIcon-up" <$> dIsTooltipVisible
+          image "arrow_down.svg" arrowClass ""
+      dIsTooltipVisible <- toggle False ev
+      dyn_ $ bool blank (formulaTooltip formula mode) <$> dIsTooltipVisible
 
 formulaTooltip :: MonadWidget t m => Formula t -> EncoinsMode -> m ()
 formulaTooltip Formula{..} mode = elAttr "div"

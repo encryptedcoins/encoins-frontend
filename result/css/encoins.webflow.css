@@ -1844,8 +1844,13 @@ body {
   margin-bottom: 20px;
 }
 
-.app-Formula_InfoIcon {
+.app-Formula_InfoIcon-down {
   cursor: pointer;
+}
+
+.app-Formula_InfoIcon-up {
+  cursor: pointer;
+  rotate: 180deg;
 }
 
 .app-Formula_TooltipWrapper {
