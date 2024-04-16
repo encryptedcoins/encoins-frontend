@@ -2073,30 +2073,69 @@ body {
 }
 
 .app-ImportWindow {
-  width: 90%;
   min-width: 470px;
-  padding-left: min(5%, 70px);
-  padding-right: min(5%, 70px);
+  padding-left: min(5%, 40px);
+  padding-right: min(5%, 40px);
   padding-top: min(5%, 30px);
   padding-bottom: min(5%, 30px);
+}
+
+.app-ImportWindow_ButtonContainer {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media screen and (min-width: 470px) {
+  .app-ImportWindow_ButtonContainer {
+    display: flex;
+    flex-direction: row;
+  }
 }
 
 .app-ImportFileWindow {
-  width: 90%;
-  min-width: 470px;
-  padding-left: min(5%, 70px);
-  padding-right: min(5%, 70px);
+  min-width: 600px;
+  padding-left: min(5%, 50px);
+  padding-right: min(5%, 50px);
   padding-top: min(5%, 30px);
   padding-bottom: min(5%, 30px);
 }
 
+.app-ImportFileWindow_ButtonContainer {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media screen and (min-width: 470px) {
+  .app-ImportFileWindow_ButtonContainer {
+    display: flex;
+    flex-direction: row;
+  }
+}
+
 .app-ExportWindow {
-  width: 90%;
-  min-width: 470px;
-  padding-left: min(5%, 70px);
-  padding-right: min(5%, 70px);
+  min-width: 600px;
+  padding-left: min(5%, 50px);
+  padding-right: min(5%, 50px);
   padding-top: min(5%, 30px);
   padding-bottom: min(5%, 30px);
+}
+
+.app-ExportWindow_ButtonContainer {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media screen and (min-width: 470px) {
+  .app-ExportWindow_ButtonContainer {
+    display: flex;
+    flex-direction: row;
+  }
 }
 
 .app-InputAddressWindow {
