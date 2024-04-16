@@ -122,8 +122,6 @@ data ServerVersion = ServerVersion
 
 newtype PasswordRaw = PasswordRaw { getPassRaw :: Text } deriving (Eq, Show)
 
-newtype PasswordHash = PasswordHash { getPassHash :: Text } deriving (Eq, Show)
-
 -- Save types
 
 -- Secret hash is used to save

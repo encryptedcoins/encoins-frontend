@@ -306,6 +306,7 @@ ledgerTab mpass dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp "" "" $
 
             -- save unique changes only
             dTokensUpdatedUniq <- holdUniqDyn dTokensUpdated
+            -- logDyn "walletTab: dTokensUpdatedUniq" dTokensUpdatedUniq
             saveCacheLocally mpass "ledgerTab" dTokensUpdatedUniq
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do

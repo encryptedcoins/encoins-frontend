@@ -19,6 +19,7 @@ library
     Backend.Environment
     Backend.Protocol.Fees
     Backend.Protocol.Setup
+    Backend.Protocol.StrongTypes
     Backend.Protocol.TxValidity
     Backend.Protocol.Types
     Backend.Protocol.Utility
@@ -102,6 +103,7 @@ library
     ilist ^>=0.4.0.1,
     jsaddle ^>=0.9.8.2,
     jsaddle-dom ^>=0.9.5.0,
+    keccak,
     lens,
     plutus-tx-extra,
     plutus-tx-js,

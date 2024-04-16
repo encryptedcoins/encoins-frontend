@@ -129,7 +129,7 @@ cloudKeyWidget :: MonadWidget t m
 cloudKeyWidget mPass eFirstLoadKey = mdo
   divClass "app-Cloud_AesKey_Title" $
     text "Your AES key for restoring encoins. Save it to a file and keep it secure!"
-  let eLoadKey = leftmost [eFirstLoadKey, eKeyRemoved, eKeyGenerated, eUserKeySaved]
+  eLoadKey <- delay 0.05 $ leftmost [eFirstLoadKey, eKeyRemoved, eKeyGenerated, eUserKeySaved]
   dmKey <- fetchAesKey mPass "cloudKeyWidget-fetchAesKey" eLoadKey
   showKeyWidget dmKey
 
