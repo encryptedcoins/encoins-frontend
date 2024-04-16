@@ -52,6 +52,7 @@ formulaTooltip Formula{..} mode = elAttr "div"
   ( "class" =: "app-Formula_TooltipWrapper"
   <> "style" =: "border-top-left-radius: 0px; border-top-right-radius: 0px"
   ) $ do
+      divClass "app-text-semibold" $ text "Balance formula"
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "font-size:16px;overflow-wrap: anywhere;") $ case mode of
         WalletMode -> divClass "app-Formula_TooltipFormula" $ do
             dynText $ mconcat
