@@ -42,9 +42,8 @@ transactionBalanceWidget formula mMode txt = do
       divClass "app-text-semibold" $ dynText $ fmap balanceADA $ total formula
     Just mode -> do
       ev <- divClassId "app-TransactionBalance" "welcome-tx-balance" $ do
-          ev <- image "info.svg" "app-Formula_InfoIcon" ""
           divClass "app-text-semibold" $ dynText $ fmap balanceADA $ total formula
-          pure ev
+          image "arrow_down.svg" "app-Formula_InfoIcon" ""
       dTooltipVis <- toggle False ev
       dyn_ $ bool blank (formulaTooltip formula mode) <$> dTooltipVis
 
