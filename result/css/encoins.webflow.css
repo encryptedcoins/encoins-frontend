@@ -840,7 +840,6 @@ body {
 
 .coin-entry-burn-div:hover {
   background: rgb(50 50 50);
-  cursor: pointer;
 }
 
 .coin-entry-mint-div {
@@ -862,7 +861,6 @@ body {
 
 .coin-entry-mint-div:hover {
   background: rgb(50 50 50);
-  cursor: pointer;
 }
 
 .checkbox-div {
@@ -1089,6 +1087,7 @@ body {
   -webkit-filter: brightness(75%);
   filter: brightness(75%);
   color: #000;
+  transition: all 1s ease;
 }
 
 .div-tooltip.top-right {
