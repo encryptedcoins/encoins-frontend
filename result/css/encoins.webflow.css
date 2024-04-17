@@ -1848,9 +1848,20 @@ body {
   cursor: pointer;
 }
 
+.app-Formula_InfoIcon-down:hover {
+  cursor: pointer;
+  transform: scale(1.1);
+}
+
 .app-Formula_InfoIcon-up {
   cursor: pointer;
   rotate: 180deg;
+}
+
+.app-Formula_InfoIcon-up:hover {
+  cursor: pointer;
+  rotate: 180deg;
+  transform: scale(1.1);
 }
 
 .app-Formula_TooltipWrapper {
