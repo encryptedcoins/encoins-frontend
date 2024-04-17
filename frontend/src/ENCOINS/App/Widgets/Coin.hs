@@ -168,13 +168,16 @@ coinTooltip (MkAssetName name) = elAttr "div" ("class" =: "div-tooltip div-toolt
 
 coinV3MintWidget :: MonadWidget t m => TokenCacheV3 -> m (Event t Secret)
 coinV3MintWidget (MkTokenCacheV3 name s _) = mdo
-    (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
+    (eArrow, ret) <- elDynAttr "div" (mkAttrs <$> dIsTooltipVisible) $ do
         eCross <- domEvent Click . fst <$> elClass' "div" "cross-div" blank
-        (txt, _) <- elClass' "div" "app-text-normal" $ text $ shortenCoinName $ getAssetName name
+        eSpoiler <- elClass "div" "app-text-normal" $ do
+          text $ shortenCoinName $ getAssetName name
+          let arrowClass = bool "app-Spoiler_AssetInfo-down" "app-Spoiler_AssetInfo-up" <$> dIsTooltipVisible
+          image "arrow_down_white.svg" arrowClass ""
         divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
-        return (txt, eCross)
-    dTooltipVis <- toggle False (domEvent Click elTxt)
-    dyn_ $ bool blank (coinTooltip name) <$> dTooltipVis
+        return (eSpoiler, eCross)
+    dIsTooltipVisible <- toggle False eArrow
+    dyn_ $ bool blank (coinTooltip name) <$> dIsTooltipVisible
     return $ s <$ ret
     where
         mkAttrs = ("class" =: "coin-entry-mint-div" <>) . bool mempty ("style" =: "background:rgb(50 50 50);")

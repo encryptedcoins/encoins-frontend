@@ -1844,21 +1844,45 @@ body {
   margin-bottom: 20px;
 }
 
-.app-Formula_InfoIcon-down {
+.app-Spoiler_AssetInfo-down {
+  cursor: pointer;
+  padding-left: 10px;
+}
+
+.app-Spoiler_AssetInfo-down:hover {
+  cursor: pointer;
+  padding-left: 10px;
+  transform: scale(1.1);
+}
+
+.app-Spoiler_AssetInfo-up {
+  cursor: pointer;
+  padding-right: 10px;
+  rotate: 180deg;
+}
+
+.app-Spoiler_AssetInfo-up:hover {
+  cursor: pointer;
+  padding-right: 10px;
+  rotate: 180deg;
+  transform: scale(1.1);
+}
+
+.app-Spoiler_Formula-down {
   cursor: pointer;
 }
 
-.app-Formula_InfoIcon-down:hover {
+.app-Spoiler_Formula-down:hover {
   cursor: pointer;
   transform: scale(1.1);
 }
 
-.app-Formula_InfoIcon-up {
+.app-Spoiler_Formula-up {
   cursor: pointer;
   rotate: 180deg;
 }
 
-.app-Formula_InfoIcon-up:hover {
+.app-Spoiler_Formula-up:hover {
   cursor: pointer;
   rotate: 180deg;
   transform: scale(1.1);

@@ -45,7 +45,7 @@ transactionBalanceWidget formula mMode txt = do
     Just mode -> mdo
       ev <- divClassId "app-TransactionBalance" "welcome-tx-balance" $ do
           divClass "app-text-semibold" $ dynText $ fmap balanceADA $ total formula
-          let arrowClass = bool "app-Formula_InfoIcon-down" "app-Formula_InfoIcon-up" <$> dIsTooltipVisible
+          let arrowClass = bool "app-Spoiler_Formula-down" "app-Spoiler_Formula-up" <$> dIsTooltipVisible
           image "arrow_down.svg" arrowClass ""
       dIsTooltipVisible <- toggle False ev
       dyn_ $ bool blank (formulaTooltip formula mode) <$> dIsTooltipVisible
