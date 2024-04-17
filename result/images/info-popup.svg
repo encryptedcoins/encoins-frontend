@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   version="1.0"
+   width="19.819965pt"
+   height="22.000008pt"
+   viewBox="0 0 19.819965 22.000008"
+   preserveAspectRatio="xMidYMid"
+   id="svg3"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs3">
+    <linearGradient
+       id="swatch40">
+      <stop
+         style="stop-color:#000000;stop-opacity:1;"
+         offset="0"
+         id="stop40" />
+    </linearGradient>
+  </defs>
+  <g
+     id="g38"
+     style="fill:none;fill-opacity:0.415175;stroke:#000000;stroke-width:5;stroke-dasharray:none;stroke-opacity:1"
+     transform="matrix(0.02646191,0,0,0.02646191,-3.3209745,-3.3438948)">
+    <path
+       d="m 210,126.36621 a 84.499996,84.499996 0 0 0 -84.49951,84.50098 V 791.25 a 84.750026,84.750026 0 0 0 84.75,84.75 H 418.49561 L 500.25,957.75 582.09082,876 H 791.25 a 83.249986,83.249986 0 0 0 83.25,-83.25 v -583.5 a 82.883496,82.883496 0 0 0 -82.88379,-82.88379 z m -1.00049,82.6333 h 582 V 791.25 H 548.25 l -48,48 -47.98389,-48 h -243.2666 z"
+       style="display:inline;fill:#000000;fill-opacity:0.993847;fill-rule:evenodd;stroke:none"
+       id="path40" />
+    <rect
+       style="display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:5;stroke-dasharray:none;stroke-opacity:1"
+       id="rect30"
+       width="81.691528"
+       height="249.75002"
+       x="459.17688"
+       y="459" />
+    <rect
+       style="display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:5;stroke-dasharray:none;stroke-opacity:1"
+       id="rect31"
+       width="81.667999"
+       height="85.000778"
+       x="459.20041"
+       y="291" />
+  </g>
+</svg>

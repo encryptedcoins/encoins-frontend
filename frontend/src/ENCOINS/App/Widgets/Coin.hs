@@ -116,7 +116,7 @@ coinBurnWidget tokenV3@(MkTokenCacheV3 name s _) = mdo
           image "arrow_down_white.svg" arrowClass ""
         divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
         let keyIcon = do
-                e <- image "Key.svg" "" "22px"
+                e <- image "Key.svg" "app-CoinBurn_IconKey" ""
                 void $ copyEvent e
                 performEvent_ (liftIO (copyText secretText) <$ e)
         divClass "key-div" $ withTooltip keyIcon "app-CoinBurn_KeyTip" 0 0 $ do

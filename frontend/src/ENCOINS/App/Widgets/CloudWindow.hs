@@ -107,7 +107,7 @@ showKeyWidget :: MonadWidget t m
 showKeyWidget dmKey = do
   let dKey = maybe "Cloud key is absent" getAesKeyRaw <$> dmKey
   let keyIcon = do
-        e <- image "Key.svg" "inverted" "22px"
+        e <- image "info-popup.svg" "app-Cloud_IconPopup" ""
         void $ copyEvent e
         let eKey = tagPromptlyDyn dKey e
         performEvent_ (liftIO . copyText <$> eKey)
