@@ -112,7 +112,7 @@ showKeyWidget dmKey = do
         let eKey = tagPromptlyDyn dKey e
         performEvent_ (liftIO . copyText <$> eKey)
   divClass "app-Cloud_KeyContainer" $ do
-    divClass "key-div" $ withTooltip keyIcon "app-CloudWindow_KeyTip" 0 0 $ do
+    withTooltip keyIcon "app-CloudWindow_KeyTip" 0 0 $ do
       text "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
     dynText dKey
 

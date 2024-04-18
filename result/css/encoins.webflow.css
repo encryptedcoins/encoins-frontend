@@ -1953,7 +1953,6 @@ body {
   letter-spacing: 0.01em;
 }
 
-
 .app-WelcomeBody_ButtonOkContainer {
   display: flex;
   flex-direction: column;
@@ -1974,25 +1973,33 @@ body {
 
 .app-Cloud_IconSaving {
   background-image: url('../images/cloud_yellow.svg');
+  height: 31px;
+  width: 27px;
 }
 
 .app-Cloud_IconAllSaved {
   background-image: url('../images/cloud_green.svg');
+  height: 31px;
+  width: 27px;
+}
+
+.app-Cloud_IconAllSaved:hover {
+  transform: scale(1.1);
 }
 
 .app-Cloud_IconAttemptExcess {
   background-image: url('../images/cloud_red.svg');
+  height: 31px;
+  width: 27px;
 }
 
 .app-Cloud_IconTurnOff {
   background-image: url('../images/cloud_blank.svg');
+  height: 31px;
+  width: 27px;
 }
 
 .app-Cloud_IconContainer {
-  height: 31px;
-  max-height: 31px;
-  width: 27px;
-  min-width: 27px;
   margin-left: 10px;
   align-self: center;
   background-position: 0px 0px;
@@ -2009,29 +2016,6 @@ body {
 
 .app-Cloud_IconContainer:hover {
   cursor: pointer;
-}
-
-.app-Cloud_IconContainer:hover .app-Nav_CloudPopup {
-  display: inline-block;
-}
-
-.app-Nav_CloudPopup {
-  display: flex;
-  top: auto;
-  right: 83px;
-  margin-top: 10px;
-  padding-top: 30px;
-  position: relative;
-  font-weight: 400;
-  white-space: nowrap;
-}
-
-@media screen and (min-width: 767px) {
-  .app-Nav_CloudPopup {
-    display: none;
-    top: 50px;
-    position: absolute;
-  }
 }
 
 .app-Cloud_CheckboxContainer {
