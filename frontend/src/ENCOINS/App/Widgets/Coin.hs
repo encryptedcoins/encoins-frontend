@@ -149,17 +149,24 @@ coinBurnCollectionWidget dlToken = do
 coinSpoiler :: MonadWidget t m => AssetName -> m ()
 coinSpoiler (MkAssetName name) = elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visible" <>
     "style" =: "border-top-left-radius: 0px; border-top-right-radius: 0px") $ do
-    divClass "app-text-semibold" $ text "Full token name"
-    elAttr "div" ("class" =: "app-text-normal" <> "style" =: "font-size:16px;overflow-wrap: anywhere;") $ do
-        eCopy <- copyButton
-        performEvent_ (liftIO (copyText name) <$ eCopy)
-        text name
-    divClass "app-text-semibold" $ text "Asset fingerprint"
-    elAttr "div" ("class" =: "app-text-normal" <> "style" =: "font-size:16px;overflow-wrap: anywhere;") $ do
-        eCopy <- copyButton
-        fp <- fingerprintFromAssetName encoinsCurrencySymbol name
-        performEvent_ (liftIO (copyText fp) <$ eCopy)
-        text fp
+      let copyTokenIcon = do
+            eCopy <- copyButton
+            performEvent_ (liftIO (copyText name) <$ eCopy)
+      divClass "app-text-semibold" $ text "Full token name"
+      divClass "app-Tooltip_TokenNameContainer" $ do
+        divClass "app-Tooltip_TokenName-copy" copyTokenIcon
+        elAttr "div" ("class" =: "app-text-normal" <> "style" =: "font-size:16px;overflow-wrap: anywhere;") $ text name
+
+      fp <- fingerprintFromAssetName encoinsCurrencySymbol name
+      let copyAssetIcon = do
+            eCopy <- copyButton
+            performEvent_ (liftIO (copyText fp) <$ eCopy)
+      divClass "app-text-semibold" $ text "Asset fingerprint"
+      divClass "app-Tooltip_AssetContainer" $ do
+        divClass "app-Tooltip_Asset-copy" copyAssetIcon
+        elAttr "div" ("class" =: "app-text-normal" <> "style" =: "font-size:16px;overflow-wrap: anywhere;") $ text fp
+
+
 --------------------------------- Coins to Mint -------------------------------
 
 coinV3MintWidget :: MonadWidget t m => TokenCacheV3 -> m (Event t Secret)

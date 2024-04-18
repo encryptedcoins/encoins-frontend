@@ -1128,9 +1128,8 @@ body {
 
 .copy-div {
   display: inline-block;
-  width: 35px;
+  width: 20px;
   height: 20px;
-  margin: 3px;
   background-image: url('../images/copy.svg');
   background-position: 50% 50%;
   background-size: 20px;
@@ -1143,9 +1142,8 @@ body {
 
 .tick-div {
   display: inline-block;
-  width: 35px;
+  width: 20px;
   height: 20px;
-  margin: 3px;
   background-image: url('../images/Tick.svg');
   background-position: 50% 50%;
   background-size: 20px;
@@ -2351,4 +2349,24 @@ body {
 
 .app-Cloud_IconPopup:hover {
   transform: scale(1.1);
+}
+
+.app-Tooltip_TokenNameContainer {
+  gap: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.app-Tooltip_TokenName-copy {
+  width: 20px;
+}
+
+.app-Tooltip_AssetContainer {
+  gap: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.app-Tooltip_Asset-copy {
+  width: 20px;
 }
