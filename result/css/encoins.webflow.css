@@ -2083,7 +2083,7 @@ body {
   height: 30px;
   background-color: #fff;
   border: 1px solid #6a6a6a;
-  border-radius: 10px;
+  border-radius: 5px;
   box-shadow: inset -20px 0 0 0 #6a6a6a;
 }
 
@@ -2098,7 +2098,8 @@ body {
   background: transparent;
   width: 26px;
   height: 26px;
-  border-radius: 30%;
+  -webkit-transition: left .4s;
+  transition: left .4s;
 }
 
 .app-Cloud_CheckboxToggle:checked {
