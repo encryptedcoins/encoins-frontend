@@ -4,6 +4,7 @@ module ENCOINS.Common.Widgets.Advanced where
 
 import           Data.Bool                     (bool)
 import           Data.List                     ((\\))
+import           Data.Maybe                    (isJust)
 import           Data.Text                     (Text)
 import           Data.Time                     (NominalDiffTime)
 import           GHCJS.DOM                     (currentDocumentUnchecked)
@@ -141,3 +142,19 @@ updateUrls :: MonadWidget t m
 updateUrls dUrls eFailedUrl = do
     dFailedUrls <- foldDyn (\mUrl acc -> maybe acc (\u -> u : acc) mUrl) [] eFailedUrl
     pure $ zipDynWith (\\) dUrls dFailedUrls
+
+-- Fire 'Main event' only when there is some value in Condition event.
+fireWhenJustThenReset :: MonadWidget t m
+  => Event t a -- Main event
+  -> Event t (Maybe b) -- Condition event
+  -> Event t c -- Reset event
+  -> m (Event t ())
+fireWhenJustThenReset eMain eCondition eReset = do
+  -- Hold 'Main event' as True value ,
+  -- and then after 'Reset event' fires
+  -- reset it to False.
+  dIsMain <- holdDyn False $ leftmost [True <$ eMain, False <$ eReset]
+  pure $ attachPromptlyDynWithMaybe
+    (\isMain mCondition -> if isMain && isJust mCondition then Just () else Nothing)
+    dIsMain
+    eCondition

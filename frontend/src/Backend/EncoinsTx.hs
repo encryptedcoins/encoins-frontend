@@ -33,7 +33,8 @@ import           ENCOINS.App.Widgets.Basic       (elementResultJS)
 import           ENCOINS.BaseTypes
 import           ENCOINS.Bulletproofs
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Widgets.Advanced (updateUrls)
+import           ENCOINS.Common.Widgets.Advanced (fireWhenJustThenReset,
+                                                  updateUrls)
 
 encoinsTxWalletMode :: MonadWidget t m
   => Dynamic t Wallet
@@ -53,9 +54,10 @@ encoinsTxWalletMode
   eSend
   dUrls = mdo
     let eFallback = leftmost [() <$ eNewTxError, () <$ eSubmitError]
-    let emFailedUrl = leftmost [Nothing <$ eSend, tagPromptlyDyn dmUrl eFallback]
-    dUpdatedUrls <- updateUrls dUrls emFailedUrl
-    emUrl <- getRelayUrlE dUpdatedUrls $ leftmost [eSend, eFallback]
+    let emUsedUrl = leftmost [Nothing <$ eSend, tagPromptlyDyn dmUrl eFallback]
+    dUpdatedUrls <- updateUrls dUrls emUsedUrl
+    emUsedUrlDelayed <- delay 0.01 $ () <$ emUsedUrl
+    emUrl <- getRelayUrlE dUpdatedUrls emUsedUrlDelayed
     dmUrl <- holdDyn Nothing emUrl
 
     let dUTXOs      = fmap walletUTXOs dWallet
@@ -77,7 +79,10 @@ encoinsTxWalletMode
           <*> current dMPs
           <*> bRandomness
 
-    eFireRedeemer <- delay 1 $ leftmost [eSend, () <$ eFallback]
+    eSendWithUrl <- fireWhenJustThenReset eSend emUrl eFinalRedeemer
+    eFallbackWithUrl <- fireWhenJustThenReset eFallback emUrl eFinalRedeemer
+
+    eFireRedeemer <- delay 1 $ leftmost [eSendWithUrl, eFallbackWithUrl]
 
     -- Constructing the final redeemer
     dmFinalRedeemer <- holdDyn Nothing $ Just <$> bRed `tag` eFireRedeemer
@@ -148,14 +153,15 @@ encoinsTxTransferMode
   eSend
   dWalletSignature
   dUrls = mdo
-
     let eFallback = leftmost [() <$ eNewTxError, () <$ eSubmitError]
-    let emFailedUrl = leftmost [Nothing <$ eSend, tagPromptlyDyn dmUrl eFallback]
-    dUpdatedUrls <- updateUrls dUrls emFailedUrl
-    emUrl <- getRelayUrlE dUpdatedUrls $ leftmost [eSend, eFallback]
+    let emUsedUrl = leftmost [ Nothing <$ eSend, tagPromptlyDyn dmUrl eFallback]
+    dUpdatedUrls <- updateUrls dUrls emUsedUrl
+    emUsedUrlDelayed <- delay 0.01 $ () <$ emUsedUrl
+    emUrl <- getRelayUrlE dUpdatedUrls emUsedUrlDelayed
     dmUrl <- holdDyn Nothing emUrl
 
-    eFireTx <- delay 1 $ leftmost [eSend, () <$ eFallback]
+    eSendWithUrl <- fireWhenJustThenReset eSend emUrl eFireTx
+    eFallbackWithUrl <- fireWhenJustThenReset eFallback emUrl eFireTx
 
     let dUTXOs      = fmap walletUTXOs dWallet
         dInputs     = map CSL.input <$> dUTXOs
@@ -168,6 +174,12 @@ encoinsTxTransferMode
     let dNewTxReqBody = zipDyn
           (InputSending <$> dAddr <*> zipDynWith mkValue dCoins dTokenCache <*> dAddrWallet)
           dInputs
+
+    eFireTx <- delay 1 $ leftmost
+      [ eSendWithUrl
+      , eFallbackWithUrl
+      ]
+
     eeNewTxResponse <- switchHoldDyn dmUrl $ \case
       Nothing -> pure never
       Just url -> newTxRequestWrapper
@@ -234,20 +246,36 @@ encoinsTxLedgerMode
   dCoinsMint
   eSend
   dUrls = mdo
-    eInit <- delay 0.1 =<< newEvent
+    eInit <- delay 0.01 =<< newEvent
 
-    let eFallback = leftmost [() <$ eStatusError, () <$ eServerError]
-    let emFailedUrl = leftmost
-          [Nothing <$ eInit, Nothing <$ eSend, tagPromptlyDyn dmUrl eFallback]
-    dUpdatedUrls <- updateUrls dUrls emFailedUrl
-    -- Wait 1s until urls are updated
-    eFireUrlCheckDelayed <- delay 1 $ () <$ emFailedUrl
-    emUrl <- getRelayUrlE dUpdatedUrls eFireUrlCheckDelayed
+    let emUsedUrl = leftmost
+          [ Nothing <$ eInit
+          , Nothing <$ eSend
+          , tagPromptlyDyn dmUrl eStatusError
+          , tagPromptlyDyn dmUrl eServerError
+          ]
+
+    dUpdatedUrls <- updateUrls dUrls emUsedUrl
+    -- Wait 0.01s until urls are updated
+    emUsedUrlDelayed <- delay 0.01 $ () <$ emUsedUrl
+    emUrl <- getRelayUrlE dUpdatedUrls emUsedUrlDelayed
     dmUrl <- holdDyn Nothing emUrl
 
+    -- Initially run status just one time with valid url without waiting 12 secs.
+    eInitWithUrl <- fireWhenJustThenReset eInit emUrl eFireStatus
+
+    -- Fire Status Fallback only when there is valid url.
+    eStatusFallbackWithUrl <- fireWhenJustThenReset eStatusError emUrl eFireStatus
+
+    -- Fire Server Fallback only when there is valid url.
+    eServerFallbackWithUrl <- fireWhenJustThenReset eServerError emUrl eFinalRedeemerReq
+
+    -- Fire Send event only when there is valid url.
+    eSendWithUrl <- fireWhenJustThenReset eSend emUrl eFinalRedeemerReq
+
     eTick <- tickLossyFromPostBuildTime 12
-    -- Wait 0.5s until pinging url is chosen
-    eFireStatus <- delay 0.5 $ leftmost [eInit, void eTick, eFallback]
+    -- Wait 0.01s until pinging url is chosen
+    eFireStatus <- delay 0.01 $ leftmost [eInitWithUrl, void eTick, eStatusFallbackWithUrl]
 
     eeStatus <- switchHoldDyn dmUrl $ \case
       Nothing  -> pure never
@@ -278,8 +306,9 @@ encoinsTxLedgerMode
 
     -- Constructing the final redeemer
     -- NOTE: The delay is needed here to wait for change address to be updated
-    -- Wait 2 secs until ChangeAddress is updated and Redeemer is made, and url is pinged
-    eFireTx <- delay 2 $ leftmost [eSend, eFallback]
+    -- Wait 2 secs until ChangeAddress is updated and Redeemer is made.
+    -- We suppose that 2 secs is sufficient.
+    eFireTx <- delay 2 $ leftmost [eSendWithUrl, eServerFallbackWithUrl]
     dmFinalRedeemer <- holdDyn Nothing $ bmRed `tag` eFireTx
     let (eInvalidChangeAddress, eFinalRedeemer) =
           eventMaybe InvalidChangeAddress (updated dmFinalRedeemer)
