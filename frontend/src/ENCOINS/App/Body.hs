@@ -39,7 +39,7 @@ bodyContentWidget :: MonadWidget t m
   => Maybe PasswordRaw
   -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mPass = mdo
-  (ePassOpen, eConnectOpen, eOpenSaveWindow) <- navbarWidget
+  (ePassOpen, eConnectOpen, eOpenSaveWindow, eMoreMenu) <- navbarWidget
     dWallet
     dIsDisableButtons
     mPass

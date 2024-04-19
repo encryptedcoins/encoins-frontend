@@ -25,7 +25,7 @@ navbarWidget :: MonadWidget t m
   -> Maybe PasswordRaw
   -> Dynamic t Bool
   -> Dynamic t CloudStatusIcon
-  -> m (Event t (), Event t (), Event t ())
+  -> m (Event t (), Event t (), Event t (), Event t ())
 navbarWidget w dIsBlock mPass dIsCloudOn dCloudStatus= do
   elAttr "div" ("data-animation" =: "default" <> "data-collapse" =: "none" <> "data-duration" =: "400" <> "id" =: "Navbar"
     <> "data-easing" =: "ease" <> "data-easing2" =: "ease" <> "role" =: "banner" <> "class" =: "navbar w-nav") $
@@ -38,13 +38,20 @@ navbarWidget w dIsBlock mPass dIsCloudOn dCloudStatus= do
               $ text currentNetworkApp
             divClass "menu-div-empty" blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do
-                elLocker <- lockerWidget mPass dIsBlock
-                elCloud <- cloudIconWidget dIsCloudOn dIsBlock dCloudStatus
                 eConnect <- divClass "menu-item-button-left" $
                     btnWithBlock "button-switching flex-center" "" dIsBlock $ do
                         dyn_ $ fmap (walletIcon . walletName) w
                         dynText $ fmap connectText w
-                return (domEvent Click elLocker, eConnect, domEvent Click elCloud)
+                elCloud <- cloudIconWidget dIsCloudOn dIsBlock dCloudStatus
+                elLocker <- lockerWidget mPass dIsBlock
+                elMore <- moreMenuWidget
+                return (domEvent Click elLocker, eConnect, domEvent Click elCloud, domEvent Click elMore)
+
+moreMenuWidget :: MonadWidget  t m
+  => m (Element EventResult (DomBuilderSpace m) t)
+moreMenuWidget = do
+  divClass "menu-item app-Nav_Container_MoreMenu" $
+    fmap fst $ elDynClass' "div" (constDyn "app-Nav_MoreMenu") (pure ())
 
 lockerWidget :: MonadWidget  t m
   => Maybe PasswordRaw

@@ -1593,62 +1593,6 @@ body {
   pointer-events: none;
 }
 
-.app-Nav_LockerContainer {
-  margin-left: 10px;
-  -webkit-align-self: center;
-  -ms-flex-item-align: center;
-  -ms-grid-row-align: center;
-  align-self: center;
-}
-
-.app-Nav_Locker-close {
-  width: 22px;
-  min-width: 22px;
-  height: 31px;
-  max-height: 31px;
-  background-image: url('../images/locked.svg');
-  background-position: 0px 0px;
-  background-size: auto;
-  margin-top: 10px;
-  margin-bottom: 40px;
-}
-
-.app-Nav_Locker-close:hover {
-  background-image: url('../images/locked-active.svg');
-  cursor: pointer;
-}
-
-@media screen and (min-width: 767px) {
-  .app-Nav_Locker-close {
-    margin-top: 0px;
-    margin-bottom: 0px;
-  }
-}
-
-.app-Nav_Locker-open {
-  width: 29px;
-  min-width: 29px;
-  height: 31px;
-  max-height: 31px;
-  background-image: url('../images/unlocked.svg');
-  background-position: 0px 0px;
-  background-size: auto;
-  margin-top: 10px;
-  margin-bottom: 40px;
-}
-
-.app-Nav_Locker-open:hover {
-  background-image: url('../images/unlocked-active.svg');
-  cursor: pointer;
-}
-
-@media screen and (min-width: 767px) {
-  .app-Nav_Locker-open {
-    margin-top: 0px;
-    margin-bottom: 0px;
-  }
-}
-
 .app-Nav_CachePopup {
   display: flex;
   top: auto;
@@ -1969,51 +1913,129 @@ body {
   }
 }
 
-.app-Cloud_IconSaving {
-  background-image: url('../images/cloud_yellow.svg');
-  height: 31px;
-  width: 27px;
-}
-
-.app-Cloud_IconAllSaved {
-  background-image: url('../images/cloud_green.svg');
-  height: 31px;
-  width: 27px;
-}
-
-.app-Cloud_IconAllSaved:hover {
-  transform: scale(1.1);
-}
-
-.app-Cloud_IconAttemptExcess {
-  background-image: url('../images/cloud_red.svg');
-  height: 31px;
-  width: 27px;
-}
-
-.app-Cloud_IconTurnOff {
-  background-image: url('../images/cloud_blank.svg');
-  height: 31px;
-  width: 27px;
-}
-
-.app-Cloud_IconContainer {
-  margin-left: 10px;
+.app-Nav_LockerContainer {
+  margin-left: 15px;
+  margin-top: 10px;
+  -webkit-align-self: center;
+  -ms-flex-item-align: center;
+  -ms-grid-row-align: center;
   align-self: center;
   background-position: 0px 0px;
   background-size: auto;
-  margin-bottom: 40px;
+  background-repeat: no-repeat;
 }
 
-@media screen and (min-width: 767px) {
-  .app-Cloud_IconContainer {
-    margin-bottom: 0px;
-    margin-top: 10px;
-  }
+.app-Nav_Locker-close {
+  width: 22px;
+  height: 30px;
+  background-image: url('../images/locked.svg');
+}
+
+.app-Nav_Locker-close:hover {
+  background-image: url('../images/locked-active.svg');
+  cursor: pointer;
+}
+
+.app-Nav_Locker-open {
+  width: 30px;
+  height: 30px;
+  background-image: url('../images/unlocked.svg');
+}
+
+.app-Nav_Locker-open:hover {
+  background-image: url('../images/unlocked-active.svg');
+  cursor: pointer;
+}
+
+
+.app-Cloud_IconContainer {
+  margin-left: 15px;
+  margin-top: 10px;
+  -webkit-align-self: center;
+  -ms-flex-item-align: center;
+  -ms-grid-row-align: center;
+  align-self: center;
 }
 
 .app-Cloud_IconContainer:hover {
   cursor: pointer;
+}
+
+.app-Cloud_IconSaving {
+  background-image: url('../images/cloud-sync-yellow.svg');
+  background-position: 0px 0px;
+  background-size: auto;
+  background-repeat: no-repeat;
+  height: 30px;
+  width: 40px;
+}
+
+.app-Cloud_IconSaving:hover {
+  background-image: url('../images/cloud-sync-yellow-fill.svg');
+}
+
+.app-Cloud_IconAllSaved {
+  background-image: url('../images/cloud-sync-green.svg');
+  background-position: 0px 0px;
+  background-size: auto;
+  background-repeat: no-repeat;
+  height: 30px;
+  width: 40px;
+}
+
+.app-Cloud_IconAllSaved:hover {
+  background-image: url('../images/cloud-sync-green-fill.svg');
+}
+
+.app-Cloud_IconAttemptExcess {
+  background-image: url('../images/cloud-sync-red.svg');
+  background-position: 0px 0px;
+  background-size: auto;
+  background-repeat: no-repeat;
+  height: 30px;
+  width: 40px;
+}
+.app-Cloud_IconAttemptExcess:hover {
+  background-image: url('../images/cloud-sync-red-fill.svg');
+}
+
+.app-Cloud_IconTurnOff {
+  background-image: url('../images/cloud-sync-white.svg');
+  background-position: 0px 0px;
+  background-size: auto;
+  background-repeat: no-repeat;
+  height: 30px;
+  width: 40px;
+}
+
+.app-Cloud_IconTurnOff:hover {
+  background-image: url('../images/cloud-sync-white-fill.svg');
+}
+
+.app-Nav_Container_MoreMenu {
+  margin-left: 17px;
+  margin-top: 10px;
+  -webkit-align-self: center;
+  -ms-flex-item-align: center;
+  -ms-grid-row-align: center;
+  align-self: center;
+}
+
+.app-Nav_Container_MoreMenu:hover {
+  cursor: pointer;
+}
+
+.app-Nav_MoreMenu {
+  background-image: url('../images/more-h-white.svg');
+  background-position: 0px 0px;
+  background-size: auto;
+  background-repeat: no-repeat;
+  width: 9px;
+  height: 30px;
+}
+
+.app-Nav_MoreMenu:hover {
+  background-image: url('../images/more-h-white-fill.svg');
 }
 
 .app-Cloud_CheckboxContainer {
