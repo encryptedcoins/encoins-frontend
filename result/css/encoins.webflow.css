@@ -792,6 +792,16 @@ body {
   letter-spacing: 0.05em;
 }
 
+.app-text-title {
+  font-family: Poppins, sans-serif;
+  font-size: 22px;
+  line-height: 32px;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.05em;
+  margin-bottom: 20px;
+}
+
 .app-text-semibold.ada-value-text {
   width: 130px;
   text-align: right;
@@ -1009,6 +1019,7 @@ body {
 }
 
 .dialog-window-title {
+  font-size: 24px;
   display: -webkit-box;
   display: -webkit-flex;
   display: -ms-flexbox;
@@ -1067,6 +1078,20 @@ body {
   grid-row-gap: 100px;
 }
 
+.common-ConnectWindow {
+  min-width: 400px;
+  min-height: 150px;
+  padding-left: min(5%, 30px);
+  padding-right: min(5%, 30px);
+  padding-top: min(5%, 30px);
+  padding-bottom: min(5%, 30px);
+}
+
+.common-Connect_WalletContainer {
+  display: flex;
+  flex-direction: column;
+}
+
 .connect-wallet-div {
   display: -webkit-box;
   display: -webkit-flex;
@@ -1081,10 +1106,16 @@ body {
   font-size: 18px;
   line-height: 32px;
   cursor: pointer;
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  border-radius: 5px;
 }
 
 .connect-wallet-div:hover {
-  color: #000;
+  background-color: #000;
+  color: #fff;
 }
 
 .div-tooltip {
@@ -2403,9 +2434,7 @@ body {
 
 .common-MoreMenu_LinkContainer {
   display: flex;
-  margin-top: 15px;
   flex-direction: column;
-  gap:10px;
 }
 
 .common-MoreMenu_Link {
