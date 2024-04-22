@@ -43,28 +43,29 @@ navbarWidget w dIsBlock mPass dIsCloudOn dCloudStatus= do
                     btnWithBlock "button-switching flex-center" "" dIsBlock $ do
                         dyn_ $ fmap (walletIcon . walletName) w
                         dynText $ fmap connectText w
-                elCloud <- cloudIconWidget dIsCloudOn dIsBlock dCloudStatus
-                elLocker <- lockerWidget mPass dIsBlock
+                eCloud <- cloudIconWidget dIsCloudOn dIsBlock dCloudStatus
+                eLocker <- lockerWidget mPass dIsBlock
                 eMore <- moreMenuWidget (NavMoreMenuClass "common-Nav_Container_MoreMenu" "common-Nav_MoreMenu")
-                pure (domEvent Click elLocker, eConnect, domEvent Click elCloud, eMore)
+                pure (eLocker, eConnect, eCloud, eMore)
 
 lockerWidget :: MonadWidget  t m
   => Maybe PasswordRaw
   -> Dynamic t Bool
-  -> m (Element EventResult (DomBuilderSpace m) t)
+  -> m (Event t ())
 lockerWidget mPass dIsBlock = do
   let iconClass = case mPass of
         Nothing -> "app-Nav_Locker-open"
         Just _  -> "app-Nav_Locker-close"
   let dLockerIconClass = bool iconClass (iconClass <> space <> "click-disabled") <$> dIsBlock
-  divClass "menu-item app-Nav_LockerContainer" $
+  elLocker <- divClass "menu-item app-Nav_LockerContainer" $
     fmap fst $ elDynClass' "div" dLockerIconClass (pure ())
+  pure $ domEvent Click elLocker
 
 cloudIconWidget :: MonadWidget  t m
   => Dynamic t Bool
   -> Dynamic t Bool
   -> Dynamic t CloudStatusIcon
-  -> m (Element EventResult (DomBuilderSpace m) t)
+  -> m (Event t ())
 cloudIconWidget dIsCloudOn dIsBlock dCloudStatus = do
   let defaultClass = "menu-item app-Cloud_IconContainer"
   let dIconClass = zipDynWith selectIconClass dCloudStatus dIsCloudOn
@@ -72,8 +73,9 @@ cloudIconWidget dIsCloudOn dIsBlock dCloudStatus = do
         (\isBlock cl -> bool cl (cl <> space <> "click-disabled") isBlock )
         dIsBlock
         dIconClass
-  divClass defaultClass $ do
+  elCloud <- divClass defaultClass $
     fmap fst $ elDynClass' "div" dIconClassBlockable (pure ())
+  pure $ domEvent Click elCloud
 
 selectIconClass :: CloudStatusIcon -> Bool -> Text
 selectIconClass status isOn = case (status, isOn) of
