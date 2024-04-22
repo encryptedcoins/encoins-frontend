@@ -2161,14 +2161,14 @@ body {
 }
 
 .app-ImportWindow {
-  min-width: 470px;
+  min-width: 570px;
   padding-left: min(5%, 40px);
   padding-right: min(5%, 40px);
   padding-top: min(5%, 30px);
   padding-bottom: min(5%, 30px);
 }
 
-.app-ImportWindow_ButtonContainer {
+.app-importMintingKey_ButtonContainer {
   display: flex;
   justify-content: center;
   flex-direction: column;
@@ -2176,18 +2176,10 @@ body {
 }
 
 @media screen and (min-width: 470px) {
-  .app-ImportWindow_ButtonContainer {
+  .app-importMintingKey_ButtonContainer {
     display: flex;
     flex-direction: row;
   }
-}
-
-.app-ImportFileWindow {
-  min-width: 600px;
-  padding-left: min(5%, 50px);
-  padding-right: min(5%, 50px);
-  padding-top: min(5%, 30px);
-  padding-bottom: min(5%, 30px);
 }
 
 .app-ImportFileWindow_ButtonContainer {
