@@ -13,6 +13,7 @@ import           Backend.Wallet                (Wallet (..), WalletName (..),
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Widgets.Basic  (btnWithBlock, logo)
 import           ENCOINS.Common.Widgets.Wallet (walletIcon)
+import           ENCOINS.Common.Widgets.MoreMenu (moreMenuWidget, NavMoreMenuClass(..))
 
 connectText :: Wallet -> Text
 connectText w = case w of
@@ -44,14 +45,8 @@ navbarWidget w dIsBlock mPass dIsCloudOn dCloudStatus= do
                         dynText $ fmap connectText w
                 elCloud <- cloudIconWidget dIsCloudOn dIsBlock dCloudStatus
                 elLocker <- lockerWidget mPass dIsBlock
-                elMore <- moreMenuWidget
-                return (domEvent Click elLocker, eConnect, domEvent Click elCloud, domEvent Click elMore)
-
-moreMenuWidget :: MonadWidget  t m
-  => m (Element EventResult (DomBuilderSpace m) t)
-moreMenuWidget = do
-  divClass "menu-item app-Nav_Container_MoreMenu" $
-    fmap fst $ elDynClass' "div" (constDyn "app-Nav_MoreMenu") (pure ())
+                eMore <- moreMenuWidget (NavMoreMenuClass "common-Nav_Container_MoreMenu" "common-Nav_MoreMenu")
+                pure (domEvent Click elLocker, eConnect, domEvent Click elCloud, eMore)
 
 lockerWidget :: MonadWidget  t m
   => Maybe PasswordRaw

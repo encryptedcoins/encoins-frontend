@@ -18,7 +18,6 @@ import           ENCOINS.App.Widgets.Basic          (loadAppDataE,
 import           ENCOINS.App.Widgets.CloudWindow    (cloudSettingsWindow)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
-import           ENCOINS.App.Widgets.MoreMenuWindow (moreMenuWindow)
 import           ENCOINS.App.Widgets.Navbar         (navbarWidget)
 import           ENCOINS.App.Widgets.Notification
 import           ENCOINS.App.Widgets.PasswordWindow
@@ -33,6 +32,8 @@ import           ENCOINS.Common.Utils               (toJsonText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           ENCOINS.Common.Widgets.Basic       (notification)
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
+import           ENCOINS.Common.Widgets.MoreMenu    (WindowMoreMenuClass (..),
+                                                     moreMenuWindow)
 import           JS.App                             (loadCacheValue)
 import           JS.Website                         (saveJSON)
 
@@ -47,7 +48,11 @@ bodyContentWidget mPass = mdo
     dCloudOn
     dCloudStatus
 
-  moreMenuWindow eMoreMenuOpen
+  let moreMenuClass = WindowMoreMenuClass
+        "common-MoreMenu_Window"
+        "common-MoreMenu_LinkContainer"
+        "common-MoreMenu_Link"
+  moreMenuWindow moreMenuClass eMoreMenuOpen
 
   (dStatusT, dIsDisableButtons, dCloudStatus) <-
     handleAppStatus dWallet evStatusList

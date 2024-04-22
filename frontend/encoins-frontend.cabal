@@ -42,7 +42,6 @@ library
     ENCOINS.App.Widgets.MainTabs
     ENCOINS.App.Widgets.MainWindow
     ENCOINS.App.Widgets.Migration
-    ENCOINS.App.Widgets.MoreMenuWindow
     ENCOINS.App.Widgets.Navbar
     ENCOINS.App.Widgets.Notification
     ENCOINS.App.Widgets.PasswordWindow
@@ -58,6 +57,7 @@ library
     ENCOINS.Common.Widgets.Advanced
     ENCOINS.Common.Widgets.Basic
     ENCOINS.Common.Widgets.JQuery
+    ENCOINS.Common.Widgets.MoreMenu
     ENCOINS.Common.Widgets.SelectInput
     ENCOINS.Common.Widgets.Wallet
     ENCOINS.DAO

@@ -2012,7 +2012,7 @@ body {
   background-image: url('../images/cloud-sync-white-fill.svg');
 }
 
-.app-Nav_Container_MoreMenu {
+.common-Nav_Container_MoreMenu {
   margin-left: 17px;
   margin-top: 10px;
   -webkit-align-self: center;
@@ -2021,11 +2021,11 @@ body {
   align-self: center;
 }
 
-.app-Nav_Container_MoreMenu:hover {
+.common-Nav_Container_MoreMenu:hover {
   cursor: pointer;
 }
 
-.app-Nav_MoreMenu {
+.common-Nav_MoreMenu {
   background-image: url('../images/more-h-white.svg');
   background-position: 0px 0px;
   background-size: auto;
@@ -2034,7 +2034,7 @@ body {
   height: 30px;
 }
 
-.app-Nav_MoreMenu:hover {
+.common-Nav_MoreMenu:hover {
   background-image: url('../images/more-h-white-fill.svg');
 }
 
@@ -2392,7 +2392,7 @@ body {
   width: 20px;
 }
 
-.app-MoreMenu_Window {
+.common-MoreMenu_Window {
   min-width: 400px;
   min-height: 150px;
   padding-left: min(5%, 30px);
@@ -2401,14 +2401,14 @@ body {
   padding-bottom: min(5%, 30px);
 }
 
-.app-MoreMenu_LinkContainer {
+.common-MoreMenu_LinkContainer {
   display: flex;
   margin-top: 15px;
   flex-direction: column;
   gap:10px;
 }
 
-.app-MoreMenu_Link {
+.common-MoreMenu_Link {
   font-family: Poppins, sans-serif;
   font-size: 18px;
   color:#000;
@@ -2420,7 +2420,7 @@ body {
   border-radius: 5px;
 }
 
-.app-MoreMenu_Link:hover {
+.common-MoreMenu_Link:hover {
   background-color: #000;
   color: #fff;
 }
