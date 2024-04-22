@@ -42,6 +42,7 @@ library
     ENCOINS.App.Widgets.MainTabs
     ENCOINS.App.Widgets.MainWindow
     ENCOINS.App.Widgets.Migration
+    ENCOINS.App.Widgets.MoreMenuWindow
     ENCOINS.App.Widgets.Navbar
     ENCOINS.App.Widgets.Notification
     ENCOINS.App.Widgets.PasswordWindow

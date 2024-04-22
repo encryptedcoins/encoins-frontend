@@ -18,6 +18,7 @@ import           ENCOINS.App.Widgets.Basic          (loadAppDataE,
 import           ENCOINS.App.Widgets.CloudWindow    (cloudSettingsWindow)
 import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.App.Widgets.MainWindow     (mainWindow)
+import           ENCOINS.App.Widgets.MoreMenuWindow (moreMenuWindow)
 import           ENCOINS.App.Widgets.Navbar         (navbarWidget)
 import           ENCOINS.App.Widgets.Notification
 import           ENCOINS.App.Widgets.PasswordWindow
@@ -39,12 +40,14 @@ bodyContentWidget :: MonadWidget t m
   => Maybe PasswordRaw
   -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mPass = mdo
-  (ePassOpen, eConnectOpen, eOpenSaveWindow, eMoreMenu) <- navbarWidget
+  (ePassOpen, eConnectOpen, eCloudOpen, eMoreMenuOpen) <- navbarWidget
     dWallet
     dIsDisableButtons
     mPass
     dCloudOn
     dCloudStatus
+
+  moreMenuWindow eMoreMenuOpen
 
   (dStatusT, dIsDisableButtons, dCloudStatus) <-
     handleAppStatus dWallet evStatusList
@@ -86,7 +89,7 @@ bodyContentWidget mPass = mdo
     mPass
     dSaveOnFromCache
     dCloudStatus
-    eOpenSaveWindow
+    eCloudOpen
   dCloudOn <- holdDyn False $ leftmost $ map updated [dSaveOnFromCache, dSaveWindow]
 
   dResetTokens <- holdDyn False $ updated $ isNothing <$> dmOldKeyBody
