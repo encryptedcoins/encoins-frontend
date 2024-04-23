@@ -2162,11 +2162,17 @@ body {
 }
 
 .app-ImportWindow {
-  max-width: 870px;
+  min-width: none;
   padding-left: min(5%, 40px);
   padding-right: min(5%, 40px);
   padding-top: min(5%, 30px);
   padding-bottom: min(5%, 30px);
+}
+
+@media screen and (min-width: 700px) {
+  .app-ImportWindow {
+    min-width: 700px;
+  }
 }
 
 .app-ImportWindow_Container {
@@ -2263,7 +2269,6 @@ body {
   width: 210px;
 }
 
-
 @media screen and (min-width: 700px) {
   .app-ImportFile_Button {
     width: none;
@@ -2273,24 +2278,55 @@ body {
 /* Export coins section */
 
 .app-ExportWindow {
-  min-width: 600px;
+  min-width: none;
   padding-left: min(5%, 50px);
   padding-right: min(5%, 50px);
   padding-top: min(5%, 30px);
   padding-bottom: min(5%, 30px);
 }
 
+
+@media screen and (min-width: 700px) {
+  .app-ExportWindow {
+    min-width: 700px;
+  }
+}
+
 .app-ExportWindow_ButtonContainer {
   display: flex;
   justify-content: center;
   flex-direction: column;
+  align-items: center;
   gap: 20px;
 }
 
-@media screen and (min-width: 470px) {
+@media screen and (min-width: 700px) {
   .app-ExportWindow_ButtonContainer {
     display: flex;
     flex-direction: row;
+  }
+}
+
+.app-ExportSelected_Button {
+  height: 38px;
+  width: 210px;
+  white-space: nowrap;
+}
+
+@media screen and (min-width: 700px) {
+  .app-ExportSelected_Button {
+    width: none;
+  }
+}
+
+.app-ExportAll_Button {
+  height: 38px;
+  width: 210px;
+}
+
+@media screen and (min-width: 700px) {
+  .app-ExportAll_Button {
+    width: none;
   }
 }
 

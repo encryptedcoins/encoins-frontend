@@ -100,14 +100,15 @@ exportWindow eOpen dSelectedSecrets dAllSecrets = mdo
               <> "style" =: "width: min(100%, 810px); margin-bottom: 15px" <> "placeholder" =: "coins.txt"))
       dFile <- value <$> inputElement conf
 
-      eSaveSelected <- divClass "app-ExportWindow_ButtonContainer" $ do
-        btn "button-switching inverted flex-center" "" $ text "Save Selected"
+      (eSaveSelected, eSaveAll) <- divClass "app-ExportWindow_ButtonContainer" $ do
+        eSelected <- btn "button-switching inverted flex-center app-ExportSelected_Button" "" $ text "Save Selected"
+        eAll <- btn "button-switching inverted flex-center app-ExportAll_Button" "" $ text "Save all"
+        pure (eSelected, eAll)
+
       let dSelectedContent = toJsonText <$> dSelectedSecrets
       performEvent_ (uncurry saveTextFile <$> (current (zipDyn dFile dSelectedContent) `tag` eSaveSelected))
-
-      eSaveAll <- divClass "app-ExportWindow_ButtonContainer" $ do
-        btn "button-switching inverted flex-center" "" $ text "Save all"
       let dAllContent = toJsonText <$> dAllSecrets
       performEvent_ (uncurry saveTextFile <$> (current (zipDyn dFile dAllContent) `tag` eSaveAll))
+
       pure $ leftmost [eSaveSelected, eSaveAll]
     blank
