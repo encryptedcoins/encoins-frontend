@@ -57,8 +57,10 @@
 
 input::file-selector-button {
     font-weight: bold;
+    font-size: 0.75em;
     color: white;
     padding: 0.5em;
+    margin-right: 1em;
     border: hidden;
     border-radius: 5px;
     background: rgb(50,50,50)

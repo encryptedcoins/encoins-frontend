@@ -2026,6 +2026,7 @@ body {
   height: 30px;
   width: 40px;
 }
+
 .app-Cloud_IconAttemptExcess:hover {
   background-image: url('../images/cloud-sync-red-fill.svg');
 }
@@ -2161,40 +2162,115 @@ body {
 }
 
 .app-ImportWindow {
-  min-width: 570px;
+  max-width: 870px;
   padding-left: min(5%, 40px);
   padding-right: min(5%, 40px);
   padding-top: min(5%, 30px);
   padding-bottom: min(5%, 30px);
 }
 
-.app-importMintingKey_ButtonContainer {
+.app-ImportWindow_Container {
   display: flex;
-  justify-content: center;
   flex-direction: column;
   gap: 20px;
 }
 
-@media screen and (min-width: 470px) {
-  .app-importMintingKey_ButtonContainer {
-    display: flex;
+/* Import key section */
+
+.app-ImportKey_Container {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-ImportKey_Container_InputAndButton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+@media screen and (min-width: 700px) {
+  .app-ImportKey_Container_InputAndButton {
     flex-direction: row;
   }
 }
 
-.app-ImportFileWindow_ButtonContainer {
+.app-ImportKey_ButtonContainer {
   display: flex;
   justify-content: center;
-  flex-direction: column;
-  gap: 20px;
+  height: 38px;
 }
 
-@media screen and (min-width: 470px) {
-  .app-ImportFileWindow_ButtonContainer {
-    display: flex;
+.app-ImportKey_Input {
+  display: block;
+  width: min(90%, 788px);
+  height: 38px;
+  padding-right: 10px;
+  padding-left: 10px;
+  background-color: #ffffff;
+  color: #000;
+  border: 1px solid #cccccc;
+  font-weight: 600;
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 34px;
+  box-sizing: content-box;
+}
+
+/* Import file section */
+
+.app-ImportFile_Container {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-ImportFile_Container_InputAndButton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+@media screen and (min-width: 700px) {
+  .app-ImportFile_Container_InputAndButton {
     flex-direction: row;
   }
 }
+
+.app-ImportFile_Input {
+  display: block;
+  width: min(90%, 788px);
+  height: 38px;
+  padding-right: 10px;
+  padding-left: 10px;
+  background-color: #ffffff;
+  color: #000;
+  border: 1px solid #cccccc;
+  font-weight: 600;
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 34px;
+  box-sizing: content-box;
+}
+
+.app-ImportFile_ButtonContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-ImportFile_Button {
+  height: 38px;
+  width: 210px;
+}
+
+
+@media screen and (min-width: 700px) {
+  .app-ImportFile_Button {
+    width: none;
+  }
+}
+
+/* Export coins section */
 
 .app-ExportWindow {
   min-width: 600px;
@@ -2352,7 +2428,7 @@ body {
 }
 
 .app-PasswordProtect_Window {
-  display:flex;
+  display: flex;
   flex-direction: column;
 }
 
@@ -2369,13 +2445,14 @@ body {
   border: 1px solid #cccccc;
   vertical-align: -webkit-baseline-middle;
 }
+
 .app-Input_Password:focus {
   border-color: #3898EC;
   outline: 0;
 }
 
 .app-Eye_Input {
-  cursor:pointer;
+  cursor: pointer;
   margin-left: -30px;
 }
 
@@ -2432,7 +2509,7 @@ body {
 .common-MoreMenu_Link {
   font-family: Poppins, sans-serif;
   font-size: 18px;
-  color:#000;
+  color: #000;
   line-height: 27px;
   letter-spacing: 0.02em;
   padding-left: 20px;

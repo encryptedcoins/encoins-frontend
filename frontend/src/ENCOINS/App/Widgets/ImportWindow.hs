@@ -25,50 +25,54 @@ import           Witherable                      (catMaybes)
 import           Backend.Protocol.Utility        (hexToSecret)
 import           Backend.Utility                 (formatCoinTime, switchHoldDyn)
 import           ENCOINS.Bulletproofs            (Secret)
+import           ENCOINS.Common.Events
 import           ENCOINS.Common.Utils            (toJsonText)
 import           ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import           ENCOINS.Common.Widgets.Basic    (btn)
-import           ENCOINS.Common.Events
 
 importWindow :: MonadWidget t m => Event t () -> m (Event t [Secret], Event t [Secret])
 importWindow eImportOpen = mdo
-    (s,ss) <- dialogWindow True eImportOpen eImportClose "app-ImportWindow" "Import new Encoins" $ mdo
-      emSecret <- importMintingKey eImportOpen
-      eSecrets <- importCoinFiles eImportOpen
-      pure (emSecret, eSecrets)
+    (s,ss) <- dialogWindow True eImportOpen eImportClose "app-ImportWindow" "Import new Encoins" $ do
+      divClass "app-ImportWindow_Container" $ do
+        emSecret <- importMintingKey eImportOpen
+        eSecrets <- importCoinFiles eImportOpen
+        pure (emSecret, eSecrets)
     let eImportClose = leftmost [() <$ s, () <$ ss]
     pure ((:[]) <$> catMaybes s,ss)
 
 importMintingKey :: MonadWidget t m
   => Event t ()
   -> m (Event t (Maybe Secret))
-importMintingKey eImportOpen = mdo
+importMintingKey eImportOpen = divClass "app-ImportKey_Container" $ mdo
   elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
       text "Enter the minting key to import a new coin:"
-  let conf = def { _inputElementConfig_setValue = pure ("" <$ eImportOpen) } & (initialAttributes .~ ("class" =: "coin-new-input w-input" <> "type" =: "text"
-          <> "style" =: "width: min(100%, 810px); margin-bottom: 15px" <> "placeholder" =: "0a00f07d1431910315c05aa5204c5e8f9e0c6..."))
-  t <- inputElement conf
-  let d    = hexToSecret <$> _inputElement_value t
-  eImportClose <- divClass "app-importMintingKey_ButtonContainer" $ do
-    btn "button-switching inverted flex-center" "" $ text "Ok"
+  let conf = def { _inputElementConfig_setValue = pure ("" <$ eImportOpen) } & (initialAttributes .~ ("class" =: "app-ImportKey_Input" <> "type" =: "text"
+        <> "placeholder" =: "0a00f07d1431910315c05aa5204c5e8f9e0c6..."))
+  (eImportClose, txt) <- divClass "app-ImportKey_Container_InputAndButton" $ do
+    t <- inputElement conf
+    eClose <- divClass "app-ImportKey_ButtonContainer" $ do
+      btn "button-switching inverted flex-center" "" $ text "Ok"
+    pure (eClose,t)
+  let d = hexToSecret <$> _inputElement_value txt
   pure $ current d `tag` eImportClose
 
 importCoinFiles :: MonadWidget t m => Event t () -> m (Event t [Secret])
-importCoinFiles eImportOpen = mdo
+importCoinFiles eImportOpen = divClass "app-ImportFile_Container" $ mdo
   elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
       text "Choose a file to import coins:"
-  let conf    = def { _inputElementConfig_setValue = pure ("" <$ eImportOpen) } & (initialAttributes .~ ("class" =: "coin-new-input w-input" <> "type" =: "file"
-          <> "style" =: "width: min(100%, 788px); margin-bottom: 15px; box-sizing: content-box;"))
-  dFiles <- _inputElement_files <$> inputElement conf
-  emFileContent <- switchHoldDyn dFiles $ \case
-    [file] -> readFileContent file
-    _      -> pure never
-  dContent <- holdDyn "" (catMaybes emFileContent)
-  let parseContent = fromMaybe [] . decode . fromStrict . encodeUtf8
-  let dRes = parseContent <$> dContent
-  eImportClose <- divClass "app-ImportFileWindow_ButtonContainer" $ do
-    btn "button-switching inverted flex-center" "" $ text "Ok"
-  return (current dRes `tag` eImportClose)
+  let conf = def { _inputElementConfig_setValue = pure ("" <$ eImportOpen) } & (initialAttributes .~ ("class" =: "app-ImportFile_Input" <> "type" =: "file"))
+  (eImportClose, dResult) <- divClass "app-ImportFile_Container_InputAndButton" $ do
+    dFiles <- _inputElement_files <$> inputElement conf
+    emFileContent <- switchHoldDyn dFiles $ \case
+      [file] -> readFileContent file
+      _      -> pure never
+    dContent <- holdDyn "" (catMaybes emFileContent)
+    let parseContent = fromMaybe [] . decode . fromStrict . encodeUtf8
+    let dRes = parseContent <$> dContent
+    eClose <- divClass "app-ImportFile_ButtonContainer" $ do
+      btn "button-switching inverted flex-center app-ImportFile_Button" "" $ text "Ok"
+    pure (eClose, dRes)
+  return (current dResult `tag` eImportClose)
 
 readFileContent :: MonadWidget t m => File -> m (Event t (Maybe Text))
 readFileContent file = do
