@@ -1,6 +1,6 @@
 module Main where
 
-import           ENCOINS.App     (app)
+import ENCOINS.App (app)
 
 main :: IO ()
 main = app

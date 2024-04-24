@@ -1,15 +1,15 @@
-{-# LANGUAGE CPP           #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE JavaScriptFFI #-}
 
 {-# HLINT ignore "Use camelCase" #-}
 
 module JS.DAO where
 
-import           Control.Monad.IO.Class      (MonadIO (..))
-import           Data.Text                   (Text)
+import Control.Monad.IO.Class (MonadIO (..))
+import Data.Text (Text)
 
 #ifdef __GHCJS__
-import           Language.Javascript.JSaddle (JSVal, ToJSVal (..))
+import Language.Javascript.JSaddle (JSVal, ToJSVal (..))
 #endif
 
 -----------------------------------------------------------------
