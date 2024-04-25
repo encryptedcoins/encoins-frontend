@@ -3,14 +3,21 @@
 module ENCOINS.App.Widgets.Migration where
 
 import Data.Bool (bool)
+import Data.Maybe (isJust, isNothing)
 import Data.Text (Text)
 import Reflex.Dom
 
-import Backend.Protocol.Types (PasswordRaw (..), TokenCacheV3)
+import Backend.Protocol.Types (PasswordRaw (..), TokenCacheV3, showTokens)
 import Backend.Status (AppStatus, Status (..))
 import Backend.Utility (switchHoldDyn)
-import ENCOINS.App.Widgets.Basic (loadAppData, saveAppData, tellTxStatus)
+import ENCOINS.App.Widgets.Basic
+    ( loadAppData
+    , loadAppDataME
+    , saveAppData
+    , tellTxStatus
+    )
 import ENCOINS.App.Widgets.Coin (coinV3)
+import ENCOINS.App.Widgets.PasswordWindow (reEncrypt)
 import ENCOINS.Bulletproofs (Secret)
 import ENCOINS.Common.Cache (encoinsV1, encoinsV2, encoinsV3)
 import ENCOINS.Common.Events
@@ -35,16 +42,33 @@ migrateTokenCacheV3 ::
     -> Dynamic t (Maybe [TokenCacheV3])
     -> m (Dynamic t [TokenCacheV3])
 migrateTokenCacheV3 mPass dmTokensV3 = do
+    -- Delay is required for waiting first token loading
+    eFireMigration <-
+        delay 2 $
+            attachPromptlyDynWithMaybe
+                (\mToken _ -> if isNothing mToken then Just () else Nothing)
+                dmTokensV3
+                (updated dmTokensV3)
+    -- logEvent "migrateTokenCacheV3: eFireMigration" eFireMigration
+
+    let eTokens =
+            attachPromptlyDynWithMaybe
+                (\mToken _ -> if isJust mToken then mToken else Nothing)
+                dmTokensV3
+                (updated dmTokensV3)
+    -- let (eFireMigration2, eTokens) = eventMaybe emLoadedTokens
+    -- logEvent "migrateTokenCacheV3: eTokens" $ showTokens <$> eTokens
+
     eTokensMigrated <- switchHoldDyn dmTokensV3 $ \case
         -- when tokenV3 is empty, try to migrate from previous versions
         Nothing -> do
-            ev <- newEventWithDelay 0.1
-            migrateCacheV3 mPass ev
-        -- when some tokenV3 exist return them
-        Just tokens -> do
-            ev <- newEvent
-            pure $ tokens <$ ev
-    holdDyn [] eTokensMigrated
+            logEvent "In Nothing: eFireMigration" eFireMigration
+            migrateCacheV3 mPass eFireMigration
+        -- when some tokenV3 exist, return them
+        Just _ -> pure never
+    -- ev <- newEvent
+    -- pure $ tokens <$ ev
+    holdDyn [] $ leftmost [eTokens, eTokensMigrated]
 
 migrateCacheV3 ::
     (MonadWidget t m, EventWriter t [AppStatus] m) =>
@@ -52,6 +76,7 @@ migrateCacheV3 ::
     -> Event t ()
     -> m (Event t [TokenCacheV3])
 migrateCacheV3 mPass ev = do
+    logEvent "migrateCacheV3 occur: ev" ev
     dSecretsV1 :: Dynamic t [Secret] <-
         loadAppData mPass encoinsV1 "migrateCacheV3-key-eSecretsV1" ev id []
     dSecretsV2 :: Dynamic t [(Secret, Text)] <-
