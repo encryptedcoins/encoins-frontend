@@ -37,7 +37,8 @@ importWindow eImportOpen = mdo
               <> "style" =: "width: min(100%, 810px); margin-bottom: 15px" <> "placeholder" =: "0a00f07d1431910315c05aa5204c5e8f9e0c6..."))
       t <- inputElement conf
       let d    = hexToSecret <$> _inputElement_value t
-      eImportClose <- btn "button-switching inverted flex-center" "" $ text "Ok"
+      eImportClose <- divClass "app-ImportWindow_ButtonContainer" $ do
+        btn "button-switching inverted flex-center" "" $ text "Ok"
       return $ current d `tag` eImportClose
     return eImportClose
 
@@ -54,7 +55,8 @@ importFileWindow eImportOpen = mdo
         _      -> pure never
       dContent <- holdDyn "" (catMaybes emFileContent)
       let dRes = parseContent <$> dContent
-      eImportClose <- btn "button-switching inverted flex-center" "" $ text "Ok"
+      eImportClose <- divClass "app-ImportFileWindow_ButtonContainer" $ do
+        btn "button-switching inverted flex-center" "" $ text "Ok"
       return (current dRes `tag` eImportClose)
     return eImportClose
   where
@@ -68,15 +70,16 @@ readFileContent file = do
     v <- getResult fileReader
     (fromJSVal <=< toJSVal) v
 
-exportWindow :: MonadWidget t m => Event t () -> Dynamic t [Secret] -> m ()
-exportWindow eOpen dSecrets = mdo
-    eClose <- dialogWindow True eOpen eClose "app-ExportWindow" "Export Coins" $ mdo
+exportWindow :: MonadWidget t m => Text -> Event t () -> Dynamic t [Secret] -> m ()
+exportWindow title eOpen dSecrets = mdo
+    eClose <- dialogWindow True eOpen eClose "app-ExportWindow" title $ mdo
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between") $
           text "Enter file name:"
       let conf    = def { _inputElementConfig_setValue = pure ("" <$ eOpen) } & (initialAttributes .~ ("class" =: "coin-new-input w-input" <> "type" =: "text"
               <> "style" =: "width: min(100%, 810px); margin-bottom: 15px" <> "placeholder" =: "coins.txt"))
       dFile <- value <$> inputElement conf
-      eSave <- btn "button-switching inverted flex-center" "" $ text "Save"
+      eSave <- divClass "app-ExportWindow_ButtonContainer" $ do
+        btn "button-switching inverted flex-center" "" $ text "Save"
       let dContent = toJsonText <$> dSecrets
       performEvent_ (uncurry saveTextFile <$> (current (zipDyn dFile dContent) `tag` eSave))
       return eSave

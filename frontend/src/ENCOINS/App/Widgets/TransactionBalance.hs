@@ -1,3 +1,5 @@
+{-# LANGUAGE RecursiveDo #-}
+
 module ENCOINS.App.Widgets.TransactionBalance where
 
 import           Data.Bool                    (bool)
@@ -40,19 +42,20 @@ transactionBalanceWidget formula mMode txt = do
   case mMode of
     Nothing -> divClassId "app-TransactionBalance" "welcome-tx-balance" $
       divClass "app-text-semibold" $ dynText $ fmap balanceADA $ total formula
-    Just mode -> do
+    Just mode -> mdo
       ev <- divClassId "app-TransactionBalance" "welcome-tx-balance" $ do
-          ev <- image "info.svg" "app-Formula_InfoIcon" ""
           divClass "app-text-semibold" $ dynText $ fmap balanceADA $ total formula
-          pure ev
-      dTooltipVis <- toggle False ev
-      dyn_ $ bool blank (formulaTooltip formula mode) <$> dTooltipVis
+          let arrowClass = bool "app-Spoiler_Formula-down" "app-Spoiler_Formula-up" <$> dIsTooltipVisible
+          image "arrow_down.svg" arrowClass ""
+      dIsTooltipVisible <- toggle False ev
+      dyn_ $ bool blank (formulaTooltip formula mode) <$> dIsTooltipVisible
 
 formulaTooltip :: MonadWidget t m => Formula t -> EncoinsMode -> m ()
 formulaTooltip Formula{..} mode = elAttr "div"
   ( "class" =: "app-Formula_TooltipWrapper"
   <> "style" =: "border-top-left-radius: 0px; border-top-right-radius: 0px"
   ) $ do
+      divClass "app-text-semibold" $ text "Balance formula"
       elAttr "div" ("class" =: "app-text-normal" <> "style" =: "font-size:16px;overflow-wrap: anywhere;") $ case mode of
         WalletMode -> divClass "app-Formula_TooltipFormula" $ do
             dynText $ mconcat

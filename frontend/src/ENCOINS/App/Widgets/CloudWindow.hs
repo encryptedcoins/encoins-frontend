@@ -12,9 +12,9 @@ import           ENCOINS.App.Widgets.Basic       (removeCacheKey, saveAppData,
 import           ENCOINS.App.Widgets.Cloud       (fetchAesKey, genAesKey)
 import           ENCOINS.Common.Cache            (aesKey, isCloudOn)
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Widgets.Advanced (copyEvent, dialogWindow,
+import           ENCOINS.Common.Widgets.Advanced (copyButton, dialogWindow,
                                                   withTooltip)
-import           ENCOINS.Common.Widgets.Basic    (btn, btnWithBlock, br, image)
+import           ENCOINS.Common.Widgets.Basic    (br, btn, btnWithBlock, image)
 import           JS.Website                      (copyText)
 
 import           Control.Monad                   (void)
@@ -107,12 +107,14 @@ showKeyWidget :: MonadWidget t m
 showKeyWidget dmKey = do
   let dKey = maybe "Cloud key is absent" getAesKeyRaw <$> dmKey
   let keyIcon = do
-        e <- image "Key.svg" "inverted" "22px"
-        void $ copyEvent e
+        void $ image "info-popup.svg" "app-Cloud_IconPopup" ""
+  let copyIcon = do
+        e <- copyButton
         let eKey = tagPromptlyDyn dKey e
         performEvent_ (liftIO . copyText <$> eKey)
   divClass "app-Cloud_KeyContainer" $ do
-    divClass "key-div" $ withTooltip keyIcon "app-CloudWindow_KeyTip" 0 0 $ do
+    copyIcon
+    withTooltip keyIcon "app-CloudWindow_KeyTip" 0 0 $ do
       text "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
     dynText dKey
 

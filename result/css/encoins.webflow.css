@@ -840,7 +840,6 @@ body {
 
 .coin-entry-burn-div:hover {
   background: rgb(50 50 50);
-  cursor: pointer;
 }
 
 .coin-entry-mint-div {
@@ -862,7 +861,6 @@ body {
 
 .coin-entry-mint-div:hover {
   background: rgb(50 50 50);
-  cursor: pointer;
 }
 
 .checkbox-div {
@@ -918,6 +916,10 @@ body {
   cursor: pointer;
 }
 
+.cross-div:hover {
+  transform: scale(1.1);
+}
+
 .coin-new-div {
   display: -webkit-box;
   display: -webkit-flex;
@@ -945,6 +947,12 @@ body {
   -ms-transform: rotate(45deg);
   transform: rotate(45deg);
   cursor: pointer;
+}
+
+.plus-div:hover {
+  -webkit-transform: rotate(45deg) scale(1.1);
+  -ms-transform: rotate(45deg) scale(1.1);
+  transform: rotate(45deg) scale(1.1);
 }
 
 .coin-new-input {
@@ -1089,6 +1097,7 @@ body {
   -webkit-filter: brightness(75%);
   filter: brightness(75%);
   color: #000;
+  transition: all 1s ease;
 }
 
 .div-tooltip.top-right {
@@ -1119,20 +1128,22 @@ body {
 
 .copy-div {
   display: inline-block;
-  width: 35px;
+  width: 20px;
   height: 20px;
-  margin: 3px;
   background-image: url('../images/copy.svg');
   background-position: 50% 50%;
   background-size: 20px;
   background-repeat: no-repeat;
 }
 
+.copy-div:hover {
+  transform: scale(1.1);
+}
+
 .tick-div {
   display: inline-block;
-  width: 35px;
+  width: 20px;
   height: 20px;
-  margin: 3px;
   background-image: url('../images/Tick.svg');
   background-position: 50% 50%;
   background-size: 20px;
@@ -1844,8 +1855,48 @@ body {
   margin-bottom: 20px;
 }
 
-.app-Formula_InfoIcon {
+.app-Spoiler_AssetInfo-down {
   cursor: pointer;
+  padding-left: 10px;
+}
+
+.app-Spoiler_AssetInfo-down:hover {
+  cursor: pointer;
+  padding-left: 10px;
+  transform: scale(1.1);
+}
+
+.app-Spoiler_AssetInfo-up {
+  cursor: pointer;
+  padding-right: 10px;
+  rotate: 180deg;
+}
+
+.app-Spoiler_AssetInfo-up:hover {
+  cursor: pointer;
+  padding-right: 10px;
+  rotate: 180deg;
+  transform: scale(1.1);
+}
+
+.app-Spoiler_Formula-down {
+  cursor: pointer;
+}
+
+.app-Spoiler_Formula-down:hover {
+  cursor: pointer;
+  transform: scale(1.1);
+}
+
+.app-Spoiler_Formula-up {
+  cursor: pointer;
+  rotate: 180deg;
+}
+
+.app-Spoiler_Formula-up:hover {
+  cursor: pointer;
+  rotate: 180deg;
+  transform: scale(1.1);
 }
 
 .app-Formula_TooltipWrapper {
@@ -1900,7 +1951,6 @@ body {
   letter-spacing: 0.01em;
 }
 
-
 .app-WelcomeBody_ButtonOkContainer {
   display: flex;
   flex-direction: column;
@@ -1919,27 +1969,35 @@ body {
   }
 }
 
-.app-Save_IconSaving {
+.app-Cloud_IconSaving {
   background-image: url('../images/cloud_yellow.svg');
-}
-
-.app-Save_IconAllSaved {
-  background-image: url('../images/cloud_green.svg');
-}
-
-.app-Save_IconAttemptExcess {
-  background-image: url('../images/cloud_red.svg');
-}
-
-.app-Save_IconTurnOff {
-  background-image: url('../images/cloud_blank.svg');
-}
-
-.app-Save_IconContainer {
   height: 31px;
-  max-height: 31px;
   width: 27px;
-  min-width: 27px;
+}
+
+.app-Cloud_IconAllSaved {
+  background-image: url('../images/cloud_green.svg');
+  height: 31px;
+  width: 27px;
+}
+
+.app-Cloud_IconAllSaved:hover {
+  transform: scale(1.1);
+}
+
+.app-Cloud_IconAttemptExcess {
+  background-image: url('../images/cloud_red.svg');
+  height: 31px;
+  width: 27px;
+}
+
+.app-Cloud_IconTurnOff {
+  background-image: url('../images/cloud_blank.svg');
+  height: 31px;
+  width: 27px;
+}
+
+.app-Cloud_IconContainer {
   margin-left: 10px;
   align-self: center;
   background-position: 0px 0px;
@@ -1948,37 +2006,14 @@ body {
 }
 
 @media screen and (min-width: 767px) {
-  .app-Save_IconContainer {
+  .app-Cloud_IconContainer {
     margin-bottom: 0px;
     margin-top: 10px;
   }
 }
 
-.app-Save_IconContainer:hover {
+.app-Cloud_IconContainer:hover {
   cursor: pointer;
-}
-
-.app-Save_IconContainer:hover .app-Nav_SavePopup {
-  display: inline-block;
-}
-
-.app-Nav_SavePopup {
-  display: flex;
-  top: auto;
-  right: 83px;
-  margin-top: 10px;
-  padding-top: 30px;
-  position: relative;
-  font-weight: 400;
-  white-space: nowrap;
-}
-
-@media screen and (min-width: 767px) {
-  .app-Nav_SavePopup {
-    display: none;
-    top: 50px;
-    position: absolute;
-  }
 }
 
 .app-Cloud_CheckboxContainer {
@@ -2030,7 +2065,7 @@ body {
   height: 30px;
   background-color: #fff;
   border: 1px solid #6a6a6a;
-  border-radius: 10px;
+  border-radius: 5px;
   box-shadow: inset -20px 0 0 0 #6a6a6a;
 }
 
@@ -2045,7 +2080,8 @@ body {
   background: transparent;
   width: 26px;
   height: 26px;
-  border-radius: 30%;
+  -webkit-transition: left .4s;
+  transition: left .4s;
 }
 
 .app-Cloud_CheckboxToggle:checked {
@@ -2073,30 +2109,69 @@ body {
 }
 
 .app-ImportWindow {
-  width: 90%;
   min-width: 470px;
-  padding-left: min(5%, 70px);
-  padding-right: min(5%, 70px);
+  padding-left: min(5%, 40px);
+  padding-right: min(5%, 40px);
   padding-top: min(5%, 30px);
   padding-bottom: min(5%, 30px);
+}
+
+.app-ImportWindow_ButtonContainer {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media screen and (min-width: 470px) {
+  .app-ImportWindow_ButtonContainer {
+    display: flex;
+    flex-direction: row;
+  }
 }
 
 .app-ImportFileWindow {
-  width: 90%;
-  min-width: 470px;
-  padding-left: min(5%, 70px);
-  padding-right: min(5%, 70px);
+  min-width: 600px;
+  padding-left: min(5%, 50px);
+  padding-right: min(5%, 50px);
   padding-top: min(5%, 30px);
   padding-bottom: min(5%, 30px);
 }
 
+.app-ImportFileWindow_ButtonContainer {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media screen and (min-width: 470px) {
+  .app-ImportFileWindow_ButtonContainer {
+    display: flex;
+    flex-direction: row;
+  }
+}
+
 .app-ExportWindow {
-  width: 90%;
-  min-width: 470px;
-  padding-left: min(5%, 70px);
-  padding-right: min(5%, 70px);
+  min-width: 600px;
+  padding-left: min(5%, 50px);
+  padding-right: min(5%, 50px);
   padding-top: min(5%, 30px);
   padding-bottom: min(5%, 30px);
+}
+
+.app-ExportWindow_ButtonContainer {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media screen and (min-width: 470px) {
+  .app-ExportWindow_ButtonContainer {
+    display: flex;
+    flex-direction: row;
+  }
 }
 
 .app-InputAddressWindow {
@@ -2235,4 +2310,63 @@ body {
 .app-PasswordProtect_Window {
   display:flex;
   flex-direction: column;
+}
+
+.app-Input_Password {
+  display: inline-block;
+  width: 100%;
+  height: 38px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  line-height: 1.42857143;
+  color: #333333;
+  background-color: #ffffff;
+  border: 1px solid #cccccc;
+  vertical-align: -webkit-baseline-middle;
+}
+.app-Input_Password:focus {
+  border-color: #3898EC;
+  outline: 0;
+}
+
+.app-Eye_Input {
+  cursor:pointer;
+  margin-left: -30px;
+}
+
+.app-CoinBurn_IconKey {
+  width: 22px;
+}
+
+.app-CoinBurn_IconKey:hover {
+  transform: scale(1.1);
+}
+
+.app-Cloud_IconPopup {
+  width: 20px;
+}
+
+.app-Cloud_IconPopup:hover {
+  transform: scale(1.1);
+}
+
+.app-Tooltip_TokenNameContainer {
+  gap: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.app-Tooltip_TokenName-copy {
+  width: 20px;
+}
+
+.app-Tooltip_AssetContainer {
+  gap: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.app-Tooltip_Asset-copy {
+  width: 20px;
 }

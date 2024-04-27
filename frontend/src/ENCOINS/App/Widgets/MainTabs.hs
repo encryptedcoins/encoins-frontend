@@ -115,8 +115,8 @@ walletTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp
                 eImp <- divClassId "" "welcome-import-export" $ do
                     (eImport, eImportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Import" <*> menuButton " Import All"
                     (eExport, eExportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Export" <*> menuButton " Export All"
-                    exportWindow eExport dCTB
-                    exportWindow eExportAll $ map tcSecret <$> dTokenCache
+                    exportWindow "Export selected coins" eExport dCTB
+                    exportWindow "Export all coins" eExportAll $ map tcSecret <$> dTokenCache
                     eIS    <- fmap pure . catMaybes <$> importWindow eImport
                     eISAll <- importFileWindow eImportAll
                     return $ leftmost [eIS, eISAll]
@@ -204,8 +204,8 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
                 coinBurnCollectionWidget dSecretsInTheWallet
             (eImport, eImportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Import" <*> menuButton " Import All"
             (eExport, eExportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Export" <*> menuButton " Export All"
-            exportWindow eExport dCTB
-            exportWindow eExportAll $ map tcSecret <$> dTokenCache
+            exportWindow "Export selected coins" eExport dCTB
+            exportWindow "Export all coins" eExportAll $ map tcSecret <$> dTokenCache
             eIS    <- fmap pure . catMaybes <$> importWindow eImport
             eISAll <- importFileWindow eImportAll
             return (dCTB, leftmost [eIS, eISAll])
@@ -318,8 +318,8 @@ ledgerTab mpass dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp "" "" $
                 eImp <- divClass "" $ do
                   (eImport, eImportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Import" <*> menuButton " Import All"
                   (eExport, eExportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Export" <*> menuButton " Export All"
-                  exportWindow eExport dCTB
-                  exportWindow eExportAll $ map tcSecret <$> dTokenCache
+                  exportWindow "Export selected coins" eExport dCTB
+                  exportWindow "Export all coins" eExportAll $ map tcSecret <$> dTokenCache
                   eIS    <- fmap pure . catMaybes <$> importWindow eImport
                   eISAll <- importFileWindow eImportAll
                   return $ leftmost [eIS, eISAll]

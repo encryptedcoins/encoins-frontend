@@ -108,19 +108,15 @@ coinBurnWidget :: MonadWidget t m
   => TokenCacheV3
   -> m (Dynamic t (Maybe (Secret, TokenCacheV3)))
 coinBurnWidget tokenV3@(MkTokenCacheV3 name s _) = mdo
-    (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
-        dChecked <- divClass "" checkboxButton -- withTooltip checkboxButton mempty 0 0 $
-            -- divClass "app-text-normal" $ text "Select to burn this coin."
-        (txt,_) <- withTooltip
-          (elClass' "div" "app-text-normal" $ text $ shortenCoinName $ getAssetName name)
-          mempty
-          0
-          0
-          $ do
-            elAttr "div" ("class" =: "app-text-normal" <> "style" =: "width: 350px;") $ text "Click to see the full token name."
+    (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dIsSpoilerVisible) $ do
+        dChecked <- divClass "" checkboxButton
+        (txt,_) <- elClass' "div" "app-text-normal" $ do
+          text $ shortenCoinName $ getAssetName name
+          let arrowClass = bool "app-Spoiler_AssetInfo-down" "app-Spoiler_AssetInfo-up" <$> dIsSpoilerVisible
+          image "arrow_down_white.svg" arrowClass ""
         divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
         let keyIcon = do
-                e <- image "Key.svg" "" "22px"
+                e <- image "Key.svg" "app-CoinBurn_IconKey" ""
                 void $ copyEvent e
                 performEvent_ (liftIO (copyText secretText) <$ e)
         divClass "key-div" $ withTooltip keyIcon "app-CoinBurn_KeyTip" 0 0 $ do
@@ -130,8 +126,8 @@ coinBurnWidget tokenV3@(MkTokenCacheV3 name s _) = mdo
                 performEvent_ (liftIO (copyText secretText) <$ e)
                 text $ " " <> secretText
         return (txt, dChecked)
-    dTooltipVis <- toggle False (domEvent Click elTxt)
-    dyn_ $ bool blank (coinTooltip name) <$> dTooltipVis
+    dIsSpoilerVisible <- toggle False (domEvent Click elTxt)
+    dyn_ $ bool blank (coinSpoiler name) <$> dIsSpoilerVisible
     return $ fmap (bool Nothing (Just (s, tokenV3))) ret
     where
         mkAttrs = ("class" =: "coin-entry-burn-div" <>) . bool mempty ("style" =: "background:rgb(50 50 50);")
@@ -150,31 +146,41 @@ coinBurnCollectionWidget dlToken = do
     dSt <- join <$> holdDyn (constDyn []) edlToken
     pure (map fst <$> dSt)
 
-coinTooltip :: MonadWidget t m => AssetName -> m ()
-coinTooltip (MkAssetName name) = elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visible" <>
+coinSpoiler :: MonadWidget t m => AssetName -> m ()
+coinSpoiler (MkAssetName name) = elAttr "div" ("class" =: "div-tooltip div-tooltip-always-visible" <>
     "style" =: "border-top-left-radius: 0px; border-top-right-radius: 0px") $ do
-    divClass "app-text-semibold" $ text "Full token name"
-    elAttr "div" ("class" =: "app-text-normal" <> "style" =: "font-size:16px;overflow-wrap: anywhere;") $ do
-        eCopy <- copyButton
-        performEvent_ (liftIO (copyText name) <$ eCopy)
-        text name
-    divClass "app-text-semibold" $ text "Asset fingerprint"
-    elAttr "div" ("class" =: "app-text-normal" <> "style" =: "font-size:16px;overflow-wrap: anywhere;") $ do
-        eCopy <- copyButton
-        fp <- fingerprintFromAssetName encoinsCurrencySymbol name
-        performEvent_ (liftIO (copyText fp) <$ eCopy)
-        text fp
+      let copyTokenIcon = do
+            eCopy <- copyButton
+            performEvent_ (liftIO (copyText name) <$ eCopy)
+      divClass "app-text-semibold" $ text "Full token name"
+      divClass "app-Tooltip_TokenNameContainer" $ do
+        divClass "app-Tooltip_TokenName-copy" copyTokenIcon
+        elAttr "div" ("class" =: "app-text-normal" <> "style" =: "font-size:16px;overflow-wrap: anywhere;") $ text name
+
+      fp <- fingerprintFromAssetName encoinsCurrencySymbol name
+      let copyAssetIcon = do
+            eCopy <- copyButton
+            performEvent_ (liftIO (copyText fp) <$ eCopy)
+      divClass "app-text-semibold" $ text "Asset fingerprint"
+      divClass "app-Tooltip_AssetContainer" $ do
+        divClass "app-Tooltip_Asset-copy" copyAssetIcon
+        elAttr "div" ("class" =: "app-text-normal" <> "style" =: "font-size:16px;overflow-wrap: anywhere;") $ text fp
+
+
 --------------------------------- Coins to Mint -------------------------------
 
 coinV3MintWidget :: MonadWidget t m => TokenCacheV3 -> m (Event t Secret)
 coinV3MintWidget (MkTokenCacheV3 name s _) = mdo
-    (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dTooltipVis) $ do
+    (eArrow, ret) <- elDynAttr "div" (mkAttrs <$> dIsSpoilerVisible) $ do
         eCross <- domEvent Click . fst <$> elClass' "div" "cross-div" blank
-        (txt, _) <- elClass' "div" "app-text-normal" $ text $ shortenCoinName $ getAssetName name
+        eSpoiler <- elClass "div" "app-text-normal" $ do
+          text $ shortenCoinName $ getAssetName name
+          let arrowClass = bool "app-Spoiler_AssetInfo-down" "app-Spoiler_AssetInfo-up" <$> dIsSpoilerVisible
+          image "arrow_down_white.svg" arrowClass ""
         divClass "app-text-semibold ada-value-text" $ text $ coinValue s `Text.append` " ADA"
-        return (txt, eCross)
-    dTooltipVis <- toggle False (domEvent Click elTxt)
-    dyn_ $ bool blank (coinTooltip name) <$> dTooltipVis
+        return (eSpoiler, eCross)
+    dIsSpoilerVisible <- toggle False eArrow
+    dyn_ $ bool blank (coinSpoiler name) <$> dIsSpoilerVisible
     return $ s <$ ret
     where
         mkAttrs = ("class" =: "coin-entry-mint-div" <>) . bool mempty ("style" =: "background:rgb(50 50 50);")

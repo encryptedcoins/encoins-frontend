@@ -176,15 +176,13 @@ passwordInput txt rep isFocus dmPass eOpen = mdo
     mkError _ (Left err) _ = if rep
       then errDiv "Password doesn't match"
       else errDiv err
-    mkEyeAttr showPass = "style" =: "cursor:pointer;display: inline-block;margin-left: -30px;"
-      <> "class" =: ("far " <> bool "fa-eye" "fa-eye-slash" showPass)
+    mkEyeAttr showPass = "class" =: ("app-Eye_Input far " <> bool "fa-eye" "fa-eye-slash" showPass)
     appTextLeft = elAttr "div" ("class" =: "app-text-normal" <>
       "style" =: "justify-content: left;") . text
     conf eType = def
       & initialAttributes .~
-        (  "class" =: "w-input"
+        (  "class" =: "app-Input_Password"
         <> "type" =: "password"
-        <> "style" =: "display: inline-block;"
         )
       & inputElementConfig_initialValue .~ ""
       & inputElementConfig_elementConfig . elementConfig_modifyAttributes .~
