@@ -57,6 +57,7 @@ library
     ENCOINS.Common.Widgets.Advanced
     ENCOINS.Common.Widgets.Basic
     ENCOINS.Common.Widgets.JQuery
+    ENCOINS.Common.Widgets.MoreMenu
     ENCOINS.Common.Widgets.SelectInput
     ENCOINS.Common.Widgets.Wallet
     ENCOINS.DAO

@@ -24,8 +24,9 @@ walletEntry w = do
 
 connectWindow :: MonadWidget t m => [WalletName] -> Event t () -> m (Dynamic t Wallet)
 connectWindow supportedWallets eConnectOpen = mdo
-    (eConnectClose, dWallet) <- dialogWindow True eConnectOpen eConnectClose "" "Connect Wallet" $ mdo
-        eWalletName <- leftmost . ([eLastWalletName] ++) <$> mapM walletEntry supportedWallets
+    (eConnectClose, dWallet) <- dialogWindow True eConnectOpen eConnectClose "common-ConnectWindow" "Connect Wallet" $ mdo
+        eWalletName <- divClass "common-Connect_WalletContainer" $
+          leftmost . ([eLastWalletName] ++) <$> mapM walletEntry supportedWallets
         eUpdate <- tag bWalletName <$> tickLossyFromPostBuildTime 10
         dW <- loadWallet (leftmost [eWalletName, eUpdate]) >>= holdUniqDyn
         let bWalletName = current $ fmap walletName dW

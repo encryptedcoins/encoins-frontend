@@ -4,18 +4,19 @@ module ENCOINS.DAO.Widgets.Navbar
   , Dao (..)
   ) where
 
-import           Data.Text                     (Text, take, takeEnd)
-import           Prelude                       hiding (take)
+import           Data.Text                       (Text, take, takeEnd)
+import           Prelude                         hiding (take)
 import           Reflex.Dom
 
-import           Backend.Wallet                (Wallet (..), WalletName (..))
-import           Config.Config                 (NetworkConfig (dao),
-                                                NetworkId (..), networkConfig)
-import           ENCOINS.Common.Widgets.Basic  (btnWithBlock, logo)
-import           ENCOINS.Common.Widgets.Wallet (walletIcon)
+import           Backend.Wallet                  (Wallet (..), WalletName (..))
+import           Config.Config                   (NetworkConfig (dao),
+                                                  NetworkId (..), networkConfig)
+import           ENCOINS.Common.Widgets.Basic    (btnWithBlock, logo)
+import           ENCOINS.Common.Widgets.MoreMenu (NavMoreMenuClass (..),
+                                                  moreMenuWidget)
+import           ENCOINS.Common.Widgets.Wallet   (walletIcon)
 
-
-data Dao = Connect | Delegate
+data Dao = Connect | Delegate | MoreMenu
   deriving (Eq, Show)
 
 connectText :: Wallet -> Text
@@ -53,7 +54,8 @@ navbarWidget w dIsBlocked dIsBlockedConnect = do
                       ""
                       dIsBlocked
                       (text "DELEGATE")
-                pure $ leftmost [Connect <$ eConnect, Delegate <$ eDelegate]
+                eMore <- moreMenuWidget (NavMoreMenuClass "common-Nav_Container_MoreMenu" "common-Nav_MoreMenu")
+                pure $ leftmost [Connect <$ eConnect, Delegate <$ eDelegate, MoreMenu <$ eMore]
 
 currentNetworkDao :: Text
 currentNetworkDao = case dao networkConfig of

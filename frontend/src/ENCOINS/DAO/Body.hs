@@ -16,6 +16,8 @@ import           ENCOINS.App.Widgets.ConnectWindow  (connectWindow)
 import           ENCOINS.Common.Events
 import           ENCOINS.Common.Widgets.Basic       (notification)
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
+import           ENCOINS.Common.Widgets.MoreMenu    (WindowMoreMenuClass (..),
+                                                     moreMenuWindow)
 import           ENCOINS.DAO.Polls
 import           ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
 import           ENCOINS.DAO.Widgets.Navbar         (Dao (..), navbarWidget)
@@ -34,6 +36,13 @@ bodyContentWidget = mdo
   eFireNames <- newEvent
   dRelayNames <- fetchRelayNames eFireNames
   eDao <- navbarWidget dWallet dIsDisableButtons dIsDisableConnectButton
+
+  let eMoreMenuOpen = void $ ffilter (==MoreMenu) eDao
+  let moreMenuClass = WindowMoreMenuClass
+        "common-MoreMenu_Window"
+        "common-MoreMenu_LinkContainer"
+        "common-MoreMenu_Link"
+  moreMenuWindow moreMenuClass eMoreMenuOpen
 
   let eConnectOpen = void $ ffilter (==Connect) eDao
   dWallet <- connectWindow walletsSupportedInDAO eConnectOpen

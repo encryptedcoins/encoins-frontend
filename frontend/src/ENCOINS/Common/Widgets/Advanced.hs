@@ -82,7 +82,7 @@ dialogWindow close eOpen eClose customClass title tags = mdo
         let titleCls = if close then "dialog-window-title" else "dialog-window-title-without-cross"
         crossClick <- divClass titleCls $ do
           elAttr "div" ("style" =: "width: 20px;") blank
-          divClass "app-text-semibold" $ text title
+          divClass "app-text-title" $ text title
           if close
             then domEvent Click . fst <$> elClass' "div" "cross-div inverted" blank
             else pure never

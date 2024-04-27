@@ -32,6 +32,8 @@ import           ENCOINS.Common.Utils               (toJsonText)
 import           ENCOINS.Common.Widgets.Advanced    (copiedNotification)
 import           ENCOINS.Common.Widgets.Basic       (notification)
 import           ENCOINS.Common.Widgets.JQuery      (jQueryWidget)
+import           ENCOINS.Common.Widgets.MoreMenu    (WindowMoreMenuClass (..),
+                                                     moreMenuWindow)
 import           JS.App                             (loadCacheValue)
 import           JS.Website                         (saveJSON)
 
@@ -39,12 +41,18 @@ bodyContentWidget :: MonadWidget t m
   => Maybe PasswordRaw
   -> m (Event t (Maybe PasswordRaw))
 bodyContentWidget mPass = mdo
-  (ePassOpen, eConnectOpen, eOpenSaveWindow) <- navbarWidget
+  (ePassOpen, eConnectOpen, eCloudOpen, eMoreMenuOpen) <- navbarWidget
     dWallet
     dIsDisableButtons
     mPass
     dCloudOn
     dCloudStatus
+
+  let moreMenuClass = WindowMoreMenuClass
+        "common-MoreMenu_Window"
+        "common-MoreMenu_LinkContainer"
+        "common-MoreMenu_Link"
+  moreMenuWindow moreMenuClass eMoreMenuOpen
 
   (dStatusT, dIsDisableButtons, dCloudStatus) <-
     handleAppStatus dWallet evStatusList
@@ -86,7 +94,7 @@ bodyContentWidget mPass = mdo
     mPass
     dSaveOnFromCache
     dCloudStatus
-    eOpenSaveWindow
+    eCloudOpen
   dCloudOn <- holdDyn False $ leftmost $ map updated [dSaveOnFromCache, dSaveWindow]
 
   dResetTokens <- holdDyn False $ updated $ isNothing <$> dmOldKeyBody
