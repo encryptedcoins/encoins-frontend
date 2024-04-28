@@ -3,13 +3,13 @@ module ENCOINS.DAO.Polls where
 import           Data.IntMap.Strict           (IntMap, fromList, mapEither)
 import           Data.Text                    (Text, pack)
 import           Data.Time                    (LocalTime (LocalTime), UTCTime,
-                                               defaultTimeLocale, formatTime,
                                                fromGregorianValid,
                                                localTimeToUTC,
                                                makeTimeOfDayValid, utc)
 import           Reflex.Dom
 
-import           Backend.Utility              (column, space, toText)
+import           Backend.Utility              (column, formatPollTime, space,
+                                               toText)
 import           ENCOINS.Common.Widgets.Basic (br, lnkInline)
 import           ENCOINS.DAO.PollResults
 
@@ -167,9 +167,6 @@ poll1 n voteRes voteFullRes = Poll n
 
 pollNum :: Int -> Text
 pollNum n = "Poll #" <> toText n <> column <> space
-
-formatPollTime :: UTCTime -> Text
-formatPollTime = pack . formatTime defaultTimeLocale "%e %B %Y, %R %Z"
 
 endTime :: Integer -> Int -> Int -> Int -> Int -> UTCTime
 endTime year month day hour minute = localTimeToUTC utc localTime

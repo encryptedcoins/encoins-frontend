@@ -13,6 +13,7 @@ import           Data.Maybe             (isNothing)
 import           Data.Text              (Text)
 import qualified Data.Text              as T
 import qualified Data.Text.Encoding     as TE
+import           Data.Time              (UTCTime, defaultTimeLocale, formatTime)
 import qualified Data.UUID              as Uid
 import qualified Data.UUID.V4           as Uid
 import           Reflex.Dom
@@ -105,3 +106,9 @@ hashKeccak512 raw
 
 isHashOfRaw :: Text -> Text -> Bool
 isHashOfRaw hash raw = hash == hashKeccak512 raw
+
+formatPollTime :: UTCTime -> Text
+formatPollTime = T.pack . formatTime defaultTimeLocale "%e %B %Y, %R %Z"
+
+formatCoinTime :: UTCTime -> Text
+formatCoinTime = T.pack . formatTime defaultTimeLocale "%Y-%B-%e"
