@@ -1,24 +1,19 @@
 module ENCOINS.App.Widgets.Navbar (navbarWidget) where
 
-import           Data.Bool                     (bool)
-import           Data.Text                     (Text, take, takeEnd)
-import           Prelude                       hiding (take)
+import           Data.Bool                       (bool)
+import           Data.Text                       (Text)
 import           Reflex.Dom
 
-import           Backend.Protocol.Types        (PasswordRaw)
-import           Backend.Status                (CloudStatusIcon (..))
-import           Backend.Utility               (space)
-import           Backend.Wallet                (Wallet (..), WalletName (..),
-                                                currentNetworkApp)
+import           Backend.Protocol.Types          (PasswordRaw)
+import           Backend.Status                  (CloudStatusIcon (..))
+import           Backend.Utility                 (space)
+import           Backend.Wallet                  (Wallet (..),
+                                                  currentNetworkApp)
 import           ENCOINS.Common.Events
-import           ENCOINS.Common.Widgets.Basic  (btnWithBlock, logo)
-import           ENCOINS.Common.Widgets.Wallet (walletIcon)
-import           ENCOINS.Common.Widgets.MoreMenu (moreMenuWidget, NavMoreMenuClass(..))
-
-connectText :: Wallet -> Text
-connectText w = case w of
-  Wallet None _ _    _ _ -> "CONNECT"
-  Wallet _    _ addr _ _ -> take 6 addr <> "..." <> takeEnd 6 addr
+import           ENCOINS.Common.Widgets.Basic    (logo)
+import           ENCOINS.Common.Widgets.Connect  (connectWidget)
+import           ENCOINS.Common.Widgets.MoreMenu (NavMoreMenuClass (..),
+                                                  moreMenuWidget)
 
 navbarWidget :: MonadWidget t m
   => Dynamic t Wallet
@@ -39,10 +34,7 @@ navbarWidget w dIsBlock mPass dIsCloudOn dCloudStatus= do
               $ text currentNetworkApp
             divClass "menu-div-empty" blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do
-                eConnect <- divClass "menu-item-button-left" $
-                    btnWithBlock "button-switching flex-center" "" dIsBlock $ do
-                        dyn_ $ fmap (walletIcon . walletName) w
-                        dynText $ fmap connectText w
+                eConnect <- connectWidget w dIsBlock
                 eCloud <- cloudIconWidget dIsCloudOn dIsBlock dCloudStatus
                 eLocker <- lockerWidget mPass dIsBlock
                 eMore <- moreMenuWidget (NavMoreMenuClass "common-Nav_Container_MoreMenu" "common-Nav_MoreMenu")

@@ -4,25 +4,19 @@ module ENCOINS.DAO.Widgets.Navbar
   , Dao (..)
   ) where
 
-import           Data.Text                       (Text, take, takeEnd)
-import           Prelude                         hiding (take)
+import           Data.Text                       (Text)
 import           Reflex.Dom
 
-import           Backend.Wallet                  (Wallet (..), WalletName (..))
+import           Backend.Wallet                  (Wallet (..))
 import           Config.Config                   (NetworkConfig (dao),
                                                   NetworkId (..), networkConfig)
 import           ENCOINS.Common.Widgets.Basic    (btnWithBlock, logo)
+import           ENCOINS.Common.Widgets.Connect  (connectWidget)
 import           ENCOINS.Common.Widgets.MoreMenu (NavMoreMenuClass (..),
                                                   moreMenuWidget)
-import           ENCOINS.Common.Widgets.Wallet   (walletIcon)
 
 data Dao = Connect | Delegate | MoreMenu
   deriving (Eq, Show)
-
-connectText :: Wallet -> Text
-connectText w = case w of
-  Wallet None _ _    _ _ -> "CONNECT"
-  Wallet _    _ addr _ _ -> take 6 addr <> "..." <> takeEnd 6 addr
 
 navbarWidget :: MonadWidget t m
   => Dynamic t Wallet
@@ -44,10 +38,7 @@ navbarWidget w dIsBlocked dIsBlockedConnect = do
               $ text currentNetworkDao
             divClass "menu-div-empty" blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do
-                eConnect <- divClass "menu-item-button-left" $
-                    btnWithBlock "button-switching flex-center" "" dIsBlockedConnect $ do
-                        dyn_ $ fmap (walletIcon . walletName) w
-                        dynText $ fmap connectText w
+                eConnect <- connectWidget w dIsBlockedConnect
                 eDelegate <- divClass "menu-item-button-left" $ do
                     btnWithBlock
                       "button-switching flex-center"

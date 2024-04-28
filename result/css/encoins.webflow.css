@@ -2558,3 +2558,8 @@ body {
   background-color: #000;
   color: #fff;
 }
+
+.common-Connect_Button {
+  width: 250px;
+  white-space: nowrap;
+}
