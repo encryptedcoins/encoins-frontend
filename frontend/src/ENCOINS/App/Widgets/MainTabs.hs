@@ -7,7 +7,6 @@ import           Data.Bool                              (bool)
 import           Data.List                              (nub)
 import           Data.Text                              (Text)
 import           Reflex.Dom
-import           Witherable                             (catMaybes)
 
 import           Backend.EncoinsTx                      (encoinsTxLedgerMode,
                                                          encoinsTxTransferMode,
@@ -29,6 +28,7 @@ import           ENCOINS.App.Widgets.Basic              (containerApp,
                                                          sectionApp,
                                                          tellTxStatus,
                                                          walletError)
+import           ENCOINS.App.Widgets.Cloud
 import           ENCOINS.App.Widgets.Coin               (CoinUpdate (..),
                                                          coinBurnCollectionWidget,
                                                          coinMintCollectionV3Widget,
@@ -37,10 +37,8 @@ import           ENCOINS.App.Widgets.Coin               (CoinUpdate (..),
                                                          filterByKnownCoinNames,
                                                          noCoinsFoundWidget)
 import           ENCOINS.App.Widgets.ImportWindow       (exportWindow,
-                                                         importFileWindow,
                                                          importWindow)
 import           ENCOINS.App.Widgets.InputAddressWindow (inputAddressWindow)
-import           ENCOINS.App.Widgets.Cloud
 import           ENCOINS.App.Widgets.SendRequestButton  (sendRequestButtonLedger,
                                                          sendRequestButtonWallet)
 import           ENCOINS.App.Widgets.SendToWalletWindow (sendToWalletWindow)
@@ -113,14 +111,11 @@ walletTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp
                   dyn_ $ fmap noCoinsFoundWidget dSecretsUniq
                   coinBurnCollectionWidget dSecretsUniq
                 eImp <- divClassId "" "welcome-import-export" $ do
-                    (eImport, eImportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Import" <*> menuButton " Import All"
-                    (eExport, eExportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Export" <*> menuButton " Export All"
-                    exportWindow "Export selected coins" eExport dCTB
-                    exportWindow "Export all coins" eExportAll $ map tcSecret <$> dTokenCache
-                    eIS    <- fmap pure . catMaybes <$> importWindow eImport
-                    eISAll <- importFileWindow eImportAll
-                    return $ leftmost [eIS, eISAll]
-                return (dCTB, eImp)
+                    (eImport, eExport) <- divClass "app-columns w-row" $ (,) <$> menuButton "Import" <*> menuButton "Export"
+                    exportWindow eExport dCTB (map tcSecret <$> dTokenCache)
+                    (eIS, eISAll) <- importWindow eImport
+                    pure $ leftmost [eIS, eISAll]
+                pure (dCTB, eImp)
 
             (dCoinsToMint, eSend, eSendStatus) <-
               divClass "app-CoinColumnRight w-col w-col-6" $ mdo
@@ -202,12 +197,9 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
                 mainWindowColumnHeader "Coins in the Wallet"
                 dyn_ $ fmap noCoinsFoundWidget dSecretsInTheWallet
                 coinBurnCollectionWidget dSecretsInTheWallet
-            (eImport, eImportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Import" <*> menuButton " Import All"
-            (eExport, eExportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Export" <*> menuButton " Export All"
-            exportWindow "Export selected coins" eExport dCTB
-            exportWindow "Export all coins" eExportAll $ map tcSecret <$> dTokenCache
-            eIS    <- fmap pure . catMaybes <$> importWindow eImport
-            eISAll <- importFileWindow eImportAll
+            (eImport, eExport) <- divClass "app-columns w-row" $ (,) <$> menuButton "Import" <*> menuButton "Export"
+            exportWindow eExport dCTB (map tcSecret <$> dTokenCache)
+            (eIS, eISAll) <- importWindow eImport
             return (dCTB, leftmost [eIS, eISAll])
         divClassId "app-CoinColumnRight w-col w-col-6" "welcome-transfer-btns" $ do
           eWallet <- sendButton
@@ -316,12 +308,9 @@ ledgerTab mpass dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp "" "" $
                   dyn_ $ fmap noCoinsFoundWidget dSecretsUniq
                   coinBurnCollectionWidget dSecretsUniq
                 eImp <- divClass "" $ do
-                  (eImport, eImportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Import" <*> menuButton " Import All"
-                  (eExport, eExportAll) <- divClass "app-columns w-row" $ (,) <$> menuButton " Export" <*> menuButton " Export All"
-                  exportWindow "Export selected coins" eExport dCTB
-                  exportWindow "Export all coins" eExportAll $ map tcSecret <$> dTokenCache
-                  eIS    <- fmap pure . catMaybes <$> importWindow eImport
-                  eISAll <- importFileWindow eImportAll
+                  (eImport, eExport) <- divClass "app-columns w-row" $ (,) <$> menuButton "Import" <*> menuButton "Export"
+                  exportWindow eExport dCTB (map tcSecret <$> dTokenCache)
+                  (eIS, eISAll) <- importWindow eImport
                   return $ leftmost [eIS, eISAll]
                 return (dCTB, eImp)
             (eSendStatus, dCoinsToMint, eSend, dChangeAddr) <-
