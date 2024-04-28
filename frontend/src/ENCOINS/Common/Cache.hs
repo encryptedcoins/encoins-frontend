@@ -1,6 +1,6 @@
 module ENCOINS.Common.Cache where
 
-import           Data.Text (Text)
+import Data.Text (Text)
 
 encoinsV3 :: Text
 encoinsV3 = "encoins-v3"

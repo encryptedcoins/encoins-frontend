@@ -1,21 +1,16 @@
-cabal-version:       3.0
-
-name:                encoins-frontend-html
-version:             0.1.0.0
-build-type:          Simple
-
-author:              Vladimir Sinyakov
-maintainer:          team@encoins.io
-
+cabal-version: 3.0
+name:          encoins-frontend-html
+version:       0.1.0.0
+build-type:    Simple
+author:        Vladimir Sinyakov
+maintainer:    team@encoins.io
 
 executable encoins-frontend-html
-  main-is:             Html.hs
-  hs-source-dirs:      apps
-
-  default-language:   Haskell2010
-  ghc-options:        -Wall -Wno-unrecognised-pragmas
-
+  main-is:          Html.hs
+  hs-source-dirs:   apps
+  default-language: Haskell2010
+  ghc-options:      -Wall -Wno-unrecognised-pragmas
   build-depends:
-    base                       >=4.7,
-    lucid2,
-    text
+    , base    >=4.7
+    , lucid2
+    , text

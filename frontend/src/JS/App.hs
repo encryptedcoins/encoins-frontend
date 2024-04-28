@@ -1,18 +1,24 @@
-{-# LANGUAGE CPP           #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE JavaScriptFFI #-}
 
 {-# HLINT ignore "Use camelCase" #-}
 
 module JS.App where
 
-import           Control.Monad.IO.Class      (MonadIO (..))
-import           Data.Text                   (Text)
+import Control.Monad.IO.Class (MonadIO (..))
+import Data.Text (Text)
 
 #ifdef __GHCJS__
-import qualified Data.Text                   as T
-import           Language.Javascript.JSaddle (FromJSVal (..), JSM, JSString,
-                                              JSVal, ToJSVal (..), strToText,
-                                              textToStr)
+import qualified Data.Text as T
+import Language.Javascript.JSaddle
+    ( FromJSVal (..)
+    , JSM
+    , JSString
+    , JSVal
+    , ToJSVal (..)
+    , strToText
+    , textToStr
+    )
 #endif
 
 -----------------------------------------------------------------
