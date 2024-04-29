@@ -14,7 +14,7 @@ import Backend.Protocol.TxValidity
 import Backend.Protocol.Types
 import Backend.Servant.Requests (getRelayUrlE, statusRequestWrapper)
 import Backend.Status (Status (..))
-import Backend.Utility (eventEither, switchHoldDyn, toEither)
+import Backend.Utility (switchHoldDyn, toEither)
 import Backend.Wallet (Wallet (..))
 import ENCOINS.Bulletproofs (Secrets)
 import ENCOINS.Common.Widgets.Advanced (updateUrls)
@@ -57,7 +57,7 @@ sendRequestButtonWallet
                     (BasePath url)
                     (pure MaxAdaWithdraw)
                     eFireStatus
-        let (eRelayDown, eMaxAda) = eventEither eeStatus
+        let (eRelayDown, eMaxAda) = fanEither eeStatus
 
         let getMaxAda (MaxAdaWithdrawResult n) = Just n
             getMaxAda _ = Nothing
@@ -123,7 +123,7 @@ sendRequestButtonLedger mode dStatus dCoinsToBurn dCoinsToMint e dUrls = mdo
                 (BasePath url)
                 (pure MaxAdaWithdraw)
                 eFireStatus
-    let (eRelayDown, eMaxAda) = eventEither eeStatus
+    let (eRelayDown, eMaxAda) = fanEither eeStatus
 
     let getMaxAda (MaxAdaWithdrawResult n) = Just n
         getMaxAda _ = Nothing

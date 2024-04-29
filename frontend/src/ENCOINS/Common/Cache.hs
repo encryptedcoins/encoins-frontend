@@ -24,5 +24,5 @@ aesKey = "encoins-aes-key"
 isCloudOn :: Text
 isCloudOn = "encoins-save-on"
 
-passwordSotrageKey :: Text
-passwordSotrageKey = "password-hash"
+passwordStorageKey :: Text
+passwordStorageKey = "password-hash"

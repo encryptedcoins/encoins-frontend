@@ -59,8 +59,8 @@ isMultiAssetOf symbol token (CSL.MultiAsset mp) =
         Nothing -> False
         Just i -> maybe False (const True) $ Map.lookup token i
 
-eventMaybe :: (Reflex t) => e -> Event t (Maybe a) -> (Event t e, Event t a)
-eventMaybe errValue ev = (errValue <$ ffilter isNothing ev, catMaybes ev)
+eventMaybe :: (Reflex t) => Event t (Maybe a) -> (Event t (), Event t a)
+eventMaybe ev = (() <$ ffilter isNothing ev, catMaybes ev)
 
 eventMaybeDynDef ::
     (Reflex t) =>
@@ -68,9 +68,6 @@ eventMaybeDynDef ::
     -> Event t (Maybe a)
     -> (Event t def, Event t a)
 eventMaybeDynDef dDefault ev = (tagPromptlyDyn dDefault $ ffilter isNothing ev, catMaybes ev)
-
-eventEither :: (Reflex t) => Event t (Either e a) -> (Event t e, Event t a)
-eventEither ev = (filterLeft ev, filterRight ev)
 
 eventTuple :: (Reflex t) => Event t (a, b) -> (Event t a, Event t b)
 eventTuple ev = (fst <$> ev, snd <$> ev)

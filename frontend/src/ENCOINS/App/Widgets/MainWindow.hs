@@ -2,6 +2,7 @@
 
 module ENCOINS.App.Widgets.MainWindow where
 
+import Data.Functor (($>))
 import Data.Maybe (isNothing)
 import Reflex.Dom
 
@@ -34,6 +35,7 @@ mainWindow ::
 mainWindow mPass dWallet dIsDisableButtons dCloudOn dmKey dKeyWasReset eRestore = mdo
     eTab <- tabsSection dTab dIsDisableButtons
     dTab <- holdDyn WalletTab eTab
+
     eNewTokensV3 <- switchHoldDyn dTab $ \tab -> mdo
         dmOldTokensV3 :: Dynamic t (Maybe [TokenCacheV3]) <-
             loadAppDataME
@@ -51,22 +53,20 @@ mainWindow mPass dWallet dIsDisableButtons dCloudOn dmKey dKeyWasReset eRestore 
         -- if tokensV3 are not found in cache
         dOldTokensMigratedUniq <-
             holdUniqDyn =<< migrateTokenCacheV3 mPass dmOldTokensStatusUpdated
-        -- logDyn "mainWindow: dOldTokensMigratedUniq" $ showTokens <$> dOldTokensMigratedUniq
 
         let eWasMigration =
-                ()
-                    <$ ( ffilter isNothing $
-                            tagPromptlyDyn dmOldTokensStatusUpdated $
-                                updated dOldTokensMigratedUniq
-                       )
-        -- logEvent "mainWindow: eWasMigration" eWasMigration
+                ffilter
+                    isNothing
+                    ( tagPromptlyDyn dmOldTokensStatusUpdated $
+                        updated dOldTokensMigratedUniq
+                    )
+                    $> ()
+
 
         -- Restore tokens from remote server and sync it with local cache
         dRestoreResponse <- restoreValidTokens dmKey eRestore
-        -- logDyn "mainWindow: dRestoreResponse" $ showTokens <$> dRestoreResponse
 
         let dTokens = zipDynWith syncRestoreWithCache dRestoreResponse dOldTokensMigratedUniq
-        -- logDyn "mainWindow: dTokens" $ showTokens <$> dTokens
 
         dUpdatedTokensV3 <- case tab of
             WalletTab -> walletTab mPass dWallet dTokens dCloudOn dmKey eWasMigration

@@ -7,17 +7,15 @@ import Data.Maybe (isJust, isNothing)
 import Data.Text (Text)
 import Reflex.Dom
 
-import Backend.Protocol.Types (PasswordRaw (..), TokenCacheV3, showTokens)
+import Backend.Protocol.Types (PasswordRaw (..), TokenCacheV3)
 import Backend.Status (AppStatus, Status (..))
 import Backend.Utility (switchHoldDyn)
 import ENCOINS.App.Widgets.Basic
     ( loadAppData
-    , loadAppDataME
     , saveAppData
     , tellTxStatus
     )
 import ENCOINS.App.Widgets.Coin (coinV3)
-import ENCOINS.App.Widgets.PasswordWindow (reEncrypt)
 import ENCOINS.Bulletproofs (Secret)
 import ENCOINS.Common.Cache (encoinsV1, encoinsV2, encoinsV3)
 import ENCOINS.Common.Events
