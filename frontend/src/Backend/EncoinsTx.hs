@@ -64,7 +64,7 @@ encoinsTxWalletMode
         let eFallback = leftmost [() <$ eNewTxError, () <$ eSubmitError]
         let emUsedUrl = leftmost [Nothing <$ eSend, tagPromptlyDyn dmUrl eFallback]
         dUpdatedUrls <- updateUrls dUrls emUsedUrl
-        emUsedUrlDelayed <- delay 0.01 $ () <$ emUsedUrl
+        emUsedUrlDelayed <- delay 0.2 $ () <$ emUsedUrl
         emUrl <- getRelayUrlE dUpdatedUrls emUsedUrlDelayed
         dmUrl <- holdDyn Nothing emUrl
 
@@ -175,7 +175,7 @@ encoinsTxTransferMode
         let eFallback = leftmost [() <$ eNewTxError, () <$ eSubmitError]
         let emUsedUrl = leftmost [Nothing <$ eSend, tagPromptlyDyn dmUrl eFallback]
         dUpdatedUrls <- updateUrls dUrls emUsedUrl
-        emUsedUrlDelayed <- delay 0.01 $ () <$ emUsedUrl
+        emUsedUrlDelayed <- delay 0.2 $ () <$ emUsedUrl
         emUrl <- getRelayUrlE dUpdatedUrls emUsedUrlDelayed
         dmUrl <- holdDyn Nothing emUrl
 
@@ -291,8 +291,8 @@ encoinsTxLedgerMode
                     ]
 
         dUpdatedUrls <- updateUrls dUrls emUsedUrl
-        -- Wait 0.01s until urls are updated
-        emUsedUrlDelayed <- delay 0.01 $ () <$ emUsedUrl
+        -- Wait 0.2s until urls are updated
+        emUsedUrlDelayed <- delay 0.2 $ () <$ emUsedUrl
         emUrl <- getRelayUrlE dUpdatedUrls emUsedUrlDelayed
         dmUrl <- holdDyn Nothing emUrl
 
@@ -310,9 +310,9 @@ encoinsTxLedgerMode
         eSendWithUrl <- fireWhenJustThenReset eSend emUrl eFinalRedeemerReq
 
         eTick <- tickLossyFromPostBuildTime 12
-        -- Wait 0.01s until pinging url is chosen
+        -- Wait 0.2s until pinging url is chosen
         eFireStatus <-
-            delay 0.01 $ leftmost [eInitWithUrl, void eTick, eStatusFallbackWithUrl]
+            delay 0.2 $ leftmost [eInitWithUrl, void eTick, eStatusFallbackWithUrl]
 
         eeStatus <- switchHoldDyn dmUrl $ \case
             Nothing -> pure never
