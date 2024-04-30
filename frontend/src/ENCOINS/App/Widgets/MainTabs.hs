@@ -109,8 +109,7 @@ walletTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp
                         zipDynWith (++) dTokenCacheOld $
                             map coinV3
                                 <$> zipDynWith (++) dImportedSecrets dNewSecrets
-            logDyn "walletTab: dImportedSecrets" $ dImportedSecrets
-            logDyn "walletTab: dTokenCache" $ showTokens <$> dTokenCache
+            -- logDyn "walletTab: dTokenCache" $ showTokens <$> dTokenCache
 
             -- Save begin
             dTokensUpdated <- handleUnsavedTokens dCloudOn dmKey dTokenCache eWasMigration
