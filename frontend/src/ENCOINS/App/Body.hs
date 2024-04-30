@@ -11,6 +11,7 @@ import Reflex.Dom
 import Backend.Protocol.StrongTypes (toPasswordHash)
 import Backend.Protocol.Types (PasswordRaw (..))
 import Backend.Utility (switchHoldDyn)
+import Backend.Status (Status(..))
 import Backend.Wallet (walletsSupportedInApp)
 import ENCOINS.App.Widgets.Basic
     ( loadAppDataE
@@ -67,7 +68,11 @@ bodyContentWidget mPass = mdo
     moreMenuWindow moreMenuClass eMoreMenuOpen
 
     (dStatusT, dIsDisableButtons, dCloudStatus) <-
-        handleAppStatus dWallet evStatusList
+        handleAppStatus dWallet evStatusList $
+            leftmost
+                [ ("", CustomStatus "Re-encrypting cache with new password...") <$ eReEncrypt
+                , ("", Ready) <$ eReEncryptDelayed
+                ]
     notification dStatusT
 
     dWallet <- connectWindow walletsSupportedInApp eConnectOpen
@@ -75,11 +80,6 @@ bodyContentWidget mPass = mdo
     (eNewPass, eClearCache) <- passwordSettingsWindow ePassOpen
     eCleanOk <- cleanCacheDialog eClearCache
     welcomeWindow welcomeWindowWalletStorageKey welcomeWallet
-
-    -- This delay wanted to prevent cancelling eNewPass' by 'bodyWidget' for delay time
-    -- In the lag between 'eNewPass' and 'eNewPassDelayed' we are able to run 'reEncryptOldCache'
-    -- We suppose that 2s is sufficient for re-encryption old cache
-    eNewPassDelayed <- delay 2 eNewPass
 
     divClass "section-app section-app-empty wf-section" blank
 
@@ -95,6 +95,11 @@ bodyContentWidget mPass = mdo
                 eRestore
 
     let eReEncrypt = leftmost [eNewPass, Nothing <$ eCleanOk]
+
+    -- This delay required for preventing cancelling 'eReEncrypt' event by 'bodyWidget'.
+    -- In the lag between 'eReEncrypt' and 'eNewPassDelayed' we are able to run 'reEncryptOldCache'
+    -- We suppose that 2s is sufficient for re-encryption old cache
+    eReEncryptDelayed <- delay 2 eReEncrypt
 
     -- re-encrypt old available cache with new pass
     reEncryptOldCache mPass eReEncrypt
@@ -123,7 +128,7 @@ bodyContentWidget mPass = mdo
         holdUniqDyn
             =<< (holdDyn Nothing $ leftmost $ map updated [dmOldKeyBody, dNewKeyWindow])
 
-    pure $ leftmost [Nothing <$ eCleanOk, eNewPassDelayed]
+    pure eReEncryptDelayed
 
 bodyWidget :: (MonadWidget t m) => m ()
 bodyWidget = waitForScripts blank $ mdo

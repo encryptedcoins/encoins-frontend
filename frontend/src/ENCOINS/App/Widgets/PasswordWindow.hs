@@ -109,14 +109,14 @@ passwordSettingsWindow ::
     (MonadWidget t m) =>
     Event t ()
     -> m (Event t (Maybe PasswordRaw), Event t ())
-passwordSettingsWindow eOpen = do
+passwordSettingsWindow eOpen = mdo
     ePassHash <- performEvent (loadCacheValue passwordStorageKey <$ eOpen)
     let emPassHash = toPasswordHash <$> ePassHash
     dmPassHash <- holdDyn Nothing emPassHash
-    dialogWindow
+    (emChangedPass, eClearOk) <- dialogWindow
         True
         eOpen
-        never
+        (leftmost [() <$ emChangedPass, eClearOk])
         "app-PasswordSettingsWindow"
         "Protect cache of Encoins app"
         $ do
@@ -128,7 +128,6 @@ passwordSettingsWindow eOpen = do
 
             let eNewPass = catMaybes (tagPromptlyDyn dmNewPass eSave)
 
-            -- it doesn't work
             passwordNotification eNewPass eReset eOpen
 
             let emChangedPassword = leftmost [Just <$> eNewPass, Nothing <$ eReset]
@@ -138,6 +137,8 @@ passwordSettingsWindow eOpen = do
                     <$> emChangedPassword
 
             pure (emChangedPassword, eClear)
+
+    pure (emChangedPass, eClearOk)
 
 passwordButtons ::
     (MonadWidget t m) =>
@@ -167,7 +168,6 @@ passwordButtons dmPassHash dPassOk dmNewPass = do
                 Nothing -> pure never
             pure (eReset', eClear', eSave')
 
--- it does not work
 passwordNotification ::
     (MonadWidget t m) =>
     Event t PasswordRaw
