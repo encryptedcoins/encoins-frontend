@@ -106,8 +106,10 @@ secretToHex s = encodeHex . fromBuiltin $ toBytes $ gamma * 2 ^ (20 :: Integer) 
         v = fromFieldElement $ secretV s
 
 hexToSecret :: Text -> Maybe Secret
-hexToSecret txt = do
-    bs <- decodeHex txt
-    let n = byteStringToInteger $ toBuiltin bs
-        (gamma, v) = n `divMod` (2 ^ (20 :: Integer))
-    return $ Secret (toFieldElement gamma) (toFieldElement v)
+hexToSecret = \case
+    "" -> Nothing
+    txt -> do
+        bs <- decodeHex txt
+        let n = byteStringToInteger $ toBuiltin bs
+            (gamma, v) = n `divMod` (2 ^ (20 :: Integer))
+        return $ Secret (toFieldElement gamma) (toFieldElement v)

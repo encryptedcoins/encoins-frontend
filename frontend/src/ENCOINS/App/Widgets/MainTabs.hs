@@ -4,8 +4,9 @@ module ENCOINS.App.Widgets.MainTabs where
 
 import Control.Monad (void)
 import Data.Bool (bool)
-import Data.List (nub)
+import Data.List (nubBy)
 import Data.Text (Text)
+import Data.Function (on)
 import Reflex.Dom
 
 import Backend.EncoinsTx
@@ -104,11 +105,12 @@ walletTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp
             dImportedSecrets <- foldDyn (++) [] eImportSecret
             dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
             let dTokenCache =
-                    fmap nub $
+                    fmap (nubBy (on (==) tcAssetName)) $
                         zipDynWith (++) dTokenCacheOld $
                             map coinV3
                                 <$> zipDynWith (++) dImportedSecrets dNewSecrets
-            -- logDyn "walletTab: dTokenCache" $ showTokens <$> dTokenCache
+            logDyn "walletTab: dImportedSecrets" $ dImportedSecrets
+            logDyn "walletTab: dTokenCache" $ showTokens <$> dTokenCache
 
             -- Save begin
             dTokensUpdated <- handleUnsavedTokens dCloudOn dmKey dTokenCache eWasMigration
@@ -214,7 +216,7 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
         transactionBalanceWidget formula (Just TransferMode) " (to Ledger)"
     (dCoins, eSendToLedger, eAddr, dTokensV3) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
-        let dTokenCache = nub <$> zipDynWith (++) dTokenCacheOld (map coinV3 <$> dImportedSecrets)
+        let dTokenCache = nubBy (on (==) tcAssetName) <$> zipDynWith (++) dTokenCacheOld (map coinV3 <$> dImportedSecrets)
 
         -- Save begin
         dTokenCacheUpdated <-
@@ -345,7 +347,7 @@ ledgerTab mpass dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp "" "" $
             dImportedSecrets <- foldDyn (++) [] eImportSecret
             dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
             let dTokenCache =
-                    fmap nub $
+                    fmap (nubBy (on (==) tcAssetName)) $
                         zipDynWith (++) dTokenCacheOld $
                             map coinV3 <$> zipDynWith (++) dImportedSecrets dNewSecrets
 

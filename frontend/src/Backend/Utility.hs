@@ -6,6 +6,7 @@ import qualified CSL
 import Control.Monad (join, (<=<))
 import Control.Monad.IO.Class (liftIO)
 import qualified Crypto.Hash.Keccak as Keccak
+import Data.Bool (bool)
 import Data.ByteString.Base16 as BS16
 import Data.Functor ((<&>))
 import qualified Data.Map as Map
@@ -35,6 +36,9 @@ normalizeCurrentUrl url = case url of
 toEither :: e -> Maybe a -> Either e a
 toEither err Nothing = Left err
 toEither _ (Just a) = Right a
+
+textMaybe :: Text -> Maybe Text
+textMaybe txt = bool (Just txt) Nothing $ T.null txt
 
 switchHoldDyn ::
     (MonadWidget t m) =>
