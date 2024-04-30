@@ -113,10 +113,10 @@ passwordSettingsWindow eOpen = mdo
     ePassHash <- performEvent (loadCacheValue passwordStorageKey <$ eOpen)
     let emPassHash = toPasswordHash <$> ePassHash
     dmPassHash <- holdDyn Nothing emPassHash
-    (emChangedPass, eClearOk) <- dialogWindow
+    dialogWindow
         True
         eOpen
-        (leftmost [() <$ emChangedPass, eClearOk])
+        never
         "app-PasswordSettingsWindow"
         "Protect cache of Encoins app"
         $ do
@@ -137,8 +137,6 @@ passwordSettingsWindow eOpen = mdo
                     <$> emChangedPassword
 
             pure (emChangedPassword, eClear)
-
-    pure (emChangedPass, eClearOk)
 
 passwordButtons ::
     (MonadWidget t m) =>
@@ -177,22 +175,8 @@ passwordNotification ::
 passwordNotification eNewPass eReset eOpen =
     widgetHold_ blank $
         leftmost
-            [ elAttr
-                "div"
-                ( "class" =: "app-columns w-row"
-                    <> "style"
-                        =: "display:flex;justify-content:center;"
-                )
-                (text "Password saved!")
-                <$ eNewPass
-            , elAttr
-                "div"
-                ( "class" =: "app-columns w-row"
-                    <> "style"
-                        =: "display:flex;justify-content:center;"
-                )
-                (text "Password cleared!")
-                <$ eReset
+            [ divClass "app-PasswordWindow_Notification" (text "Password saved!") <$ eNewPass
+            , divClass "app-PasswordWindow_Notification" (text "Password cleared!") <$ eReset
             , blank <$ eOpen
             ]
 
