@@ -9,8 +9,9 @@ import Control.Monad ((<=<))
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (decode)
 import Data.ByteString.Lazy (fromStrict)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Time (getCurrentTime)
 import GHCJS.DOM.EventM (on)
@@ -26,7 +27,7 @@ import ENCOINS.Bulletproofs (Secret)
 import ENCOINS.Common.Events
 import ENCOINS.Common.Utils (toJsonText)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
-import ENCOINS.Common.Widgets.Basic (btn)
+import ENCOINS.Common.Widgets.Basic (btn, btnWithBlock)
 
 importWindow ::
     (MonadWidget t m) => Event t () -> m (Event t [Secret], Event t [Secret])
@@ -50,10 +51,8 @@ importMintingKey ::
     Event t ()
     -> m (Event t (Maybe Secret))
 importMintingKey eImportOpen = divClass "app-ImportKey_Container" $ mdo
-    elAttr
-        "div"
-        ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between")
-        $ text "Enter the minting key to import a new coin:"
+    divClass "app-ImportWindow_SubTitle" $
+        text "Enter the minting key to import a new coin:"
     let conf =
             def{_inputElementConfig_setValue = pure ("" <$ eImportOpen)}
                 & ( initialAttributes
@@ -62,20 +61,29 @@ importMintingKey eImportOpen = divClass "app-ImportKey_Container" $ mdo
                                 <> "placeholder" =: "0a00f07d1431910315c05aa5204c5e8f9e0c6..."
                            )
                   )
-    (eImportClose, txt) <- divClass "app-ImportKey_Container_InputAndButton" $ do
-        t <- inputElement conf
-        eClose <- divClass "app-ImportKey_ButtonContainer" $ do
-            btn "button-switching inverted flex-center" "" $ text "Ok"
-        pure (eClose, t)
-    let d = hexToSecret <$> _inputElement_value txt
-    pure $ current d `tag` eImportClose
+                & inputElementConfig_elementConfig
+                . elementConfig_modifyAttributes
+                .~ (("style" =:) . Just <$> updated dBorder)
+    (eImportClose, dmSec, dBorder) <- divClass "app-ImportKey_Container_InputAndButton" $ do
+        dText <- _inputElement_value <$> inputElement conf
+        let dmSecret = hexToSecret <$> dText
+        eClose <-
+            divClass "app-ImportKey_ButtonContainer" $
+                btnWithBlock "button-switching inverted flex-center" "" (isNothing <$> dmSecret) $
+                    text "Ok"
+        let dBorderLine = zipDynWith selectBorderColor dmSecret dText
+        pure (eClose, dmSecret, dBorderLine)
+    pure $ tagPromptlyDyn dmSec eImportClose
+
+selectBorderColor :: Maybe Secret -> Text -> Text
+selectBorderColor mSecret origInput =
+    if T.null origInput
+        then T.empty
+        else maybe "border-color: #ff3e31;" (const "border-color: #00cb7a;") mSecret
 
 importCoinFiles :: (MonadWidget t m) => Event t () -> m (Event t [Secret])
 importCoinFiles eImportOpen = divClass "app-ImportFile_Container" $ mdo
-    elAttr
-        "div"
-        ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between")
-        $ text "Choose a file to import coins:"
+    divClass "app-ImportWindow_SubTitle" $ text "Choose a file to import coins:"
     let conf =
             def{_inputElementConfig_setValue = pure ("" <$ eImportOpen)}
                 & (initialAttributes .~ ("class" =: "app-ImportFile_Input" <> "type" =: "file"))

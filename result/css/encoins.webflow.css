@@ -2223,6 +2223,11 @@ body {
   box-sizing: content-box;
 }
 
+.app-ImportKey_Input:focus {
+  border-color: #3898EC;
+  outline: 0;
+}
+
 /* Import file section */
 
 .app-ImportFile_Container {
@@ -2257,6 +2262,11 @@ body {
   font-size: 18px;
   line-height: 34px;
   box-sizing: content-box;
+}
+
+.app-ImportFile_Input:focus {
+  border-color: #3898EC;
+  outline: 0;
 }
 
 .app-ImportFile_ButtonContainer {
@@ -2565,9 +2575,20 @@ body {
 }
 
 .app-PasswordWindow_Notification {
-  display:flex;
-  justify-content:center;
+  display: flex;
+  justify-content: center;
   margin-top: 10px;
   font-family: Poppins, sans-serif;
   font-size: 18px;
+}
+
+.app-ImportWindow_SubTitle {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    align-items: center;
+    font-family: Poppins, sans-serif;
+    font-size: 18px;
+    line-height: 32px;
 }
