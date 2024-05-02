@@ -2563,3 +2563,11 @@ body {
   width: 250px;
   white-space: nowrap;
 }
+
+.app-PasswordWindow_Notification {
+  display:flex;
+  justify-content:center;
+  margin-top: 10px;
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+}

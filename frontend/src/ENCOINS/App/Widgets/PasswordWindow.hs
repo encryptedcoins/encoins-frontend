@@ -14,7 +14,7 @@ import Backend.Protocol.StrongTypes (PasswordHash (getPassHash), toPasswordHash)
 import Backend.Protocol.Types (PasswordRaw (..))
 import Backend.Utility (hashKeccak512, isHashOfRaw, switchHoldDyn)
 import ENCOINS.App.Widgets.Basic (saveAppData_)
-import ENCOINS.Common.Cache (encoinsV3, passwordSotrageKey)
+import ENCOINS.Common.Cache (encoinsV3, passwordStorageKey)
 import ENCOINS.Common.Events
 import ENCOINS.Common.Events (setFocusDelayOnEvent)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
@@ -109,8 +109,8 @@ passwordSettingsWindow ::
     (MonadWidget t m) =>
     Event t ()
     -> m (Event t (Maybe PasswordRaw), Event t ())
-passwordSettingsWindow eOpen = do
-    ePassHash <- performEvent (loadCacheValue passwordSotrageKey <$ eOpen)
+passwordSettingsWindow eOpen = mdo
+    ePassHash <- performEvent (loadCacheValue passwordStorageKey <$ eOpen)
     let emPassHash = toPasswordHash <$> ePassHash
     dmPassHash <- holdDyn Nothing emPassHash
     dialogWindow
@@ -118,26 +118,44 @@ passwordSettingsWindow eOpen = do
         eOpen
         never
         "app-PasswordSettingsWindow"
-        "Protect cache of Encoins app" $ do
-        ePassOk <- switchHoldDyn dmPassHash $ \case
-            Just passHash -> divClass "app-columns w-row" $ divClass "w-col w-col-12" $ do
-                dmCurPass <- passwordInput "Current password:" False True (pure Nothing) eOpen
-                let dCheckedPass = checkPass passHash <$> dmCurPass
-                dyn_ $ mkErr <$> dCheckedPass <*> dmCurPass
-                return (ffilter id $ updated dCheckedPass)
-            Nothing -> pure never
-        dmNewPass <- divClass "app-PasswordProtect_Window" $ mdo
-            dmPass1 <- divClass "w-col" $ do
-                passwordInput "Enter password:" False True (pure Nothing) eOpen
-            dmPass2 <- divClass "w-col" $ do
-                passwordInput "Repeat password:" True False dmPass1 eOpen
-            return dmPass2
-        dPassOk <- holdDyn False ePassOk
-        (eReset, eClear, eSave) <- elAttr
-            "div"
-            ("class" =: "app-columns w-row app-PasswordSetting_ButtonContainer") $ do
-            eSave' <-
-                btn (mkSaveBtnCls <$> dmPassHash <*> dPassOk <*> dmNewPass) "" $ text "Save"
+        "Protect cache of Encoins app"
+        $ do
+            dPassOk <- passwordChecker dmPassHash eOpen
+
+            dmNewPass <- passwordEnterRepeat eOpen
+
+            (eReset, eClear, eSave) <- passwordButtons dmPassHash dPassOk dmNewPass
+
+            let eNewPass = catMaybes (tagPromptlyDyn dmNewPass eSave)
+
+            passwordNotification eNewPass eReset eOpen
+
+            let emChangedPassword = leftmost [Just <$> eNewPass, Nothing <$ eReset]
+
+            performEvent_ $
+                saveHashedTextToStorage passwordStorageKey . hashKeccak512 . maybe "" getPassRaw
+                    <$> emChangedPassword
+
+            pure (emChangedPassword, eClear)
+
+passwordButtons ::
+    (MonadWidget t m) =>
+    Dynamic t (Maybe PasswordHash)
+    -> Dynamic t Bool
+    -> Dynamic t (Maybe PasswordRaw)
+    -> m (Event t (), Event t (), Event t ())
+passwordButtons dmPassHash dPassOk dmNewPass = do
+    let cls = "button-switching inverted flex-center"
+        mkSaveBtnCls Nothing _ (Just _) = cls
+        mkSaveBtnCls (Just _) True (Just _) = cls
+        mkSaveBtnCls _ _ _ = cls <> " button-disabled"
+        mkClearBtnCls = (cls <>) . bool " button-disabled" ""
+    divClass
+        "app-columns w-row app-PasswordSetting_ButtonContainer"
+        $ do
+            eSave' <- do
+                let dSaveClass = mkSaveBtnCls <$> dmPassHash <*> dPassOk <*> dmNewPass
+                btn dSaveClass "" $ text "Save"
             eReset' <- switchHoldDyn dmPassHash $ \case
                 Just _ ->
                     btn (mkClearBtnCls <$> dPassOk) "white-space: nowrap;" $ text "Reset password"
@@ -146,47 +164,53 @@ passwordSettingsWindow eOpen = do
                 Just _ ->
                     btn "button-switching flex-center" "white-space: nowrap;" $ text "Clean cache"
                 Nothing -> pure never
-            return (eReset', eClear', eSave')
-        let eNewPass = catMaybes (tagPromptlyDyn dmNewPass eSave)
-        performEvent_
-            (saveHashedTextToStorage passwordSotrageKey (hashKeccak512 "") <$ eReset)
-        performEvent_
-            ( saveHashedTextToStorage passwordSotrageKey . hashKeccak512 . getPassRaw
-                <$> eNewPass
-            )
-        widgetHold_ blank $
-            leftmost
-                [ elAttr
-                    "div"
-                    ( "class" =: "app-columns w-row"
-                        <> "style"
-                            =: "display:flex;justify-content:center;"
-                    )
-                    (text "Password saved!")
-                    <$ eNewPass
-                , elAttr
-                    "div"
-                    ( "class" =: "app-columns w-row"
-                        <> "style"
-                            =: "display:flex;justify-content:center;"
-                    )
-                    (text "Password cleared!")
-                    <$ eReset
-                , blank <$ eOpen
-                ]
-        return (leftmost [Just <$> eNewPass, Nothing <$ eReset], eClear)
-    where
-        mkErr _ Nothing = blank
+            pure (eReset', eClear', eSave')
+
+passwordNotification ::
+    (MonadWidget t m) =>
+    Event t PasswordRaw
+    -> Event t ()
+    -> Event t ()
+    -> m ()
+passwordNotification eNewPass eReset eOpen =
+    widgetHold_ blank $
+        leftmost
+            [ divClass "app-PasswordWindow_Notification" (text "Password saved!") <$ eNewPass
+            , divClass "app-PasswordWindow_Notification" (text "Password cleared!") <$ eReset
+            , blank <$ eOpen
+            ]
+
+passwordChecker ::
+    (MonadWidget t m) =>
+    Dynamic t (Maybe PasswordHash)
+    -> Event t ()
+    -> m (Dynamic t Bool)
+passwordChecker dmPassHash eOpen = do
+    let mkErr _ Nothing = blank
         mkErr _ (Just (PasswordRaw "")) = blank
         mkErr c _ = bool (errDiv "Incorrect password") blank c
         checkPass hash (Just raw) = isHashOfRaw (getPassHash hash) (getPassRaw raw)
         checkPass _ Nothing = False
+    ePassOk <- switchHoldDyn dmPassHash $ \case
+        Just passHash -> divClass "app-columns w-row" $ divClass "w-col w-col-12" $ do
+            dmCurPass <- passwordInput "Current password:" False True (pure Nothing) eOpen
+            let dCheckedPass = checkPass passHash <$> dmCurPass
+            dyn_ $ mkErr <$> dCheckedPass <*> dmCurPass
+            return (ffilter id $ updated dCheckedPass)
+        Nothing -> pure never
+    holdDyn False ePassOk
 
-        cls = "button-switching inverted flex-center"
-        mkSaveBtnCls Nothing _ (Just _) = cls
-        mkSaveBtnCls (Just _) True (Just _) = cls
-        mkSaveBtnCls _ _ _ = cls <> " button-disabled"
-        mkClearBtnCls = (cls <>) . bool " button-disabled" ""
+passwordEnterRepeat ::
+    (MonadWidget t m) =>
+    Event t ()
+    -> m (Dynamic t (Maybe PasswordRaw))
+passwordEnterRepeat eOpen =
+    divClass "app-PasswordProtect_Window" $ do
+        dmPass1 <- divClass "w-col" $ do
+            passwordInput "Enter password:" False True (pure Nothing) eOpen
+        dmPass2 <- divClass "w-col" $ do
+            passwordInput "Repeat password:" True False dmPass1 eOpen
+        return dmPass2
 
 passwordInput ::
     (MonadWidget t m) =>
@@ -259,16 +283,17 @@ cleanCacheDialog eOpen = mdo
         eOpen
         (leftmost [eOk, eCancel])
         "app-CleanCacheWindow"
-        "Clean cache" $ do
-        divClass "app-CleanCache_Description" $ do
-            text "This action will reset password and clean cache (remove known coins)!"
-            br
-            text "Are you sure?"
-        elAttr "div" ("class" =: "app-columns w-row app-CleanCache_ButtonContainer") $ do
-            btnOk <- btn "button-switching inverted flex-center" "" $ text "Clean"
-            btnCancel <- btn "button-switching flex-center" "" $ text "Cancel"
-            return (btnOk, btnCancel)
+        "Clean cache"
+        $ do
+            divClass "app-CleanCache_Description" $ do
+                text "This action will reset password and clean cache (remove known coins)!"
+                br
+                text "Are you sure?"
+            elAttr "div" ("class" =: "app-columns w-row app-CleanCache_ButtonContainer") $ do
+                btnOk <- btn "button-switching inverted flex-center" "" $ text "Clean"
+                btnCancel <- btn "button-switching flex-center" "" $ text "Cancel"
+                return (btnOk, btnCancel)
     performEvent_
-        (saveHashedTextToStorage passwordSotrageKey (hashKeccak512 "") <$ eOk)
+        (saveHashedTextToStorage passwordStorageKey (hashKeccak512 "") <$ eOk)
     saveAppData_ Nothing encoinsV3 $ ("" :: Text) <$ eOk
     return eOk

@@ -54,11 +54,12 @@ handleAppStatus ::
     (MonadWidget t m) =>
     Dynamic t Wallet
     -> Event t [AppStatus]
+    -> Event t (Text, Status)
     -> m (Dynamic t Text, Dynamic t Bool, Dynamic t CloudStatusIcon)
-handleAppStatus dWallet elAppStatus = do
+handleAppStatus dWallet elAppStatus eAppStatus = do
     logEvent "AppStatus" elAppStatus
-    eSaveStatus <- fromEventList isSaveStatus elAppStatus
-    eStatus <- fromEventList isStatus elAppStatus
+    eSaveStatus <- getLastStatus isSaveStatus elAppStatus
+    eStatus <- getLastStatus isStatus elAppStatus
     dWalletNetworkStatus <- fetchWalletNetworkStatus dWallet
 
     dStatus <-
@@ -66,7 +67,7 @@ handleAppStatus dWallet elAppStatus = do
             -- Hold NoRelay status once it fired until page reloading.
             (\ev (_, accS) -> if isStatusWantReload accS then Nothing else Just ev)
             (T.empty, Ready)
-            $ leftmost [eStatus, updated dWalletNetworkStatus]
+            $ leftmost [eStatus, updated dWalletNetworkStatus, eAppStatus]
 
     let flatStatus (t, s)
             | isReady s = T.empty
@@ -80,12 +81,12 @@ handleAppStatus dWallet elAppStatus = do
 
     pure (dStatusT, dIsDisableButtons, dCloudStatus)
 
-fromEventList ::
+getLastStatus ::
     (MonadWidget t m) => (a -> Maybe b) -> Event t [a] -> m (Event t b)
-fromEventList f eList = do
-    let emOneStatus = fmap NE.last . NE.nonEmpty . mapMaybe f <$> eList
-    dmOneStatus <- holdDyn Nothing emOneStatus
-    switchHoldDyn dmOneStatus $ \case
+getLastStatus f eList = do
+    let emLastStatus = fmap NE.last . NE.nonEmpty . mapMaybe f <$> eList
+    dmLastStatus <- holdDyn Nothing emLastStatus
+    switchHoldDyn dmLastStatus $ \case
         Nothing -> pure never
         Just s -> do
             ev <- newEvent

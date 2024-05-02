@@ -30,8 +30,7 @@ import Backend.Protocol.Utility
 import Backend.Servant.Requests
 import Backend.Status (Status (..))
 import Backend.Utility
-    ( eventEither
-    , eventMaybe
+    ( eventMaybe
     , switchHoldDyn
     , toEither
     , toText
@@ -114,7 +113,7 @@ encoinsTxWalletMode
                     (BasePath url)
                     dNewTxReqBody
                     eFinalRedeemer
-        let (eNewTxError, eNewTxSuccess) = eventEither eeNewTxResponse
+        let (eNewTxError, eNewTxSuccess) = fanEither eeNewTxResponse
 
         let eTxId = fmap fst eNewTxSuccess
             eTx = fmap snd eNewTxSuccess
@@ -135,7 +134,7 @@ encoinsTxWalletMode
                     (BasePath url)
                     dSubmitReqBody
                     eWalletSignature
-        let (eSubmitError, eSubmitted) = eventEither eeSubmitResponse
+        let (eSubmitError, eSubmitted) = fanEither eeSubmitResponse
 
         -- Tracking the pending transaction
         eConfirmed <- updated <$> holdUniqDyn dUTXOs
@@ -213,7 +212,7 @@ encoinsTxTransferMode
                     (BasePath url)
                     dNewTxReqBody
                     eFireTx
-        let (eNewTxError, eNewTxSuccess) = eventEither eeNewTxResponse
+        let (eNewTxError, eNewTxSuccess) = fanEither eeNewTxResponse
 
         let eTxId = fmap fst eNewTxSuccess
             eTx = fmap snd eNewTxSuccess
@@ -229,7 +228,7 @@ encoinsTxTransferMode
         eeSubmitResponse <- switchHoldDyn dmUrl $ \case
             Nothing -> pure never
             Just url -> submitTxRequestWrapper (BasePath url) dSubmitReqBody eWalletSignature
-        let (eSubmitError, eSubmitted) = eventEither eeSubmitResponse
+        let (eSubmitError, eSubmitted) = fanEither eeSubmitResponse
 
         -- Tracking the pending transaction
         eConfirmed <- updated <$> holdUniqDyn dUTXOs
@@ -321,7 +320,7 @@ encoinsTxLedgerMode
                     (BasePath url)
                     (pure LedgerEncoins)
                     eFireStatus
-        let (eStatusError, eStatusResp) = eventEither eeStatus
+        let (eStatusError, eStatusResp) = fanEither eeStatus
 
         let toLedgerUtxoResult (LedgerUtxoResult xs) = Just xs
             toLedgerUtxoResult _ = Nothing
@@ -354,8 +353,8 @@ encoinsTxLedgerMode
         -- We suppose that 2 secs is sufficient.
         eFireTx <- delay 2 $ leftmost [eSendWithUrl, eServerFallbackWithUrl]
         dmFinalRedeemer <- holdDyn Nothing $ bmRed `tag` eFireTx
-        let (eInvalidChangeAddress, eFinalRedeemer) =
-                eventMaybe InvalidChangeAddress (updated dmFinalRedeemer)
+        let (eNoRedeemer, eFinalRedeemer) = eventMaybe (updated dmFinalRedeemer)
+        let eInvalidChangeAddress = InvalidChangeAddress <$ eNoRedeemer
 
         -- Constructing a new transaction
         let dServerTxReqBody =
@@ -373,7 +372,7 @@ encoinsTxLedgerMode
                     dServerTxReqBody
                     eFinalRedeemerReq
             Nothing -> pure never
-        let (eServerError, eServerOk) = eventEither eeServerTxResponse
+        let (eServerError, eServerOk) = fanEither eeServerTxResponse
 
         -- Tracking the pending transaction
         eConfirmed <- updated <$> holdUniqDyn dUTXOs

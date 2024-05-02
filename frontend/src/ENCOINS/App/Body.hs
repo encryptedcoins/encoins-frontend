@@ -4,32 +4,40 @@ module ENCOINS.App.Body
     ( bodyWidget
     ) where
 
-import Control.Monad.IO.Class (MonadIO (..))
-import Data.Aeson (ToJSON)
 import Data.Bifunctor (first)
 import Data.Maybe (isNothing)
-import Data.Text (Text)
 import Reflex.Dom
 
 import Backend.Protocol.StrongTypes (toPasswordHash)
-import Backend.Protocol.Types
+import Backend.Protocol.Types (PasswordRaw (..))
 import Backend.Utility (switchHoldDyn)
+import Backend.Status (Status(..))
 import Backend.Wallet (walletsSupportedInApp)
-import ENCOINS.App.Widgets.Basic (loadAppDataE, waitForScripts)
+import ENCOINS.App.Widgets.Basic
+    ( loadAppDataE
+    , waitForScripts
+    )
 import ENCOINS.App.Widgets.CloudWindow (cloudSettingsWindow)
 import ENCOINS.App.Widgets.ConnectWindow (connectWindow)
 import ENCOINS.App.Widgets.MainWindow (mainWindow)
 import ENCOINS.App.Widgets.Navbar (navbarWidget)
 import ENCOINS.App.Widgets.Notification
 import ENCOINS.App.Widgets.PasswordWindow
+import ENCOINS.App.Widgets.ReEncryption
+    ( reEncryptCurrentCache
+    , reEncryptOldCache
+    )
 import ENCOINS.App.Widgets.WelcomeWindow
     ( welcomeWallet
     , welcomeWindow
     , welcomeWindowWalletStorageKey
     )
-import ENCOINS.Common.Cache (aesKey, encoinsV3, isCloudOn, passwordSotrageKey)
+import ENCOINS.Common.Cache
+    ( aesKey
+    , isCloudOn
+    , passwordStorageKey
+    )
 import ENCOINS.Common.Events
-import ENCOINS.Common.Utils (toJsonText)
 import ENCOINS.Common.Widgets.Advanced (copiedNotification)
 import ENCOINS.Common.Widgets.Basic (notification)
 import ENCOINS.Common.Widgets.JQuery (jQueryWidget)
@@ -38,7 +46,6 @@ import ENCOINS.Common.Widgets.MoreMenu
     , moreMenuWindow
     )
 import JS.App (loadCacheValue)
-import JS.Website (saveJSON)
 
 bodyContentWidget ::
     (MonadWidget t m) =>
@@ -61,7 +68,11 @@ bodyContentWidget mPass = mdo
     moreMenuWindow moreMenuClass eMoreMenuOpen
 
     (dStatusT, dIsDisableButtons, dCloudStatus) <-
-        handleAppStatus dWallet evStatusList
+        handleAppStatus dWallet evStatusList $
+            leftmost
+                [ ("", CustomStatus "Re-encrypting cache with new password...") <$ eReEncrypt
+                , ("", Ready) <$ eReEncryptDelayed
+                ]
     notification dStatusT
 
     dWallet <- connectWindow walletsSupportedInApp eConnectOpen
@@ -85,13 +96,16 @@ bodyContentWidget mPass = mdo
 
     let eReEncrypt = leftmost [eNewPass, Nothing <$ eCleanOk]
 
-    performEvent_ $
-        fmap (reEncrypt encoinsV3) $
-            attachPromptlyDyn dTokensV3 eReEncrypt
+    -- This delay required for preventing cancelling 'eReEncrypt' event by 'bodyWidget'.
+    -- In the lag between 'eReEncrypt' and 'eNewPassDelayed' we are able to run 'reEncryptOldCache'
+    -- We suppose that 2s is sufficient for re-encryption old cache
+    eReEncryptDelayed <- delay 2 eReEncrypt
 
-    performEvent_ $
-        fmap (reEncrypt aesKey) $
-            attachPromptlyDynWithMaybe (\mKey e -> (,e) <$> mKey) dmKey eReEncrypt
+    -- re-encrypt old available cache with new pass
+    reEncryptOldCache mPass eReEncrypt
+
+    -- re-encrypt current cache with new pass
+    reEncryptCurrentCache dTokensV3 dmKey eReEncrypt
 
     copiedNotification
 
@@ -114,21 +128,11 @@ bodyContentWidget mPass = mdo
         holdUniqDyn
             =<< (holdDyn Nothing $ leftmost $ map updated [dmOldKeyBody, dNewKeyWindow])
 
-    pure $ leftmost [Nothing <$ eCleanOk, eNewPass]
-
--- ReEncryption functions wanted every time when
--- wherever some key is saved with password.
-reEncrypt :: (ToJSON a, MonadIO m) => Text -> (a, Maybe PasswordRaw) -> m ()
-reEncrypt key (d, mNewPass) =
-    saveJSON
-        (getPassRaw <$> mNewPass)
-        key
-        . toJsonText
-        $ d
+    pure eReEncryptDelayed
 
 bodyWidget :: (MonadWidget t m) => m ()
 bodyWidget = waitForScripts blank $ mdo
-    mPass <- toPasswordHash <$> loadCacheValue passwordSotrageKey
+    mPass <- toPasswordHash <$> loadCacheValue passwordStorageKey
     (ePassOk, eCleanCache) <- case mPass of
         Just pass -> first (Just <$>) <$> enterPasswordWindow pass eCleanOk
         Nothing -> do

@@ -42,6 +42,7 @@ library
     ENCOINS.App.Widgets.Navbar
     ENCOINS.App.Widgets.Notification
     ENCOINS.App.Widgets.PasswordWindow
+    ENCOINS.App.Widgets.ReEncryption
     ENCOINS.App.Widgets.SendRequestButton
     ENCOINS.App.Widgets.SendToWalletWindow
     ENCOINS.App.Widgets.TabsSelection

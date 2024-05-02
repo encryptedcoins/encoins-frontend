@@ -6,7 +6,7 @@ module ENCOINS.App.Widgets.Cloud where
 import Backend.Protocol.Types
 import Backend.Servant.Requests (restoreRequest, savePingRequest, saveRequest)
 import Backend.Status (AppStatus, CloudStatusIcon (..))
-import Backend.Utility (eventEither, eventMaybeDynDef, switchHoldDyn, toText)
+import Backend.Utility (eventMaybeDynDef, switchHoldDyn, toText)
 import ENCOINS.App.Widgets.Basic
     ( elementResultJS
     , loadAppData
@@ -136,10 +136,10 @@ saveEncryptedTokens dConditions = do
             let eFireCaching = ffilter (not . null) $ updated dCloudTokens
             tellSaveStatus $ Saving <$ eFireCaching
             eePing <- savePingRequest $ () <$ eFireCaching
-            let (ePingError, ePingResponse) = eventEither eePing
+            let (ePingError, ePingResponse) = fanEither eePing
 
             eeStatusResponse <- saveRequest dCloudTokens $ () <$ ePingResponse
-            let (eCacheError, eStatusResponse) = eventEither eeStatusResponse
+            let (eCacheError, eStatusResponse) = fanEither eeStatusResponse
 
             dStatusResponse <- holdDyn Map.empty eStatusResponse
             let eUpdatedTokens = updated $ updateCacheStatus tokenCache <$> dStatusResponse
@@ -327,7 +327,7 @@ restoreValidTokens dmKey eRestore = do
         Nothing -> pure never
         Just key -> do
             eeResotres <- restoreRequest eRestore
-            let (eRestoreError, eRestoreResponses) = eventEither eeResotres
+            let (eRestoreError, eRestoreResponses) = fanEither eeResotres
             dRestoreResponses <- holdDyn [] eRestoreResponses
             -- logDyn "restoreValidTokens: dRestoreResponses" dRestoreResponses
             updated <$> decryptTokens key dRestoreResponses
