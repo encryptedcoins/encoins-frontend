@@ -62,6 +62,34 @@ headWidget = do
         domEvent Load . fst
             <$> elAttr' "script" ("src" =: "js/md5.js" <> "type" =: "text/javascript") blank
 
+    -- Dex hunter begin
+    eReactLoaded <-
+        domEvent Load . fst
+            <$> elAttr'
+                "script"
+                ( "src" =: "https://unpkg.com/react@18.2.0/umd/react.production.min.js"
+                    <> "type" =: "text/javascript" <> "crossorigin" =: ""
+                )
+                blank
+    eReactDomLoaded <-
+        domEvent Load . fst
+            <$> elAttr'
+                "script"
+                ( "src" =: "https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"
+                    <> "type" =: "text/javascript" <> "crossorigin" =: ""
+                )
+                blank
+    eSwapsLoaded <-
+        domEvent Load . fst
+            <$> elAttr'
+                "script"
+                ( "src" =: "https://unpkg.com/@dexhunterio/swaps@0.0.86/lib/umd/swaps.umd.js"
+                    <> "type" =: "module"
+                )
+                blank
+    -- Dex hunter end
+
+
     dWebFontLoaded <- holdDyn False (True <$ eWebFontLoaded)
     dCSLLoaded <- holdDyn False (True <$ eCSLLoaded)
     dLucidLoaded <- holdDyn False (True <$ eLucidLoaded)
@@ -69,6 +97,11 @@ headWidget = do
     dEd25519Loaded <- holdDyn False (True <$ eEd25519Loaded)
     dCIP14Loaded <- holdDyn False (True <$ eCIP14Loaded)
     dMd5Loaded <- holdDyn False (True <$ eMd5Loaded)
+    -- Dex hunter begin
+    dReactLoaded <- holdDyn False (True <$ eReactLoaded)
+    dReactDomLoaded <- holdDyn False (True <$ eReactDomLoaded)
+    dSwapsLoaded <- holdDyn False (True <$ eSwapsLoaded)
+    -- Dex hunter end
 
     let eScriptsLoaded =
             ffilter (== True) $
@@ -83,6 +116,9 @@ headWidget = do
                         , dEd25519Loaded
                         , dCIP14Loaded
                         , dMd5Loaded
+                        , dReactLoaded
+                        , dReactDomLoaded
+                        , dSwapsLoaded
                         ]
 
     performEvent_ (JS.runHeadScripts <$ eScriptsLoaded)

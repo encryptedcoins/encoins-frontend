@@ -26,6 +26,7 @@ landingPage elemId = do
     titleSection
     communitySection
     featuresSection
+    dexHunterSection
     roadmapSection
     partnersSection
 
@@ -43,7 +44,7 @@ titleSection = section "" "" $ do
     blank
 
 communitySection :: (MonadWidget t m) => m ()
-communitySection = section "" "" $ container "" $ do
+communitySection = section "Community" "" $ container "" $ do
     h4 "Join our community"
     divClass "div-our-resourses" $ ourResourses "83px"
     blank
@@ -115,3 +116,15 @@ partnersSection :: (MonadWidget t m) => m ()
 partnersSection = section "Partners" "div-invisible" $ do
     container "" $ h3 "PARTNERS"
     divClass "div-partners" $ container "" blank
+
+dexHunterSection :: (MonadWidget t m) => m ()
+dexHunterSection =
+    section "DexHunter" "" $ do
+      container "" $ h3 "DEX HUNTER"
+      divClass "main-DexHunter_Container" $
+        elAttr
+            "div"
+            ( "class" =: ""
+                <> "id" =: "dexhunter-root"
+            )
+            blank
