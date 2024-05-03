@@ -2,15 +2,17 @@ module ENCOINS.Website.Widgets.Footer
     ( footerWidget
     ) where
 
-import Data.Text (Text)
+import Data.Text (Text, pack)
+import Data.Version (showVersion)
+import Paths_encoins_frontend (version)
 import Reflex.Dom
 
 import ENCOINS.Common.Widgets.Basic
 import ENCOINS.Website.Widgets.Resourses (ourResourses)
 
 footerWidget :: (MonadWidget t m) => m (Event t (Text, Text))
-footerWidget = divClass "footer wf-section" $
-    divClass "container-footer" $
+footerWidget = divClass "footer wf-section" $ do
+    res <- divClass "container-footer" $
         divClass "columns-footer w-row" $ do
             divClass "column-footer border-right w-col w-col-6" $ do
                 divClass "div-horizontal-margin" $ divClass "div-horizontal-items" $ do
@@ -55,3 +57,13 @@ footerWidget = divClass "footer wf-section" $
                         _ <-
                             lnk "docs/whitepaper.pdf" "" $ divClass "text-footer" $ text "White Paper"
                         return $ leftmost [("Home", "Navbar") <$ eHome, ("ISPO", "Navbar") <$ eISPO, e]
+    versionWidget
+    pure res
+
+versionWidget :: (MonadWidget t m) => m ()
+versionWidget =
+    divClass "main-Version" $
+        divClass "main-Footer_VersionContainer" $
+            divClass "main-Footer_VersionText" $
+                text $
+                    "Encoins frontend v" <> pack (showVersion version)
