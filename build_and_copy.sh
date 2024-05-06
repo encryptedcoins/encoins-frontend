@@ -1,16 +1,11 @@
 #!/bin/bash
 
-printf '\n==== Build Frontend html ====\n\n'
-cabal new-run --project-file=frontend-html.project frontend-html
+source utils.sh
 
-printf '\n==== Build Frontend ====\n\n'
-cabal new-build --ghcjs frontend
+version=$(get_version)
+printf "Current frontend version: %s" "$version"
 
-printf '\n==== Copy js files to result ====\n\n'
-
-cp dist-newstyle/build/x86_64-linux/ghcjs-8.6.0.1/encoins-frontend-0.1.0.0/x/encoins-website/build/encoins-website/encoins-website.jsexe/all.js result/index.js
-cp dist-newstyle/build/x86_64-linux/ghcjs-8.6.0.1/encoins-frontend-0.1.0.0/x/encoins-app/build/encoins-app/encoins-app.jsexe/all.js result/app.js
-cp dist-newstyle/build/x86_64-linux/ghcjs-8.6.0.1/encoins-frontend-0.1.0.0/x/encoins-dao/build/encoins-dao/encoins-dao.jsexe/all.js result/dao.js
+build_prod_js_html_and_copy "$version"
 
 printf '\n==== Copy result to parent directory ====\n\n'
 

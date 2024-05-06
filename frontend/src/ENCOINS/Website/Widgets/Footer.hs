@@ -66,4 +66,4 @@ versionWidget =
         divClass "main-Footer_VersionContainer" $
             divClass "main-Footer_VersionText" $
                 text $
-                    "Encoins frontend v" <> pack (showVersion version)
+                    "v" <> pack (showVersion version)
