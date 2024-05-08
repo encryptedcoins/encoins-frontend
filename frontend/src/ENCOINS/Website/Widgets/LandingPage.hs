@@ -120,7 +120,7 @@ partnersSection = section "Partners" "div-invisible" $ do
 
 dexHunterSection :: (MonadWidget t m) => m ()
 dexHunterSection =
-    section "Buy Encoins" "" $ do
+    section "buy-encoins" "" $ do
         container "" $ h3 "Buy ENCS"
         divClass "main-DexHunter_Container" $
             elAttr "div" ("id" =: "dexhunter-root") blank
