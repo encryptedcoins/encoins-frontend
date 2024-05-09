@@ -36,8 +36,8 @@ navbarWidget dPageFocus = do
                 let dPage = fmap fst dPageFocus
                 eHome <- menuItemWidget "Home" "57" "#" False dPage
                 eISPO <- menuItemWidget "ISPO" "45" "#" False dPage
-                _ <- menuItemWidget "DAO" "45" "https://dao.encoins.io" False dPage
                 _ <- menuItemWidget "APP" "45" "https://app.encoins.io/" False dPage
+                _ <- menuItemWidget "DAO" "45" "https://dao.encoins.io" False dPage
                 _ <- menuItemWidget "Buy ENCS" "100" "#buy-encoins" False dPage
                 _ <- menuItemWidget "White paper" "120" "docs/whitepaper.pdf" False dPage
                 return $ (,"Navbar") <$> leftmost [eHome, eISPO]
