@@ -1492,10 +1492,6 @@ body {
 
   .menu-item-button-left {
     margin-left: 0px;
-    -webkit-align-self: stretch;
-    -ms-flex-item-align: stretch;
-    -ms-grid-row-align: stretch;
-    align-self: stretch;
     -webkit-box-flex: 1;
     -webkit-flex: 1;
     -ms-flex: 1;
