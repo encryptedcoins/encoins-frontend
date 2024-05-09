@@ -5,7 +5,7 @@ module ENCOINS.App
 import Reflex.Dom
 
 import ENCOINS.App.Body (bodyWidget)
-import ENCOINS.Website.Head (headWidget)
+import ENCOINS.Common.Head (headWidget)
 
 app :: IO ()
 app = mainWidgetWithHead headWidget bodyWidget
