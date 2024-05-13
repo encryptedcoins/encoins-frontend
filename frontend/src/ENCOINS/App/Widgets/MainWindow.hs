@@ -64,7 +64,6 @@ mainWindow mPass dWallet dIsDisableButtons dCloudOn dmKey dKeyWasReset eRestore 
 
         -- Restore tokens from remote server and sync it with local cache
         dRestoreResponse <- restoreValidTokens dmKey eRestore
-        logDyn "mainWindow: dRestoreResponse" dRestoreResponse
 
         -- The priority is given to restored tokens
         -- hence the first parameter must be list of restored tokens!

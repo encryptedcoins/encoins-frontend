@@ -57,7 +57,6 @@ migrateTokenCacheV3 mPass dmTokensV3 = do
     eTokensMigrated <- switchHoldDyn dmTokensV3 $ \case
         -- when tokenV3 is empty, try to migrate from previous versions
         Nothing -> do
-            logEvent "In Nothing: eFireMigration" eFireMigration
             migrateCacheV3 mPass eFireMigration
         -- when some tokenV3 exist, return them
         Just _ -> pure never
