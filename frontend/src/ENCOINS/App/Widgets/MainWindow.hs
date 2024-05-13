@@ -8,13 +8,12 @@ import Reflex.Dom
 
 import Backend.Protocol.Types
 import Backend.Status (AppStatus)
-import Backend.Utility (switchHoldDyn)
+import Backend.Utility (switchHoldDyn, unionWith)
 import Backend.Wallet (Wallet (..))
 import ENCOINS.App.Widgets.Basic (loadAppDataME)
 import ENCOINS.App.Widgets.Cloud
     ( resetTokens
     , restoreValidTokens
-    , syncRestoreWithCache
     )
 import ENCOINS.App.Widgets.MainTabs (ledgerTab, transferTab, walletTab)
 import ENCOINS.App.Widgets.Migration (migrateTokenCacheV3)
@@ -65,8 +64,11 @@ mainWindow mPass dWallet dIsDisableButtons dCloudOn dmKey dKeyWasReset eRestore 
 
         -- Restore tokens from remote server and sync it with local cache
         dRestoreResponse <- restoreValidTokens dmKey eRestore
+        logDyn "mainWindow: dRestoreResponse" dRestoreResponse
 
-        let dTokens = zipDynWith syncRestoreWithCache dRestoreResponse dOldTokensMigratedUniq
+        -- The priority is given to restored tokens
+        -- hence the first parameter must be list of restored tokens!
+        let dTokens = zipDynWith (unionWith tcAssetName) dRestoreResponse dOldTokensMigratedUniq
 
         dUpdatedTokensV3 <- case tab of
             WalletTab -> walletTab mPass dWallet dTokens dCloudOn dmKey eWasMigration

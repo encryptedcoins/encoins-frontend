@@ -22,6 +22,7 @@ import Reflex.Dom
 import Witherable (catMaybes)
 import qualified Data.Set as Set
 
+-- O(n * log(n)) instead of O(n^2) in 'nubBy'
 nubWith :: (Ord b) => (a -> b) -> [a] -> [a]
 nubWith f l = snd $ foldl' (func f) (Set.empty, []) l
   where
@@ -29,6 +30,19 @@ nubWith f l = snd $ foldl' (func f) (Set.empty, []) l
           | Set.member x' set = (set, acc)
           | otherwise = (Set.insert x' set, x : acc)
         where x' = f' x
+
+-- Combine two lists efficiently excluding duplicates from both lists
+-- Original 'union' excludes duplicates from last list only.
+-- O((n+m) * log(n+m)) instead of > O(n+m^2)
+-- Give the priority to first list.
+unionWith :: (Ord b) => (a -> b) -> [a] -> [a] -> [a]
+unionWith f l1 l2 =
+  let func f' (set, acc) x
+          | Set.member x' set = (set, acc)
+          | otherwise = (Set.insert x' set, x : acc)
+        where x' = f' x
+      listOfUniq = snd $ foldl' (func f) (Set.empty, []) $ l1 <> l2
+  in listOfUniq
 
 normalizePingUrl :: Text -> Text
 normalizePingUrl url = T.append (T.dropWhileEnd (== '/') url) $ case appNetwork of

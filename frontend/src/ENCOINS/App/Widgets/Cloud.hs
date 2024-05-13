@@ -6,7 +6,7 @@ module ENCOINS.App.Widgets.Cloud where
 import Backend.Protocol.Types
 import Backend.Servant.Requests (restoreRequest, savePingRequest, saveRequest)
 import Backend.Status (AppStatus, CloudStatusIcon (..))
-import Backend.Utility (eventMaybeDynDef, switchHoldDyn, toText)
+import Backend.Utility (eventMaybeDynDef, switchHoldDyn, toText, unionWith)
 import ENCOINS.App.Widgets.Basic
     ( elementResultJS
     , loadAppData
@@ -24,9 +24,8 @@ import Control.Monad ((<=<))
 import qualified Crypto.Hash as Hash
 import Data.Aeson (decodeStrict)
 import Data.Align (align)
-import Data.Function (on)
 import Data.Functor ((<&>))
-import Data.List (find, foldl', union, unionBy)
+import Data.List (find, foldl')
 import Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
@@ -69,7 +68,7 @@ handleUnsavedTokens dCloudOn dmKey dTokenCache eWasMigration = mdo
 
     eTokenWithNewState <- saveTokens dCloudOn dmKey dTokenCacheUniqFired
     -- TODO: consider better union method for eliminating duplicates.
-    dTokenSaveSynched <- foldDyn union [] eTokenWithNewState
+    dTokenSaveSynched <- foldDyn (unionWith tcAssetName) [] eTokenWithNewState
     -- logDyn "handleUnsavedTokens: out" $ showTokens <$> dTokenSaveSynched
     -- Update statuses of dTokenCache before saving on server first one.
     let dTokenCacheUpdated =
@@ -377,10 +376,3 @@ mkTokenCacheV3 name secret =
         else Nothing
     where
         v = secretV secret
-
--- First parameter must be list of restored tokens!
--- List of restored tokens has to avoid duplicated tokens.
--- If assetName and secret are equal then leave token with restored status only.
--- If asset names are equal and secrets are not then add them both.
-syncRestoreWithCache :: [TokenCacheV3] -> [TokenCacheV3] -> [TokenCacheV3]
-syncRestoreWithCache = unionBy (\a b -> on (==) tcAssetName a b && on (==) tcSecret a b)
