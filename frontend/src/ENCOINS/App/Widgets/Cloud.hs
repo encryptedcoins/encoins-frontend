@@ -25,7 +25,7 @@ import qualified Crypto.Hash as Hash
 import Data.Aeson (decodeStrict)
 import Data.Align (align)
 import Data.Functor ((<&>))
-import Data.List (find, foldl')
+import Data.List (find)
 import Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
@@ -295,18 +295,15 @@ resetTokens dmTokens dKeyWasReset =
 -- and save each of them separately
 -- This function synchronize them.
 -- Otherwise dynamic with old tokens rewrite new one.
--- TODO: in case of migration it is better the old cache is empty
--- in case of minting the old cache is bigger
--- in case of new cloud key both caches are the same
--- O(n*m)
+-- O(1) when new token list is empty,
+-- O(n*m) otherwise
 syncOldWithUpdatedTokens :: [TokenCacheV3] -> [TokenCacheV3] -> [TokenCacheV3]
 syncOldWithUpdatedTokens old [] = old
-syncOldWithUpdatedTokens old new = foldl' (update new) [] old
+syncOldWithUpdatedTokens old new = map (update new) old
     where
-        update ns acc o =
-            case find (\n -> tcAssetName o == tcAssetName n) ns of
-                Nothing -> o : acc
-                Just n' -> n' : acc
+        update ns o = case find (\n -> tcAssetName o == tcAssetName n) ns of
+            Nothing -> o
+            Just n' -> n'
 
 -- RESTORE
 
