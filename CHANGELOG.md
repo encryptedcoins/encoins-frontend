@@ -1,5 +1,10 @@
 # Revision history for encoins-frontend
 
+## 0.1.0.3
+
+* Optimize performance of list handlers.
+* Fix bug in ledger. Now it waits for urls loads and fires  initial status request.
+
 ## 0.1.0.2
 
 * Prevent dex to autofocus on loading
