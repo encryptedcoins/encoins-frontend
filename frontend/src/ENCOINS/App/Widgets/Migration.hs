@@ -8,12 +8,12 @@ import Data.Text (Text)
 import Reflex.Dom
 
 import Backend.Protocol.Types (PasswordRaw (..), TokenCacheV3)
-import Backend.Status (AppStatus, Status (..))
+import Backend.Status (AppStatus, MigrateStatus (..))
 import Backend.Utility (switchHoldDyn)
 import ENCOINS.App.Widgets.Basic
     ( loadAppData
     , saveAppData
-    , tellTxStatus
+    , tellMigrateStatus
     )
 import ENCOINS.App.Widgets.Coin (coinV3)
 import ENCOINS.Bulletproofs (Secret)
@@ -78,10 +78,10 @@ migrateCacheV3 mPass ev = do
 
     let dMigrateStatus =
             bool
-                (CustomStatus "Cache structure is updating. Please wait.")
-                Ready
+                MigUpdating
+                MigReady
                 <$> dIsOldCacheEmpty
-    tellTxStatus "App status" $ updated dMigrateStatus
+    tellMigrateStatus $ updated dMigrateStatus
 
     let dCacheV3 = zipDynWith migrateV3 dSecretsV1 dSecretsV2
 
@@ -90,7 +90,7 @@ migrateCacheV3 mPass ev = do
         updated
             <$> loadAppData mPass encoinsV3 "migrateCacheV3-key-eSecretsV3" eSaved id []
 
-    tellTxStatus "App status" $ CacheMigrated <$ eTokensV3
+    tellMigrateStatus $ MigSuccess <$ eTokensV3
     pure eTokensV3
 
 migrateV1 :: [Secret] -> [TokenCacheV3]

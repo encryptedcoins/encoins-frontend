@@ -7,7 +7,7 @@ import Data.Text (Text)
 import Reflex.Dom
 
 import Backend.Protocol.Types (PasswordRaw)
-import Backend.Status (CloudStatusIcon (..))
+import Backend.Status (CloudIconStatus (..))
 import Backend.Utility (space)
 import Backend.Wallet (Wallet (..), currentNetworkApp)
 import ENCOINS.Common.Events
@@ -21,7 +21,7 @@ navbarWidget ::
     -> Dynamic t Bool
     -> Maybe PasswordRaw
     -> Dynamic t Bool
-    -> Dynamic t CloudStatusIcon
+    -> Dynamic t CloudIconStatus
     -> m (Event t (), Event t (), Event t (), Event t ())
 navbarWidget w dIsBlock mPass dIsCloudOn dCloudStatus = do
     elAttr
@@ -73,7 +73,7 @@ cloudIconWidget ::
     (MonadWidget t m) =>
     Dynamic t Bool
     -> Dynamic t Bool
-    -> Dynamic t CloudStatusIcon
+    -> Dynamic t CloudIconStatus
     -> m (Event t ())
 cloudIconWidget dIsCloudOn dIsBlock dCloudStatus = do
     let defaultClass = "menu-item app-Cloud_IconContainer"
@@ -89,7 +89,7 @@ cloudIconWidget dIsCloudOn dIsBlock dCloudStatus = do
                 elDynClass' "div" dIconClassBlockable (pure ())
     pure $ domEvent Click elCloud
 
-selectIconClass :: CloudStatusIcon -> Bool -> Text
+selectIconClass :: CloudIconStatus -> Bool -> Text
 selectIconClass status isOn = case (status, isOn) of
     (_, False) -> "app-Cloud_IconTurnOff"
     (NoTokens, _) -> "app-Cloud_IconTurnOff"

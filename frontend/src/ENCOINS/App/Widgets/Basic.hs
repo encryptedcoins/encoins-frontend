@@ -1,14 +1,22 @@
 module ENCOINS.App.Widgets.Basic where
 
 import Backend.Protocol.Types (PasswordRaw (..))
-import Backend.Status (AppStatus (..), CloudStatusIcon (..), Status (..))
+import Backend.Status
+    ( AppStatus (..)
+    , CloudIconStatus
+    , CloudRestoreStatus
+    , LedgerTxStatus
+    , MigrateStatus
+    , TransferTxStatus
+    , WalletStatus (..)
+    , WalletTxStatus
+    )
 import ENCOINS.Common.Events
 import ENCOINS.Common.Utils (toJsonText)
 import JS.Website (loadJSON, removeKey, saveJSON)
 
 import Control.Monad (void)
 import Data.Aeson (FromJSON, ToJSON, decode, decodeStrict)
-import Data.Bool (bool)
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (fromStrict)
 import Data.Text (Text)
@@ -144,26 +152,53 @@ loadTextFromStorage key = do
     getItem lc key
 
 -- Wallet error element
-walletError :: (MonadWidget t m) => m (Event t Status)
+walletError :: (MonadWidget t m) => m (Event t WalletStatus)
 walletError = do
     dWalletError <- elementResultJS "walletErrorElement" id
     let eWalletError = ffilter ("" /=) $ updated dWalletError
     return $ WalletError <$> eWalletError
 
-tellTxStatus ::
+tellAppStatus ::
     (MonadWidget t m, EventWriter t [AppStatus] m) =>
-    Text -- Category of the status. E.g. 'wallet mode'
-    -> Event t Status
+    Event t AppStatus
     -> m ()
-tellTxStatus title ev =
-    tellEvent $
-        (\x -> singletonL . Tx . bool (title, x) (T.empty, Ready) $ x == Ready) <$> ev
+tellAppStatus ev = tellEvent $ singletonL <$> ev
 
-tellSaveStatus ::
+tellWalletTxStatus ::
     (MonadWidget t m, EventWriter t [AppStatus] m) =>
-    Event t CloudStatusIcon
+    Event t WalletTxStatus
     -> m ()
-tellSaveStatus ev = tellEvent $ (singletonL . Save) <$> ev
+tellWalletTxStatus ev = tellEvent $ (singletonL . WalletTx) <$> ev
+
+tellTransferTxStatus ::
+    (MonadWidget t m, EventWriter t [AppStatus] m) =>
+    Event t TransferTxStatus
+    -> m ()
+tellTransferTxStatus ev = tellEvent $ (singletonL . TransferTx) <$> ev
+
+tellLedgerTxStatus ::
+    (MonadWidget t m, EventWriter t [AppStatus] m) =>
+    Event t LedgerTxStatus
+    -> m ()
+tellLedgerTxStatus ev = tellEvent $ (singletonL . LedgerTx) <$> ev
+
+tellCloudIconStatus ::
+    (MonadWidget t m, EventWriter t [AppStatus] m) =>
+    Event t CloudIconStatus
+    -> m ()
+tellCloudIconStatus ev = tellEvent $ (singletonL . CloudIcon) <$> ev
+
+tellMigrateStatus ::
+    (MonadWidget t m, EventWriter t [AppStatus] m) =>
+    Event t MigrateStatus
+    -> m ()
+tellMigrateStatus ev = tellEvent $ (singletonL . Migrate) <$> ev
+
+tellCloudRestoreStatus ::
+    (MonadWidget t m, EventWriter t [AppStatus] m) =>
+    Event t CloudRestoreStatus
+    -> m ()
+tellCloudRestoreStatus ev = tellEvent $ (singletonL . CloudRestore) <$> ev
 
 -- it added to base from 4.15.0.0
 -- we are on base-4.12.0.0

@@ -2,95 +2,363 @@
 
 module Backend.Status where
 
-import Data.Text (Text, unpack)
+import Backend.Utility (column, space, toText)
+import Data.Bool (bool)
+import Data.Text (Text)
+import qualified Data.Text as T
 
-data Status
-    = -- | The default status
-      Ready
-    | -- | Transaction is passed successfully
-      Success
-    | -- | Transaction is sent to the backend for constructing and balancing
-      Constructing
-    | -- | Transaction is sent to the wallet for signing
-      Signing
-    | -- | Transaction is sent to the backend for submission
-      Submitting
-    | -- | Transaction is submitted to the blockchain
-      Submitted
-    | -- | All errors are gone
-      NoError
-    | -- | All relay are down. Need reload
-      NoRelay
-    | -- | Cache is migrated to new version. Reload wanted.
-      CacheMigrated
-    | -- | Change address is invalid in Ledger mode
-      InvalidChangeAddress
-    | BackendError Text
-    | WalletNetworkError Text
-    | WalletError Text
+data AppStatus
+    = AppReady
     | CustomStatus Text
+    | WalletTx WalletTxStatus
+    | TransferTx TransferTxStatus
+    | LedgerTx LedgerTxStatus
+    | CloudIcon CloudIconStatus
+    | CloudRestore CloudRestoreStatus
+    | Migrate MigrateStatus
+    | WalletInApp WalletStatus
+    deriving stock (Eq)
+
+textAppStatus :: AppStatus -> Text
+textAppStatus appStatus =
+    if isAppReady appStatus
+        then T.empty
+        else case appStatus of
+            AppReady -> T.empty
+            CustomStatus t -> t
+            WalletTx s -> "Wallet mode" <> column <> space <> textWalletTxStatus s
+            TransferTx s -> "Transfer mode" <> column <> space <> textTransferTxStatus s
+            LedgerTx s -> "Ledger mode" <> column <> space <> textLedgerTxStatus s
+            CloudIcon s -> toText s
+            CloudRestore s -> "Cloud" <> column <> space <> textCloudRestoreStatus s
+            Migrate s -> "Migration" <> column <> space <> textMigrateStatus s
+            WalletInApp s -> "Wallet" <> column <> space <> textWalletStatus s
+
+data WalletTxStatus
+    = -- Default, initial status
+      WalTxReady
+    | -- | Transaction is passed successfully
+      WalTxSuccess
+    | -- | Transaction is sent to the backend for constructing and balancing
+      WalTxConstructing
+    | -- | Transaction is sent to the wallet for signing
+      WalTxSigning
+    | -- | Transaction is sent to the backend for submission
+      WalTxSubmitting
+    | -- | Transaction is submitted to the blockchain
+      WalTxSubmitted
+    | -- | All errors are gone
+      WalTxNoError
+    | -- | All relay are down. Need reload
+      WalTxNoRelay
+    | WalTxBackendError Text
     deriving (Eq)
 
-instance Show Status where
-    show Ready = ""
-    show Success = "Transaction finished successfully"
-    show Constructing = "Constructing the transaction..."
-    show Signing = "Please sign the transaction."
-    show Submitting = "Submitting..."
-    show Submitted = "Submitted. Pending the confirmation..."
-    show NoRelay = "All available relays are down!"
-    show CacheMigrated = "Local cache was updated to last version"
-    show InvalidChangeAddress = "ChangeAddress is invalid"
-    show NoError = ""
-    show (BackendError e) = "Error: " <> unpack e
-    show (WalletNetworkError e) = "Error: " <> unpack e
-    show (WalletError e) = "Error: " <> unpack e
-    show (CustomStatus t) = unpack t
+textWalletTxStatus :: WalletTxStatus -> Text
+textWalletTxStatus = \case
+    WalTxReady -> T.empty
+    WalTxSuccess -> "Transaction finished successfully"
+    WalTxConstructing -> "Constructing the transaction..."
+    WalTxSigning -> "Please sign the transaction."
+    WalTxSubmitting -> "Submitting..."
+    WalTxSubmitted -> "Submitted. Pending the confirmation..."
+    WalTxNoRelay -> "All available relays are down!"
+    WalTxNoError -> T.empty
+    WalTxBackendError e -> e
+
+data TransferTxStatus
+    = -- Default, initial status
+      TransTxReady
+    | -- | Transaction is passed successfully
+      TransTxSuccess
+    | -- | Transaction is sent to the backend for constructing and balancing
+      TransTxConstructing
+    | -- | Transaction is sent to the wallet for signing
+      TransTxSigning
+    | -- | Transaction is sent to the backend for submission
+      TransTxSubmitting
+    | -- | Transaction is submitted to the blockchain
+      TransTxSubmitted
+    | -- | All errors are gone
+      TransTxNoError
+    | -- | All relay are down. Need reload
+      TransTxNoRelay
+    | TransTxBackendError Text
+    deriving (Eq)
+
+textTransferTxStatus :: TransferTxStatus -> Text
+textTransferTxStatus = \case
+    TransTxReady -> T.empty
+    TransTxSuccess -> "Transaction finished successfully"
+    TransTxConstructing -> "Constructing the transaction..."
+    TransTxSigning -> "Please sign the transaction."
+    TransTxSubmitting -> "Submitting..."
+    TransTxSubmitted -> "Submitted. Pending the confirmation..."
+    TransTxNoRelay -> "All available relays are down!"
+    TransTxNoError -> T.empty
+    TransTxBackendError e -> "Error" <> column <> space <> e
+
+data LedgerTxStatus
+    = -- Default, initial status
+      LedTxReady
+    | -- | Transaction is passed successfully
+      LedTxSuccess
+    | -- | Transaction is sent to the backend for constructing and balancing
+      LedTxConstructing
+    | -- | Transaction is sent to the wallet for signing
+      LedTxSigning
+    | -- | Transaction is sent to the backend for submission
+      LedTxSubmitting
+    | -- | Transaction is submitted to the blockchain
+      LedTxSubmitted
+    | -- | All errors are gone
+      LedTxNoError
+    | -- | All relay are down. Need reload
+      LedTxNoRelay
+    | -- | Change address is invalid in Ledger mode
+      LedTxInvalidChangeAddress
+    | LedTxBackendError Text
+    deriving (Eq)
+
+textLedgerTxStatus :: LedgerTxStatus -> Text
+textLedgerTxStatus = \case
+    LedTxReady -> T.empty
+    LedTxSuccess -> "Transaction finished successfully"
+    LedTxConstructing -> "Constructing the transaction..."
+    LedTxSigning -> "Please sign the transaction."
+    LedTxSubmitting -> "Submitting..."
+    LedTxSubmitted -> "Submitted. Pending the confirmation..."
+    LedTxNoRelay -> "All available relays are down!"
+    LedTxInvalidChangeAddress -> "ChangeAddress is invalid"
+    LedTxNoError -> T.empty
+    LedTxBackendError e -> "Error" <> column <> space <> e
+
+data WalletStatus
+    = WalletReady
+    | WalletNetworkError Text
+    | WalletError Text
+    deriving (Eq)
+
+textWalletStatus :: WalletStatus -> Text
+textWalletStatus = \case
+    WalletReady -> T.empty
+    WalletNetworkError t -> t
+    WalletError t -> t
+
+data MigrateStatus
+    = MigReady
+    | MigSuccess
+    | MigUpdating
+    deriving (Eq)
+
+textMigrateStatus :: MigrateStatus -> Text
+textMigrateStatus = \case
+    MigReady -> T.empty
+    MigSuccess -> "Local cache was updated to last version"
+    MigUpdating -> "Cache structure is updating. Please wait."
+
+data CloudRestoreStatus = RestoreFail | RestoreSuccess Int
+    deriving stock (Eq)
+
+textCloudRestoreStatus :: CloudRestoreStatus -> Text
+textCloudRestoreStatus = \case
+    RestoreFail -> "Restoring tokens from the cloud failed"
+    RestoreSuccess n -> "Restored " <> toText n <> " tokens from the cloud"
+
+data DaoStatus
+    = DaoReady
+    | DelegateTx DelegateTxStatus
+    | VoteTx VoteTxStatus
+    | WalletInDao WalletStatus
+    deriving stock (Eq)
+
+textDaoStatus :: DaoStatus -> Text
+textDaoStatus daoStatus =
+    if isDaoReady daoStatus
+        then T.empty
+        else case daoStatus of
+            DaoReady -> T.empty
+            DelegateTx s -> "Delegate" <> column <> space <> textDelegateTxStatus s
+            VoteTx s -> "Vote" <> column <> space <> textVoteTxStatus s
+            WalletInDao s -> "Wallet" <> column <> space <> textWalletStatus s
+
+data DelegateTxStatus
+    = DelTxReady
+    | -- | Transaction is passed successfully
+      DelTxSuccess
+    | -- | Transaction is sent to the backend for constructing and balancing
+      DelTxConstructing
+    | -- | Transaction is sent to the wallet for signing
+      DelTxSigning
+    | -- | Transaction is sent to the backend for submission
+      DelTxSubmitting
+    | -- | Transaction is submitted to the blockchain
+      DelTxSubmitted
+    | -- | All errors are gone
+      DelTxNoError
+    | -- | All relay are down. Need reload
+      DelTxNoRelay
+    | DelTxError Text
+    deriving (Eq)
+
+textDelegateTxStatus :: DelegateTxStatus -> Text
+textDelegateTxStatus = \case
+    DelTxReady -> T.empty
+    DelTxSuccess -> "Transaction finished successfully"
+    DelTxConstructing -> "Constructing the transaction..."
+    DelTxSigning -> "Please sign the transaction."
+    DelTxSubmitting -> "Submitting..."
+    DelTxSubmitted -> "Submitted. Pending the confirmation..."
+    DelTxNoRelay -> "All available relays are down!"
+    DelTxNoError -> T.empty
+    DelTxError e -> e
+
+data VoteTxStatus
+    = VoteTxReady
+    | -- | Transaction is passed successfully
+      VoteTxSuccess
+    | -- | Transaction is sent to the backend for constructing and balancing
+      VoteTxConstructing
+    | -- | Transaction is sent to the wallet for signing
+      VoteTxSigning
+    | -- | Transaction is sent to the backend for submission
+      VoteTxSubmitting
+    | -- | Transaction is submitted to the blockchain
+      VoteTxSubmitted
+    | -- | All errors are gone
+      VoteTxNoError
+    | -- | All relay are down. Need reload
+      VoteTxNoRelay
+    | VoteTxError Text
+    deriving (Eq)
+
+textVoteTxStatus :: VoteTxStatus -> Text
+textVoteTxStatus = \case
+    VoteTxReady -> T.empty
+    VoteTxSuccess -> "Transaction finished successfully"
+    VoteTxConstructing -> "Constructing the transaction..."
+    VoteTxSigning -> "Please sign the transaction."
+    VoteTxSubmitting -> "Submitting..."
+    VoteTxSubmitted -> "Submitted. Pending the confirmation..."
+    VoteTxNoRelay -> "All available relays are down!"
+    VoteTxNoError -> T.empty
+    VoteTxError e -> "Error" <> column <> space <> e
 
 -- Check if status is the performant one.
 -- Performant status fires when background operations are processing.
-isTxProcess :: Status -> Bool
-isTxProcess status = status `elem` [Constructing, Signing, Submitting, Submitted]
+isAppProcess :: AppStatus -> Bool
+isAppProcess status =
+    status
+        `elem` [ WalletTx WalTxConstructing
+               , WalletTx WalTxSigning
+               , WalletTx WalTxSubmitting
+               , WalletTx WalTxSubmitted
+               , LedgerTx LedTxConstructing
+               , LedgerTx LedTxSigning
+               , LedgerTx LedTxSubmitting
+               , LedgerTx LedTxSubmitted
+               ]
 
-isStatusWantBlockButtons :: Status -> Bool
-isStatusWantBlockButtons = \case
-    Constructing -> True
-    Signing -> True
-    Submitting -> True
-    Submitted -> True
-    NoRelay -> True
-    InvalidChangeAddress -> True
-    WalletNetworkError _ -> True
+isDelegateTxProcess :: DelegateTxStatus -> Bool
+isDelegateTxProcess status =
+    status `elem` [DelTxConstructing, DelTxSigning, DelTxSubmitting, DelTxSubmitted]
+
+isVoteTxProcess :: VoteTxStatus -> Bool
+isVoteTxProcess status =
+    status
+        `elem` [VoteTxConstructing, VoteTxSigning, VoteTxSubmitting, VoteTxSubmitted]
+
+isAppStatusWantBlockButtons :: AppStatus -> Bool
+isAppStatusWantBlockButtons = \case
+    WalletTx WalTxConstructing -> True
+    WalletTx WalTxSigning -> True
+    WalletTx WalTxSubmitting -> True
+    WalletTx WalTxSubmitted -> True
+    WalletTx WalTxNoRelay -> True
+    TransferTx TransTxConstructing -> True
+    TransferTx TransTxSigning -> True
+    TransferTx TransTxSubmitting -> True
+    TransferTx TransTxSubmitted -> True
+    TransferTx TransTxNoRelay -> True
+    LedgerTx LedTxConstructing -> True
+    LedgerTx LedTxSigning -> True
+    LedgerTx LedTxSubmitting -> True
+    LedgerTx LedTxSubmitted -> True
+    LedgerTx LedTxNoRelay -> True
+    LedgerTx LedTxInvalidChangeAddress -> True
+    WalletInApp (WalletNetworkError _) -> True
+    _ -> False
+
+isDaoStatusWantBlockButtons :: DaoStatus -> Bool
+isDaoStatusWantBlockButtons = \case
+    DelegateTx DelTxConstructing -> True
+    DelegateTx DelTxSigning -> True
+    DelegateTx DelTxSubmitting -> True
+    DelegateTx DelTxSubmitted -> True
+    DelegateTx DelTxNoRelay -> True
+    VoteTx VoteTxConstructing -> True
+    VoteTx VoteTxSigning -> True
+    VoteTx VoteTxSubmitting -> True
+    VoteTx VoteTxSubmitted -> True
+    VoteTx VoteTxNoRelay -> True
+    WalletInDao (WalletNetworkError _) -> True
     _ -> False
 
 relayError :: Text
 relayError = "Relay returned an error!"
 
-isReady :: Status -> Bool
-isReady Ready = True
-isReady _ = False
+isAppReady :: AppStatus -> Bool
+isAppReady status =
+    status
+        `elem` [ AppReady
+               , WalletTx WalTxReady
+               , WalletTx WalTxNoError
+               , TransferTx TransTxReady
+               , TransferTx TransTxNoError
+               , LedgerTx LedTxReady
+               , LedgerTx LedTxNoError
+               , WalletInApp WalletReady
+               , Migrate MigReady
+               ]
 
--- Used to hold status (processing status or with critical error)
--- until Buffer statuses occur.
--- After they fired any status can be shown.
-isBuffer :: Status -> Bool
-isBuffer Ready = True
-isBuffer Success = True
-isBuffer (WalletError _) = True
-isBuffer _ = False
+isDaoReady :: DaoStatus -> Bool
+isDaoReady status =
+    status
+        `elem` [ DaoReady
+               , VoteTx VoteTxReady
+               , VoteTx VoteTxNoError
+               , DelegateTx DelTxReady
+               , DelegateTx DelTxNoError
+               , WalletInDao WalletReady
+               ]
 
-isReadyOrNoError :: Status -> Bool
-isReadyOrNoError Ready = True
-isReadyOrNoError NoError = True
-isReadyOrNoError _ = False
+-- Used to hold status (processing status or with critical error) until Buffer statuses occur.
+-- Buffer statuses are Ready, Tx Success, Tx WalletError
+-- After buffer are fired any status can be shown.
+isDaoBuffer :: DaoStatus -> Bool
+isDaoBuffer (DelegateTx DelTxReady) = True
+isDaoBuffer (DelegateTx DelTxSuccess) = True
+isDaoBuffer (VoteTx VoteTxReady) = True
+isDaoBuffer (VoteTx VoteTxSuccess) = True
+isDaoBuffer (WalletInDao (WalletError _)) = True
+isDaoBuffer _ = False
 
-isWalletError :: Status -> Bool
+isDaoReadyOrNoError :: DaoStatus -> Bool
+isDaoReadyOrNoError (DelegateTx DelTxReady) = True
+isDaoReadyOrNoError (DelegateTx DelTxNoError) = True
+isDaoReadyOrNoError (VoteTx VoteTxReady) = True
+isDaoReadyOrNoError (VoteTx VoteTxNoError) = True
+isDaoReadyOrNoError _ = False
+
+isWalletError :: WalletStatus -> Bool
 isWalletError (WalletError _) = True
 isWalletError _ = False
 
-isStatusWantReload :: Status -> Bool
-isStatusWantReload NoRelay = True
-isStatusWantReload _ = False
+isAppStatusWantReload :: AppStatus -> Bool
+isAppStatusWantReload (WalletTx WalTxNoRelay) = True
+isAppStatusWantReload (TransferTx TransTxNoRelay) = True
+isAppStatusWantReload (LedgerTx LedTxNoRelay) = True
+isAppStatusWantReload _ = False
 
 data UrlStatus
     = UrlEmpty
@@ -109,16 +377,25 @@ isNotValidUrl UrlEmpty = True
 isNotValidUrl UrlInvalid = True
 isNotValidUrl UrlValid = False
 
-data CloudStatusIcon = NoTokens | Saving | AllSaved | FailedSave
+data CloudIconStatus = NoTokens | Saving | AllSaved | FailedSave
     deriving stock (Eq, Show)
 
-data AppStatus = Save CloudStatusIcon | Tx (Text, Status)
-    deriving stock (Eq, Show)
+isCloudIconStatus :: AppStatus -> Maybe CloudIconStatus
+isCloudIconStatus (CloudIcon s) = Just s
+isCloudIconStatus _ = Nothing
 
-isSaveStatus :: AppStatus -> Maybe CloudStatusIcon
-isSaveStatus (Save s) = Just s
-isSaveStatus _ = Nothing
+isCloudRestoreStatus :: AppStatus -> Maybe CloudRestoreStatus
+isCloudRestoreStatus (CloudRestore s) = Just s
+isCloudRestoreStatus _ = Nothing
 
-isStatus :: AppStatus -> Maybe (Text, Status)
-isStatus (Tx s) = Just s
-isStatus _ = Nothing
+isWalletTxStatus :: AppStatus -> Maybe WalletTxStatus
+isWalletTxStatus (WalletTx s) = Just s
+isWalletTxStatus _ = Nothing
+
+isTransferTxStatus :: AppStatus -> Maybe TransferTxStatus
+isTransferTxStatus (TransferTx s) = Just s
+isTransferTxStatus _ = Nothing
+
+isLedgerTxStatus :: AppStatus -> Maybe LedgerTxStatus
+isLedgerTxStatus (LedgerTx s) = Just s
+isLedgerTxStatus _ = Nothing

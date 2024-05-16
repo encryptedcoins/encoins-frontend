@@ -6,7 +6,6 @@ import Data.Text (Text, unpack)
 import qualified Data.Text as T
 import Reflex.Dom
 
-import Backend.Status (Status (..))
 import Backend.Utility (space)
 
 h1 :: (MonadWidget t m) => Text -> m ()
@@ -150,9 +149,3 @@ notification :: (MonadWidget t m) => Dynamic t Text -> m ()
 notification dNotification = do
     divClass "notification" $ do
         divClass "notification-text" $ dynText dNotification
-
--- Other error element
-otherStatus :: (MonadWidget t m) => Event t Text -> m (Event t Status)
-otherStatus eOtherError = do
-    let eOtherStatusNonEmpty = ffilter ("" /=) eOtherError
-    return $ CustomStatus <$> eOtherStatusNonEmpty

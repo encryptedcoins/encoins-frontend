@@ -6,14 +6,19 @@ import qualified Data.Text as T
 import Reflex.Dom
 
 import Backend.Status
-    ( Status (..)
-    , isBuffer
-    , isReadyOrNoError
-    , isStatusWantBlockButtons
-    , isTxProcess
+    ( DaoStatus (..)
+    , DelegateTxStatus (..)
+    , VoteTxStatus (..)
+    , WalletStatus (..)
+    , isDaoBuffer
+    , isDaoReadyOrNoError
+    , isDaoStatusWantBlockButtons
+    , isDelegateTxProcess
+    , isVoteTxProcess
     , isWalletError
+    , textDaoStatus
     )
-import Backend.Utility (column, space, toText)
+import Backend.Utility (space, toText)
 import Backend.Wallet
     ( LucidConfig (..)
     , Wallet (..)
@@ -33,10 +38,10 @@ handleStatus ::
     -> m (Dynamic t Bool, Dynamic t Bool, Dynamic t Text)
 handleStatus dWallet = do
     eVoteStatus <- voteStatus
-    dVoteStatus <- holdDyn Ready eVoteStatus
+    dVoteStatus <- holdDyn VoteTxReady eVoteStatus
 
     eDelegateStatus <- delegateStatus
-    dDelegateStatus <- holdDyn Ready eDelegateStatus
+    dDelegateStatus <- holdDyn DelTxReady eDelegateStatus
 
     (dUnexpectedNetworkB, dUnexpectedNetworkS) <- handleInvalidNetwork dWallet
     (dWalletNotConnectedB, dWalletNotConnectedS) <- handleWalletNone
@@ -48,8 +53,8 @@ handleStatus dWallet = do
 
     let dIsDisableButtons =
             foldDynamicAny
-                [ isTxProcess <$> dDelegateStatus
-                , isTxProcess <$> dVoteStatus
+                [ isDelegateTxProcess <$> dDelegateStatus
+                , isVoteTxProcess <$> dVoteStatus
                 , dUnexpectedNetworkB
                 , dWalletNotConnectedB
                 , dWalletError
@@ -57,28 +62,28 @@ handleStatus dWallet = do
                 ]
     let dIsDisableConnectButton =
             foldDynamicAny
-                [ isTxProcess <$> dDelegateStatus
-                , isTxProcess <$> dVoteStatus
+                [ isDelegateTxProcess <$> dDelegateStatus
+                , isVoteTxProcess <$> dVoteStatus
                 , dUnexpectedNetworkB
                 ]
 
-    let flatStatus (t, s) = bool (t <> column <> space <> toText s) T.empty $ isReadyOrNoError s
+    let flatStatus s = bool (textDaoStatus s) T.empty $ isDaoReadyOrNoError s
 
     let currentStatus =
             leftmost
-                [ ("Vote status",) <$> eVoteStatus
-                , ("Delegate status",) <$> eDelegateStatus
-                , ("Wallet",) <$> updated dUnexpectedNetworkS
-                , ("Wallet",) <$> updated dWalletNotConnectedS
-                , ("Wallet",) <$> eWalletError
-                , ("Wallet",) <$> eHasNotTokenStatus
+                [ VoteTx <$> eVoteStatus
+                , DelegateTx <$> eDelegateStatus
+                , WalletInDao <$> updated dUnexpectedNetworkS
+                , WalletInDao <$> updated dWalletNotConnectedS
+                , WalletInDao <$> eWalletError
+                , WalletInDao <$> eHasNotTokenStatus
                 ]
-    logEvent "Current status" currentStatus
-    dNotification <- foldDyn processStatus ("", Ready) currentStatus
+    logEvent "Current status" $ textDaoStatus <$> currentStatus
+    dNotification <- foldDyn processStatus DaoReady currentStatus
 
     pure (dIsDisableButtons, dIsDisableConnectButton, flatStatus <$> dNotification)
 
-voteStatus :: (MonadWidget t m) => m (Event t Status)
+voteStatus :: (MonadWidget t m) => m (Event t VoteTxStatus)
 voteStatus = do
     eConstruct <- updated <$> elementResultJS "VoteCreateNewTx" id
     eSign <- updated <$> elementResultJS "VoteSignTx" id
@@ -88,17 +93,17 @@ voteStatus = do
     eErr <- updated <$> elementResultJS "VoteError" id
     pure $
         leftmost
-            [ WalletError <$> eErr
-            , Submitted <$ eSubmitted
-            , Submitting <$ eSubmit
-            , Signing <$ eSign
-            , Constructing <$ eConstruct
-            , Ready <$ eReady
+            [ VoteTxError <$> eErr
+            , VoteTxSubmitted <$ eSubmitted
+            , VoteTxSubmitting <$ eSubmit
+            , VoteTxSigning <$ eSign
+            , VoteTxConstructing <$ eConstruct
+            , VoteTxReady <$ eReady
             ]
 
 delegateStatus ::
     (MonadWidget t m) =>
-    m (Event t Status)
+    m (Event t DelegateTxStatus)
 delegateStatus = do
     eConstruct <- updated <$> elementResultJS "DelegateCreateNewTx" id
     eSign <- updated <$> elementResultJS "DelegateSignTx" id
@@ -117,19 +122,19 @@ delegateStatus = do
     eErr <- updated <$> elementResultJS "DelegateError" id
     pure $
         leftmost
-            [ WalletError <$> eErr
-            , Submitted <$ eSubmitted
-            , Submitting <$ eSubmit
-            , Signing <$ eSign
-            , Constructing <$ eConstruct
-            , Success <$ eSuccessDelayed
-            , Ready <$ eReadyDelayed
+            [ DelTxError <$> eErr
+            , DelTxSubmitted <$ eSubmitted
+            , DelTxSubmitting <$ eSubmit
+            , DelTxSigning <$ eSign
+            , DelTxConstructing <$ eConstruct
+            , DelTxSuccess <$ eSuccessDelayed
+            , DelTxReady <$ eReadyDelayed
             ]
 
 handleInvalidNetwork ::
     (MonadWidget t m) =>
     Dynamic t Wallet
-    -> m (Dynamic t Bool, Dynamic t Status)
+    -> m (Dynamic t Bool, Dynamic t WalletStatus)
 handleInvalidNetwork dWallet = do
     dWalletLoad <- elementResultJS "EndWalletLoad" id
     let eLoadedWallet = tagPromptlyDyn dWallet $ updated dWalletLoad
@@ -141,14 +146,15 @@ handleInvalidNetwork dWallet = do
     let mkNetworkMessage isInvalidNetwork message =
             case (isInvalidNetwork, message) of
                 (True, _) -> Just $ WalletNetworkError unexpectedNetwork
-                (False, Ready) -> Nothing
-                (False, _) -> Just Ready
-    dUnexpectedNetworkS <- foldDynMaybe mkNetworkMessage Ready eUnexpectedNetworkB
+                (False, WalletReady) -> Nothing
+                (False, _) -> Just WalletReady
+    dUnexpectedNetworkS <-
+        foldDynMaybe mkNetworkMessage WalletReady eUnexpectedNetworkB
     pure (dUnexpectedNetworkB, dUnexpectedNetworkS)
 
 handleWalletNone ::
     (MonadWidget t m) =>
-    m (Dynamic t Bool, Dynamic t Status)
+    m (Dynamic t Bool, Dynamic t WalletStatus)
 handleWalletNone = do
     eWalletName <- updated <$> elementResultJS "daoWalletNameNotConnected" fromJS
     dWalletMessage <-
@@ -156,9 +162,9 @@ handleWalletNone = do
             ( \w _ ->
                 if w == None
                     then (True, WalletError "Wallet is not connected!")
-                    else (False, NoError)
+                    else (False, WalletReady)
             )
-            (False, NoError)
+            (False, WalletReady)
             eWalletName
     dWalletMessageUniq <- holdUniqDyn dWalletMessage
     pure $ splitDynPure dWalletMessageUniq
@@ -166,23 +172,23 @@ handleWalletNone = do
 handleEncToken ::
     (MonadWidget t m) =>
     Dynamic t Wallet
-    -> m (Dynamic t Bool, Event t Status)
+    -> m (Dynamic t Bool, Event t WalletStatus)
 handleEncToken dWallet = do
     let LucidConfig _ _ encPolicy encName = lucidConfigDao
     let eWalletConnected = ffilter (\w -> walletName w /= None) $ updated dWallet
     let eHasNotToken = not . hasToken encPolicy encName <$> eWalletConnected
     let eHasNotTokenStatus =
             bool
-                NoError
+                WalletReady
                 (WalletError "No ENCS tokens to delegate!")
                 <$> eHasNotToken
     dHasNotToken <- holdDyn False eHasNotToken
     pure (dHasNotToken, eHasNotTokenStatus)
 
-processStatus :: (Text, Status) -> (Text, Status) -> (Text, Status)
+processStatus :: DaoStatus -> DaoStatus -> DaoStatus
 processStatus newSt oldSt =
-    case ( isStatusWantBlockButtons $ snd oldSt
-         , isStatusWantBlockButtons (snd newSt) || isBuffer (snd newSt)
+    case ( isDaoStatusWantBlockButtons oldSt
+         , isDaoStatusWantBlockButtons newSt || isDaoBuffer newSt
          ) of
         (True, False) -> oldSt
         _ -> newSt

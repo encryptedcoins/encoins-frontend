@@ -4,7 +4,7 @@
 module ENCOINS.App.Widgets.CloudWindow where
 
 import Backend.Protocol.Types
-import Backend.Status (CloudStatusIcon (..))
+import Backend.Status (CloudIconStatus (..))
 import Backend.Utility (space, switchHoldDyn)
 import ENCOINS.App.Widgets.Basic (removeCacheKey, saveAppData, saveAppData_)
 import ENCOINS.App.Widgets.Cloud (fetchAesKey, genAesKey)
@@ -27,7 +27,7 @@ cloudSettingsWindow ::
     (MonadWidget t m) =>
     Maybe PasswordRaw
     -> Dynamic t Bool
-    -> Dynamic t CloudStatusIcon
+    -> Dynamic t CloudIconStatus
     -> Event t ()
     -> m (Dynamic t Bool, Dynamic t (Maybe AesKeyRaw), Event t ())
 cloudSettingsWindow mPass cloudCacheFlag dCloudStatus eOpen = mdo
@@ -69,7 +69,7 @@ cloudCheckbox cloudCacheFlag = do
 
 cloudStatusIcon ::
     (MonadWidget t m) =>
-    Dynamic t CloudStatusIcon
+    Dynamic t CloudIconStatus
     -> Dynamic t Bool
     -> m ()
 cloudStatusIcon dCloudStatus dIsSave = do
@@ -79,7 +79,7 @@ cloudStatusIcon dCloudStatus dIsSave = do
         dynText $
             zipDynWith selectSaveStatusNote dCloudStatus dIsSave
 
-selectSaveStatusNote :: CloudStatusIcon -> Bool -> Text
+selectSaveStatusNote :: CloudIconStatus -> Bool -> Text
 selectSaveStatusNote status isCloud =
     let t = case (status, isCloud) of
             (_, False) -> "is turned off"

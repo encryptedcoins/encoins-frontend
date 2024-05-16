@@ -11,7 +11,7 @@ import Reflex.Dom
 import Backend.Protocol.StrongTypes (toPasswordHash)
 import Backend.Protocol.Types (PasswordRaw (..))
 import Backend.Utility (switchHoldDyn)
-import Backend.Status (Status(..))
+import Backend.Status (AppStatus(..))
 import Backend.Wallet (walletsSupportedInApp)
 import ENCOINS.App.Widgets.Basic
     ( loadAppDataE
@@ -70,8 +70,8 @@ bodyContentWidget mPass = mdo
     (dStatusT, dIsDisableButtons, dCloudStatus) <-
         handleAppStatus dWallet evStatusList $
             leftmost
-                [ ("", CustomStatus "Re-encrypting cache with new password...") <$ eReEncrypt
-                , ("", Ready) <$ eReEncryptDelayed
+                [ CustomStatus "Re-encrypting cache with new password..." <$ eReEncrypt
+                , AppReady <$ eReEncryptDelayed
                 ]
     notification dStatusT
 

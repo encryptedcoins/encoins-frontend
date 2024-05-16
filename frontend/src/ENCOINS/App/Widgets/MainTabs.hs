@@ -12,13 +12,19 @@ import Backend.EncoinsTx
     , encoinsTxTransferMode
     , encoinsTxWalletMode
     )
-import Backend.Utility (nubWith)
 import Backend.Environment (getEnvironment)
 import Backend.Protocol.Setup (emergentChangeAddress, ledgerAddress)
 import Backend.Protocol.TxValidity (getAda, getCoinNumber, getDeposit)
 import Backend.Protocol.Types
 import Backend.Servant.Requests (currentRequestWrapper)
-import Backend.Status (AppStatus, Status (..), isStatusWantBlockButtons)
+import Backend.Status
+    ( AppStatus (..)
+    , LedgerTxStatus (..)
+    , TransferTxStatus (..)
+    , WalletTxStatus (..)
+    , isAppStatusWantBlockButtons
+    )
+import Backend.Utility (nubWith)
 import Backend.Wallet (Wallet (..))
 import Config.Config (delegateServerUrl)
 import ENCOINS.App.Widgets.Basic
@@ -26,7 +32,10 @@ import ENCOINS.App.Widgets.Basic
     , elementResultJS
     , saveAppData
     , sectionApp
-    , tellTxStatus
+    , tellAppStatus
+    , tellLedgerTxStatus
+    , tellTransferTxStatus
+    , tellWalletTxStatus
     , walletError
     )
 import ENCOINS.App.Widgets.Cloud
@@ -141,7 +150,7 @@ walletTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp
                             coinMintCollectionV3Widget $
                                 leftmost
                                     [ fmap AddCoin eNewSecret
-                                    , ClearCoins <$ ffilter (== Ready) eStatusUpdate
+                                    , ClearCoins <$ ffilter (== WalTxReady) eStatusUpdate
                                     ]
                         eNewSecret <- coinNewWidget
                         return dCoinsToMint''
@@ -177,9 +186,14 @@ walletTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp
                 , dTokensUpdated
                 )
     eWalletError <- walletError
-    let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
-    dStatus <- holdDyn Ready eStatus
-    tellTxStatus "Wallet mode" eStatus
+    let eStatus =
+            leftmost
+                [ WalletTx <$> eStatusUpdate
+                , WalletInApp <$> eWalletError
+                , WalletTx WalTxNoRelay <$ eUrlError
+                ]
+    dStatus <- holdDyn AppReady eStatus
+    tellAppStatus eStatus
     pure dNewTokensV3
     where
         menuButton =
@@ -214,7 +228,9 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
         transactionBalanceWidget formula (Just TransferMode) " (to Ledger)"
     (dCoins, eSendToLedger, eAddr, dTokensV3) <- containerApp "" $ divClass "app-columns w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
-        let dTokenCache = nubWith tcAssetName <$> zipDynWith (++) dTokenCacheOld (map coinV3 <$> dImportedSecrets)
+        let dTokenCache =
+                nubWith tcAssetName
+                    <$> zipDynWith (++) dTokenCacheOld (map coinV3 <$> dImportedSecrets)
 
         -- Save begin
         dTokenCacheUpdated <-
@@ -242,7 +258,7 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
                     ( zipDynWith
                         (&&)
                         (fmap (not . null) dCoinsToBurn)
-                        (fmap (not . isStatusWantBlockButtons) dStatus)
+                        (fmap (not . isAppStatusWantBlockButtons) dStatus)
                     )
                     ""
                     " Send to Wallet"
@@ -251,7 +267,7 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
                     ( zipDynWith
                         (&&)
                         (fmap (not . null) dCoinsToBurn)
-                        (fmap (not . isStatusWantBlockButtons) dStatus)
+                        (fmap (not . isAppStatusWantBlockButtons) dStatus)
                     )
                     "margin-top: 20px"
                     " Send to Ledger"
@@ -288,9 +304,13 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
     eWalletError <- walletError
     let eStatus =
             leftmost
-                [eWalletError, eStatusUpdate1, eStatusUpdate2, NoRelay <$ eUrlError]
-    dStatus <- holdDyn Ready eStatus
-    tellTxStatus "Transfer mode" eStatus
+                [ WalletInApp <$> eWalletError
+                , TransferTx <$> eStatusUpdate1
+                , TransferTx <$> eStatusUpdate2
+                , TransferTx TransTxNoRelay <$ eUrlError
+                ]
+    dStatus <- holdDyn AppReady eStatus
+    tellAppStatus eStatus
     pure dTokensV3
     where
         menuButton =
@@ -379,7 +399,7 @@ ledgerTab mpass dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp "" "" $
                             coinMintCollectionV3Widget $
                                 leftmost
                                     [ AddCoin <$> eNewSecret
-                                    , ClearCoins <$ ffilter (== Submitted) eStatusUpdate
+                                    , ClearCoins <$ ffilter (== LedTxSubmitted) eStatusUpdate
                                     , AddCoin <$> eAddChange
                                     ]
                         eNewSecret <- coinNewWidget
@@ -427,9 +447,14 @@ ledgerTab mpass dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp "" "" $
                 , dTokensUpdated
                 )
     eWalletError <- walletError
-    let eStatus = leftmost [eStatusUpdate, eWalletError, NoRelay <$ eUrlError]
-    dStatus <- holdDyn Ready eStatus
-    tellTxStatus "Ledger status" eStatus
+    let eStatus =
+            leftmost
+                [ LedgerTx <$> eStatusUpdate
+                , WalletInApp <$> eWalletError
+                , LedgerTx LedTxNoRelay <$ eUrlError
+                ]
+    dStatus <- holdDyn AppReady eStatus
+    tellAppStatus eStatus
     pure dNewTokensV3
     where
         menuButton =
