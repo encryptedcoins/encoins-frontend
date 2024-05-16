@@ -3,13 +3,7 @@ module ENCOINS.App.Widgets.Basic where
 import Backend.Protocol.Types (PasswordRaw (..))
 import Backend.Status
     ( AppStatus (..)
-    , CloudIconStatus
-    , CloudRestoreStatus
-    , LedgerTxStatus
-    , MigrateStatus
-    , TransferTxStatus
     , WalletStatus (..)
-    , WalletTxStatus
     )
 import ENCOINS.Common.Events
 import ENCOINS.Common.Utils (toJsonText)
@@ -163,42 +157,6 @@ tellAppStatus ::
     Event t AppStatus
     -> m ()
 tellAppStatus ev = tellEvent $ singletonL <$> ev
-
-tellWalletTxStatus ::
-    (MonadWidget t m, EventWriter t [AppStatus] m) =>
-    Event t WalletTxStatus
-    -> m ()
-tellWalletTxStatus ev = tellEvent $ (singletonL . WalletTx) <$> ev
-
-tellTransferTxStatus ::
-    (MonadWidget t m, EventWriter t [AppStatus] m) =>
-    Event t TransferTxStatus
-    -> m ()
-tellTransferTxStatus ev = tellEvent $ (singletonL . TransferTx) <$> ev
-
-tellLedgerTxStatus ::
-    (MonadWidget t m, EventWriter t [AppStatus] m) =>
-    Event t LedgerTxStatus
-    -> m ()
-tellLedgerTxStatus ev = tellEvent $ (singletonL . LedgerTx) <$> ev
-
-tellCloudIconStatus ::
-    (MonadWidget t m, EventWriter t [AppStatus] m) =>
-    Event t CloudIconStatus
-    -> m ()
-tellCloudIconStatus ev = tellEvent $ (singletonL . CloudIcon) <$> ev
-
-tellMigrateStatus ::
-    (MonadWidget t m, EventWriter t [AppStatus] m) =>
-    Event t MigrateStatus
-    -> m ()
-tellMigrateStatus ev = tellEvent $ (singletonL . Migrate) <$> ev
-
-tellCloudRestoreStatus ::
-    (MonadWidget t m, EventWriter t [AppStatus] m) =>
-    Event t CloudRestoreStatus
-    -> m ()
-tellCloudRestoreStatus ev = tellEvent $ (singletonL . CloudRestore) <$> ev
 
 -- it added to base from 4.15.0.0
 -- we are on base-4.12.0.0

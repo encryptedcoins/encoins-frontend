@@ -33,9 +33,6 @@ import ENCOINS.App.Widgets.Basic
     , saveAppData
     , sectionApp
     , tellAppStatus
-    , tellLedgerTxStatus
-    , tellTransferTxStatus
-    , tellWalletTxStatus
     , walletError
     )
 import ENCOINS.App.Widgets.Cloud

@@ -15,6 +15,7 @@ import Backend.Status
     , isAppStatusWantReload
     , isCloudIconStatus
     , textAppStatus
+    , isTextAppStatus
     )
 import Backend.Utility (space, switchHoldDyn, toText)
 import Backend.Wallet (Wallet (..))
@@ -87,16 +88,16 @@ handleNotification appStatus previousStatus =
     if isAppStatusWantReload (fst previousStatus)
         then Nothing
         else do
-            s <- getLastStatus appStatus
+            s <- getLastStatus isTextAppStatus appStatus
             pure (s, textAppStatus s)
 
-getLastStatus :: [a] -> Maybe a
-getLastStatus = fmap NE.last . NE.nonEmpty
+getLastStatus :: (a -> Maybe b) -> [a] -> Maybe b
+getLastStatus f = fmap NE.last . NE.nonEmpty . mapMaybe f
 
 getLastStatusE ::
     (MonadWidget t m) => (a -> Maybe b) -> Event t [a] -> m (Event t b)
 getLastStatusE f eList = do
-    let emLastStatus = getLastStatus . mapMaybe f <$> eList
+    let emLastStatus = getLastStatus f <$> eList
     dmLastStatus <- holdDyn Nothing emLastStatus
     switchHoldDyn dmLastStatus $ \case
         Nothing -> pure never

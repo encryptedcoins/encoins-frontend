@@ -61,7 +61,6 @@ mainWindow mPass dWallet dIsDisableButtons dCloudOn dmKey dKeyWasReset eRestore 
                     )
                     $> ()
 
-
         -- Restore tokens from remote server and sync it with local cache
         dRestoreResponse <- restoreValidTokens dmKey eRestore
 

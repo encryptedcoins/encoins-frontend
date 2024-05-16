@@ -6,7 +6,7 @@ module ENCOINS.App.Widgets.Cloud where
 import Backend.Protocol.Types
 import Backend.Servant.Requests (restoreRequest, savePingRequest, saveRequest)
 import Backend.Status
-    ( AppStatus
+    ( AppStatus (..)
     , CloudIconStatus (..)
     , CloudRestoreStatus (..)
     )
@@ -15,8 +15,7 @@ import ENCOINS.App.Widgets.Basic
     ( elementResultJS
     , loadAppData
     , saveAppData
-    , tellCloudIconStatus
-    , tellCloudRestoreStatus
+    , tellAppStatus
     )
 import ENCOINS.Bulletproofs (Secret (..))
 import ENCOINS.Common.Cache (aesKey)
@@ -75,10 +74,10 @@ handleUnsavedTokens dCloudOn dmKey dTokenCache eWasMigration = mdo
                 dTokenCacheUniq
                 dTokenSaveSynched
     let eUnsavedTokens = updated $ selectUnsavedTokens <$> dTokenCacheUpdated
-    tellCloudIconStatus $
+    tellAppStatus $
         leftmost
-            [ AllSaved <$ ffilter null eUnsavedTokens
-            , FailedSave <$ ffilter (not . null) eUnsavedTokens
+            [ CloudIcon AllSaved <$ ffilter null eUnsavedTokens
+            , CloudIcon FailedSave <$ ffilter (not . null) eUnsavedTokens
             ]
     pure dTokenCacheUpdated
 
@@ -130,7 +129,7 @@ saveEncryptedTokens dConditions = do
         (True, Just key, Just (NE.toList -> tokenCache)) -> do
             dCloudTokens <- encryptTokens key tokenCache
             let eFireCaching = ffilter (not . null) $ updated dCloudTokens
-            tellCloudIconStatus $ Saving <$ eFireCaching
+            tellAppStatus $ CloudIcon Saving <$ eFireCaching
             eePing <- savePingRequest $ () <$ eFireCaching
             let (ePingError, ePingResponse) = fanEither eePing
 
@@ -325,10 +324,13 @@ restoreValidTokens dmKey eRestore = do
             eeResotres <- restoreRequest eRestore
             let (eRestoreError, eRestoreResponses) = fanEither eeResotres
             dRestoreResponses <- holdDyn [] eRestoreResponses
-            -- logDyn "restoreValidTokens: dRestoreResponses" dRestoreResponses
             eRes <- updated <$> decryptTokens key dRestoreResponses
-            tellCloudRestoreStatus $
-                leftmost [RestoreFail <$ eRestoreError, RestoreSuccess . length <$> eRes]
+            let restoredNumber = fromMaybe 0 . fmap length
+            tellAppStatus $
+                leftmost
+                    [ CloudRestore RestoreFail <$ eRestoreError
+                    , CloudRestore . RestoreSuccess . restoredNumber <$> eRes
+                    ]
             pure eRes
     holdDyn [] $ fromMaybe [] <$> eTokens
 

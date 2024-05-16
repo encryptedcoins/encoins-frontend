@@ -3,7 +3,6 @@
 module Backend.Status where
 
 import Backend.Utility (column, space, toText)
-import Data.Bool (bool)
 import Data.Text (Text)
 import qualified Data.Text as T
 
@@ -154,7 +153,7 @@ data MigrateStatus
 textMigrateStatus :: MigrateStatus -> Text
 textMigrateStatus = \case
     MigReady -> T.empty
-    MigSuccess -> "Local cache was updated to last version"
+    MigSuccess -> "Local cache was updated to the last version"
     MigUpdating -> "Cache structure is updating. Please wait."
 
 data CloudRestoreStatus = RestoreFail | RestoreSuccess Int
@@ -162,8 +161,8 @@ data CloudRestoreStatus = RestoreFail | RestoreSuccess Int
 
 textCloudRestoreStatus :: CloudRestoreStatus -> Text
 textCloudRestoreStatus = \case
-    RestoreFail -> "Restoring tokens from the cloud failed"
-    RestoreSuccess n -> "Restored " <> toText n <> " tokens from the cloud"
+    RestoreFail -> "Restoring tokens failed"
+    RestoreSuccess n -> "Restored " <> toText n <> " tokens (with duplicates)"
 
 data DaoStatus
     = DaoReady
@@ -384,18 +383,6 @@ isCloudIconStatus :: AppStatus -> Maybe CloudIconStatus
 isCloudIconStatus (CloudIcon s) = Just s
 isCloudIconStatus _ = Nothing
 
-isCloudRestoreStatus :: AppStatus -> Maybe CloudRestoreStatus
-isCloudRestoreStatus (CloudRestore s) = Just s
-isCloudRestoreStatus _ = Nothing
-
-isWalletTxStatus :: AppStatus -> Maybe WalletTxStatus
-isWalletTxStatus (WalletTx s) = Just s
-isWalletTxStatus _ = Nothing
-
-isTransferTxStatus :: AppStatus -> Maybe TransferTxStatus
-isTransferTxStatus (TransferTx s) = Just s
-isTransferTxStatus _ = Nothing
-
-isLedgerTxStatus :: AppStatus -> Maybe LedgerTxStatus
-isLedgerTxStatus (LedgerTx s) = Just s
-isLedgerTxStatus _ = Nothing
+isTextAppStatus :: AppStatus -> Maybe AppStatus
+isTextAppStatus (CloudIcon _) = Nothing
+isTextAppStatus textStatus = Just textStatus
