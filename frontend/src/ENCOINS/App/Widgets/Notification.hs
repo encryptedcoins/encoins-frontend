@@ -58,17 +58,16 @@ handleAppStatus ::
     -> Event t AppStatus
     -> m (Dynamic t Text, Dynamic t Bool, Dynamic t CloudIconStatus, Dynamic t Bool)
 handleAppStatus dWallet eAppStatusList eOtherTxStatus = do
-    logEvent "AppStatus" $ fmap textAppStatus <$> eAppStatusList
-
-    eCloudIconStatus <- getLastStatusE isCloudIconStatus eAppStatusList
     dWalletNetworkStatus <- fetchWalletNetworkStatus dWallet
-
     let eStatusNotification =
             leftmost
                 [ eAppStatusList
                 , singletonL . WalletInApp <$> updated dWalletNetworkStatus
                 , singletonL <$> eOtherTxStatus
                 ]
+    logEvent "AppStatus" $ fmap textAppStatus <$> eStatusNotification
+
+    eCloudIconStatus <- getLastStatusE isCloudIconStatus eAppStatusList
 
     dStatusText <-
         foldDynMaybe
