@@ -7,9 +7,9 @@ printf "Current frontend version: %s" "$version"
 
 printf '\n\n==== Build frontend for development ====\n'
 if ! build_dev; then
-  printf "\n\nBuilding is failed."
+  printf "\n\nBuilding is failed.\n"
 else
-  printf "Dev is built successfully!"
+  printf "Dev v$version is built successfully!"
   if copy_js "$version"; then
     if ! caddy run; then
       printf "\n\nCaddy running is failed."

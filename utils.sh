@@ -47,7 +47,7 @@ copy_js() {
       if ! copy_dao "$1"; then
         printf "\n\nCoping dao is failed."
       else
-        printf "\nCopping is successful!\n\n"
+        printf "\nCoping is successful!\n\n"
       fi
     fi
   fi
