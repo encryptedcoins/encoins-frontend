@@ -12,7 +12,7 @@ import Backend.Status
     , WalletStatus (..)
     , isDaoBuffer
     , isDaoReadyOrNoError
-    , isDaoStatusWantBlockButtons
+    , isDaoTotalBlock
     , isDelegateTxProcess
     , isVoteTxProcess
     , isWalletError
@@ -64,7 +64,6 @@ handleStatus dWallet = do
             foldDynamicAny
                 [ isDelegateTxProcess <$> dDelegateStatus
                 , isVoteTxProcess <$> dVoteStatus
-                , dUnexpectedNetworkB
                 ]
 
     let flatStatus s = bool (textDaoStatus s) T.empty $ isDaoReadyOrNoError s
@@ -187,8 +186,8 @@ handleEncToken dWallet = do
 
 processStatus :: DaoStatus -> DaoStatus -> DaoStatus
 processStatus newSt oldSt =
-    case ( isDaoStatusWantBlockButtons oldSt
-         , isDaoStatusWantBlockButtons newSt || isDaoBuffer newSt
+    case ( isDaoTotalBlock oldSt
+         , isDaoTotalBlock newSt || isDaoBuffer newSt
          ) of
         (True, False) -> oldSt
         _ -> newSt

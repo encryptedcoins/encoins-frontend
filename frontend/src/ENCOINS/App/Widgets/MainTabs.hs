@@ -22,7 +22,7 @@ import Backend.Status
     , LedgerTxStatus (..)
     , TransferTxStatus (..)
     , WalletTxStatus (..)
-    , isAppStatusWantBlockButtons
+    , isAppTotalBlock
     )
 import Backend.Utility (nubWith)
 import Backend.Wallet (Wallet (..))
@@ -255,7 +255,7 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
                     ( zipDynWith
                         (&&)
                         (fmap (not . null) dCoinsToBurn)
-                        (fmap (not . isAppStatusWantBlockButtons) dStatus)
+                        (fmap (not . isAppTotalBlock) dStatus)
                     )
                     ""
                     " Send to Wallet"
@@ -264,7 +264,7 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
                     ( zipDynWith
                         (&&)
                         (fmap (not . null) dCoinsToBurn)
-                        (fmap (not . isAppStatusWantBlockButtons) dStatus)
+                        (fmap (not . isAppTotalBlock) dStatus)
                     )
                     "margin-top: 20px"
                     " Send to Ledger"

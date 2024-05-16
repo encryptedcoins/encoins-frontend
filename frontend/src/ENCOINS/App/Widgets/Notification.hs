@@ -11,11 +11,12 @@ import Backend.Status
     ( AppStatus (..)
     , CloudIconStatus (..)
     , WalletStatus (..)
-    , isAppStatusWantBlockButtons
+    , isAppTotalBlock
     , isAppStatusWantReload
     , isCloudIconStatus
     , textAppStatus
     , isTextAppStatus
+    , isAppTxProcessingBlock
     )
 import Backend.Utility (space, switchHoldDyn, toText)
 import Backend.Wallet (Wallet (..))
@@ -55,7 +56,7 @@ handleAppStatus ::
     Dynamic t Wallet
     -> Event t [AppStatus]
     -> Event t AppStatus
-    -> m (Dynamic t Text, Dynamic t Bool, Dynamic t CloudIconStatus)
+    -> m (Dynamic t Text, Dynamic t Bool, Dynamic t CloudIconStatus, Dynamic t Bool)
 handleAppStatus dWallet eAppStatusList eOtherTxStatus = do
     logEvent "AppStatus" $ fmap textAppStatus <$> eAppStatusList
 
@@ -75,11 +76,12 @@ handleAppStatus dWallet eAppStatusList eOtherTxStatus = do
             (AppReady, T.empty)
             eStatusNotification
 
-    let dIsDisableButtons = (isAppStatusWantBlockButtons . fst) <$> dStatusText
+    let dIsBlockAllButtons = (isAppTotalBlock . fst) <$> dStatusText
+    let dIsBlockConnectButton = (isAppTxProcessingBlock . fst) <$> dStatusText
 
     dCloudIconStatus <- holdDyn NoTokens eCloudIconStatus
 
-    pure (snd <$> dStatusText, dIsDisableButtons, dCloudIconStatus)
+    pure (snd <$> dStatusText, dIsBlockAllButtons, dCloudIconStatus, dIsBlockConnectButton)
 
 handleNotification ::
     [AppStatus] -> (AppStatus, Text) -> Maybe (AppStatus, Text)

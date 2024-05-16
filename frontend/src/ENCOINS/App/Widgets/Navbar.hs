@@ -22,8 +22,9 @@ navbarWidget ::
     -> Maybe PasswordRaw
     -> Dynamic t Bool
     -> Dynamic t CloudIconStatus
+    -> Dynamic t Bool
     -> m (Event t (), Event t (), Event t (), Event t ())
-navbarWidget w dIsBlock mPass dIsCloudOn dCloudStatus = do
+navbarWidget w dIsBlockAll mPass dIsCloudOn dCloudStatus dIsBlockConnect = do
     elAttr
         "div"
         ( "data-animation" =: "default"
@@ -45,9 +46,9 @@ navbarWidget w dIsBlock mPass dIsCloudOn dCloudStatus = do
                     text currentNetworkApp
             divClass "menu-div-empty" blank
             elAttr "nav" ("role" =: "navigation" <> "class" =: "nav-menu w-nav-menu") $ do
-                eConnect <- connectWidget w dIsBlock
-                eCloud <- cloudIconWidget dIsCloudOn dIsBlock dCloudStatus
-                eLocker <- lockerWidget mPass dIsBlock
+                eConnect <- connectWidget w dIsBlockConnect
+                eCloud <- cloudIconWidget dIsCloudOn dIsBlockAll dCloudStatus
+                eLocker <- lockerWidget mPass dIsBlockAll
                 eMore <-
                     moreMenuWidget
                         (NavMoreMenuClass "common-Nav_Container_MoreMenu" "common-Nav_MoreMenu")

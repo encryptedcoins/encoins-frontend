@@ -267,8 +267,8 @@ isVoteTxProcess status =
     status
         `elem` [VoteTxConstructing, VoteTxSigning, VoteTxSubmitting, VoteTxSubmitted]
 
-isAppStatusWantBlockButtons :: AppStatus -> Bool
-isAppStatusWantBlockButtons = \case
+isAppTxProcessingBlock :: AppStatus -> Bool
+isAppTxProcessingBlock = \case
     WalletTx WalTxConstructing -> True
     WalletTx WalTxSigning -> True
     WalletTx WalTxSubmitting -> True
@@ -285,11 +285,18 @@ isAppStatusWantBlockButtons = \case
     LedgerTx LedTxSubmitted -> True
     LedgerTx LedTxNoRelay -> True
     LedgerTx LedTxInvalidChangeAddress -> True
+    _ -> False
+
+isAppNetworkBlock :: AppStatus -> Bool
+isAppNetworkBlock = \case
     WalletInApp (WalletNetworkError _) -> True
     _ -> False
 
-isDaoStatusWantBlockButtons :: DaoStatus -> Bool
-isDaoStatusWantBlockButtons = \case
+isAppTotalBlock :: AppStatus -> Bool
+isAppTotalBlock s = isAppTxProcessingBlock s || isAppNetworkBlock s
+
+isDaoTxProcessingBlock :: DaoStatus -> Bool
+isDaoTxProcessingBlock = \case
     DelegateTx DelTxConstructing -> True
     DelegateTx DelTxSigning -> True
     DelegateTx DelTxSubmitting -> True
@@ -300,8 +307,15 @@ isDaoStatusWantBlockButtons = \case
     VoteTx VoteTxSubmitting -> True
     VoteTx VoteTxSubmitted -> True
     VoteTx VoteTxNoRelay -> True
+    _ -> False
+
+isDaoNetworkBlock :: DaoStatus -> Bool
+isDaoNetworkBlock = \case
     WalletInDao (WalletNetworkError _) -> True
     _ -> False
+
+isDaoTotalBlock :: DaoStatus -> Bool
+isDaoTotalBlock s = isDaoTxProcessingBlock s || isDaoNetworkBlock s
 
 relayError :: Text
 relayError = "Relay returned an error!"
