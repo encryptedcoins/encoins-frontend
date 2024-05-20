@@ -2583,14 +2583,14 @@ body {
 }
 
 .app-ImportWindow_SubTitle {
-    display: -webkit-box;
-    display: -webkit-flex;
-    display: -ms-flexbox;
-    display: flex;
-    align-items: center;
-    font-family: Poppins, sans-serif;
-    font-size: 18px;
-    line-height: 32px;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  align-items: center;
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
 }
 
 .main-DexHunter_Container {
@@ -2598,4 +2598,23 @@ body {
   align-items: center;
   justify-content: center;
   margin-top: 50px;
+}
+
+.main-Version {
+  display: inline;
+}
+
+.main-Footer_VersionContainer {
+  align-items: center;
+  justify-content: center;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  padding-bottom: 30px;
+}
+
+.main-Footer_VersionText {
+  font-family: Poppins, sans-serif;
+  font-size: 20px;
 }
