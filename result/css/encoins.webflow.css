@@ -2592,3 +2592,10 @@ body {
     font-size: 18px;
     line-height: 32px;
 }
+
+.main-DexHunter_Container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 50px;
+}
