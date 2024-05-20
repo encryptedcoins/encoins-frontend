@@ -6,7 +6,7 @@ module ENCOINS.App.Widgets.Cloud where
 import Backend.Protocol.Types
 import Backend.Servant.Requests (restoreRequest, savePingRequest, saveRequest)
 import Backend.Status (AppStatus, CloudStatusIcon (..))
-import Backend.Utility (eventMaybeDynDef, switchHoldDyn, toText)
+import Backend.Utility (eventMaybeDynDef, switchHoldDyn, toText, unionWith)
 import ENCOINS.App.Widgets.Basic
     ( elementResultJS
     , loadAppData
@@ -24,9 +24,8 @@ import Control.Monad ((<=<))
 import qualified Crypto.Hash as Hash
 import Data.Aeson (decodeStrict)
 import Data.Align (align)
-import Data.Function (on)
 import Data.Functor ((<&>))
-import Data.List (find, foldl', union, unionBy)
+import Data.List (find)
 import Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
@@ -46,8 +45,6 @@ handleUnsavedTokens ::
     -> Event t ()
     -> m (Dynamic t [TokenCacheV3])
 handleUnsavedTokens dCloudOn dmKey dTokenCache eWasMigration = mdo
-    -- logDyn "handleUnsavedTokens: dCloudOn" dCloudOn
-    -- logDyn "handleUnsavedTokens: dmKey" dmKey
     dTokenCacheUniq <- holdUniqDyn dTokenCache
 
     -- create save trigger when cache contains un-saved tokens
@@ -57,27 +54,21 @@ handleUnsavedTokens dCloudOn dmKey dTokenCache eWasMigration = mdo
                 )
                 dTokenCacheUpdated
                 (updated dTokenCacheUniq)
-    -- logEvent "handleUnsavedTokens: cache has unsaved tokens" $ () <$ eTokenCacheUniqFired
 
     -- or create trigger of saving when migration was occurred
     let eTokenCacheMigrated = tagPromptlyDyn dTokenCacheUpdated eWasMigration
-    -- logEvent "handleUnsavedTokens: migration occurred" $ () <$ eTokenCacheMigrated
 
     let eSaveTrigger = leftmost [eTokenCacheMigrated, eTokenCacheUniqFired]
     dTokenCacheUniqFired <- holdDyn [] eSaveTrigger
-    -- logDyn "handleUnsavedTokens: in" $ showTokens <$> dTokenCacheUniqFired
 
     eTokenWithNewState <- saveTokens dCloudOn dmKey dTokenCacheUniqFired
-    -- TODO: consider better union method for eliminating duplicates.
-    dTokenSaveSynched <- foldDyn union [] eTokenWithNewState
-    -- logDyn "handleUnsavedTokens: out" $ showTokens <$> dTokenSaveSynched
+    dTokenSaveSynched <- foldDyn (unionWith tcAssetName) [] eTokenWithNewState
     -- Update statuses of dTokenCache before saving on server first one.
     let dTokenCacheUpdated =
             zipDynWith
-                updateMintedTokens
+                syncOldWithUpdatedTokens
                 dTokenCacheUniq
                 dTokenSaveSynched
-    -- logDyn "handleUnsavedTokens: final cache" $ showTokens <$> dTokenCacheUpdated
     let eUnsavedTokens = updated $ selectUnsavedTokens <$> dTokenCacheUpdated
     tellSaveStatus $
         leftmost
@@ -98,7 +89,7 @@ saveTokens dCloudOn dmKey dTokens = mdo
     let dSaveConditions = zipDynWith (,) dCloudOn dmKey
     -- Select unpinned tokens in cache
     let dmUnpinnedTokens = selectUnsavedTokens <$> dTokens
-    -- Combine all condition in a tuple
+    -- Combine all condition to the tuple
     let dFullConditions = combineConditions dSaveConditions dmUnpinnedTokens
 
     (eSaveError, eTokenSaveAttemptOne) <-
@@ -304,15 +295,15 @@ resetTokens dmTokens dKeyWasReset =
 -- and save each of them separately
 -- This function synchronize them.
 -- Otherwise dynamic with old tokens rewrite new one.
--- TODO: consider use MVar or TWar to manage state.
--- O(n^2)
-updateMintedTokens :: [TokenCacheV3] -> [TokenCacheV3] -> [TokenCacheV3]
-updateMintedTokens old new = foldl' (update new) [] old
+-- O(1) when new token list is empty,
+-- O(n*m) otherwise
+syncOldWithUpdatedTokens :: [TokenCacheV3] -> [TokenCacheV3] -> [TokenCacheV3]
+syncOldWithUpdatedTokens old [] = old
+syncOldWithUpdatedTokens old new = map (update new) old
     where
-        update ns acc o =
-            case find (\n -> tcAssetName o == tcAssetName n) ns of
-                Nothing -> o : acc
-                Just n' -> n' : acc
+        update ns o = case find (\n -> tcAssetName o == tcAssetName n) ns of
+            Nothing -> o
+            Just n' -> n'
 
 -- RESTORE
 
@@ -377,10 +368,3 @@ mkTokenCacheV3 name secret =
         else Nothing
     where
         v = secretV secret
-
--- First parameter must be list of restored tokens!
--- List of restored tokens has to avoid duplicated tokens.
--- If assetName and secret are equal then leave token with restored status only.
--- If asset names are equal and secrets are not then add them both.
-syncRestoreWithCache :: [TokenCacheV3] -> [TokenCacheV3] -> [TokenCacheV3]
-syncRestoreWithCache = unionBy (\a b -> on (==) tcAssetName a b && on (==) tcSecret a b)

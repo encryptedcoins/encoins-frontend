@@ -58,7 +58,7 @@ build_prod_js_and_copy() {
   if ! build_prod; then
     printf "\n\nBuilding is failed."
   else
-    printf "Building is successful!"
+    printf "Prod is built successfully!"
     copy_js "$1"
   fi
 }

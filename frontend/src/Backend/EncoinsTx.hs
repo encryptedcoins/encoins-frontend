@@ -279,7 +279,7 @@ encoinsTxLedgerMode
     dCoinsMint
     eSend
     dUrls = mdo
-        eInit <- delay 0.01 =<< newEvent
+        let eInit = updated dUrls
 
         let emUsedUrl =
                 leftmost
@@ -377,6 +377,7 @@ encoinsTxLedgerMode
         -- Tracking the pending transaction
         eConfirmed <- updated <$> holdUniqDyn dUTXOs
         let eAllRelayDown = filterLeft $ toEither () <$> emUrl
+        logEvent "encoinsTxLedgerMode: eAllRelayDown" eAllRelayDown
 
         let eStatus =
                 leftmost
