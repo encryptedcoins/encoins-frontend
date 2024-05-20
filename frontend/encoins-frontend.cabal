@@ -1,6 +1,6 @@
 cabal-version: 3.0
 name:          encoins-frontend
-version:       0.1.0.1
+version:       0.1.0.2
 build-type:    Simple
 author:
   Vladimir Sinyakov
@@ -11,7 +11,7 @@ maintainer:    team@encoins.io
 library
   default-language:   Haskell2010
   ghc-options:        -Wall -Wno-unrecognised-pragmas
-  other-modules:   Paths_encoins_frontend
+  other-modules:      Paths_encoins_frontend
   exposed-modules:
     Backend.EncoinsTx
     Backend.Environment
@@ -51,6 +51,7 @@ library
     ENCOINS.App.Widgets.WelcomeWindow
     ENCOINS.Common.Cache
     ENCOINS.Common.Events
+    ENCOINS.Common.Head
     ENCOINS.Common.Language
     ENCOINS.Common.Utils
     ENCOINS.Common.Widgets.Advanced

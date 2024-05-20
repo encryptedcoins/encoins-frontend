@@ -56,10 +56,8 @@ body {
 }
 
 .menu-selector {
-  width: 25px;
-  height: 4px;
+  height: 1px;
   border: 1px solid #000;
-  border-radius: 29px;
   background-color: #fff;
 }
 
@@ -1494,10 +1492,6 @@ body {
 
   .menu-item-button-left {
     margin-left: 0px;
-    -webkit-align-self: stretch;
-    -ms-flex-item-align: stretch;
-    -ms-grid-row-align: stretch;
-    align-self: stretch;
     -webkit-box-flex: 1;
     -webkit-flex: 1;
     -ms-flex: 1;

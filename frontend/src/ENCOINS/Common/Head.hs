@@ -1,4 +1,4 @@
-module ENCOINS.Website.Head
+module ENCOINS.Common.Head
     ( headWidget
     ) where
 
@@ -6,6 +6,7 @@ import Reflex.Dom
 
 import qualified JS.Website as JS
 
+-- Head for app and dao
 headWidget :: (MonadWidget t m) => m ()
 headWidget = do
     meta $ "charset" =: "utf-8"
@@ -40,46 +41,35 @@ headWidget = do
                     <> "type" =: "text/javascript"
                 )
                 blank
-    eWebpageLoaded <-
+    eCSLLoaded <-
         domEvent Load . fst
-            <$> elAttr' "script" ("src" =: "js/Webpage.js" <> "type" =: "text/javascript") blank
-
-    -- Dex hunter begin
-    eReactLoaded <-
+            <$> elAttr' "script" ("src" =: "js/CSL.js" <> "type" =: "text/javascript") blank
+    eLucidLoaded <-
         domEvent Load . fst
-            <$> elAttr'
-                "script"
-                ( "src" =: "https://unpkg.com/react@18.2.0/umd/react.production.min.js"
-                    <> "type" =: "text/javascript" <> "crossorigin" =: ""
-                )
-                blank
-    eReactDomLoaded <-
+            <$> elAttr' "script" ("src" =: "js/Lucid.js" <> "type" =: "text/javascript") blank
+    eCommonLoaded <-
+        domEvent Load . fst
+            <$> elAttr' "script" ("src" =: "js/Common.js" <> "type" =: "text/javascript") blank
+    eEd25519Loaded <-
         domEvent Load . fst
             <$> elAttr'
                 "script"
-                ( "src" =: "https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"
-                    <> "type" =: "text/javascript" <> "crossorigin" =: ""
-                )
+                ("src" =: "js/noble-ed25519.js" <> "type" =: "text/javascript")
                 blank
-    eSwapsLoaded <-
+    eCIP14Loaded <-
         domEvent Load . fst
-            <$> elAttr'
-                "script"
-                ( "src" =: "https://unpkg.com/@dexhunterio/swaps@0.0.98/lib/umd/swaps.umd.js"
-                    <> "type" =: "module"
-                )
-                blank
-    -- Dex hunter end
-
+            <$> elAttr' "script" ("src" =: "js/cip14.js" <> "type" =: "text/javascript") blank
+    eMd5Loaded <-
+        domEvent Load . fst
+            <$> elAttr' "script" ("src" =: "js/md5.js" <> "type" =: "text/javascript") blank
 
     dWebFontLoaded <- holdDyn False (True <$ eWebFontLoaded)
-    dWebpageLoaded <- holdDyn False (True <$ eWebpageLoaded)
-
-    -- Dex hunter begin
-    dReactLoaded <- holdDyn False (True <$ eReactLoaded)
-    dReactDomLoaded <- holdDyn False (True <$ eReactDomLoaded)
-    dSwapsLoaded <- holdDyn False (True <$ eSwapsLoaded)
-    -- Dex hunter end
+    dCSLLoaded <- holdDyn False (True <$ eCSLLoaded)
+    dLucidLoaded <- holdDyn False (True <$ eLucidLoaded)
+    dCommonLoaded <- holdDyn False (True <$ eCommonLoaded)
+    dEd25519Loaded <- holdDyn False (True <$ eEd25519Loaded)
+    dCIP14Loaded <- holdDyn False (True <$ eCIP14Loaded)
+    dMd5Loaded <- holdDyn False (True <$ eMd5Loaded)
 
     let eScriptsLoaded =
             ffilter (== True) $
@@ -88,10 +78,12 @@ headWidget = do
                         (zipDynWith (&&))
                         (pure True)
                         [ dWebFontLoaded
-                        , dWebpageLoaded
-                        , dReactLoaded
-                        , dReactDomLoaded
-                        , dSwapsLoaded
+                        , dCommonLoaded
+                        , dCSLLoaded
+                        , dLucidLoaded
+                        , dEd25519Loaded
+                        , dCIP14Loaded
+                        , dMd5Loaded
                         ]
 
     performEvent_ (JS.runHeadScripts <$ eScriptsLoaded)

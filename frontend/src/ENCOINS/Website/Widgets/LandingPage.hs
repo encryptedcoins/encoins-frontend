@@ -8,6 +8,7 @@ import Data.Text (Text)
 import Reflex.Dom
 import Reflex.ScriptDependent (widgetHoldUntilDefined)
 
+import ENCOINS.Common.Events
 import ENCOINS.Common.Widgets.Basic
 import ENCOINS.Website.Widgets.Basic
 import ENCOINS.Website.Widgets.Resourses (ourResourses)
@@ -119,12 +120,7 @@ partnersSection = section "Partners" "div-invisible" $ do
 
 dexHunterSection :: (MonadWidget t m) => m ()
 dexHunterSection =
-    section "DexHunter" "" $ do
-      container "" $ h3 "DEX HUNTER"
-      divClass "main-DexHunter_Container" $
-        elAttr
-            "div"
-            ( "class" =: ""
-                <> "id" =: "dexhunter-root"
-            )
-            blank
+    section "buy-encoins" "" $ do
+        container "" $ h3 "Buy ENCS"
+        divClass "main-DexHunter_Container" $
+            elAttr "div" ("id" =: "dexhunter-root") blank
