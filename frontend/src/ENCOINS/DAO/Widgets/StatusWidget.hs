@@ -11,7 +11,7 @@ import Backend.Status
     , VoteTxStatus (..)
     , WalletStatus (..)
     , isDaoBuffer
-    , isDaoReadyOrNoError
+    , isDaoReady
     , isDaoTotalBlock
     , isDelegateTxProcess
     , isVoteTxProcess
@@ -66,7 +66,7 @@ handleStatus dWallet = do
                 , isVoteTxProcess <$> dVoteStatus
                 ]
 
-    let flatStatus s = bool (textDaoStatus s) T.empty $ isDaoReadyOrNoError s
+    let flatStatus s = bool (textDaoStatus s) T.empty $ isDaoReady s
 
     let currentStatus =
             leftmost
@@ -160,7 +160,7 @@ handleWalletNone = do
         foldDyn
             ( \w _ ->
                 if w == None
-                    then (True, WalletError "Wallet is not connected!")
+                    then (True, WalletFail "Wallet is not connected!")
                     else (False, WalletReady)
             )
             (False, WalletReady)
@@ -179,7 +179,7 @@ handleEncToken dWallet = do
     let eHasNotTokenStatus =
             bool
                 WalletReady
-                (WalletError "No ENCS tokens to delegate!")
+                (WalletFail "No ENCS tokens to delegate!")
                 <$> eHasNotToken
     dHasNotToken <- holdDyn False eHasNotToken
     pure (dHasNotToken, eHasNotTokenStatus)

@@ -150,7 +150,7 @@ walletError :: (MonadWidget t m) => m (Event t WalletStatus)
 walletError = do
     dWalletError <- elementResultJS "walletErrorElement" id
     let eWalletError = ffilter ("" /=) $ updated dWalletError
-    return $ WalletError <$> eWalletError
+    return $ WalletFail <$> eWalletError
 
 tellAppStatus ::
     (MonadWidget t m, EventWriter t [AppStatus] m) =>

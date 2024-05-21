@@ -36,8 +36,6 @@ textAppStatus appStatus =
 data WalletTxStatus
     = -- Default, initial status
       WalTxReady
-    | -- | Transaction is passed successfully
-      WalTxSuccess
     | -- | Transaction is sent to the backend for constructing and balancing
       WalTxConstructing
     | -- | Transaction is sent to the wallet for signing
@@ -46,8 +44,6 @@ data WalletTxStatus
       WalTxSubmitting
     | -- | Transaction is submitted to the blockchain
       WalTxSubmitted
-    | -- | All errors are gone
-      WalTxNoError
     | -- | All relay are down. Need reload
       WalTxNoRelay
     | WalTxBackendError Text
@@ -56,20 +52,16 @@ data WalletTxStatus
 textWalletTxStatus :: WalletTxStatus -> Text
 textWalletTxStatus = \case
     WalTxReady -> T.empty
-    WalTxSuccess -> "Transaction finished successfully"
     WalTxConstructing -> "Constructing the transaction..."
     WalTxSigning -> "Please sign the transaction."
     WalTxSubmitting -> "Submitting..."
     WalTxSubmitted -> "Submitted. Pending the confirmation..."
     WalTxNoRelay -> "All available relays are down!"
-    WalTxNoError -> T.empty
     WalTxBackendError e -> e
 
 data TransferTxStatus
     = -- Default, initial status
       TransTxReady
-    | -- | Transaction is passed successfully
-      TransTxSuccess
     | -- | Transaction is sent to the backend for constructing and balancing
       TransTxConstructing
     | -- | Transaction is sent to the wallet for signing
@@ -78,8 +70,6 @@ data TransferTxStatus
       TransTxSubmitting
     | -- | Transaction is submitted to the blockchain
       TransTxSubmitted
-    | -- | All errors are gone
-      TransTxNoError
     | -- | All relay are down. Need reload
       TransTxNoRelay
     | TransTxBackendError Text
@@ -88,30 +78,20 @@ data TransferTxStatus
 textTransferTxStatus :: TransferTxStatus -> Text
 textTransferTxStatus = \case
     TransTxReady -> T.empty
-    TransTxSuccess -> "Transaction finished successfully"
     TransTxConstructing -> "Constructing the transaction..."
     TransTxSigning -> "Please sign the transaction."
     TransTxSubmitting -> "Submitting..."
     TransTxSubmitted -> "Submitted. Pending the confirmation..."
     TransTxNoRelay -> "All available relays are down!"
-    TransTxNoError -> T.empty
     TransTxBackendError e -> "Error" <> column <> space <> e
 
 data LedgerTxStatus
     = -- Default, initial status
       LedTxReady
-    | -- | Transaction is passed successfully
-      LedTxSuccess
     | -- | Transaction is sent to the backend for constructing and balancing
       LedTxConstructing
-    | -- | Transaction is sent to the wallet for signing
-      LedTxSigning
-    | -- | Transaction is sent to the backend for submission
-      LedTxSubmitting
     | -- | Transaction is submitted to the blockchain
       LedTxSubmitted
-    | -- | All errors are gone
-      LedTxNoError
     | -- | All relay are down. Need reload
       LedTxNoRelay
     | -- | Change address is invalid in Ledger mode
@@ -122,27 +102,23 @@ data LedgerTxStatus
 textLedgerTxStatus :: LedgerTxStatus -> Text
 textLedgerTxStatus = \case
     LedTxReady -> T.empty
-    LedTxSuccess -> "Transaction finished successfully"
     LedTxConstructing -> "Constructing the transaction..."
-    LedTxSigning -> "Please sign the transaction."
-    LedTxSubmitting -> "Submitting..."
     LedTxSubmitted -> "Submitted. Pending the confirmation..."
     LedTxNoRelay -> "All available relays are down!"
     LedTxInvalidChangeAddress -> "ChangeAddress is invalid"
-    LedTxNoError -> T.empty
     LedTxBackendError e -> "Error" <> column <> space <> e
 
 data WalletStatus
     = WalletReady
     | WalletNetworkError Text
-    | WalletError Text
+    | WalletFail Text
     deriving (Eq)
 
 textWalletStatus :: WalletStatus -> Text
 textWalletStatus = \case
     WalletReady -> T.empty
     WalletNetworkError t -> t
-    WalletError t -> t
+    WalletFail t -> t
 
 data MigrateStatus
     = MigReady
@@ -193,10 +169,6 @@ data DelegateTxStatus
       DelTxSubmitting
     | -- | Transaction is submitted to the blockchain
       DelTxSubmitted
-    | -- | All errors are gone
-      DelTxNoError
-    | -- | All relay are down. Need reload
-      DelTxNoRelay
     | DelTxError Text
     deriving (Eq)
 
@@ -208,14 +180,10 @@ textDelegateTxStatus = \case
     DelTxSigning -> "Please sign the transaction."
     DelTxSubmitting -> "Submitting..."
     DelTxSubmitted -> "Submitted. Pending the confirmation..."
-    DelTxNoRelay -> "All available relays are down!"
-    DelTxNoError -> T.empty
     DelTxError e -> e
 
 data VoteTxStatus
     = VoteTxReady
-    | -- | Transaction is passed successfully
-      VoteTxSuccess
     | -- | Transaction is sent to the backend for constructing and balancing
       VoteTxConstructing
     | -- | Transaction is sent to the wallet for signing
@@ -224,23 +192,16 @@ data VoteTxStatus
       VoteTxSubmitting
     | -- | Transaction is submitted to the blockchain
       VoteTxSubmitted
-    | -- | All errors are gone
-      VoteTxNoError
-    | -- | All relay are down. Need reload
-      VoteTxNoRelay
     | VoteTxError Text
     deriving (Eq)
 
 textVoteTxStatus :: VoteTxStatus -> Text
 textVoteTxStatus = \case
     VoteTxReady -> T.empty
-    VoteTxSuccess -> "Transaction finished successfully"
     VoteTxConstructing -> "Constructing the transaction..."
     VoteTxSigning -> "Please sign the transaction."
     VoteTxSubmitting -> "Submitting..."
     VoteTxSubmitted -> "Submitted. Pending the confirmation..."
-    VoteTxNoRelay -> "All available relays are down!"
-    VoteTxNoError -> T.empty
     VoteTxError e -> "Error" <> column <> space <> e
 
 -- Check if status is the performant one.
@@ -253,8 +214,6 @@ isAppProcess status =
                , WalletTx WalTxSubmitting
                , WalletTx WalTxSubmitted
                , LedgerTx LedTxConstructing
-               , LedgerTx LedTxSigning
-               , LedgerTx LedTxSubmitting
                , LedgerTx LedTxSubmitted
                ]
 
@@ -280,8 +239,6 @@ isAppTxProcessingBlock = \case
     TransferTx TransTxSubmitted -> True
     TransferTx TransTxNoRelay -> True
     LedgerTx LedTxConstructing -> True
-    LedgerTx LedTxSigning -> True
-    LedgerTx LedTxSubmitting -> True
     LedgerTx LedTxSubmitted -> True
     LedgerTx LedTxNoRelay -> True
     LedgerTx LedTxInvalidChangeAddress -> True
@@ -301,12 +258,10 @@ isDaoTxProcessingBlock = \case
     DelegateTx DelTxSigning -> True
     DelegateTx DelTxSubmitting -> True
     DelegateTx DelTxSubmitted -> True
-    DelegateTx DelTxNoRelay -> True
     VoteTx VoteTxConstructing -> True
     VoteTx VoteTxSigning -> True
     VoteTx VoteTxSubmitting -> True
     VoteTx VoteTxSubmitted -> True
-    VoteTx VoteTxNoRelay -> True
     _ -> False
 
 isDaoNetworkBlock :: DaoStatus -> Bool
@@ -325,11 +280,8 @@ isAppReady status =
     status
         `elem` [ AppReady
                , WalletTx WalTxReady
-               , WalletTx WalTxNoError
                , TransferTx TransTxReady
-               , TransferTx TransTxNoError
                , LedgerTx LedTxReady
-               , LedgerTx LedTxNoError
                , WalletInApp WalletReady
                , Migrate MigReady
                ]
@@ -339,32 +291,22 @@ isDaoReady status =
     status
         `elem` [ DaoReady
                , VoteTx VoteTxReady
-               , VoteTx VoteTxNoError
                , DelegateTx DelTxReady
-               , DelegateTx DelTxNoError
                , WalletInDao WalletReady
                ]
 
 -- Used to hold status (processing status or with critical error) until Buffer statuses occur.
--- Buffer statuses are Ready, Tx Success, Tx WalletError
+-- Buffer statuses are Ready, Tx Success, Tx WalletFail
 -- After buffer are fired any status can be shown.
 isDaoBuffer :: DaoStatus -> Bool
 isDaoBuffer (DelegateTx DelTxReady) = True
 isDaoBuffer (DelegateTx DelTxSuccess) = True
 isDaoBuffer (VoteTx VoteTxReady) = True
-isDaoBuffer (VoteTx VoteTxSuccess) = True
-isDaoBuffer (WalletInDao (WalletError _)) = True
+isDaoBuffer (WalletInDao (WalletFail _)) = True
 isDaoBuffer _ = False
 
-isDaoReadyOrNoError :: DaoStatus -> Bool
-isDaoReadyOrNoError (DelegateTx DelTxReady) = True
-isDaoReadyOrNoError (DelegateTx DelTxNoError) = True
-isDaoReadyOrNoError (VoteTx VoteTxReady) = True
-isDaoReadyOrNoError (VoteTx VoteTxNoError) = True
-isDaoReadyOrNoError _ = False
-
 isWalletError :: WalletStatus -> Bool
-isWalletError (WalletError _) = True
+isWalletError (WalletFail _) = True
 isWalletError _ = False
 
 isAppStatusWantReload :: AppStatus -> Bool
