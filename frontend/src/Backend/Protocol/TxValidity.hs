@@ -4,7 +4,10 @@ module Backend.Protocol.TxValidity where
 
 import Backend.Protocol.Fees (protocolFees)
 import Backend.Protocol.Types
-import Backend.Status (Status (..), isTxProcess)
+import Backend.Status
+    ( AppStatus
+    , isAppProcess
+    )
 import Backend.Utility (space, toText)
 import Backend.Wallet (Wallet (..), WalletName (..), currentNetworkApp)
 import CSL (TransactionUnspentOutput (..), amount, coin)
@@ -34,7 +37,7 @@ txValidityWallet ::
     EncoinsMode
     -> Maybe Text
     -> Integer
-    -> Status
+    -> AppStatus
     -> Wallet
     -> Secrets
     -> Secrets
@@ -67,7 +70,7 @@ txValidityWallet mode mUrl maxAda s Wallet{..} toBurn toMint =
         cond3 =
             (balance + fees + 5) * 1_000_000
                 < sum (map (fromJust . decodeText . coin . amount . output) walletUTXOs)
-        cond4 = not $ isTxProcess s
+        cond4 = not $ isAppProcess s
         cond5 = not $ null toMint
         cond6 = length coins >= 2
         cond7 = length coins <= 5
@@ -101,7 +104,7 @@ txValidityLedger ::
     EncoinsMode
     -> Maybe Text
     -> Integer
-    -> Status
+    -> AppStatus
     -> Secrets
     -> Secrets
     -> TxValidity
@@ -132,7 +135,7 @@ txValidityLedger mode mUrl maxAda s toBurn toMint =
         cond1 = mode == LedgerMode
         cond2 = mode == LedgerMode
         cond3 = mode == LedgerMode
-        cond4 = not $ isTxProcess s
+        cond4 = not $ isAppProcess s
         cond5 = not $ null toMint
         cond6 = length coins >= 2
         cond7 = mode == LedgerMode

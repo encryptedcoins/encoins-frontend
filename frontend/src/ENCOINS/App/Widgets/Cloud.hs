@@ -5,13 +5,17 @@ module ENCOINS.App.Widgets.Cloud where
 
 import Backend.Protocol.Types
 import Backend.Servant.Requests (restoreRequest, savePingRequest, saveRequest)
-import Backend.Status (AppStatus, CloudStatusIcon (..))
+import Backend.Status
+    ( AppStatus (..)
+    , CloudIconStatus (..)
+    , CloudRestoreStatus (..)
+    )
 import Backend.Utility (eventMaybeDynDef, switchHoldDyn, toText, unionWith)
 import ENCOINS.App.Widgets.Basic
     ( elementResultJS
     , loadAppData
     , saveAppData
-    , tellSaveStatus
+    , tellAppStatus
     )
 import ENCOINS.Bulletproofs (Secret (..))
 import ENCOINS.Common.Cache (aesKey)
@@ -70,10 +74,10 @@ handleUnsavedTokens dCloudOn dmKey dTokenCache eWasMigration = mdo
                 dTokenCacheUniq
                 dTokenSaveSynched
     let eUnsavedTokens = updated $ selectUnsavedTokens <$> dTokenCacheUpdated
-    tellSaveStatus $
+    tellAppStatus $
         leftmost
-            [ AllSaved <$ ffilter null eUnsavedTokens
-            , FailedSave <$ ffilter (not . null) eUnsavedTokens
+            [ CloudIcon AllSaved <$ ffilter null eUnsavedTokens
+            , CloudIcon FailedSave <$ ffilter (not . null) eUnsavedTokens
             ]
     pure dTokenCacheUpdated
 
@@ -125,7 +129,7 @@ saveEncryptedTokens dConditions = do
         (True, Just key, Just (NE.toList -> tokenCache)) -> do
             dCloudTokens <- encryptTokens key tokenCache
             let eFireCaching = ffilter (not . null) $ updated dCloudTokens
-            tellSaveStatus $ Saving <$ eFireCaching
+            tellAppStatus $ CloudIcon Saving <$ eFireCaching
             eePing <- savePingRequest $ () <$ eFireCaching
             let (ePingError, ePingResponse) = fanEither eePing
 
@@ -309,7 +313,7 @@ syncOldWithUpdatedTokens old new = map (update new) old
 
 -- restore tokens saved on cloud server
 restoreValidTokens ::
-    (MonadWidget t m) =>
+    (MonadWidget t m, EventWriter t [AppStatus] m) =>
     Dynamic t (Maybe AesKeyRaw)
     -> Event t ()
     -> m (Dynamic t [TokenCacheV3])
@@ -320,8 +324,14 @@ restoreValidTokens dmKey eRestore = do
             eeResotres <- restoreRequest eRestore
             let (eRestoreError, eRestoreResponses) = fanEither eeResotres
             dRestoreResponses <- holdDyn [] eRestoreResponses
-            -- logDyn "restoreValidTokens: dRestoreResponses" dRestoreResponses
-            updated <$> decryptTokens key dRestoreResponses
+            eRes <- updated <$> decryptTokens key dRestoreResponses
+            let restoredNumber = fromMaybe 0 . fmap length
+            tellAppStatus $
+                leftmost
+                    [ CloudRestore RestoreFail <$ eRestoreError
+                    , CloudRestore . RestoreSuccess . restoredNumber <$> eRes
+                    ]
+            pure eRes
     holdDyn [] $ fromMaybe [] <$> eTokens
 
 -- Return the tokens that the aes key is able to decrypt
@@ -346,13 +356,9 @@ decryptTokens key dRestores = do
                         )
                         . (decodeStrict . encodeUtf8 :: Text -> Maybe [(AssetName, Text)])
             dmDecryptedTokens <- elementResultJS resId f
-            -- logDyn "decryptTokens: dmDecryptedTokens" dmDecryptedTokens
             pure $ updated dmDecryptedTokens
 
-    -- logEvent "decryptTokens: emlmTokens" emlmTokens
     dRes <- holdDyn Nothing emlmTokens
-    -- logDyn "decryptTokens: number of tokens" $ length <$> dRes
-    -- logDyn "decryptTokens: decrypted tokens" $ showTokens <$> dRes
     pure dRes
 
 mkTokenCacheV3 :: AssetName -> Secret -> Maybe TokenCacheV3

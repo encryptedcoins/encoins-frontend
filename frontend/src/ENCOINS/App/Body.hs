@@ -11,7 +11,7 @@ import Reflex.Dom
 import Backend.Protocol.StrongTypes (toPasswordHash)
 import Backend.Protocol.Types (PasswordRaw (..))
 import Backend.Utility (switchHoldDyn)
-import Backend.Status (Status(..))
+import Backend.Status (AppStatus(..))
 import Backend.Wallet (walletsSupportedInApp)
 import ENCOINS.App.Widgets.Basic
     ( loadAppDataE
@@ -55,10 +55,11 @@ bodyContentWidget mPass = mdo
     (ePassOpen, eConnectOpen, eCloudOpen, eMoreMenuOpen) <-
         navbarWidget
             dWallet
-            dIsDisableButtons
+            dIsBlockAllButtons
             mPass
             dCloudOn
             dCloudStatus
+            dIsBlockConnectButton
 
     let moreMenuClass =
             WindowMoreMenuClass
@@ -67,11 +68,11 @@ bodyContentWidget mPass = mdo
                 "common-MoreMenu_Link"
     moreMenuWindow moreMenuClass eMoreMenuOpen
 
-    (dStatusT, dIsDisableButtons, dCloudStatus) <-
+    (dStatusT, dIsBlockAllButtons, dCloudStatus, dIsBlockConnectButton) <-
         handleAppStatus dWallet evStatusList $
             leftmost
-                [ ("", CustomStatus "Re-encrypting cache with new password...") <$ eReEncrypt
-                , ("", Ready) <$ eReEncryptDelayed
+                [ CustomStatus "Re-encrypting cache with new password..." <$ eReEncrypt
+                , AppReady <$ eReEncryptDelayed
                 ]
     notification dStatusT
 
@@ -88,7 +89,7 @@ bodyContentWidget mPass = mdo
             mainWindow
                 mPass
                 dWallet
-                dIsDisableButtons
+                dIsBlockAllButtons
                 dCloudOn
                 dmKey
                 dResetTokens

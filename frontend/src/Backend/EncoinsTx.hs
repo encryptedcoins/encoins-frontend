@@ -28,7 +28,11 @@ import Backend.Protocol.Utility
     , mkWalletRedeemer
     )
 import Backend.Servant.Requests
-import Backend.Status (Status (..))
+import Backend.Status
+    ( LedgerTxStatus (..)
+    , TransferTxStatus (..)
+    , WalletTxStatus (..)
+    )
 import Backend.Utility
     ( eventMaybe
     , switchHoldDyn
@@ -51,7 +55,7 @@ encoinsTxWalletMode ::
     -> Dynamic t Secrets
     -> Event t ()
     -> Dynamic t [Text]
-    -> m (Dynamic t [AssetName], Event t Status, Dynamic t Text)
+    -> m (Dynamic t [AssetName], Event t WalletTxStatus, Dynamic t Text)
 encoinsTxWalletMode
     dWallet
     dBulletproofParams
@@ -142,13 +146,13 @@ encoinsTxWalletMode
 
         let eStatus =
                 leftmost
-                    [ Ready <$ eConfirmed
-                    , NoRelay <$ eAllRelayDown
-                    , Constructing <$ eFireRedeemer
-                    , Signing <$ eNewTxSuccess
-                    , Submitting <$ eWalletSignature
-                    , Submitted <$ eSubmitted
-                    , (BackendError . ("Relay returned error: " <>))
+                    [ WalTxReady <$ eConfirmed
+                    , WalTxNoRelay <$ eAllRelayDown
+                    , WalTxConstructing <$ eFireRedeemer
+                    , WalTxSigning <$ eNewTxSuccess
+                    , WalTxSubmitting <$ eWalletSignature
+                    , WalTxSubmitted <$ eSubmitted
+                    , (WalTxBackendError . ("Relay returned error: " <>))
                         <$> leftmost [eNewTxError, eSubmitError]
                     ]
         return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
@@ -162,7 +166,7 @@ encoinsTxTransferMode ::
     -> Event t ()
     -> Dynamic t [(Text, Text)]
     -> Dynamic t [Text]
-    -> m (Dynamic t [AssetName], Event t Status, Dynamic t Text)
+    -> m (Dynamic t [AssetName], Event t TransferTxStatus, Dynamic t Text)
 encoinsTxTransferMode
     dWallet
     dCoins
@@ -236,13 +240,13 @@ encoinsTxTransferMode
 
         let eStatus =
                 leftmost
-                    [ Ready <$ eConfirmed
-                    , NoRelay <$ eAllRelayDown
-                    , Constructing <$ eFireTx
-                    , Signing <$ eNewTxSuccess
-                    , Submitting <$ eWalletSignature
-                    , Submitted <$ eSubmitted
-                    , (BackendError . ("Relay returned error: " <>))
+                    [ TransTxReady <$ eConfirmed
+                    , TransTxNoRelay <$ eAllRelayDown
+                    , TransTxConstructing <$ eFireTx
+                    , TransTxSigning <$ eNewTxSuccess
+                    , TransTxSubmitting <$ eWalletSignature
+                    , TransTxSubmitted <$ eSubmitted
+                    , (TransTxBackendError . ("Relay returned error: " <>))
                         <$> leftmost [eNewTxError, eSubmitError]
                     ]
         return (fmap getEncoinsInUtxos dUTXOs, eStatus, dTxId)
@@ -270,7 +274,7 @@ encoinsTxLedgerMode ::
     -> Dynamic t Secrets
     -> Event t ()
     -> Dynamic t [Text]
-    -> m (Dynamic t [AssetName], Event t Status)
+    -> m (Dynamic t [AssetName], Event t LedgerTxStatus)
 encoinsTxLedgerMode
     dBulletproofParams
     bRandomness
@@ -354,7 +358,7 @@ encoinsTxLedgerMode
         eFireTx <- delay 2 $ leftmost [eSendWithUrl, eServerFallbackWithUrl]
         dmFinalRedeemer <- holdDyn Nothing $ bmRed `tag` eFireTx
         let (eNoRedeemer, eFinalRedeemer) = eventMaybe (updated dmFinalRedeemer)
-        let eInvalidChangeAddress = InvalidChangeAddress <$ eNoRedeemer
+        let eInvalidChangeAddress = LedTxInvalidChangeAddress <$ eNoRedeemer
 
         -- Constructing a new transaction
         let dServerTxReqBody =
@@ -381,12 +385,12 @@ encoinsTxLedgerMode
 
         let eStatus =
                 leftmost
-                    [ Ready <$ eConfirmed
-                    , NoRelay <$ eAllRelayDown
+                    [ LedTxReady <$ eConfirmed
+                    , LedTxNoRelay <$ eAllRelayDown
                     , eInvalidChangeAddress
-                    , Constructing <$ eFireTx
-                    , Submitted <$ eServerOk
-                    , (BackendError . ("Relay returned error: " <>))
+                    , LedTxConstructing <$ eFireTx
+                    , LedTxSubmitted <$ eServerOk
+                    , (LedTxBackendError . ("Relay threw an error: " <>))
                         <$> leftmost [eStatusError, eServerError]
                     ]
         return (fmap getEncoinsInUtxos dUTXOs, eStatus)

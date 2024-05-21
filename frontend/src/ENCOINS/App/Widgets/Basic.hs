@@ -1,14 +1,16 @@
 module ENCOINS.App.Widgets.Basic where
 
 import Backend.Protocol.Types (PasswordRaw (..))
-import Backend.Status (AppStatus (..), CloudStatusIcon (..), Status (..))
+import Backend.Status
+    ( AppStatus (..)
+    , WalletStatus (..)
+    )
 import ENCOINS.Common.Events
 import ENCOINS.Common.Utils (toJsonText)
 import JS.Website (loadJSON, removeKey, saveJSON)
 
 import Control.Monad (void)
 import Data.Aeson (FromJSON, ToJSON, decode, decodeStrict)
-import Data.Bool (bool)
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (fromStrict)
 import Data.Text (Text)
@@ -144,26 +146,17 @@ loadTextFromStorage key = do
     getItem lc key
 
 -- Wallet error element
-walletError :: (MonadWidget t m) => m (Event t Status)
+walletError :: (MonadWidget t m) => m (Event t WalletStatus)
 walletError = do
     dWalletError <- elementResultJS "walletErrorElement" id
     let eWalletError = ffilter ("" /=) $ updated dWalletError
-    return $ WalletError <$> eWalletError
+    return $ WalletFail <$> eWalletError
 
-tellTxStatus ::
+tellAppStatus ::
     (MonadWidget t m, EventWriter t [AppStatus] m) =>
-    Text -- Category of the status. E.g. 'wallet mode'
-    -> Event t Status
+    Event t AppStatus
     -> m ()
-tellTxStatus title ev =
-    tellEvent $
-        (\x -> singletonL . Tx . bool (title, x) (T.empty, Ready) $ x == Ready) <$> ev
-
-tellSaveStatus ::
-    (MonadWidget t m, EventWriter t [AppStatus] m) =>
-    Event t CloudStatusIcon
-    -> m ()
-tellSaveStatus ev = tellEvent $ (singletonL . Save) <$> ev
+tellAppStatus ev = tellEvent $ singletonL <$> ev
 
 -- it added to base from 4.15.0.0
 -- we are on base-4.12.0.0

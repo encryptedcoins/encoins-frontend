@@ -13,7 +13,7 @@ import Backend.Protocol.TxValidity
     )
 import Backend.Protocol.Types
 import Backend.Servant.Requests (getRelayUrlE, statusRequestWrapper)
-import Backend.Status (Status (..))
+import Backend.Status (AppStatus, WalletTxStatus (..), LedgerTxStatus (..))
 import Backend.Utility (switchHoldDyn, toEither)
 import Backend.Wallet (Wallet (..))
 import ENCOINS.Bulletproofs (Secrets)
@@ -25,13 +25,13 @@ import ENCOINS.Common.Events
 sendRequestButtonWallet ::
     (MonadWidget t m) =>
     EncoinsMode
-    -> Dynamic t Status
+    -> Dynamic t AppStatus
     -> Dynamic t Wallet
     -> Dynamic t Secrets
     -> Dynamic t Secrets
     -> Event t ()
     -> Dynamic t [Text]
-    -> m (Event t Status, Event t ())
+    -> m (Event t WalletTxStatus, Event t ())
 sendRequestButtonWallet
     mode
     dStatus
@@ -94,17 +94,17 @@ sendRequestButtonWallet
                     text "SEND REQUEST"
         dyn_ $ fmap g dTxValidity
         let eValidTx = () <$ ffilter (== TxValid) (current dTxValidity `tag` eSend)
-        pure (NoRelay <$ eAllRelayDown, eValidTx)
+        pure (WalTxNoRelay <$ eAllRelayDown, eValidTx)
 
 sendRequestButtonLedger ::
     (MonadWidget t m) =>
     EncoinsMode
-    -> Dynamic t Status
+    -> Dynamic t AppStatus
     -> Dynamic t Secrets
     -> Dynamic t Secrets
     -> Event t ()
     -> Dynamic t [Text]
-    -> m (Event t Status, Event t ())
+    -> m (Event t LedgerTxStatus, Event t ())
 sendRequestButtonLedger mode dStatus dCoinsToBurn dCoinsToMint e dUrls = mdo
     let eUrls = updated dUrls
     let emFailedUrl = leftmost [Nothing <$ e, tagPromptlyDyn dmUrl eRelayDown]
@@ -159,4 +159,4 @@ sendRequestButtonLedger mode dStatus dCoinsToBurn dCoinsToMint e dUrls = mdo
                 text "SEND REQUEST"
     dyn_ $ fmap g dTxValidity
     let eValidTx = () <$ ffilter (== TxValid) (current dTxValidity `tag` eSend)
-    pure (NoRelay <$ eAllRelayDown, eValidTx)
+    pure (LedTxNoRelay <$ eAllRelayDown, eValidTx)

@@ -2,18 +2,17 @@
 
 module ENCOINS.App.Widgets.Migration where
 
-import Data.Bool (bool)
 import Data.Maybe (isJust, isNothing)
 import Data.Text (Text)
 import Reflex.Dom
 
 import Backend.Protocol.Types (PasswordRaw (..), TokenCacheV3)
-import Backend.Status (AppStatus, Status (..))
+import Backend.Status (AppStatus (..), MigrateStatus (..))
 import Backend.Utility (switchHoldDyn)
 import ENCOINS.App.Widgets.Basic
     ( loadAppData
     , saveAppData
-    , tellTxStatus
+    , tellAppStatus
     )
 import ENCOINS.App.Widgets.Coin (coinV3)
 import ENCOINS.Bulletproofs (Secret)
@@ -41,12 +40,14 @@ migrateTokenCacheV3 ::
     -> m (Dynamic t [TokenCacheV3])
 migrateTokenCacheV3 mPass dmTokensV3 = do
     -- Delay is required for waiting first token loading
-    eFireMigration <-
-        delay 2 $
+    eFireTokens' <- tailE $ updated dmTokensV3
+    eFireTokens <- delay 2 eFireTokens'
+
+    let eFireMigration =
             attachPromptlyDynWithMaybe
                 (\mToken _ -> if isNothing mToken then Just () else Nothing)
                 dmTokensV3
-                (updated dmTokensV3)
+                eFireTokens
 
     let eTokens =
             attachPromptlyDynWithMaybe
@@ -68,29 +69,23 @@ migrateCacheV3 ::
     -> Event t ()
     -> m (Event t [TokenCacheV3])
 migrateCacheV3 mPass ev = do
-    logEvent "migrateCacheV3 launches: ev" ev
+    logEvent "The migration launched" ev
+    tellAppStatus $ Migrate MigUpdating <$ ev
     dSecretsV1 :: Dynamic t [Secret] <-
         loadAppData mPass encoinsV1 "migrateCacheV3-key-eSecretsV1" ev id []
     dSecretsV2 :: Dynamic t [(Secret, Text)] <-
         loadAppData mPass encoinsV2 "migrateCacheV3-key-eSecretsV2" ev id []
 
-    let dIsOldCacheEmpty = zipDynWith (\v1 v2 -> null v1 && null v2) dSecretsV1 dSecretsV2
+    -- As V1 and V2 fire two events on load result, fire saving on second one.
+    eCacheV3 <- tailE $ updated $ zipDynWith migrateV3 dSecretsV1 dSecretsV2
+    eSaved <- saveAppData mPass encoinsV3 eCacheV3
+    eTokensV3 :: Event t [TokenCacheV3] <- updated <$>
+        loadAppData mPass encoinsV3 "migrateCacheV3-key-eSecretsV3" eSaved id []
 
-    let dMigrateStatus =
-            bool
-                (CustomStatus "Cache structure is updating. Please wait.")
-                Ready
-                <$> dIsOldCacheEmpty
-    tellTxStatus "App status" $ updated dMigrateStatus
+    -- migration is too quick, that's why we delay Success message
+    eMigSuccess <- delay 2 eTokensV3
+    tellAppStatus $ Migrate MigSuccess <$ eMigSuccess
 
-    let dCacheV3 = zipDynWith migrateV3 dSecretsV1 dSecretsV2
-
-    eSaved <- saveAppData mPass encoinsV3 $ updated dCacheV3
-    eTokensV3 :: Event t [TokenCacheV3] <-
-        updated
-            <$> loadAppData mPass encoinsV3 "migrateCacheV3-key-eSecretsV3" eSaved id []
-
-    tellTxStatus "App status" $ CacheMigrated <$ eTokensV3
     pure eTokensV3
 
 migrateV1 :: [Secret] -> [TokenCacheV3]
