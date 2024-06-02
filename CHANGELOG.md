@@ -1,5 +1,10 @@
 # Revision history for encoins-frontend
 
+## 0.1.1.1
+
+* Update dex-hunter to v0.0.100
+* Set default token to ENCS
+
 ## 0.1.1.0
 
 * Refactor status/notification system
