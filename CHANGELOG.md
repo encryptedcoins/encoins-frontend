@@ -1,5 +1,9 @@
 # Revision history for encoins-frontend
 
+## 0.1.1.4
+
+* Update roadmap
+
 ## 0.1.1.3
 
 * Add highlight of relays in Dao basing on their amounts
