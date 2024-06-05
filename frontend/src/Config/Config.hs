@@ -11,9 +11,6 @@ import Servant.Reflex (BaseUrl (..))
 bulletproofSetupBS :: ByteString
 bulletproofSetupBS = $(embedFile "config/bulletproof_setup.json")
 
-delegatorListBS :: ByteString
-delegatorListBS = $(embedFile "../result/ispo/calculator.json")
-
 data NetworkId = Testnet | Mainnet
     deriving (Eq, Show, Enum)
 

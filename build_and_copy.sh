@@ -23,7 +23,6 @@ rm -f $WEBAPP_DIR/index.js
 rm -f $WEBAPP_DIR/dao.html
 rm -f $WEBAPP_DIR/dao.js
 mv $WEBAPP_DIR/app.html $WEBAPP_DIR/index.html
-rm -r $WEBAPP_DIR/ispo
 rm -r $WEBAPP_DIR/docs
 
 export DAO_DIR=../DAO
@@ -33,5 +32,4 @@ rm -f $DAO_DIR/index.js
 rm -f $DAO_DIR/app.html
 rm -f $DAO_DIR/app.js
 mv $DAO_DIR/dao.html $DAO_DIR/index.html
-rm -r $DAO_DIR/ispo
 rm -r $DAO_DIR/docs

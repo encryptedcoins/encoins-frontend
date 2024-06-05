@@ -52,11 +52,10 @@ footerWidget = divClass "footer wf-section" $ do
                     divClass "column-footer w-col w-col-6" $ do
                         h5Bold "Links"
                         eHome <- lnk "#Navbar" "" $ divClass "text-footer" $ text "Home"
-                        eISPO <- lnk "#Navbar" "" $ divClass "text-footer" $ text "ISPO"
                         _ <- lnk "https://dao.encoins.io" "" $ divClass "text-footer" $ text "DAO"
                         _ <-
                             lnk "docs/whitepaper.pdf" "" $ divClass "text-footer" $ text "White Paper"
-                        return $ leftmost [("Home", "Navbar") <$ eHome, ("ISPO", "Navbar") <$ eISPO, e]
+                        return $ leftmost [("Home", "Navbar") <$ eHome, e]
     versionWidget
     pure res
 

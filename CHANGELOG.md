@@ -1,5 +1,9 @@
 # Revision history for encoins-frontend
 
+## 0.1.1.2
+
+* Remove ISPO page and its artifacts
+
 ## 0.1.1.1
 
 * Update dex-hunter to v0.0.100
