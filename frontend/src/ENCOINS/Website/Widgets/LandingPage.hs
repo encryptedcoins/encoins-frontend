@@ -75,28 +75,15 @@ featuresSection = section "Features" "" $ do
 roadmapSection :: (MonadWidget t m) => m ()
 roadmapSection = section "Roadmap" "" $ do
     container "" $ h3 "ROADMAP"
-    roadmapItemLeft "01" True "ENCOINS Announced" $
+    roadmapItemLeft "01" False "Encoins V2 Testnet" $
         text
-            "ENCOINS protocol was announced in August 2022. The team released White Paper v0.1. The project received community funding through the ISPO and Project Catalyst."
-    roadmapItemRight "02" True "Token Generation Event" $ do
+            "The Encoins V2 Testnet will introduce the ability to support any native Cardano asset, similar to $ADA in version 1. This development will allow for increased flexibility and enhanced user experience within the Encoins platform."
+    roadmapItemRight "02" False "Trustless On-Ramp Solution" $
         text
-            "The decentralized token generation and distribution ceremony was held on March 13-22. The ceremony followed the algorithm presented "
-        lnkInline
-            "https://encoins-crypto.medium.com/fully-decentralized-token-distribution-on-cardano-9d7317d8de6"
-            "here"
-        text "."
-    roadmapItemLeft "03" True "Public Test" $
+            "Our OnRamp will feature a peer-to-peer (P2P) trustless and decentralized exchange of fiat and cryptocurrencies. This innovative solution will enable users to seamlessly transition between traditional currencies and digital assets, bridging the gap between conventional finance and the world of blockchain technology."
+    roadmapItemLeft "03" False "Encoins V2 Mainnet" $
         text
-            "ENCOINS Public Test began in March 2023. Since then, users have been testing the DApp on Cardano testnets. In the second phase, we expect relayers to join in."
-    roadmapItemRight "04" False "Mainnet Launch" $
-        text
-            "After the Public Test and audit, everything will be ready for the mainnet launch. Users can now mint, trade, and transfer ENCOINS using their wallet or ENCOINS Ledger."
-    roadmapItemLeft "05" False "Ecosystem Integrations" $
-        text
-            "We plan to integrate ENCOINS with selected Cardano Ecosystem projects, including wallets, DeFi, and NFT dApps. All potential partners are welcome!"
-    roadmapItemRight "06" False "Native Assets Support" $
-        text
-            "Currently, ENCOINS protocol only supports wrapping of ADA. This support will eventually be extended to all native assets on Cardano, including Cardano NFTs."
+            "Upon successful testing and refinement of our platform, we will launch Encoins V2 Mainnet. This upgrade will introduce integrations with other protocols, starting with popular wallets and decentralized exchanges (DExes). These strategic collaborations will further expand the accessibility and usability of our platform, empowering users with a diverse range of options for managing and exchanging their digital assets."
     where
         roadmapItemComplete =
             bool "text-roadmap-numbers" "text-roadmap-numbers text-roadmap-numbers-complete"
