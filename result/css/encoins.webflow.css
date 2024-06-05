@@ -1769,6 +1769,21 @@ body {
   border-bottom: 1px solid;
 }
 
+.dao-DelegateWindow_TableRow-green {
+  border-bottom: 1px solid;
+  background-color: #bbffc3;
+}
+
+.dao-DelegateWindow_TableRow-yellow {
+  border-bottom: 1px solid;
+  background-color: #fff9bb;
+}
+
+.dao-DelegateWindow_TableRow-red {
+  border-bottom: 1px solid;
+  background-color: #ffbbbb;
+}
+
 .dao-DelegateWindow_TableHeader {
   background-color: #000000;
   color: #fff;
