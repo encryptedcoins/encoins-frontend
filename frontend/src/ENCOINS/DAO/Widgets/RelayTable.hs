@@ -55,26 +55,36 @@ relayAmountWidget eeRelays emDelegated dRelayNames = do
                         then do
                             blank
                             pure never
-                        else tr $ do
-                            tdRelay $ dynText $ fromMaybe relay . Map.lookup relay <$> dRelayNames
-                            tdAmount $ text $ mkAmount amount
-                            eClick <-
-                                tdButton $
-                                    btnWithBlock
-                                        "button-switching inverted"
-                                        ""
-                                        (isDelegated relay <$> dmDelegated)
-                                        (dynText $ mkDelegateButton relay <$> dmDelegated)
-                            pure $ relay <$ eClick
+                        else do
+                            let normalAmount = normalizeAmount amount
+                            rainbowTr normalAmount $ do
+                                tdRelay $ dynText $ fromMaybe relay . Map.lookup relay <$> dRelayNames
+                                tdAmount $ text $ mkAmount normalAmount
+                                eClick <-
+                                    tdButton $
+                                        btnWithBlock
+                                            "button-switching inverted"
+                                            ""
+                                            (isDelegated relay <$> dmDelegated)
+                                            (dynText $ mkDelegateButton relay <$> dmDelegated)
+                                pure $ relay <$ eClick
                 pure $ leftmost evs
     where
         article = elAttr "article" ("class" =: "dao-DelegateWindow_TableWrapper")
         table = elAttr "table" ("class" =: "dao-DelegateWindow_Table")
         tr = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow")
+        trRed = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow-red")
+        trYellow = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow-yellow")
+        trGreen = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow-green")
         th = elAttr "th" ("class" =: "dao-DelegateWindow_TableHeader")
         tdRelay = elAttr "td" ("class" =: "dao-DelegateWindow_TableRelay")
         tdAmount = elAttr "td" ("class" =: "dao-DelegateWindow_TableAmount")
         tdButton = elAttr "td" ("class" =: "dao-DelegateWindow_TableButton")
+        rainbowTr stakedAmount
+            | stakedAmount > 100000 = trRed
+            | stakedAmount <= 100000 && stakedAmount > 90000 = trYellow
+            | stakedAmount <= 90000 && stakedAmount > 50000 = trGreen
+            | otherwise = tr
 
 fetchRelayTable ::
     (MonadWidget t m) =>
@@ -95,13 +105,16 @@ fetchDelegatedByAddress dAddr eFire = do
     let meInfo = either (const Nothing) Just <$> eeInfo
     pure meInfo
 
+normalizeAmount :: Integer -> Integer
+normalizeAmount amount = floor @Double $ fromIntegral amount / 1000000 :: Integer
+
 mkAmount :: Integer -> Text
 mkAmount amount =
-    toText (floor @Double $ fromIntegral amount / 1000000 :: Integer) <> " ENCS"
+    toText amount <> " ENCS"
 
 mkDelegateButton :: Text -> Maybe (Text, Integer) -> Text
 mkDelegateButton relay =
-    maybe "Delegate" (\(r, n) -> bool "Delegate" (mkAmount n) (r == relay))
+    maybe "Delegate" (\(r, n) -> bool "Delegate" (mkAmount $ normalizeAmount n) (r == relay))
 
 isDelegated :: Text -> Maybe (Text, Integer) -> Bool
 isDelegated relay = \case
