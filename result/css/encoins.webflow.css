@@ -555,14 +555,6 @@ body {
   align-items: center;
 }
 
-.p-ispo {
-  margin-bottom: 20px;
-  font-family: Poppins, sans-serif;
-  color: #b8b8b8;
-  font-size: 18px;
-  line-height: 32px;
-  text-align: justify;
-}
 
 .link-inline {
   color: #b8b8b8;
@@ -571,10 +563,6 @@ body {
 
 .list {
   list-style-type: decimal;
-}
-
-.list.p-ispo {
-  padding-left: 20px;
 }
 
 .div-lottery-winners {
@@ -1475,15 +1463,6 @@ body {
     -webkit-justify-content: center;
     -ms-flex-pack: center;
     justify-content: center;
-  }
-
-  .p-ispo {
-    overflow: auto;
-    text-align: center;
-  }
-
-  .list.p-ispo {
-    overflow: scroll;
   }
 
   .text-calculator.input-calculator {

@@ -10,14 +10,12 @@ import Reflex.Dom
 
 import ENCOINS.Common.Widgets.JQuery (jQueryWidget)
 import ENCOINS.Website.Widgets.Footer (footerWidget)
-import ENCOINS.Website.Widgets.ISPOPage (ispoPage)
 import ENCOINS.Website.Widgets.LandingPage (landingPage)
 import ENCOINS.Website.Widgets.Navbar (navbarWidget)
 
 pageSelect :: (MonadWidget t m) => (Text, Text) -> m (Event t (Text, Text))
 pageSelect (page, idFocus) = case page of
     "Home" -> landingPage idFocus
-    "ISPO" -> never <$ ispoPage
     _ -> return never
 
 bodyContentWidget :: (MonadWidget t m) => m ()
