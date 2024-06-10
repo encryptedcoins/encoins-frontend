@@ -1,5 +1,9 @@
 # Revision history for encoins-frontend
 
+## 0.1.1.5
+
+* Add one more way to make cloud key, the key is making out of connected wallet sign.
+
 ## 0.1.1.4
 
 * Update roadmap

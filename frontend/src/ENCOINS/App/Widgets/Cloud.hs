@@ -4,13 +4,14 @@
 module ENCOINS.App.Widgets.Cloud where
 
 import Backend.Protocol.Types
+import Backend.Wallet(WalletName, toJS)
 import Backend.Servant.Requests (restoreRequest, savePingRequest, saveRequest)
 import Backend.Status
     ( AppStatus (..)
     , CloudIconStatus (..)
     , CloudRestoreStatus (..)
     )
-import Backend.Utility (eventMaybeDynDef, switchHoldDyn, toText, unionWith)
+import Backend.Utility (eventMaybeDynDef, switchHoldDyn, toText, unionWith, hashKeccak256)
 import ENCOINS.App.Widgets.Basic
     ( elementResultJS
     , loadAppData
@@ -274,6 +275,26 @@ genAesKey mPass dmCachedKey ev1 = do
             pure eKeySaved
         Just _ -> pure never
     pure eNewKeySaved
+
+-- Make cloud key basing on wallet signature.
+-- Then save it to local cache
+makeSignedKey ::
+    (MonadWidget t m) =>
+    Maybe PasswordRaw
+    -> Dynamic t WalletName
+    -> Event t ()
+    -> m (Event t ())
+makeSignedKey mPass dWalletName ev = do
+    let getKeyElId = "getKeyFromSign2"
+    ev2 <- delay 0.1 ev
+    performEvent_ $ JS.getSignedKey getKeyElId <$> tagPromptlyDyn (toJS <$> dWalletName) ev2
+    eSignedKey <- updated <$> elementResultJS
+      getKeyElId
+      id
+    let eHashedSign = hashKeccak256 <$> eSignedKey
+    let eAesKey = MkAesKeyRaw <$> eHashedSign
+    eKeySaved <- saveAppData mPass aesKey eAesKey
+    pure eKeySaved
 
 fetchAesKey ::
     (MonadWidget t m) =>

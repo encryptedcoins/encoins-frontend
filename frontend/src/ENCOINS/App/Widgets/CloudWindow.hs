@@ -6,12 +6,19 @@ module ENCOINS.App.Widgets.CloudWindow where
 import Backend.Protocol.Types
 import Backend.Status (CloudIconStatus (..))
 import Backend.Utility (space, switchHoldDyn)
+import Backend.Wallet (WalletName (..))
 import ENCOINS.App.Widgets.Basic (removeCacheKey, saveAppData, saveAppData_)
-import ENCOINS.App.Widgets.Cloud (fetchAesKey, genAesKey)
+import ENCOINS.App.Widgets.Cloud (fetchAesKey, genAesKey, makeSignedKey)
 import ENCOINS.Common.Cache (aesKey, isCloudOn)
 import ENCOINS.Common.Events
 import ENCOINS.Common.Widgets.Advanced (copyButton, dialogWindow, withTooltip)
-import ENCOINS.Common.Widgets.Basic (br, btn, btnWithBlock, image)
+import ENCOINS.Common.Widgets.Basic
+    ( br
+    , btn
+    , btnWithBlock
+    , btnWithOverOutBlock
+    , image
+    )
 import JS.Website (copyText)
 
 import Control.Monad (void)
@@ -26,11 +33,12 @@ import Text.Hex (decodeHex)
 cloudSettingsWindow ::
     (MonadWidget t m) =>
     Maybe PasswordRaw
+    -> Dynamic t WalletName
     -> Dynamic t Bool
     -> Dynamic t CloudIconStatus
     -> Event t ()
     -> m (Dynamic t Bool, Dynamic t (Maybe AesKeyRaw), Event t ())
-cloudSettingsWindow mPass cloudCacheFlag dCloudStatus eOpen = mdo
+cloudSettingsWindow mPass dWalletName cloudCacheFlag dCloudStatus eOpen = mdo
     (dCloudOn, dmKey, eCloseByRestore) <- dialogWindow
         True
         eOpen
@@ -48,7 +56,7 @@ cloudSettingsWindow mPass cloudCacheFlag dCloudStatus eOpen = mdo
                 False -> pure never
                 True -> do
                     let eFirstKeyLoad = leftmost [() <$ eCloudChangeValDelayed, eOpen]
-                    dmNewKey <- cloudKeyWidget mPass eFirstKeyLoad
+                    dmNewKey <- cloudKeyWidget mPass dWalletName eFirstKeyLoad
                     divClass "app-Cloud_Restore_Title" $
                         text "Restore all unburned encoins from cloud with your current key"
                     eRestore <- restoreButton dmNewKey
@@ -138,13 +146,15 @@ restoreButton dmKey =
 cloudKeyWidget ::
     (MonadWidget t m) =>
     Maybe PasswordRaw
+    -> Dynamic t WalletName
     -> Event t ()
     -> m (Dynamic t (Maybe AesKeyRaw))
-cloudKeyWidget mPass eFirstLoadKey = mdo
+cloudKeyWidget mPass dWalletName eFirstLoadKey = mdo
     divClass "app-Cloud_AesKey_Title" $
         text "Your AES key for restoring encoins. Save it to a file and keep it secure!"
     eLoadKey <-
-        delay 0.05 $ leftmost [eFirstLoadKey, eKeyRemoved, eKeyGenerated, eUserKeySaved]
+        delay 0.05 $
+            leftmost [eFirstLoadKey, eKeyRemoved, eKeyGenerated, eUserKeySaved, eSignedKey]
     dmKey <- fetchAesKey mPass "cloudKeyWidget-fetchAesKey" eLoadKey
     showKeyWidget dmKey
 
@@ -155,32 +165,57 @@ cloudKeyWidget mPass eFirstLoadKey = mdo
     eUserKeySaved <- saveAppData mPass aesKey eKeyInputByUser
 
     eKeyGenerated <- genAesKey mPass dmKey eGenerate
+
+    eSignedKey <- makeSignedKey mPass dWalletName eGetSignedKey
+
     let dBlockEnter =
             zipDynWith
                 (\mUserKey mCacheKey -> isNothing mUserKey || isJust mCacheKey)
                 dmCorrectKey
                 dmKey
-    (eGenerate, eDelete, eEnter) <- divClass "app-Cloud_Key_ButtonContainer" $ do
-        eGen <-
-            btnWithBlock
-                "button-switching inverted flex-center"
-                ""
-                (isJust <$> dmKey)
-                (text "Generate")
-        eDel <-
-            btnWithBlock
-                "button-switching inverted flex-center"
-                ""
-                (isNothing <$> dmKey)
-                (text "Delete")
+    ( (eEnterOver, eEnterOut, eEnter)
+        , (eGenOver, eGenOut, eGenerate)
+        , (eSignOver, eSignOut, eGetSignedKey)
+        , (eDelOver, eDelOut, eDelete)
+        ) <- divClass "app-Cloud_Key_ButtonContainer" $ do
         eEnt <-
-            btnWithBlock
+            btnWithOverOutBlock
                 "button-switching inverted flex-center"
                 ""
                 dBlockEnter
                 (text "Enter")
-        pure (eGen, eDel, eEnt)
+        eGen <-
+            btnWithOverOutBlock
+                "button-switching inverted flex-center"
+                ""
+                (isJust <$> dmKey)
+                (text "Generate")
+        eSign <-
+            btnWithOverOutBlock
+                "button-switching inverted flex-center"
+                ""
+                (zipDynWith (\mKey name -> isJust mKey || name == None) dmKey dWalletName)
+                (text "SignKey")
+        eDel <-
+            btnWithOverOutBlock
+                "button-switching inverted flex-center"
+                ""
+                (isNothing <$> dmKey)
+                (text "Delete")
+        pure (eEnt, eGen, eSign, eDel)
     eKeyRemoved <- deleteKeyDialog eDelete
+    let eMouseOutButton = leftmost [eEnterOut, eGenOut, eSignOut, eDelOut]
+    dButtonDescription <-
+        holdDyn "To see more details, hover over the active button." $
+            leftmost
+                [ "Button 'Enter' confirmes manually input key." <$ eEnterOver
+                , "Button 'Generate' generates random cloud key." <$ eGenOver
+                , "Button 'SignKey' makes key basing on the sign of connected wallet."
+                    <$ eSignOver
+                , "Button 'Delete' removes currently set key." <$ eDelOver
+                , "To see more details, hover over the active button." <$ eMouseOutButton
+                ]
+    divClass "app-Cloud_ButtonDescription" $ dynText dButtonDescription
     pure dmKey
 
 inputCloudKeyWidget ::

@@ -155,6 +155,22 @@ async function walletAPI(walletName) {
   }
 }
 
+async function getSignedKey(resId, walletName) {
+  try {
+    const api = await walletAPI(walletName);
+    const rewardAddress = await api.getRewardAddresses();
+    const stakeAddress = rewardAddress[0];
+
+    const mes = '454e434f494e53204163636f756e74'; // hex from 'ENCOINS Account'
+    const dataSignature = await api.signData(stakeAddress, mes);
+
+    setInputValue(resId, dataSignature.signature + dataSignature.key);
+  } catch (e) {
+    console.log('Error in getSignedKey');
+    console.log('error:', e);
+}
+}
+
 async function walletLoad(walletName) {
   console.log("begin walletLoad");
   await loader.load();

@@ -2404,8 +2404,6 @@ body {
   display: flex;
   justify-content: left;
   flex-direction: column;
-  /* gap: 10px; */
-  /* margin-left: 5%; */
   margin-right: 5%;
 }
 
@@ -2605,4 +2603,11 @@ body {
 .main-Footer_VersionText {
   font-family: Poppins, sans-serif;
   font-size: 20px;
+}
+
+.app-Cloud_ButtonDescription {
+  display: flex;
+  justify-content: left;
+  gap: 10px;
+  margin-top: 10px;
 }

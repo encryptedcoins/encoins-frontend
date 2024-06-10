@@ -219,3 +219,16 @@ decryptSecretList (key, resId, list) = liftIO $ do
 decryptSecretList :: MonadIO m => (Text, Text, [(Text,Text)]) -> m ()
 decryptSecretList _ = error "GHCJS is required!"
 #endif
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
+  "getSignedKey($1,$2)" getSignedKey_js :: JSString -> JSVal -> JSM ()
+
+getSignedKey :: MonadIO m => Text -> Text -> m ()
+getSignedKey resId walletName = liftIO $ do
+  wn <- toJSVal walletName
+  getSignedKey_js (textToStr resId) wn
+#else
+getSignedKey :: MonadIO m => Text -> Text -> m ()
+getSignedKey = const $ error "GHCJS is required!"
+#endif

@@ -8,10 +8,11 @@ import Control.Monad.IO.Class (liftIO)
 import qualified Crypto.Hash.Keccak as Keccak
 import Data.Bool (bool)
 import Data.ByteString.Base16 as BS16
-import Data.Functor ((<&>))
 import Data.Foldable (foldl')
+import Data.Functor ((<&>))
 import qualified Data.Map as Map
 import Data.Maybe (isNothing)
+import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -20,17 +21,17 @@ import qualified Data.UUID as Uid
 import qualified Data.UUID.V4 as Uid
 import Reflex.Dom
 import Witherable (catMaybes)
-import qualified Data.Set as Set
 
 -- O(n * log(n)) instead of O(n^2) in 'nubBy'
 -- It reverse list of tokens
 nubWith :: (Ord b) => (a -> b) -> [a] -> [a]
 nubWith f l = snd $ foldl' (func f) (Set.empty, []) l
-  where
-    func f' (set, acc) x
-          | Set.member x' set = (set, acc)
-          | otherwise = (Set.insert x' set, x : acc)
-        where x' = f' x
+    where
+        func f' (set, acc) x
+            | Set.member x' set = (set, acc)
+            | otherwise = (Set.insert x' set, x : acc)
+            where
+                x' = f' x
 
 -- Combine two lists efficiently excluding duplicates from both lists
 -- Original 'union' excludes duplicates from last list only.
@@ -39,12 +40,13 @@ nubWith f l = snd $ foldl' (func f) (Set.empty, []) l
 -- It reverse list of tokens
 unionWith :: (Ord b) => (a -> b) -> [a] -> [a] -> [a]
 unionWith f l1 l2 =
-  let func f' (set, acc) x
-          | Set.member x' set = (set, acc)
-          | otherwise = (Set.insert x' set, x : acc)
-        where x' = f' x
-      listOfUniq = snd $ foldl' (func f) (Set.empty, []) $ l1 <> l2
-  in listOfUniq
+    let func f' (set, acc) x
+            | Set.member x' set = (set, acc)
+            | otherwise = (Set.insert x' set, x : acc)
+            where
+                x' = f' x
+        listOfUniq = snd $ foldl' (func f) (Set.empty, []) $ l1 <> l2
+     in listOfUniq
 
 normalizePingUrl :: Text -> Text
 normalizePingUrl url = T.append (T.dropWhileEnd (== '/') url) $ case appNetwork of
@@ -127,14 +129,23 @@ toText = T.pack . show
 genUid :: (MonadWidget t m) => Event t () -> m (Event t Text)
 genUid ev = performEvent $ (Uid.toText <$> liftIO Uid.nextRandom) <$ ev
 
--- Keccak 512 is SHA-3. It is used in cryptoJS
--- we use it to replace js external library
+data HashBit = B512 | B384 | B256 | B224
+    deriving (Eq)
+
+hashKeccak :: HashBit -> Text -> Text
+hashKeccak hb raw =
+    let keccak = case hb of
+            B512 -> Keccak.keccak512
+            B384 -> Keccak.keccak384
+            B256 -> Keccak.keccak256
+            B224 -> Keccak.keccak224
+     in TE.decodeUtf8 $ BS16.encode $ keccak $ TE.encodeUtf8 raw
+
 hashKeccak512 :: Text -> Text
-hashKeccak512 raw =
-    TE.decodeUtf8 $
-        BS16.encode $
-            Keccak.keccak512 $
-                TE.encodeUtf8 raw
+hashKeccak512 = hashKeccak B512
+
+hashKeccak256 :: Text -> Text
+hashKeccak256 = hashKeccak B256
 
 isHashOfRaw :: Text -> Text -> Bool
 isHashOfRaw hash raw = hash == hashKeccak512 raw
