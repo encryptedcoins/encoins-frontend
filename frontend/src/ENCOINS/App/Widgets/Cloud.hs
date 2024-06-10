@@ -37,7 +37,6 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Maybe (catMaybes, fromMaybe)
 import Data.Text (Text)
-import Data.ByteString (ByteString)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.These (These)
