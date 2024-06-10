@@ -77,6 +77,30 @@ btnWithBlock dCls dStyle dIsBlock tags = do
                 leftmost [() <$ domEvent Click e, keydown Enter e]
     pure eGated
 
+btnWithOverOutBlock ::
+    (MonadWidget t m) =>
+    Dynamic t Text
+    -> Dynamic t Text
+    -> Dynamic t Bool
+    -> m ()
+    -> m (Event t (), Event t (), Event t ())
+btnWithOverOutBlock dCls dStyle dIsBlock tags = do
+    let f style cls =
+            "href" =: "#"
+                <> "class" =: "app-button  w-button " `T.append` cls
+                <> "style" =: style
+    let dBlockBtnCls = do
+            defaultClass <- dCls
+            let classWithDisable = defaultClass <> space <> "button-disabled"
+            bool defaultClass classWithDisable <$> dIsBlock
+    (e, _) <- elDynAttr' "a" (zipDynWith f dStyle dBlockBtnCls) tags
+    let mouseOver = () <$ domEvent Mouseover e
+    let mouseOut = () <$ domEvent Mouseout e
+    let eGated =
+            gate (current $ not <$> dIsBlock) $
+                leftmost [() <$ domEvent Click e, keydown Enter e]
+    pure (mouseOver, mouseOut, eGated)
+
 btnExternal ::
     (MonadWidget t m) =>
     Dynamic t Text

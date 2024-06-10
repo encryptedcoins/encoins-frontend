@@ -12,7 +12,7 @@ import Backend.Protocol.StrongTypes (toPasswordHash)
 import Backend.Protocol.Types (PasswordRaw (..))
 import Backend.Utility (switchHoldDyn)
 import Backend.Status (AppStatus(..))
-import Backend.Wallet (walletsSupportedInApp)
+import Backend.Wallet (walletsSupportedInApp, Wallet(walletName))
 import ENCOINS.App.Widgets.Basic
     ( loadAppDataE
     , waitForScripts
@@ -117,6 +117,7 @@ bodyContentWidget mPass = mdo
     (dSaveWindow, dNewKeyWindow, eRestore) <-
         cloudSettingsWindow
             mPass
+            (walletName <$> dWallet)
             dSaveOnFromCache
             dCloudStatus
             eCloudOpen
