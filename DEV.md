@@ -66,6 +66,12 @@ tmux attach-session -t $SESSION
 
 3. Update paths variables to match your directories
 
+4. After running `dev-up.sh` 
+    - wait for sync finishing of `node` and `kupo`
+    - run `wallet.sh` in `cardano` window
+    - run `encoins --run` in `apps` window to launch relay server
+    - run `run-dev.sh` in `apps` window to launch frontend
+
 ## Dev down
 
 Just killing session won't stop `node` and `kupo`. 
@@ -89,3 +95,4 @@ tmux send-keys -t $SESSION:$APPS.3 C-c ;
 
 tmux kill-session -t $SESSION
 ```
+
