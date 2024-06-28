@@ -1,6 +1,8 @@
 # Tmux session for development
 
-1. Create script `dev.sh` anywhere (it use absolute paths)
+## Dev up
+
+1. Create script `dev-up.sh` anywhere (it use absolute paths anyway)
 2. Insert the following stuff to the script file: 
 
 ```shell
@@ -63,3 +65,27 @@ tmux attach-session -t $SESSION
 ```
 
 3. Update paths variables to match your directories
+
+## Dev down
+
+Just killing session won't stop `node` and `kupo`. 
+To gracely shutting down dev session you want to use followng script:
+
+```shell
+#!/bin/sh
+
+SESSION="encoins"
+APPS="apps"
+CARDANO="cardano"
+
+tmux send-keys -t $SESSION:$CARDANO.0 C-c ;
+tmux send-keys -t $SESSION:$CARDANO.1 C-c ;
+tmux send-keys -t $SESSION:$CARDANO.2 C-c ;
+
+tmux send-keys -t $SESSION:$APPS.0 C-c ;
+tmux send-keys -t $SESSION:$APPS.1 C-c ;
+tmux send-keys -t $SESSION:$APPS.2 C-c ;
+tmux send-keys -t $SESSION:$APPS.3 C-c ;
+
+tmux kill-session -t $SESSION
+```
