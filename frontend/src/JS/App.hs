@@ -144,7 +144,7 @@ foreign import javascript unsafe
 
 loadCacheValue :: MonadIO m => Text -> m Text
 loadCacheValue key =
-  strToText <$> liftIO (loadCacheValue_js$ textToStr key)
+  strToText <$> liftIO (loadCacheValue_js $ textToStr key)
 #else
 loadCacheValue :: MonadIO m => Text -> m Text
 loadCacheValue _ = error "GHCJS is required!"

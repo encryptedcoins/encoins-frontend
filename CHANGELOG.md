@@ -1,5 +1,10 @@
 # Revision history for encoins-frontend
 
+## 0.1.2.0 
+
+* Update to GHC and GHCJS to 8.10.7 version
+* Add instruction for tmux session
+
 ## 0.1.1.5
 
 * Add one more way to make cloud key, the key is making out of connected wallet sign.

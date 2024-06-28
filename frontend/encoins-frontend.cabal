@@ -1,6 +1,6 @@
 cabal-version: 3.0
 name:          encoins-frontend
-version:       0.1.1.5
+version:       0.1.2.0 
 build-type:    Simple
 author:
   Vladimir Sinyakov
@@ -84,46 +84,46 @@ library
     Reflex.ScriptDependent
 
   build-depends:
-    , aeson                       ^>=1.4.6
+    , aeson                       
     , aeson-casing
     , array
     , attoparsec
-    , base                        ^>=4.12.0.0
-    , base16-bytestring           ^>=1.0.2.0
-    , bytestring                  ^>=0.10.8.2
-    , containers                  ^>=0.6.0.1
+    , base                        
+    , base16-bytestring           
+    , bytestring                  
+    , containers                  
     , csl-types
     , encoins-bulletproofs
-    , extra                       ^>=1.7.14
-    , file-embed                  ^>=0.0.15.0
-    , ghcjs-dom                   ^>=0.9.5.0
+    , extra                       
+    , file-embed                  
+    , ghcjs-dom                   
     , hashing
-    , hex-text                    ^>=0.1.0.7
-    , http-api-data               ^>=0.4.3
-    , ilist                       ^>=0.4.0.1
-    , jsaddle                     ^>=0.9.8.2
-    , jsaddle-dom                 ^>=0.9.5.0
+    , hex-text                    
+    , http-api-data               
+    , ilist                       
+    , jsaddle                     
+    , jsaddle-dom                 
     , keccak
     , lens
     , plutus-tx-extra
     , plutus-tx-js
-    , random                      ^>=1.2.1.1
+    , random                      
     , raw-strings-qq
-    , reflex-dom                  ==0.6.1.1
-    , reflex-dom-core             ^>=0.7.0.3
+    , reflex-dom                  
+    , reflex-dom-core             
     , regex-tdfa
     , semialign
-    , servant                     ^>=0.18.3
-    , servant-checked-exceptions  ^>=2.2.0.1
-    , servant-reflex              ^>=0.4.0
-    , stm                         ^>=2.5.1.0
-    , text                        ^>=1.2.3.1
+    , servant                     
+    , servant-checked-exceptions  
+    , servant-reflex              
+    , stm                         
+    , text                        
     , these
-    , time                        ^>=1.8.0.2
-    , tuple                       ^>=0.3.0.2
+    , time                        
+    , tuple                       
     , uuid
     , vector
-    , witherable                  ^>=0.4.2
+    , witherable                  
 
   if impl(ghcjs)
     build-depends: ghcjs-base ^>=0.2.1.0
@@ -177,7 +177,7 @@ executable encoins-website
     ghc-options: -dedupe
 
   build-depends:
-    , base              ^>=4.12.0.0
+    , base              ^>=4.14.3.0
     , encoins-frontend
 
   if impl(ghcjs)
@@ -193,7 +193,7 @@ executable encoins-app
     ghc-options: -dedupe
 
   build-depends:
-    , base              ^>=4.12.0.0
+    , base              ^>=4.14.3.0
     , encoins-frontend
 
   if impl(ghcjs)
@@ -209,7 +209,7 @@ executable encoins-dao
     ghc-options: -dedupe
 
   build-depends:
-    , base              ^>=4.12.0.0
+    , base              ^>=4.14.3.0
     , encoins-frontend
 
   if impl(ghcjs)
@@ -221,7 +221,7 @@ test-suite frontend
   hs-source-dirs:     test
   main-is:            Spec.hs
   build-depends:
-    , base              ^>=4.12.0.0
+    , base              ^>=4.14.3.0
     , bytestring
     , encoins-frontend
     , hspec

@@ -10,7 +10,7 @@ if ! build_dev; then
   printf "\n\nBuilding is failed.\n"
 else
   printf "Dev v$version is built successfully!"
-  if copy_js "$version"; then
+  if copy_js_8107 "$version"; then
     if ! caddy run; then
       printf "\n\nCaddy running is failed."
     fi
