@@ -123,16 +123,14 @@ injectScriptEvent symbol evUrl = performEventAsync $ ffor evUrl $ \url cb ->
 -- tag injection, wait for the load to complete and then switch to the main
 -- widget. This switch happens whether or not the symbol gets defined by the
 -- script, so make sure you have the correct symbol!
--- widgetHoldUntilDefined ::
---     ( MonadIO (Performable m)
---     , PerformEvent t m
---     , TriggerEvent t m
---     , DomBuilder t m
---     , MonadHold t m
---     , MonadFix m
---     ) =>
 widgetHoldUntilDefined ::
-    (MonadWidget t m) =>
+    ( MonadIO (Performable m)
+    , PerformEvent t m
+    , TriggerEvent t m
+    , DomBuilder t m
+    , MonadHold t m
+    , MonadFix m
+    ) =>
     String
     -- ^ Symbol, for instance the value "dhtmlxCalendarObject", as in
     -- window.dhtmlxCalendarObject
@@ -145,6 +143,6 @@ widgetHoldUntilDefined ::
     -> m (Dynamic t a)
 widgetHoldUntilDefined symbol evUrl placeholder widget = do
     evLoaded <- injectScriptEvent symbol =<< debounce 0.75 evUrl
-    logEvent "widgetHoldUntilDefined: evLoaded" evLoaded
-    eLoadDelayed <- delay 1 evLoaded
-    widgetHold placeholder (widget <$ eLoadDelayed)
+    eLoadDelayed <- delay 0.01 evLoaded
+    dRes <- widgetHold placeholder (widget <$ eLoadDelayed)
+    pure dRes
