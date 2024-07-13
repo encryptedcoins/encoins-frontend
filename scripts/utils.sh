@@ -21,7 +21,7 @@ build_prod() {
 }
 
 build_dev() {
-  cabal new-build -f preapp -f predao --ghcjs frontend
+  cabal new-build -f preapp -f predao --ghcjs frontend --verbose
 }
 
 copy_main() {
@@ -76,7 +76,7 @@ copy_js_8107() {
       if ! copy_dao_8107 "$1"; then
         printf "\n\nCoping dao is failed."
       else
-        printf "\nCoping is successful!\n\n"
+        printf "\nCoping is successful!"
       fi
     fi
   fi
@@ -98,5 +98,38 @@ build_prod_js_html_and_copy() {
     printf "Building HTML is failed."
   else
     build_prod_js_and_copy "$version"
+  fi
+}
+
+optimize-js() {
+    printf "\n\n==== Optimizing $1.js file ===="
+    java -jar "$HOME/.local/bin/closure-compiler.jar" --warning_level QUIET --js ./result/$1.js --js_output_file ./result/$1_opt.js
+}
+
+
+optimizer() {
+if ! optimize-js $1; then
+    printf "\n\nOptimizing $1 was failed.";
+    exit 1;
+else
+  if ! mv -f ./result/$1.js ./result/$1_bak.js; then
+      printf "\n\Backuping $1 was failed.";
+      exit 1;
+  else
+    if ! mv -f ./result/$1_opt.js ./result/$1.js; then 
+      printf "\n\Replacing $1 was failed.\n\n";
+      exit 1;
+    else 
+      rm ./result/$1_bak.js
+    fi
+  fi
+fi
+}
+
+optimize_all() {
+  if optimizer app; then 
+    if optimizer dao; then 
+      optimizer index; 
+    fi
   fi
 }

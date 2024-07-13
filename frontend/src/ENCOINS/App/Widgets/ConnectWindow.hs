@@ -14,6 +14,7 @@ import ENCOINS.App.Widgets.Basic (loadAppDataE, saveAppData_)
 import ENCOINS.Common.Cache (currentWallet)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Wallet (loadWallet, walletIcon)
+import ENCOINS.Common.Events
 
 walletEntry :: (MonadWidget t m) => WalletName -> m (Event t WalletName)
 walletEntry w = do
@@ -42,6 +43,8 @@ connectWindow supportedWallets eConnectOpen = mdo
             divClass "common-Connect_WalletContainer" $
                 leftmost . ([eLastWalletName] ++) <$> mapM walletEntry supportedWallets
         eUpdate <- tag bWalletName <$> tickLossyFromPostBuildTime 10
+        -- logEvent "connectWindow: eWalletName" eWalletName
+        -- logEvent "connectWindow: eUpdate" eUpdate
         dW <- loadWallet (leftmost [eWalletName, eUpdate]) >>= holdUniqDyn
         let bWalletName = current $ fmap walletName dW
 

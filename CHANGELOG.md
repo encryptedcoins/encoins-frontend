@@ -4,6 +4,7 @@
 
 * Update to GHC and GHCJS to 8.10.7 version
 * Add instruction for tmux session
+* Reduce js sice of the client with google optimizer
 
 ## 0.1.1.5
 
