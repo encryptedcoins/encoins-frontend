@@ -40,12 +40,15 @@ copy_js() {
   printf '\n\n==== Copy js files to result ===='
   if ! copy_main "$1"; then
     printf "\n\nCoping main page is failed."
+    exit 1
   else
     if ! copy_app "$1"; then
       printf "\n\nCoping app is failed"
+      exit 1
     else
       if ! copy_dao "$1"; then
         printf "\n\nCoping dao is failed."
+        exit 1
       else
         printf "\nCoping is successful!\n\n"
       fi
@@ -57,6 +60,7 @@ build_prod_js_and_copy() {
   printf '\n==== Build js frontend for production ====\n'
   if ! build_prod; then
     printf "\n\nBuilding is failed."
+    exit 1;
   else
     printf "Prod is built successfully!"
     copy_js "$1"
@@ -66,8 +70,23 @@ build_prod_js_and_copy() {
 build_prod_js_html_and_copy() {
   printf '\n\n==== Build HTML frontend ====\n'
   if ! build_html; then
-    printf "Building HTML is failed."
+    printf "Building HTML is failed.";
+    exit 1
   else
     build_prod_js_and_copy "$version"
+  fi
+}
+
+build_dev_js_and_copy() {
+  printf '\n==== Build js frontend for development ====\n'
+  if ! build_dev; then
+    printf "\n\nBuilding is failed.";
+    exit 1
+  else
+    printf "Dev is built successfully!"
+    if ! copy_js "$1"; then 
+      printf "\n\nCoping was failed";
+      exit 1
+    fi
   fi
 }
