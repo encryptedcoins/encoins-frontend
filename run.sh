@@ -4,5 +4,6 @@ source ./utils.sh
 
 version=$(get_version)
 printf "Current frontend version: %s" "$version"
+printf "\n\nRunning frontend in watch mode:\n\n"
 
-build_dev_js_and_copy "$version"
+caddy run -w

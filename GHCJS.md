@@ -1,14 +1,31 @@
 # GHCJS
 
+## Building GHCJS-8.6.5 version with docker
+
+From the root directory of frontend project (where dockerfile is) run:
+
+```shell
+docker build -t ghcjs865 .
+```
+
+to run project building use
+
+```shell 
+# FRONT_PATH is absolute path to frontend project
+docker run -ti -v $FRONT_PATH:/home/frontend ghcjs865
+
+./build_js_dev.sh # or build_js.sh for mainnet
+```
+
+## Building GHCJS-8.6 version manually
+
 System setup where installing ghcjs was succeeded. In another system setup the steps could be different.
 
         OS: Manjaro 23.0.0 Uranos
         Kernel: x86_64 Linux 6.4.6-1-MANJARO
         DE: KDE 5.108.0 / Plasma 5.27.7
 
-## GHC-8.6 version for encoins project
-
-1. I use `ghcup` for tool management. Thus there should not exist (or be visible in a PATH) any alternative of cabal setup (for example in `/home/$USERNAME/.cabal` ) except ones that installed by  `ghcup`.
+0. I use `ghcup` for tool management. Thus there should not exist (or be visible in a PATH) any alternative of cabal setup (for example in `/home/$USERNAME/.cabal` ) except ones that installed by  `ghcup`.
 Also,no extra `ghc-pkg` setups, for example in `/usr/bin` PATH. Highly likely installed globally `happy` should have version `1.19.11`. Likely, in your case there are another toolings installed with different version that slips into GHCJS compiling.
 
 1. GHCUP: GHC set to 8.6.5, Cabal set to 3.2.0.0

@@ -2,61 +2,47 @@
 
 ## Install GHCJS locally
 
-See instruction [GHCJS.md](GHCJS.md)
+See instruction [GHCJS.md](GHCJS.md) for mannual and dockerized methods.
 
-## Building
+## General information
 
 - This project is based on cabal 3.2.0.0, GHC 8.6.5 and GHCJS 8.6 versions.
+- HLS version for the setup is 1.8.0.0.
 - The project is comprised by two packages `frontend` for constructing javascript part and `frontend-html` for constructing html part.
-- For building both of them at once just run `build.sh` that builds them and copy results to `result` folder.
 
-## Development
+## Building frontend for production
 
-1. For building just the `frontend-html` part of the project use commands:
+- `build.sh` builds `frontend` and `frontend-html` and copy result to `result` folder.
+- `build_and_copy.sh` is spacial version of `build.sh` with deploy preparing.
+- `build_js.sh` builds `frontend`.
 
-```shell
-cabal run --project-file=frontend-html.project frontend-html
-```
-They generate html files to `result/` folder.
+## Building frontend for development
 
-2. Building `frontend` part of the project for mainnet use commands:
+- `build_html.sh` builds just `frontend-html`.
+- `build_js_dev.sh` builds `frontend` in preprod mode
 
-```shell
-cabal new-build --ghcjs frontend
-```
-to build all webpages. Copy `all.js` files to the respective files in `result/`.
-
-Alternatively, simply run
+## Launch frontend
 
 ```shell
-./build-frontend.sh
-```
-It will compile frontend and copy required files to `result/`.
-
-1. Building frontend for preprod use flags `predao` and `preapp`
-
-```shell
-cabal new-build -f preapp -f predao --ghcjs frontend
-```
-or simply run
-
-```shell
-./build-frontend-dev.sh
-```
-It will compile frontend in dev mode and copy required files to `result/`.
-
-4. Rebuild frontend in dev mode and run it with caddy at once
-
-```shell
-run-dev.sh
+run.sh
 ```
 
-## Setup for local development
+## Caddy server 
 
-Switch to cabal 3.2.0.0 and GHC 8.6.5 for HLS support (HLS version for the setup is 1.8.0.0).
+Setup [`caddy2`](https://caddyserver.com/v2).
 
-Download [`caddy2`](https://caddyserver.com/v2).
+Add `Caddyfile` to root of the frontend project if it doesn't
+```
+http://localhost:3333 {
+  route * {
+    root * {$CADDY_ROOT}result
+    file_server *
+  }
+}
+```
 
-Run the server locally `caddy run`.
+## In a browser
 
-Open http://localhost:3333/ or http://localhost:3333/app.html or http://localhost:3333/dao.html in the browser to see the results!
+- `http://localhost:3333/` - landing page
+- `http://localhost:3333/app.html` - app page
+- `http://localhost:3333/dao.html` - dao page

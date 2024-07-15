@@ -83,4 +83,4 @@ RUN ghcup install cabal 3.2.0.0 && ghcup set cabal 3.2.0.0
 
 RUN cabal update
 
-WORKDIR /home
+WORKDIR /home/frontend
