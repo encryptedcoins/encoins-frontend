@@ -8,11 +8,11 @@ From the root directory of frontend project (where dockerfile is) run:
 docker build -t ghcjs865 .
 ```
 
-to run project building use
+to run project use:
 
 ```shell 
 # FRONT_PATH is absolute path to frontend project
-docker run -ti -v $FRONT_PATH:/home/frontend ghcjs865
+docker  run -it -v $FRONT_PATH/encoins-frontend:/home/frontend -v $FRONT_PATH/.cabal:/root/.cabal --entrypoint ./start.sh ghcjs865 `id -u -n` `id -u`
 
 ./build_js_dev.sh # or build_js.sh for mainnet
 ```

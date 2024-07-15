@@ -61,7 +61,7 @@ tmux send-keys -t $SESSION:$APPS.3 "./run.sh ";
 tmux send-keys -t $SESSION:$APPS.4 "cd $FRONT_PATH" C-m;
 tmux send-keys -t $SESSION:$APPS.4 "clear" C-m ;
 tmux send-keys -t $SESSION:$APPS.4 "docker run -ti -v $FRONT_PATH:/home/frontend ghcjs865" C-m ;
-tmux send-keys -t $SESSION:$APPS.4 "build_js_dev.sh" C-m ;
+tmux send-keys -t $SESSION:$APPS.4 "./build_js_dev.sh" C-m ;
 
 tmux select-pane -t $SESSION:$CARDANO.2
 tmux select-pane -t $SESSION:$APPS.2
