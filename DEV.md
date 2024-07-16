@@ -13,10 +13,16 @@ APPS="apps"
 CARDANO="cardano"
 
 # update path variables to match your directories
-ENCOINS_PATH="source/org/encoins" 
-APPS_PATH="$HOME/$ENCOINS_PATH/encoins-tools/testnet-preprod/apps/encoins"
-SCRIPTS_PATH="$HOME/$ENCOINS_PATH/encoins-tools/testnet-preprod/scripts"
-FRONT_PATH="$HOME/$ENCOINS_PATH/encoins-frontend"
+# STORAGE_PATH="/run/media/$USER/WD_Black/encoins/" # path to data of node and kupo
+ENCOINS_PATH="$HOME/source/org/encoins" 
+APPS_PATH="$ENCOINS_PATH/encoins-tools/testnet-preprod/apps/encoins"
+SCRIPTS_PATH="$ENCOINS_PATH/encoins-tools/testnet-preprod/scripts"
+FRONT_PATH="$ENCOINS_PATH/encoins-frontend"
+
+# if [ ! -d $STORAGE_PATH ]; then
+#        echo "Storage disk is not mounted"
+#        exit 1;
+# fi;
 
 tmux new-session -d -s $SESSION -n $CARDANO
 tmux split-window -v -t $SESSION:$CARDANO.0
@@ -60,7 +66,7 @@ tmux send-keys -t $SESSION:$APPS.3 "./run.sh ";
 
 tmux send-keys -t $SESSION:$APPS.4 "cd $FRONT_PATH" C-m;
 tmux send-keys -t $SESSION:$APPS.4 "clear" C-m ;
-tmux send-keys -t $SESSION:$APPS.4 "docker run -ti -v $FRONT_PATH:/home/frontend ghcjs865" C-m ;
+tmux send-keys -t $SESSION:$APPS.4 "docker run -it -v $FRONT_PATH:/home/frontend -v $ENCOINS_PATH/.docker_cabal_cache:/home/.frontend_cabal_cache ghcjs865 `id -u -n` `id -u`" C-m ;
 tmux send-keys -t $SESSION:$APPS.4 "./build_js_dev.sh" C-m ;
 
 tmux select-pane -t $SESSION:$CARDANO.2
