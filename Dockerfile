@@ -25,7 +25,7 @@ RUN echo 'deb http://ppa.launchpad.net/hvr/ghc/ubuntu xenial main' > \
       python3 \
       git
 
-ENV PATH=/root/.cabal/bin:/root/.local/bin:/opt/cabal/bin:/opt/ghc/8.6.5/bin:$PATH
+# ENV PATH=/root/.cabal/bin:/root/.local/bin:/opt/cabal/bin:/opt/ghc/8.6.5/bin:$PATH
 
 ## node.js
 RUN curl -sL https://deb.nodesource.com/setup_8.x | bash - \
@@ -35,17 +35,36 @@ RUN curl -sL https://deb.nodesource.com/setup_8.x | bash - \
 RUN curl https://getmic.ro | bash
 RUN mv micro /usr/local/bin
 
+# Set host $USER as default in docker container
+ARG uid
+ARG username
+
+RUN echo "uid: $uid"
+RUN echo "username: $username"
+
+ENV USER=${username}
+
+ENV UID=${uid}
+
+RUN echo "UID: $UID"
+RUN echo "USER: $USER"
+
+RUN adduser --uid $UID $USER
+USER $USER
+
+ENV HOME=/home/$USER
+WORKDIR $HOME
+
 # Install ghc-8.6.5 and cabal-2.4.1.0. This cabal version wanted for build ghcjs.
 RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | \
   BOOTSTRAP_HASKELL_NONINTERACTIVE=1 \
   BOOTSTRAP_HASKELL_GHC_VERSION=8.6.5 \
   sh
-ENV PATH=/root/.ghcup/bin:$PATH
+ENV PATH=$HOME/.ghcup/bin:$HOME/.cabal:$HOME/.cabal/bin:$PATH
 
 RUN ghcup install cabal 2.4.1.0 && ghcup set cabal 2.4.1.0
 
 ## build GHCJS
-WORKDIR /opt
 
 RUN cabal update
 
@@ -54,7 +73,7 @@ RUN cabal install happy-1.19.9
 
 RUN git clone https://github.com/ghcjs/ghcjs.git
 
-WORKDIR /opt/ghcjs
+WORKDIR $HOME/ghcjs
 
 RUN git checkout 04c61d21e13fcbd5de8ca03bea5bc81a862d83d3
 
@@ -66,7 +85,7 @@ RUN ./utils/makeSandbox.sh
 
 RUN cabal install
 
-ENV PATH=/opt/ghcjs/.cabal-sandbox/bin:$PATH
+ENV PATH=$HOME/ghcjs/.cabal-sandbox/bin:$PATH
 
 RUN ghcjs-boot -v2 -s ./lib/boot/
 
@@ -74,10 +93,14 @@ RUN ghcjs-boot -v2 -s ./lib/boot/
 
 RUN ghcup install cabal 3.2.0.0 && ghcup set cabal 3.2.0.0
 
-WORKDIR /home/frontend
+WORKDIR $HOME
 
-ENV CABAL_DIR=/home/.frontend_cabal_cache
+RUN mkdir $HOME/.frontend_cabal_cache
 
-COPY ./start.sh /home/start.sh
+RUN mkdir $HOME/frontend
 
-ENTRYPOINT ["/bin/sh", "/home/start.sh"]
+ENV CABAL_DIR=$HOME/.frontend_cabal_cache
+
+ADD ./start.sh ./start.sh
+
+ENTRYPOINT ["./start.sh"]
