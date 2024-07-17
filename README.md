@@ -2,7 +2,7 @@
 
 ## Install GHCJS locally
 
-See instruction [GHCJS.md](GHCJS.md) for mannual and dockerized methods.
+See instruction [GHCJS.md](GHCJS.md) for manual and dockerized methods.
 
 ## General information
 
@@ -49,7 +49,7 @@ http://localhost:3333 {
 
 ## Run dockerized ghcjs
 
-1. After building ghcjs-8.6 with docker (see [CHCJS.md](./GHCJS.md)) there is docker image namied `ghcjs865`. Check it with `docker images`.
+1. After building ghcjs-8.6 with docker (see [CHCJS.md](./GHCJS.md)) there is docker image named `ghcjs865`. Check it with `docker images`.
 
 2. Run docker image and share frontend code directory and cabal cache directory (the last one is empty on the first run). Use command
 
@@ -57,10 +57,10 @@ http://localhost:3333 {
 docker run -it -v <host_path_to_encoins-frontend>:/home/frontend -v <host_path_to_any_empty_directory>:/home/.frontend_cabal_cache ghcjs865 `id -u -n` `id -u`
 ```
 
-3. Entrypoint of docker is `./start.sh` script which finetunes infrastructure. It copied on image build and launch automatically.
+3. Entrypoint of docker is `./start.sh` script which fine tunes infrastructure. It copied on image build and launch automatically.
 
 4. Inside docker run `./build_js_dev.sh` for development and `./build_js.sh` for production. They are wrappers on commands: 
-  - build `cabal new-build -f preapp -f predao --ghcjs frontend` and `cabal new-build --ghcjs frontend` respectevly.
+  - build `cabal new-build -f preapp -f predao --ghcjs frontend` and `cabal new-build --ghcjs frontend` respectively.
   - copy js to result directory. 
 
 5. Due to docker's volumes the things built in docker appear on the host.
