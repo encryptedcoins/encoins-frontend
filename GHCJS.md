@@ -2,10 +2,12 @@
 
 ## Building GHCJS-8.6.5 version with docker
 
-From the root directory of frontend project (where dockerfile is) run:
+1. Add envvars to `.envrc` file. See README
+
+2. Run ghcjs builder from the root directory of frontend project (where dockerfile is):
 
 ```shell
-docker build --progress=plain -t ghcjs865 .
+./docker_build.sh
 ```
 
 ## Building GHCJS-8.6 version manually

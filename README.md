@@ -1,5 +1,39 @@
 # ENCOINS Frontend
 
+## Prepare environment
+
+1. Install [direnv](https://direnv.net/)
+2. Set [hook](https://direnv.net/docs/hook.html) for `direnv`
+3. `mkdir .envrc`
+4. Add env vars to `.envrc` with format `export ENV_NAME=ENV_VALUE`.
+If you add all, remove duplicates
+
+Envvar wanted everywhere:
+- HOST_ENCOINS_PATH - absolute path to directory where all encoins projects sit
+
+Envvars for building `ghcjs`:
+- DOCKER_CABAL_CACHE=$HOME/.docker_cabal_cache
+- DOCKER_FRONT_PATH=$HOME/frontend 
+- GHCJS_IMAGE=ghcjs865
+- USER_ID=$(id -u)
+- USER_NAME=$(id -u -n)
+
+Envars for running docker container:
+- GHCJS_IMAGE=ghcjs865
+- DOCKER_CABAL_CACHE=$HOME/.docker_cabal_cache
+- DOCKER_FRONT_PATH=$HOME/frontend 
+- HOST_CABAL_CACHE=$HOST_ENCOINS_PATH/.docker_cabal_cache
+- HOST_FRONT_PATH=$HOST_ENCOINS_PATH/encoins-frontend
+
+Envvars for development within tmux:
+- STORAGE_PATH - absolute path to external disk, if you keep data of cardano-node and kupo there (optional)
+- HOST_FRONT_PATH=$HOST_ENCOINS_PATH/encoins-frontend
+- APPS_PATH="$ENCOINS_PATH/encoins-tools/testnet-preprod/apps/encoins"
+- SCRIPTS_PATH="$ENCOINS_PATH/encoins-tools/testnet-preprod/scripts"
+- SESSION="encoins"
+- APPS="apps"
+- CARDANO="cardano"
+
 ## Install GHCJS locally
 
 See instruction [GHCJS.md](GHCJS.md) for manual and dockerized methods.
@@ -23,15 +57,9 @@ See instruction [GHCJS.md](GHCJS.md) for manual and dockerized methods.
 
 ## Launch frontend
 
-```shell
-run.sh
-```
+- Setup [`caddy2`](https://caddyserver.com/v2).
 
-## Run with caddy server 
-
-Setup [`caddy2`](https://caddyserver.com/v2).
-
-Add `Caddyfile` to root of the frontend project if it doesn't
+- Add `Caddyfile` to root of the frontend project if it doesn't
 ```
 http://localhost:3333 {
   route * {
@@ -41,26 +69,25 @@ http://localhost:3333 {
 }
 ```
 
+- Run frontend
+```shell
+run.sh
+```
+
 ## In a browser
 
 - `http://localhost:3333/` - landing page
 - `http://localhost:3333/app.html` - app page
 - `http://localhost:3333/dao.html` - dao page
 
-## Run dockerized ghcjs
+## Build and run frontend with docker
 
-1. After building ghcjs-8.6 with docker (see [CHCJS.md](./GHCJS.md)) there is docker image named `ghcjs865`. Check it with `docker images`.
+1. Check there is docker image named `ghcjs865` with command `docker images` after building ghcjs-8.6 with docker (see [CHCJS.md](./GHCJS.md)).
 
-2. Run docker image and share frontend code directory and cabal cache directory (the last one is empty on the first run). Use command
+2. `./docker_run.sh` run `ghcjs865 container, bind cabal cache and frontend sources.
 
-```shell
-docker run -it -v <host_path_to_encoins-frontend>:/home/frontend -v <host_path_to_any_empty_directory>:/home/.frontend_cabal_cache ghcjs865 `id -u -n` `id -u`
-```
+3. Just for info. Entrypoint of ghcjs865 container is `./docker_entrypoint.sh` script which fine tunes infrastructure. 
 
-3. Entrypoint of docker is `./start.sh` script which fine tunes infrastructure. It copied on image build and launch automatically.
+4. Inside docker run `./build_js_dev.sh` for development or `./build_js.sh` for production. 
 
-4. Inside docker run `./build_js_dev.sh` for development and `./build_js.sh` for production. They are wrappers on commands: 
-  - build `cabal new-build -f preapp -f predao --ghcjs frontend` and `cabal new-build --ghcjs frontend` respectively.
-  - copy js to result directory. 
-
-5. Due to docker's volumes the things built in docker appear on the host.
+5. Thanks to docker's volumes the things built in docker appear on the host, that is in result folder.

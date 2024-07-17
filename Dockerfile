@@ -95,12 +95,18 @@ RUN ghcup install cabal 3.2.0.0 && ghcup set cabal 3.2.0.0
 
 WORKDIR $HOME
 
-RUN mkdir $HOME/.frontend_cabal_cache
+ARG docker_cabal_cache
+ARG docker_front_path
 
-RUN mkdir $HOME/frontend
+ENV DOCKER_CABAL_CACHE=${docker_cabal_cache}
+ENV DOCKER_FRONT_PATH=${docker_front_path}
 
-ENV CABAL_DIR=$HOME/.frontend_cabal_cache
+RUN mkdir $DOCKER_CABAL_CACHE
 
-ADD ./start.sh ./start.sh
+RUN mkdir $DOCKER_FRONT_PATH
 
-ENTRYPOINT ["./start.sh"]
+ENV CABAL_DIR=$DOCKER_CABAL_CACHE
+
+ADD ./docker_entrypoint.sh ./docker_entrypoint.sh
+
+ENTRYPOINT ["./docker_entrypoint.sh"]

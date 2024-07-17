@@ -3,3 +3,4 @@ result/app.js
 result/index.js
 result/dao.js
 cabal.log
+.envrc
