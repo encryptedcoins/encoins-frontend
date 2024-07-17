@@ -5,7 +5,7 @@
 From the root directory of frontend project (where dockerfile is) run:
 
 ```shell
-docker build -t ghcjs865 .
+docker build --progress=plain -t ghcjs865 .
 ```
 
 ## Building GHCJS-8.6 version manually

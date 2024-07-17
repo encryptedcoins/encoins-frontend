@@ -27,7 +27,7 @@ See instruction [GHCJS.md](GHCJS.md) for mannual and dockerized methods.
 run.sh
 ```
 
-## Caddy server 
+## Run with caddy server 
 
 Setup [`caddy2`](https://caddyserver.com/v2).
 
@@ -46,3 +46,21 @@ http://localhost:3333 {
 - `http://localhost:3333/` - landing page
 - `http://localhost:3333/app.html` - app page
 - `http://localhost:3333/dao.html` - dao page
+
+## Run dockerized ghcjs
+
+1. After building ghcjs-8.6 with docker (see [CHCJS.md](./GHCJS.md)) there is docker image namied `ghcjs865`. Check it with `docker images`.
+
+2. Run docker image and share frontend code directory and cabal cache directory (the last one is empty on the first run). Use command
+
+```shell
+docker run -it -v <host_path_to_encoins-frontend>:/home/frontend -v <host_path_to_any_empty_directory>:/home/.frontend_cabal_cache ghcjs865 `id -u -n` `id -u`
+```
+
+3. Entrypoint of docker is `./start.sh` script which finetunes infrastructure. It copied on image build and launch automatically.
+
+4. Inside docker run `./build_js_dev.sh` for development and `./build_js.sh` for production. They are wrappers on commands: 
+  - build `cabal new-build -f preapp -f predao --ghcjs frontend` and `cabal new-build --ghcjs frontend` respectevly.
+  - copy js to result directory. 
+
+5. Due to docker's volumes the things built in docker appear on the host.
