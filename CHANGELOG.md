@@ -6,6 +6,8 @@
 * Refactor build scripts
 * Add instruction for running all services for frontend within tmux session
 * Update README
+* Add wrappers for docker command
+* Use 'direnv' for managing env vars.
 
 ## 0.1.1.5
 
