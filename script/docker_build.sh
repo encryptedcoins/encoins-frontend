@@ -1,6 +1,8 @@
 #!/bin/bash
 
-direnv allow .envrc
+set -a
+source ./.env
+set +a
 
 docker build --progress=plain -t "$GHCJS_IMAGE" \
     --build-arg uid="$USER_ID" \

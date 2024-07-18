@@ -2,10 +2,8 @@
 
 ## Prepare environment
 
-1. Install [direnv](https://direnv.net/)
-2. Set [hook](https://direnv.net/docs/hook.html) for `direnv`
-3. `mkdir .envrc`
-4. Add env vars to `.envrc` with format `export ENV_NAME=ENV_VALUE`.
+1. `mkdir .env`
+2. Add env vars to `.env` with format `ENV_NAME=ENV_VALUE`.
 If you add all, remove duplicates
 
 Envvar wanted everywhere:
@@ -26,17 +24,17 @@ Envars for running docker container:
 - HOST_FRONT_PATH=$HOST_ENCOINS_PATH/encoins-frontend
 
 Envvars for development within tmux:
-- STORAGE_PATH - absolute path to external disk, if you keep data of cardano-node and kupo there (optional)
+- EXTERNAL_DATA_PATH - absolute path to external disk, if you keep data of cardano-node and kupo there (optional)
 - HOST_FRONT_PATH=$HOST_ENCOINS_PATH/encoins-frontend
-- APPS_PATH="$ENCOINS_PATH/encoins-tools/testnet-preprod/apps/encoins"
-- SCRIPTS_PATH="$ENCOINS_PATH/encoins-tools/testnet-preprod/scripts"
-- SESSION="encoins"
-- APPS="apps"
-- CARDANO="cardano"
+- TOOL_APP_PATH="$HOST_ENCOINS_PATH/encoins-tools/testnet-preprod/apps/encoins"
+- TOOL_SCRIPT_PATH="$HOST_ENCOINS_PATH/encoins-tools/testnet-preprod/scripts"
+- FRONT_SESSION="encoins"
+- WINDOW_APPS="apps"
+- WINDOW_CARDANO="cardano"
 
 ## Install GHCJS locally
 
-See instruction [GHCJS.md](GHCJS.md) for manual and dockerized methods.
+See instruction [GHCJS.md](./doc/GHCJS.md) for manual and docker methods.
 
 ## General information
 
@@ -47,12 +45,12 @@ See instruction [GHCJS.md](GHCJS.md) for manual and dockerized methods.
 ## Building frontend for production
 
 - `build.sh` builds `frontend` and `frontend-html` and copy result to `result` folder.
-- `build_and_copy.sh` is spacial version of `build.sh` with deploy preparing.
-- `build_js.sh` builds `frontend`.
+- `build_and_copy.sh` is spacial version of `build.sh` with deploy preparing. 
+- `build_js.sh` builds `frontend` only.
+- `build_html.sh` builds `frontend-html` only (the same for prod and dev)
 
 ## Building frontend for development
 
-- `build_html.sh` builds just `frontend-html`.
 - `build_js_dev.sh` builds `frontend` in preprod mode
 
 ## Launch frontend
@@ -82,9 +80,9 @@ run.sh
 
 ## Build and run frontend with docker
 
-1. Check there is docker image named `ghcjs865` with command `docker images` after building ghcjs-8.6 with docker (see [CHCJS.md](./GHCJS.md)).
+1. Check there is docker image named `ghcjs865` with command `docker images` or build it with docker method (see [CHCJS.md](./doc/GHCJS.md)).
 
-2. `./docker_run.sh` run `ghcjs865 container, bind cabal cache and frontend sources.
+2. `./docker_run.sh` run `ghcjs865` container, bind cabal cache and frontend sources.
 
 3. Just for info. Entrypoint of ghcjs865 container is `./docker_entrypoint.sh` script which fine tunes infrastructure. 
 

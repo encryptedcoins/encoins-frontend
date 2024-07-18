@@ -2,7 +2,9 @@
 
 # set -eux -o pipefail
 
-direnv allow .
+set -a
+source ./.env
+set +a
 
 mkdir -p "$HOST_CABAL_CACHE"
 

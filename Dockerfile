@@ -107,6 +107,6 @@ RUN mkdir $DOCKER_FRONT_PATH
 
 ENV CABAL_DIR=$DOCKER_CABAL_CACHE
 
-ADD ./docker_entrypoint.sh ./docker_entrypoint.sh
+ADD ./script/docker_entrypoint.sh ./docker_entrypoint.sh
 
 ENTRYPOINT ["./docker_entrypoint.sh"]

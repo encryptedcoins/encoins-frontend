@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# $USER, $UID and $HOME env vars taken from dockerfile wheree this script starts
+# $USER, $UID and $HOME env vars taken from ENVs of dockerfile where this script starts
+
 printf "\nConfiguring user: %s ...\n" "$USER"
 
 sudo adduser --disabled-password --gecos '' --uid "$UID" "$USER" > /dev/null 2>&1 
