@@ -1,5 +1,15 @@
 # Revision history for encoins-frontend
 
+## 0.1.1.6
+
+* Add dockerfile to build ghcjs-8.6.5
+* Refactor build scripts
+* Add instruction for running all services for frontend within tmux session
+* Update README
+* Add wrappers for docker command
+* Use '.env' for managing env vars.
+* Refactor file structure of scripts and docs.
+
 ## 0.1.1.5
 
 * Add one more way to make cloud key, the key is making out of connected wallet sign.
