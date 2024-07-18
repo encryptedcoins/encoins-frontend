@@ -1,7 +1,9 @@
 #!/bin/bash
 
-export USER_NAME=$(id -u -n)
-export USER_ID=$(id -u)
+USER_NAME=$(id -u -n)
+export USER_NAME
+USER_ID=$(id -u)
+export USER_ID
 
 printf "\nConfiguring user: %s ...\n" "$USER_NAME"
 
@@ -18,6 +20,6 @@ if [ ! -d "$HOME"/.docker_cabal_cache ] || [ -z "$(ls -A "$HOME"/.docker_cabal_c
     cabal install happy-1.19.9
 fi
 
-cd "$HOME"/frontend
+cd "$HOME"/frontend || exit
 
 bash
