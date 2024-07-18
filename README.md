@@ -7,27 +7,35 @@
 If you add all, remove duplicates
 
 Envvar wanted everywhere:
-- HOST_ENCOINS_PATH - absolute path to directory where all encoins projects sit
+- HOST_ENCOINS - absolute path to directory where all encoins projects sit, that is parent directory to encoins projects.
 
 Envvars for building `ghcjs`:
 - DOCKER_CABAL_CACHE=$HOME/.docker_cabal_cache
-- DOCKER_FRONT_PATH=$HOME/frontend 
+- DOCKER_FRONTEND=$HOME/frontend 
 - GHCJS_IMAGE=ghcjs865
 - USER_ID=$(id -u)
 - USER_NAME=$(id -u -n)
 
-Envars for running docker container:
+Envvars for running docker container:
 - GHCJS_IMAGE=ghcjs865
 - DOCKER_CABAL_CACHE=$HOME/.docker_cabal_cache
-- DOCKER_FRONT_PATH=$HOME/frontend 
-- HOST_CABAL_CACHE=$HOST_ENCOINS_PATH/.docker_cabal_cache
-- HOST_FRONT_PATH=$HOST_ENCOINS_PATH/encoins-frontend
+- DOCKER_FRONTEND=$HOME/frontend 
+- HOST_CABAL_CACHE=$HOST_ENCOINS/.docker_cabal_cache
+- HOST_FRONTEND=$HOST_ENCOINS/encoins-frontend
+
+Envvars special for `./script/build_and_copy.sh`
+- HOST_WEBSITE=$HOST_ENCOINS/Website
+- HOST_WEBAPP=$HOST_ENCOINS/Webapp
+- HOST_WEBDAO=$HOST_ENCOINS/DAO
+- DOCKER_WEBSITE=$HOME/Website
+- DOCKER_WEBAPP=$HOME/Webapp
+- DOCKER_WEBDAO=$HOME/DAO
 
 Envvars for development within tmux:
-- EXTERNAL_DATA_PATH - absolute path to external disk, if you keep data of cardano-node and kupo there (optional)
-- HOST_FRONT_PATH=$HOST_ENCOINS_PATH/encoins-frontend
-- TOOL_APP_PATH="$HOST_ENCOINS_PATH/encoins-tools/testnet-preprod/apps/encoins"
-- TOOL_SCRIPT_PATH="$HOST_ENCOINS_PATH/encoins-tools/testnet-preprod/scripts"
+- EXTERNAL_DATA - absolute path to external disk, if you keep data of cardano-node and kupo there (optional)
+- HOST_FRONTEND=$HOST_ENCOINS/encoins-frontend
+- TOOL_APP="$HOST_ENCOINS/encoins-tools/testnet-preprod/apps/encoins"
+- TOOL_SCRIPT="$HOST_ENCOINS/encoins-tools/testnet-preprod/scripts"
 - FRONT_SESSION="encoins"
 - WINDOW_APPS="apps"
 - WINDOW_CARDANO="cardano"
@@ -44,14 +52,14 @@ See instruction [GHCJS.md](./doc/GHCJS.md) for manual and docker methods.
 
 ## Building frontend for production
 
-- `build.sh` builds `frontend` and `frontend-html` and copy result to `result` folder.
-- `build_and_copy.sh` is spacial version of `build.sh` with deploy preparing. 
-- `build_js.sh` builds `frontend` only.
-- `build_html.sh` builds `frontend-html` only (the same for prod and dev)
+- `./script/build.sh` builds `frontend` and `frontend-html` and copy result to `result` folder.
+- `./script/build_and_copy.sh` is spacial version of `./script/build.sh` with deploy preparing. 
+- `./script/build_js.sh` builds `frontend` only.
+- `./script/build_html.sh` builds `frontend-html` only (the same for prod and dev)
 
 ## Building frontend for development
 
-- `build_js_dev.sh` builds `frontend` in preprod mode
+- `./script/build_dev_js.sh` builds `frontend` in preprod mode
 
 ## Launch frontend
 
@@ -69,7 +77,7 @@ http://localhost:3333 {
 
 - Run frontend
 ```shell
-run.sh
+./script/run.sh
 ```
 
 ## In a browser
@@ -82,10 +90,10 @@ run.sh
 
 1. Check there is docker image named `ghcjs865` with command `docker images` or build it with docker method (see [CHCJS.md](./doc/GHCJS.md)).
 
-2. `./docker_run.sh` run `ghcjs865` container, bind cabal cache and frontend sources.
+2. `script/docker_run.sh` for prod (and `./scrript/docker_dev_run.sh` for dev) run `ghcjs865` container, bind cabal cache and frontend sources (prod version `docker_run.sh` binds Website, Webapp and Webdao as well)
 
-3. Just for info. Entrypoint of ghcjs865 container is `./docker_entrypoint.sh` script which fine tunes infrastructure. 
+3. Just for info. Entrypoint of ghcjs865 container is `./script/docker_entrypoint.sh` script which fine tunes infrastructure. 
 
-4. Inside docker run `./build_js_dev.sh` for development or `./build_js.sh` for production. 
+4. Inside docker run `./script/build_dev_js.sh` for dev or `./script/build_js.sh` for prod. 
 
 5. Thanks to docker's volumes the things built in docker appear on the host, that is in result folder.

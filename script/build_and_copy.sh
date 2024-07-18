@@ -25,7 +25,7 @@ rm -f $WEBAPP_DIR/dao.js
 mv $WEBAPP_DIR/app.html $WEBAPP_DIR/index.html
 rm -r $WEBAPP_DIR/docs
 
-export DAO_DIR=../DAO
+export DAO_DIR=../Webdao
 cp -r -T result $DAO_DIR
 rm -f $DAO_DIR/index.html
 rm -f $DAO_DIR/index.js

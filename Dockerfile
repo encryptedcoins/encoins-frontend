@@ -96,14 +96,22 @@ RUN ghcup install cabal 3.2.0.0 && ghcup set cabal 3.2.0.0
 WORKDIR $HOME
 
 ARG docker_cabal_cache
-ARG docker_front_path
+ARG docker_frontend
+ARG docker_website
+ARG docker_webapp
+ARG docker_webdao
 
 ENV DOCKER_CABAL_CACHE=${docker_cabal_cache}
-ENV DOCKER_FRONT_PATH=${docker_front_path}
+ENV DOCKER_FRONTEND=${docker_frontend}
+ENV DOCKER_WEBSITE=${docker_website}
+ENV DOCKER_WEBAPP=${docker_webapp}
+ENV DOCKER_WEBDAO=${docker_webdao}
 
 RUN mkdir $DOCKER_CABAL_CACHE
-
-RUN mkdir $DOCKER_FRONT_PATH
+RUN mkdir $DOCKER_FRONTEND
+RUN mkdir $DOCKER_WEBSITE
+RUN mkdir $DOCKER_WEBAPP
+RUN mkdir $DOCKER_WEBDAO
 
 ENV CABAL_DIR=$DOCKER_CABAL_CACHE
 

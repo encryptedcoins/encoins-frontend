@@ -77,7 +77,7 @@ build_prod_js_html_and_copy() {
   fi
 }
 
-build_js_dev_and_copy() {
+build_dev_js_and_copy() {
   printf '\n==== Build js frontend for development ====\n'
   if ! build_dev; then
     printf "\n\nBuilding is failed.";
