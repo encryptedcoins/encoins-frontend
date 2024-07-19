@@ -2,7 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecursiveDo #-}
 
-module ENCOINS.DAO.Widgets.RelayTable
+module ENCOINS.DAO.Widgets.DelegateWindow.RelayTable
     ( fetchDelegatedByAddress
     , fetchRelayNames
     , fetchRelayTable
@@ -57,34 +57,21 @@ relayAmountWidget eeRelays emDelegated dRelayNames = do
                             pure never
                         else do
                             let normalAmount = normalizeAmount amount
-                            rainbowTr normalAmount $ do
-                                tdRelay $ dynText $ fromMaybe relay . Map.lookup relay <$> dRelayNames
-                                tdAmount $ text $ mkAmount normalAmount
-                                eClick <-
-                                    tdButton $
-                                        btnWithBlock
-                                            "button-switching inverted"
-                                            ""
-                                            (isDelegated relay <$> dmDelegated)
-                                            (dynText $ mkDelegateButton relay <$> dmDelegated)
-                                pure $ relay <$ eClick
+                            let dRelayName = fromMaybe relay . Map.lookup relay <$> dRelayNames
+                            let dDelegateBlock = isDelegated relay <$> dmDelegated
+                            let dDelegateTag = dynText $ mkDelegateButton relay <$> dmDelegated
+                            ev <- makeDelegateRow 
+                                normalAmount 
+                                dRelayName 
+                                dDelegateBlock 
+                                dDelegateTag 
+                            pure $ relay <$ ev
                 pure $ leftmost evs
     where
         article = elAttr "article" ("class" =: "dao-DelegateWindow_TableWrapper")
         table = elAttr "table" ("class" =: "dao-DelegateWindow_Table")
-        tr = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow")
-        trRed = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow-red")
-        trYellow = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow-yellow")
-        trGreen = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow-green")
         th = elAttr "th" ("class" =: "dao-DelegateWindow_TableHeader")
-        tdRelay = elAttr "td" ("class" =: "dao-DelegateWindow_TableRelay")
-        tdAmount = elAttr "td" ("class" =: "dao-DelegateWindow_TableAmount")
-        tdButton = elAttr "td" ("class" =: "dao-DelegateWindow_TableButton")
-        rainbowTr stakedAmount
-            | stakedAmount > 100000 = trRed
-            | stakedAmount <= 100000 && stakedAmount > 90000 = trYellow
-            | stakedAmount <= 90000 && stakedAmount > 50000 = trGreen
-            | otherwise = tr
+
 
 fetchRelayTable ::
     (MonadWidget t m) =>
@@ -154,3 +141,38 @@ fetchRelayNames eOpen = do
             e <- newEvent
             pure $ names <$ e
     holdDyn Map.empty eNames
+
+makeDelegateRow :: 
+    (MonadWidget t m) =>
+    Integer
+    -> Dynamic t Text 
+    -> Dynamic t Bool
+    -> m ()
+    -> m (Event t ()) 
+makeDelegateRow normalAmount dRelayName dDelegateBlock dDelegateTag = 
+    rainbowTr normalAmount $ do
+        tdRelay $ dynText dRelayName
+        tdAmount $ text $ mkAmount normalAmount
+        eClick <-
+            tdButton $
+                btnWithBlock
+                    "button-switching inverted"
+                    ""
+                    dDelegateBlock
+                    dDelegateTag
+        pure eClick
+    where
+        trRed = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow-red")
+        trYellow = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow-yellow")
+        trGreen = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow-green")
+        tdRelay = elAttr "td" ("class" =: "dao-DelegateWindow_TableRelay")
+        tdAmount = elAttr "td" ("class" =: "dao-DelegateWindow_TableAmount")
+        tdButton = elAttr "td" ("class" =: "dao-DelegateWindow_TableButton")
+        rainbowTr stakedAmount
+            | stakedAmount > 100000 = trRed
+            | stakedAmount <= 100000 && stakedAmount > 90000 = trYellow
+            | stakedAmount <= 90000 && stakedAmount > 50000 = trGreen
+            | otherwise = tr
+    
+tr :: (DomBuilder t m) => m a -> m a
+tr = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow")

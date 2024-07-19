@@ -20,7 +20,7 @@ import ENCOINS.Common.Events
 import ENCOINS.Common.Utils (checkUrl, stripHostOrRelay)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Basic (btn, btnWithBlock, divClassId)
-import ENCOINS.DAO.Widgets.RelayTable
+import ENCOINS.DAO.Widgets.DelegateWindow.RelayTable
     ( fetchDelegatedByAddress
     , fetchRelayTable
     , relayAmountWidget

@@ -66,9 +66,9 @@ library
     ENCOINS.DAO.Polls
     ENCOINS.DAO.Widgets.DelegateWindow
     ENCOINS.DAO.Widgets.DelegateWindow.RelayNames
+    ENCOINS.DAO.Widgets.DelegateWindow.RelayTable
     ENCOINS.DAO.Widgets.Navbar
     ENCOINS.DAO.Widgets.PollWidget
-    ENCOINS.DAO.Widgets.RelayTable
     ENCOINS.DAO.Widgets.StatusWidget
     ENCOINS.Website
     ENCOINS.Website.Body

@@ -26,7 +26,7 @@ import ENCOINS.DAO.Polls
 import ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
 import ENCOINS.DAO.Widgets.Navbar (Dao (..), navbarWidget)
 import ENCOINS.DAO.Widgets.PollWidget
-import ENCOINS.DAO.Widgets.RelayTable (fetchRelayNames)
+import ENCOINS.DAO.Widgets.DelegateWindow.RelayTable (fetchRelayNames)
 import ENCOINS.DAO.Widgets.StatusWidget
 import ENCOINS.Website.Widgets.Basic (container, section)
 
