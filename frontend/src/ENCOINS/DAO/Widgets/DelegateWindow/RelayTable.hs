@@ -59,8 +59,8 @@ relayAmountWidget eeRelays emDelegated dRelayNames = do
                             let normalAmount = normalizeAmount amount
                             let dRelayName = fromMaybe relay . Map.lookup relay <$> dRelayNames
                             let dDelegateBlock = isDelegated relay <$> dmDelegated
-                            let dDelegateTag = dynText $ mkDelegateButton relay <$> dmDelegated
-                            ev <- makeDelegateRow 
+                            let dDelegateTag = dynText $ delegationButtonText relay <$> dmDelegated
+                            ev <- viewDelegateRow 
                                 normalAmount 
                                 dRelayName 
                                 dDelegateBlock 
@@ -99,8 +99,8 @@ mkAmount :: Integer -> Text
 mkAmount amount =
     toText amount <> " ENCS"
 
-mkDelegateButton :: Text -> Maybe (Text, Integer) -> Text
-mkDelegateButton relay =
+delegationButtonText :: Text -> Maybe (Text, Integer) -> Text
+delegationButtonText relay =
     maybe "Delegate" (\(r, n) -> bool "Delegate" (mkAmount $ normalizeAmount n) (r == relay))
 
 isDelegated :: Text -> Maybe (Text, Integer) -> Bool
@@ -142,14 +142,14 @@ fetchRelayNames eOpen = do
             pure $ names <$ e
     holdDyn Map.empty eNames
 
-makeDelegateRow :: 
+viewDelegateRow :: 
     (MonadWidget t m) =>
     Integer
     -> Dynamic t Text 
     -> Dynamic t Bool
     -> m ()
     -> m (Event t ()) 
-makeDelegateRow normalAmount dRelayName dDelegateBlock dDelegateTag = 
+viewDelegateRow normalAmount dRelayName dDelegateBlock dDelegateTag = 
     rainbowTr normalAmount $ do
         tdRelay $ dynText dRelayName
         tdAmount $ text $ mkAmount normalAmount
