@@ -20,10 +20,11 @@ connectWidget ::
     Dynamic t Wallet
     -> Dynamic t Bool
     -> m (Event t ())
-connectWidget dWallet dIsBlockedConnect = divClass "menu-item-button-left" $
-    btnWithBlock
+connectWidget dWallet dIsBlockedConnect = divClass "menu-item-button-left"
+    $ btnWithBlock
         "button-switching flex-center common-Connect_Button"
         ""
-        dIsBlockedConnect $ do
+        dIsBlockedConnect
+    $ do
         dyn_ $ fmap (walletIcon . walletName) dWallet
         dynText $ fmap connectText dWallet

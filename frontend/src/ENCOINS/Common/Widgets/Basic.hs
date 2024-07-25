@@ -173,3 +173,6 @@ notification :: (MonadWidget t m) => Dynamic t Text -> m ()
 notification dNotification = do
     divClass "notification" $ do
         divClass "notification-text" $ dynText dNotification
+
+divClassDyn :: (MonadWidget t m) => Dynamic t Text -> m a -> m a
+divClassDyn = elDynClass "div"

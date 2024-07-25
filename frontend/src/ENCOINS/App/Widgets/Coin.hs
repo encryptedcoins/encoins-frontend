@@ -26,8 +26,8 @@ import Backend.Utility (toText)
 import ENCOINS.BaseTypes (FieldElement)
 import ENCOINS.Bulletproofs (Secret (..), Secrets, fromSecret)
 import ENCOINS.Common.Widgets.Advanced
-    ( checkboxButton
-    , copyButton
+    ( viewCheckboxButton
+    , viewCopyButton
     , copyEvent
     , withTooltip
     )
@@ -118,7 +118,7 @@ coinBurnWidget ::
     -> m (Dynamic t (Maybe (Secret, TokenCacheV3)))
 coinBurnWidget tokenV3@(MkTokenCacheV3 name s _) = mdo
     (elTxt, ret) <- elDynAttr "div" (mkAttrs <$> dIsSpoilerVisible) $ do
-        dChecked <- divClass "" checkboxButton
+        dChecked <- divClass "" viewCheckboxButton
         (txt, _) <- elClass' "div" "app-text-normal" $ do
             text $ shortenCoinName $ getAssetName name
             let arrowClass =
@@ -135,7 +135,7 @@ coinBurnWidget tokenV3@(MkTokenCacheV3 name s _) = mdo
         divClass "key-div" $ withTooltip keyIcon "app-CoinBurn_KeyTip" 0 0 $ do
             divClass "app-text-semibold" $ text "Minting Key"
             divClass "app-ToolTip_MintingKey" $ do
-                e <- copyButton
+                e <- viewCopyButton
                 performEvent_ (liftIO (copyText secretText) <$ e)
                 text $ " " <> secretText
         return (txt, dChecked)
@@ -177,7 +177,7 @@ coinSpoiler (MkAssetName name) = elAttr
     )
     $ do
         let copyTokenIcon = do
-                eCopy <- copyButton
+                eCopy <- viewCopyButton
                 performEvent_ (liftIO (copyText name) <$ eCopy)
         divClass "app-text-semibold" $ text "Full token name"
         divClass "app-Tooltip_TokenNameContainer" $ do
@@ -191,7 +191,7 @@ coinSpoiler (MkAssetName name) = elAttr
 
         fp <- fingerprintFromAssetName encoinsCurrencySymbol name
         let copyAssetIcon = do
-                eCopy <- copyButton
+                eCopy <- viewCopyButton
                 performEvent_ (liftIO (copyText fp) <$ eCopy)
         divClass "app-text-semibold" $ text "Asset fingerprint"
         divClass "app-Tooltip_AssetContainer" $ do

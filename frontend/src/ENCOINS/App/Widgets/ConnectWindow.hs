@@ -15,8 +15,8 @@ import ENCOINS.Common.Cache (currentWallet)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Wallet (loadWallet, walletIcon)
 
-walletEntry :: (MonadWidget t m) => WalletName -> m (Event t WalletName)
-walletEntry w = do
+viewWalletEntry :: (MonadWidget t m) => WalletName -> m (Event t WalletName)
+viewWalletEntry w = do
     (e, _) <- elAttr' "div" ("class" =: "connect-wallet-div") $ do
         divClass "app-text-normal" $ text $ bool "Disconnect" (toText w) $ w /= None
         elAttr
@@ -40,7 +40,7 @@ connectWindow supportedWallets eConnectOpen = mdo
         "Connect Wallet" $ mdo
         eWalletName <-
             divClass "common-Connect_WalletContainer" $
-                leftmost . ([eLastWalletName] ++) <$> mapM walletEntry supportedWallets
+                leftmost . ([eLastWalletName] ++) <$> mapM viewWalletEntry supportedWallets
         eUpdate <- tag bWalletName <$> tickLossyFromPostBuildTime 10
         dW <- loadWallet (leftmost [eWalletName, eUpdate]) >>= holdUniqDyn
         let bWalletName = current $ fmap walletName dW

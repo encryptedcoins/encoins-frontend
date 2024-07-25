@@ -18,7 +18,7 @@ import ENCOINS.Common.Cache (encoinsV3, passwordStorageKey)
 import ENCOINS.Common.Events
 import ENCOINS.Common.Events (setFocusDelayOnEvent)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
-import ENCOINS.Common.Widgets.Basic (br, btn, errDiv)
+import ENCOINS.Common.Widgets.Basic (br, btn, divClassDyn, errDiv)
 import JS.App (loadCacheValue, saveHashedTextToStorage)
 
 validatePassword :: Text -> Either Text PasswordRaw
@@ -53,57 +53,52 @@ enterPasswordWindow ::
     -> m (Event t PasswordRaw, Event t ())
 enterPasswordWindow passHash eResetOk = mdo
     dWindowIsOpen <- holdDyn True (False <$ leftmost [void eClose, eResetOk])
-    let windowStyle =
-            "width: min(90%, 750px); padding-left: min(5%, 70px); padding-right: min(5%, 70px); padding-top: min(5%, 30px); padding-bottom: min(5%, 30px)"
-    ret@(eClose, _) <- elDynAttr "div" (fmap mkClass dWindowIsOpen)
-        $ elAttr
-            "div"
-            ("class" =: "dialog-window" <> "style" =: windowStyle)
-        $ do
-            divClass "app-columns w-row" $
-                divClass "connect-title-div" $
-                    divClass "app-text-semibold" $
-                        text "Password for the cache of Encoins app"
-            dPassOk <- divClass "app-columns w-row" $
-                divClass "w-col w-col-12" $ do
-                    ePb <- getPostBuild
-                    dmCurPass <- passwordInput "Enter password:" False True (pure Nothing) ePb
-                    pure $ checkPass passHash <$> dmCurPass
-            (eClean, eOk) <- elAttr "div" ("class" =: "app-columns w-row app-EnterPassword_ButtonContainer") $ do
-                eSave' <-
-                    btn
-                        "button-switching inverted flex-center"
-                        ""
-                        $ text "Ok"
-                eClean' <-
-                    btn
-                        "button-switching flex-center"
-                        ""
-                        $ text "Clean cache"
-                return (eClean', eSave')
+    ret@(eClose, _) <- do
+        divClassDyn (mkClass <$> dWindowIsOpen) $ do 
+            (eClean, eOk, dPass) <- viewEnterPasswordEntries
+            let dPassOk = checkPass passHash <$> dPass
             widgetHold_ blank $
                 leftmost
-                    [ maybe err (const blank) <$> tagPromptlyDyn dPassOk eOk
+                    [ maybe viewPassError (const blank) <$> tagPromptlyDyn dPassOk eOk
                     , blank <$ updated dPassOk
                     ]
-            return (catMaybes $ tagPromptlyDyn dPassOk eOk, eClean)
-    return ret
+            pure (catMaybes $ tagPromptlyDyn dPassOk eOk, eClean)
+    pure ret
     where
-        err =
-            elAttr
-                "div"
-                ( "class" =: "app-columns w-row"
-                    <> "style" =: "display:flex;justify-content:center;"
-                )
-                $ errDiv "Incorrect password"
-        mkClass b =
-            "class" =: "dialog-window-wrapper"
-                <> bool ("style" =: "display: none") mempty b
+        mkClass b = bool "app-EnterPasswordWindow-none" "app-EnterPasswordWindow" b
+        viewPassError = divClass "app-EnterPassword_Error" $ errDiv "Incorrect password"
         checkPass hash mRaw = do
             raw <- mRaw
             if isHashOfRaw (getPassHash hash) (getPassRaw raw)
                 then Just raw
                 else Nothing
+
+viewEnterPasswordEntries ::
+    (MonadWidget t m) =>
+    m (Event t (), Event t (), Dynamic t (Maybe PasswordRaw))
+viewEnterPasswordEntries = divClass "app-DialogWindow_EnterPassword" $ do
+    divClass "app-columns w-row" $
+        divClass "connect-title-div" $
+            divClass "app-text-semibold" $
+                text "Password for the cache of Encoins app"
+    dPass' <- divClass "app-columns w-row" $
+        divClass "w-col w-col-12" $ do
+            ePb <- getPostBuild
+            dmCurPass <- passwordInput "Enter password:" False True (pure Nothing) ePb
+            pure dmCurPass
+    (eClean, eSave) <- divClass "app-columns w-row app-EnterPassword_ButtonContainer" $ do
+        eSave' <-
+            btn
+                "button-switching inverted flex-center"
+                ""
+                $ text "Ok"
+        eClean' <-
+            btn
+                "button-switching flex-center"
+                ""
+                $ text "Clean cache"
+        pure (eClean', eSave')
+    pure (eClean, eSave, dPass')
 
 passwordSettingsWindow ::
     (MonadWidget t m) =>

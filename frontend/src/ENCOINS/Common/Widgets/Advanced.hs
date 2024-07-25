@@ -27,15 +27,15 @@ copyEvent e = do
         (setElementStyle "bottom-notification-copy" "display" "none" <$ e')
     return d
 
-copyButton :: (MonadWidget t m) => m (Event t ())
-copyButton = mdo
+viewCopyButton :: (MonadWidget t m) => m (Event t ())
+viewCopyButton = mdo
     let mkClass = bool "copy-div" "tick-div inverted"
     e <- domEvent Click . fst <$> elDynClass' "div" (fmap mkClass d) blank
     d <- copyEvent e
     return e
 
-copiedNotification :: (MonadWidget t m) => m ()
-copiedNotification =
+viewCopiedNotification :: (MonadWidget t m) => m ()
+viewCopiedNotification =
     elAttr
         "div"
         ( "class" =: "bottom-notification"
@@ -45,8 +45,8 @@ copiedNotification =
         . divClass "notification-content"
         $ text "Copied!"
 
-noRelayNotification :: (MonadWidget t m) => m ()
-noRelayNotification =
+viewNoRelayNotification :: (MonadWidget t m) => m ()
+viewNoRelayNotification =
     elAttr
         "div"
         ( "class" =: "bottom-notification"
@@ -57,8 +57,8 @@ noRelayNotification =
         $ text
             "All available relays are down! Try reloading the page or come back later."
 
-wrongNetworkNotification :: (MonadWidget t m) => NetworkId -> m ()
-wrongNetworkNotification network =
+viewWrongNetworkNotification :: (MonadWidget t m) => NetworkId -> m ()
+viewWrongNetworkNotification network =
     elAttr
         "div"
         ( "class" =: "bottom-notification"
@@ -71,8 +71,8 @@ wrongNetworkNotification network =
             <> toText network
             <> "."
 
-checkboxButton :: (MonadWidget t m) => m (Dynamic t Bool)
-checkboxButton = mdo
+viewCheckboxButton :: (MonadWidget t m) => m (Dynamic t Bool)
+viewCheckboxButton = mdo
     let mkClass = bool "checkbox-div" "checkbox-div checkbox-selected"
     (e, _) <- elDynClass' "div" (fmap mkClass d) blank
     d <- toggle False $ domEvent Click e

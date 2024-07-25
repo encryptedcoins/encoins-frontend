@@ -82,22 +82,24 @@ selectBorderColor mSecret origInput =
         else maybe "border-color: #ff3e31;" (const "border-color: #00cb7a;") mSecret
 
 importCoinFiles :: (MonadWidget t m) => Event t () -> m (Event t [Secret])
-importCoinFiles eImportOpen = divClass "app-ImportFile_Container" $ mdo
-    divClass "app-ImportWindow_SubTitle" $ text "Choose a file to import coins:"
-    let conf =
-            def{_inputElementConfig_setValue = pure ("" <$ eImportOpen)}
-                & (initialAttributes .~ ("class" =: "app-ImportFile_Input" <> "type" =: "file"))
-    (eImportClose, dResult) <- divClass "app-ImportFile_Container_InputAndButton" $ do
-        dFiles <- _inputElement_files <$> inputElement conf
-        emFileContent <- switchHoldDyn dFiles $ \case
-            [file] -> readFileContent file
-            _ -> pure never
-        dContent <- holdDyn "" (catMaybes emFileContent)
-        let parseContent = fromMaybe [] . decode . fromStrict . encodeUtf8
-        let dRes = parseContent <$> dContent
-        eClose <- divClass "app-ImportFile_ButtonContainer" $ do
-            btn "button-switching inverted flex-center app-ImportFile_Button" "" $ text "Ok"
-        pure (eClose, dRes)
+importCoinFiles eImportOpen = do 
+    (eImportClose, dInputFiles) <- divClass "app-ImportFile_Container" $ do
+        divClass "app-ImportWindow_SubTitle" $ text "Choose a file to import coins:"
+        let conf =
+                def{_inputElementConfig_setValue = pure ("" <$ eImportOpen)}
+                    & (initialAttributes .~ ("class" =: "app-ImportFile_Input" <> "type" =: "file"))
+        divClass "app-ImportFile_Container_InputAndButton" $ do
+            dFiles <- _inputElement_files <$> inputElement conf
+            eClose <- divClass "app-ImportFile_ButtonContainer" $ do
+                btn "button-switching inverted flex-center app-ImportFile_Button" "" $ text "Ok"
+            pure (eClose, dFiles)
+
+    emFileContent <- switchHoldDyn dInputFiles $ \case
+        [file] -> readFileContent file
+        _ -> pure never
+    dContent <- holdDyn "" (catMaybes emFileContent)
+    let parseContent = fromMaybe [] . decode . fromStrict . encodeUtf8
+    let dResult = parseContent <$> dContent
     return (current dResult `tag` eImportClose)
 
 readFileContent :: (MonadWidget t m) => File -> m (Event t (Maybe Text))

@@ -38,7 +38,7 @@ import ENCOINS.Common.Cache
     , passwordStorageKey
     )
 import ENCOINS.Common.Events
-import ENCOINS.Common.Widgets.Advanced (copiedNotification)
+import ENCOINS.Common.Widgets.Advanced (viewCopiedNotification)
 import ENCOINS.Common.Widgets.Basic (notification)
 import ENCOINS.Common.Widgets.JQuery (jQueryWidget)
 import ENCOINS.Common.Widgets.MoreMenu
@@ -108,7 +108,7 @@ bodyContentWidget mPass = mdo
     -- re-encrypt current cache with new pass
     reEncryptCurrentCache dTokensV3 dmKey eReEncrypt
 
-    copiedNotification
+    viewCopiedNotification
 
     dSaveOnFromCache <-
         loadAppDataE Nothing isCloudOn "app-body-load-is-save-on-key" id False

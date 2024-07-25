@@ -2,6 +2,10 @@ module ENCOINS.Common.Cache where
 
 import Data.Text (Text)
 
+-------------------------------------------------------------------------------
+-- Constants for browser cache
+-------------------------------------------------------------------------------
+    
 encoinsV3 :: Text
 encoinsV3 = "encoins-v3"
 

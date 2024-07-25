@@ -11,7 +11,7 @@ import ENCOINS.App.Widgets.Basic (removeCacheKey, saveAppData, saveAppData_)
 import ENCOINS.App.Widgets.Cloud (fetchAesKey, genAesKey, makeSignedKey)
 import ENCOINS.Common.Cache (aesKey, isCloudOn)
 import ENCOINS.Common.Events
-import ENCOINS.Common.Widgets.Advanced (copyButton, dialogWindow, withTooltip)
+import ENCOINS.Common.Widgets.Advanced (viewCopyButton, dialogWindow, withTooltip)
 import ENCOINS.Common.Widgets.Basic
     ( br
     , btn
@@ -59,7 +59,7 @@ cloudSettingsWindow mPass dWalletName cloudCacheFlag dCloudStatus eOpen = mdo
                     dmNewKey <- cloudKeyWidget mPass dWalletName eFirstKeyLoad
                     divClass "app-Cloud_Restore_Title" $
                         text "Restore all unburned encoins from cloud with your current key"
-                    eRestore <- restoreButton dmNewKey
+                    eRestore <- viewRestoreButton dmNewKey
                     pure $ align (updated dmNewKey) eRestore
             dmNewKey <- holdDyn Nothing emNewKey
             pure (dIsCloudOn, dmNewKey, eRestore)
@@ -71,7 +71,7 @@ cloudCheckbox ::
     -> m (Dynamic t Bool, Event t Bool)
 cloudCheckbox cloudCacheFlag = do
     (dIsChecked, eCloudChange) <-
-        checkboxWidget (updated cloudCacheFlag) "app-Cloud_CheckboxToggle"
+        viewCheckbox (updated cloudCacheFlag) "app-Cloud_CheckboxToggle"
     saveAppData_ Nothing isCloudOn $ updated dIsChecked
     pure (dIsChecked, eCloudChange)
 
@@ -97,12 +97,12 @@ selectSaveStatusNote status isCloud =
             (FailedSave, _) -> "failed"
      in "The synchronization" <> space <> t
 
-checkboxWidget ::
+viewCheckbox ::
     (MonadWidget t m) =>
     Event t Bool
     -> Text
     -> m (Dynamic t Bool, Event t Bool)
-checkboxWidget initial checkBoxClass = divClass "w-row app-Cloud_CheckboxContainer" $ do
+viewCheckbox initial checkBoxClass = divClass "w-row app-Cloud_CheckboxContainer" $ do
     inp <-
         inputElement $
             def
@@ -124,7 +124,7 @@ showKeyWidget dmKey = do
     let keyIcon = do
             void $ image "info-black.svg" "app-Cloud_IconPopup" ""
     let copyIcon = do
-            e <- copyButton
+            e <- viewCopyButton
             let eKey = tagPromptlyDyn dKey e
             performEvent_ (liftIO . copyText <$> eKey)
     divClass "app-Cloud_KeyContainer" $ do
@@ -134,11 +134,11 @@ showKeyWidget dmKey = do
                 "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
         dynText dKey
 
-restoreButton ::
+viewRestoreButton ::
     (MonadWidget t m) =>
     Dynamic t (Maybe AesKeyRaw)
     -> m (Event t ())
-restoreButton dmKey =
+viewRestoreButton dmKey =
     divClass "app-Cloud_Restore_ButtonContainer" $
         btnWithBlock "button-switching inverted flex-center" "" (isNothing <$> dmKey) $
             text "Restore"
@@ -160,7 +160,7 @@ cloudKeyWidget mPass dWalletName eFirstLoadKey = mdo
 
     let dmCorrectKey = checkUserKeyValid <$> dInputCloudKey
     let dBorderLine = zipDynWith selectBorderColor dmKey dmCorrectKey
-    dInputCloudKey <- inputCloudKeyWidget dBorderLine eFirstLoadKey
+    dInputCloudKey <- viewInputCloudKey dBorderLine eFirstLoadKey
     let eKeyInputByUser = attachPromptlyDynWithMaybe const dmCorrectKey eEnter
     eUserKeySaved <- saveAppData mPass aesKey eKeyInputByUser
 
@@ -218,12 +218,12 @@ cloudKeyWidget mPass dWalletName eFirstLoadKey = mdo
     divClass "app-Cloud_ButtonDescription" $ dynText dButtonDescription
     pure dmKey
 
-inputCloudKeyWidget ::
+viewInputCloudKey ::
     (MonadWidget t m) =>
     Dynamic t Text
     -> Event t ()
     -> m (Dynamic t Text)
-inputCloudKeyWidget dBorder eOpen = divClass "w-row" $ do
+viewInputCloudKey dBorder eOpen = divClass "w-row" $ do
     inp <-
         inputElement $
             def

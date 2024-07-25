@@ -13,7 +13,7 @@ import Backend.Wallet (Wallet (..), currentNetworkApp)
 import ENCOINS.Common.Events
 import ENCOINS.Common.Widgets.Basic (logo)
 import ENCOINS.Common.Widgets.Connect (connectWidget)
-import ENCOINS.Common.Widgets.MoreMenu (NavMoreMenuClass (..), moreMenuWidget)
+import ENCOINS.Common.Widgets.MoreMenu (NavMoreMenuClass (..), viewMoreMenu)
 
 navbarWidget ::
     (MonadWidget t m) =>
@@ -50,7 +50,7 @@ navbarWidget w dIsBlockAll mPass dIsCloudOn dCloudStatus dIsBlockConnect = do
                 eCloud <- cloudIconWidget dIsCloudOn dIsBlockAll dCloudStatus
                 eLocker <- lockerWidget mPass dIsBlockAll
                 eMore <-
-                    moreMenuWidget
+                    viewMoreMenu
                         (NavMoreMenuClass "common-Nav_Container_MoreMenu" "common-Nav_MoreMenu")
                 pure (eLocker, eConnect, eCloud, eMore)
 
