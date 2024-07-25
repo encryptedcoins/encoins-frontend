@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ./script/utils.sh
+source ./script/common.sh
 
 version=$(get_version)
 printf "Current frontend version: %s" "$version"
