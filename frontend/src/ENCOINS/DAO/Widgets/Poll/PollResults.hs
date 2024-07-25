@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module ENCOINS.DAO.PollResults where
+module ENCOINS.DAO.Widgets.Poll.PollResults where
 
 import Data.Aeson (FromJSON (..), ToJSON (..))
 import Data.Text (Text)

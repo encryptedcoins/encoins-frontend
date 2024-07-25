@@ -22,7 +22,7 @@ import ENCOINS.Common.Widgets.MoreMenu
     ( WindowMoreMenuClass (..)
     , moreMenuWindow
     )
-import ENCOINS.DAO.Polls
+import ENCOINS.DAO.Widgets.Poll.Polls
 import ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
 import ENCOINS.DAO.Widgets.Navbar (Dao (..), navbarWidget)
 import ENCOINS.DAO.Widgets.PollWidget

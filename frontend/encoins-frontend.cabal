@@ -62,12 +62,12 @@ library
     ENCOINS.Common.Widgets.Wallet
     ENCOINS.DAO
     ENCOINS.DAO.Body
-    ENCOINS.DAO.PollResults
-    ENCOINS.DAO.Polls
     ENCOINS.DAO.Widgets.DelegateWindow
     ENCOINS.DAO.Widgets.DelegateWindow.RelayNames
     ENCOINS.DAO.Widgets.DelegateWindow.RelayTable
     ENCOINS.DAO.Widgets.Navbar
+    ENCOINS.DAO.Widgets.Poll.Polls
+    ENCOINS.DAO.Widgets.Poll.PollResults
     ENCOINS.DAO.Widgets.PollWidget
     ENCOINS.DAO.Widgets.StatusWidget
     ENCOINS.Website
