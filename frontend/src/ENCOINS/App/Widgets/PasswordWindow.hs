@@ -76,15 +76,15 @@ viewEnterPasswordEntries ::
     Event t (m ()) -- password error
     -> m (Event t (), Event t (), Dynamic t (Maybe PasswordRaw))
 viewEnterPasswordEntries eError = divClass "app-DialogWindow_EnterPassword" $ mdo
-    divClass "app-columns w-row" $
+    divClass "w-row" $
         divClass "connect-title-div" $
             divClass "app-text-semibold" $
                 text "Password for the cache of Encoins app"
-    dPass' <- divClass "app-columns w-row" $
+    dPass' <- divClass "w-row" $
         divClass "w-col w-col-12" $ do
             ePb <- getPostBuild
             passwordInput "Enter password:" False True (pure Nothing) eError ePb
-    (eClean, eSave) <- divClass "app-columns w-row app-EnterPassword_ButtonContainer" $ do
+    (eClean, eSave) <- divClass "w-row app-EnterPassword_ButtonContainer" $ do
         eSave' <-
             btn
                 "button-switching inverted flex-center"
@@ -144,7 +144,7 @@ passwordButtons dmPassHash dPassOk dmNewPass = do
         mkSaveBtnCls _ _ _ = cls <> " button-disabled"
         mkClearBtnCls = (cls <>) . bool " button-disabled" ""
     divClass
-        "app-columns w-row app-PasswordSetting_ButtonContainer"
+        "w-row app-PasswordSetting_ButtonContainer"
         $ do
             eSave' <- do
                 let dSaveClass = mkSaveBtnCls <$> dmPassHash <*> dPassOk <*> dmNewPass
@@ -185,7 +185,7 @@ passwordChecker dmPassHash eOpen = do
         checkPass hash (Just raw) = isHashOfRaw (getPassHash hash) (getPassRaw raw)
         checkPass _ Nothing = False
     ePassOk <- switchHoldDyn dmPassHash $ \case
-        Just passHash -> divClass "app-columns w-row" $ divClass "w-col w-col-12" $ mdo
+        Just passHash -> divClass "w-row" $ divClass "w-col w-col-12" $ mdo
             dmCurPass <-
                 passwordInput "Current password:" False True (pure Nothing) eError eOpen
             let dCheckedPass = checkPass passHash <$> dmCurPass
@@ -219,8 +219,8 @@ passwordInput txt rep isFocus dmPass eError eOpen = mdo
     dShowPass <- toggle False (domEvent Click eye)
     divClass "app-PasswordError_Container" $ do 
         appTextLeft txt
-        dyn_ $ mkError <$> value inp <*> deVal <*> dmPass -- view invalid input error
-        widgetHold_ blank eError -- view incorrect error
+        dyn_ $ mkError <$> value inp <*> deVal <*> dmPass -- view invalid password input error
+        widgetHold_ blank eError -- view incorrect password error
     inp <- inputElement $ conf $ bool "password" "text" <$> updated dShowPass
     if isFocus then setFocusDelayOnEvent inp eOpen else blank
     (eye, _) <- elDynAttr' "i" (mkEyeAttr <$> dShowPass) blank
@@ -286,7 +286,7 @@ cleanCacheDialog eOpen = mdo
                 text "This action will reset password and clean cache (remove known coins)!"
                 br
                 text "Are you sure?"
-            elAttr "div" ("class" =: "app-columns w-row app-CleanCache_ButtonContainer") $ do
+            elAttr "div" ("class" =: "w-row app-CleanCache_ButtonContainer") $ do
                 btnOk <- btn "button-switching inverted flex-center" "" $ text "Clean"
                 btnCancel <- btn "button-switching flex-center" "" $ text "Cancel"
                 return (btnOk, btnCancel)

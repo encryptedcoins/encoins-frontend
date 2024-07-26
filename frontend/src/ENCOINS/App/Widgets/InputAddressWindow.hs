@@ -23,7 +23,7 @@ inputAddressWindow eOpen = mdo
         divClass "connect-title-div" $
             divClass "app-text-semibold" $
                 text "Enter wallet address in bech32:"
-        dAddrInp <- divClass "app-columns w-row" $ do
+        dAddrInp <- divClass "w-row" $ do
             inp <-
                 inputElement $
                     def
@@ -63,7 +63,7 @@ inputAddressWindow eOpen = mdo
         err =
             elAttr
                 "div"
-                ( "class" =: "app-columns w-row"
+                ( "class" =: "w-row"
                     <> "style" =: "display:flex;justify-content:center;"
                 )
                 $ errDiv "Incorrect address"

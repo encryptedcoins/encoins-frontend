@@ -266,7 +266,7 @@ deleteKeyDialog eDelete = mdo
                     "This action will remove cloud key from the cache! If you won't remember the key you can't recover encoins from remote server!"
                 br
                 text "Are you sure?"
-            elAttr "div" ("class" =: "app-columns w-row app-DeleteKey_ButtonContainer") $ do
+            elAttr "div" ("class" =: "w-row app-DeleteKey_ButtonContainer") $ do
                 btnOk <- btn "button-switching inverted flex-center" "" $ text "Delete"
                 btnCancel <- btn "button-switching flex-center" "" $ text "Cancel"
                 return (btnOk, btnCancel)

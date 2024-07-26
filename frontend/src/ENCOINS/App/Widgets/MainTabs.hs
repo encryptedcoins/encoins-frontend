@@ -106,7 +106,7 @@ walletTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp
                 0
     containerApp "" $ transactionBalanceWidget formula (Just WalletMode) ""
     (dToBurn, dToMint, eStatusUpdate, dNewTokensV3) <- containerApp "" $
-        divClass "app-columns w-row" $ mdo
+        divClass "w-row" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
             dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
             let dTokenCache =
@@ -132,7 +132,7 @@ walletTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp
                     coinBurnCollectionWidget dSecretsUniq
                 eImp <- divClassId "" "welcome-import-export" $ do
                     (eImport, eExport) <-
-                        divClass "app-columns w-row" $
+                        divClass "w-row" $
                             (,) <$> menuButton "Import" <*> menuButton "Export"
                     exportWindow eExport dCTB (map tcSecret <$> dTokenCache)
                     (eIS, eISAll) <- importWindow eImport
@@ -223,7 +223,7 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
     let formula = Formula dDepositBalance 0 0 0 (getCoinNumber <$> dCoins) 0
     containerApp "" $
         transactionBalanceWidget formula (Just TransferMode) " (to Ledger)"
-    (dCoins, eSendToLedger, eAddr, dTokensV3) <- containerApp "" $ divClass "app-columns w-row" $ mdo
+    (dCoins, eSendToLedger, eAddr, dTokensV3) <- containerApp "" $ divClass "w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         let dTokenCache =
                 nubWith tcAssetName
@@ -244,7 +244,7 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
                 dyn_ $ fmap noCoinsFoundWidget dSecretsInTheWallet
                 coinBurnCollectionWidget dSecretsInTheWallet
             (eImport, eExport) <-
-                divClass "app-columns w-row" $
+                divClass "w-row" $
                     (,) <$> menuButton "Import" <*> menuButton "Export"
             exportWindow eExport dCTB (map tcSecret <$> dTokenCache)
             (eIS, eISAll) <- importWindow eImport
@@ -358,7 +358,7 @@ ledgerTab mpass dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp "" "" $
     containerApp "" $ transactionBalanceWidget formula (Just LedgerMode) ""
 
     (dToBurn, dToMint, dAddr, eStatusUpdate, dNewTokensV3) <- containerApp "" $
-        divClassId "app-columns w-row" "welcome-ledger" $ mdo
+        divClassId "w-row" "welcome-ledger" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
             dNewSecrets <- foldDyn (++) [] $ tagPromptlyDyn dCoinsToMint eSend
             let dTokenCache =
@@ -382,7 +382,7 @@ ledgerTab mpass dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp "" "" $
                     coinBurnCollectionWidget dSecretsUniq
                 eImp <- divClass "" $ do
                     (eImport, eExport) <-
-                        divClass "app-columns w-row" $
+                        divClass "w-row" $
                             (,) <$> menuButton "Import" <*> menuButton "Export"
                     exportWindow eExport dCTB (map tcSecret <$> dTokenCache)
                     (eIS, eISAll) <- importWindow eImport
