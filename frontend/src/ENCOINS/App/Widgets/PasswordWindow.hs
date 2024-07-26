@@ -18,7 +18,7 @@ import ENCOINS.Common.Cache (encoinsV3, passwordStorageKey)
 import ENCOINS.Common.Events
 import ENCOINS.Common.Events (setFocusDelayOnEvent)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
-import ENCOINS.Common.Widgets.Basic (br, btn, divClassDyn, errDiv)
+import ENCOINS.Common.Widgets.Basic (br, btn, divClassDyn)
 import JS.App (loadCacheValue, saveHashedTextToStorage)
 
 validatePassword :: Text -> Either Text PasswordRaw
@@ -54,19 +54,17 @@ enterPasswordWindow ::
 enterPasswordWindow passHash eResetOk = mdo
     dWindowIsOpen <- holdDyn True (False <$ leftmost [void eClose, eResetOk])
     ret@(eClose, _) <- do
-        divClassDyn (mkClass <$> dWindowIsOpen) $ do 
-            (eClean, eOk, dPass) <- viewEnterPasswordEntries
+        divClassDyn (mkClass <$> dWindowIsOpen) $ mdo
+            (eClean, eOk, dPass) <- viewEnterPasswordEntries eError
             let dPassOk = checkPass passHash <$> dPass
-            widgetHold_ blank $
-                leftmost
-                    [ maybe viewPassError (const blank) <$> tagPromptlyDyn dPassOk eOk
+            let eError = leftmost
+                    [ maybe (viewPasswordError "Incorrect password") (const blank) <$> tagPromptlyDyn dPassOk eOk
                     , blank <$ updated dPassOk
                     ]
             pure (catMaybes $ tagPromptlyDyn dPassOk eOk, eClean)
     pure ret
     where
         mkClass b = bool "app-EnterPasswordWindow-none" "app-EnterPasswordWindow" b
-        viewPassError = divClass "app-EnterPassword_Error" $ errDiv "Incorrect password"
         checkPass hash mRaw = do
             raw <- mRaw
             if isHashOfRaw (getPassHash hash) (getPassRaw raw)
@@ -75,8 +73,9 @@ enterPasswordWindow passHash eResetOk = mdo
 
 viewEnterPasswordEntries ::
     (MonadWidget t m) =>
-    m (Event t (), Event t (), Dynamic t (Maybe PasswordRaw))
-viewEnterPasswordEntries = divClass "app-DialogWindow_EnterPassword" $ do
+    Event t (m ()) -- password error
+    -> m (Event t (), Event t (), Dynamic t (Maybe PasswordRaw))
+viewEnterPasswordEntries eError = divClass "app-DialogWindow_EnterPassword" $ mdo
     divClass "app-columns w-row" $
         divClass "connect-title-div" $
             divClass "app-text-semibold" $
@@ -84,8 +83,7 @@ viewEnterPasswordEntries = divClass "app-DialogWindow_EnterPassword" $ do
     dPass' <- divClass "app-columns w-row" $
         divClass "w-col w-col-12" $ do
             ePb <- getPostBuild
-            dmCurPass <- passwordInput "Enter password:" False True (pure Nothing) ePb
-            pure dmCurPass
+            passwordInput "Enter password:" False True (pure Nothing) eError ePb
     (eClean, eSave) <- divClass "app-columns w-row app-EnterPassword_ButtonContainer" $ do
         eSave' <-
             btn
@@ -183,14 +181,15 @@ passwordChecker ::
 passwordChecker dmPassHash eOpen = do
     let mkErr _ Nothing = blank
         mkErr _ (Just (PasswordRaw "")) = blank
-        mkErr c _ = bool (errDiv "Incorrect password") blank c
+        mkErr c _ = bool (viewPasswordError "Incorrect password") blank c
         checkPass hash (Just raw) = isHashOfRaw (getPassHash hash) (getPassRaw raw)
         checkPass _ Nothing = False
     ePassOk <- switchHoldDyn dmPassHash $ \case
-        Just passHash -> divClass "app-columns w-row" $ divClass "w-col w-col-12" $ do
-            dmCurPass <- passwordInput "Current password:" False True (pure Nothing) eOpen
+        Just passHash -> divClass "app-columns w-row" $ divClass "w-col w-col-12" $ mdo
+            dmCurPass <-
+                passwordInput "Current password:" False True (pure Nothing) eError eOpen
             let dCheckedPass = checkPass passHash <$> dmCurPass
-            dyn_ $ mkErr <$> dCheckedPass <*> dmCurPass
+            let eError = updated $ mkErr <$> dCheckedPass <*> dmCurPass
             return (ffilter id $ updated dCheckedPass)
         Nothing -> pure never
     holdDyn False ePassOk
@@ -202,9 +201,9 @@ passwordEnterRepeat ::
 passwordEnterRepeat eOpen =
     divClass "app-PasswordProtect_Window" $ do
         dmPass1 <- divClass "w-col" $ do
-            passwordInput "Enter password:" False True (pure Nothing) eOpen
+            passwordInput "Enter password:" False True (pure Nothing) never eOpen
         dmPass2 <- divClass "w-col" $ do
-            passwordInput "Repeat password:" True False dmPass1 eOpen
+            passwordInput "Repeat password:" True False dmPass1 never eOpen
         return dmPass2
 
 passwordInput ::
@@ -213,16 +212,19 @@ passwordInput ::
     -> Bool
     -> Bool
     -> Dynamic t (Maybe PasswordRaw)
+    -> Event t (m ()) -- Incorrect password error
     -> Event t ()
     -> m (Dynamic t (Maybe PasswordRaw))
-passwordInput txt rep isFocus dmPass eOpen = mdo
+passwordInput txt rep isFocus dmPass eError eOpen = mdo
     dShowPass <- toggle False (domEvent Click eye)
-    appTextLeft txt
+    divClass "app-PasswordError_Container" $ do 
+        appTextLeft txt
+        dyn_ $ mkError <$> value inp <*> deVal <*> dmPass -- view invalid input error
+        widgetHold_ blank eError -- view incorrect error
     inp <- inputElement $ conf $ bool "password" "text" <$> updated dShowPass
     if isFocus then setFocusDelayOnEvent inp eOpen else blank
     (eye, _) <- elDynAttr' "i" (mkEyeAttr <$> dShowPass) blank
     let deVal = validatePassword <$> value inp
-    dyn_ $ mkError <$> value inp <*> deVal <*> dmPass
     return (zipDynWith mkRes deVal dmPass)
     where
         mkRes (Right p1) (Just p2) =
@@ -239,16 +241,16 @@ passwordInput txt rep isFocus dmPass eOpen = mdo
                 then
                     if p1 == p2
                         then blank
-                        else errDiv "Password doesn't match"
+                        else viewPasswordError "Password doesn't match"
                 else blank
         mkError _ (Right _) Nothing =
             if rep
-                then errDiv "Password doesn't match"
+                then viewPasswordError "Password doesn't match"
                 else blank
         mkError _ (Left err) _ =
             if rep
-                then errDiv "Password doesn't match"
-                else errDiv err
+                then viewPasswordError "Password doesn't match"
+                else viewPasswordError err
         mkEyeAttr showPass = "class" =: ("app-Eye_Input far " <> bool "fa-eye" "fa-eye-slash" showPass)
         appTextLeft =
             elAttr
@@ -292,3 +294,6 @@ cleanCacheDialog eOpen = mdo
         (saveHashedTextToStorage passwordStorageKey (hashKeccak512 "") <$ eOk)
     saveAppData_ Nothing encoinsV3 $ ("" :: Text) <$ eOk
     return eOk
+
+viewPasswordError :: (MonadWidget t m) => Text -> m ()
+viewPasswordError = divClass "app-PasswordError_Message" . text

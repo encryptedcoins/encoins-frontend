@@ -2680,8 +2680,13 @@ body {
   margin-top: 10px;
 }
 
-.app-EnterPassword_Error {
+.app-PasswordError_Container {
   display: flex;
-  justify-content: center;
-  flex-direction: column;
+  justify-content: space-between;
+}
+
+.app-PasswordError_Message {
+  display: flex;
+  color: #ea384c;
+  align-items: center;
 }
