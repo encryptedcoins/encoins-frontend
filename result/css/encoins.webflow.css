@@ -1941,6 +1941,8 @@ body {
   color: #000;
   position: static;
   display: block;
+  border-top-left-radius: 0px; 
+  border-top-right-radius: 0px;
 }
 
 @media screen and (max-width: 767px) {
@@ -2707,4 +2709,38 @@ body {
   font-family: Poppins, sans-serif;
   font-size: 18px;
   line-height: 32px;
+}
+
+.app-SendButton_Tooltip_TxInvalid {
+  display: block;
+  position: static;
+  z-index: 500;
+  padding: 10px 20px;
+  border-radius: 6px;
+  background-color: #fff;
+  -webkit-filter: brightness(75%);
+  filter: brightness(75%);
+  color: #000;
+  transition: all 1s ease;
+  border-top-left-radius: 0px; 
+  border-top-right-radius: 0px;
+}
+
+.app-Transfer_SendToWalletWindow_Secret {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+  justify-content: space-between;
+  text-align:left;
 }

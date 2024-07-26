@@ -77,14 +77,7 @@ sendRequestButtonWallet
                 _ -> "button-not-selected button-disabled flex-center"
             g v = case v of
                 TxValid -> blank
-                TxInvalid err ->
-                    elAttr
-                        "div"
-                        ( "class" =: "div-tooltip div-tooltip-always-visible"
-                            <> "style" =: "border-top-left-radius: 0px; border-top-right-radius: 0px"
-                        )
-                        $ divClass "app-text-normal"
-                        $ text err
+                TxInvalid err -> viewTxInvalidTooltip err
             h v = case v of
                 TxValid -> ""
                 _ -> "border-bottom-left-radius: 0px; border-bottom-right-radius: 0px"
@@ -142,14 +135,7 @@ sendRequestButtonLedger mode dStatus dCoinsToBurn dCoinsToMint e dUrls = mdo
             _ -> "button-not-selected button-disabled flex-center"
         g v = case v of
             TxValid -> blank
-            TxInvalid err ->
-                elAttr
-                    "div"
-                    ( "class" =: "div-tooltip div-tooltip-always-visible"
-                        <> "style" =: "border-top-left-radius: 0px; border-top-right-radius: 0px"
-                    )
-                    $ divClass "app-text-normal"
-                    $ text err
+            TxInvalid err -> viewTxInvalidTooltip err
         h v = case v of
             TxValid -> ""
             _ -> "border-bottom-left-radius: 0px; border-bottom-right-radius: 0px"
@@ -160,3 +146,6 @@ sendRequestButtonLedger mode dStatus dCoinsToBurn dCoinsToMint e dUrls = mdo
     dyn_ $ fmap g dTxValidity
     let eValidTx = () <$ ffilter (== TxValid) (current dTxValidity `tag` eSend)
     pure (LedTxNoRelay <$ eAllRelayDown, eValidTx)
+
+viewTxInvalidTooltip :: MonadWidget t m => Text -> m ()
+viewTxInvalidTooltip = divClass "app-SendButton_Tooltip_TxInvalid" . divClass "app-text-normal" . text 
