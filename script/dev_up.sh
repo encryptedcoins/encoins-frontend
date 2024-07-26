@@ -42,7 +42,7 @@ tmux send-keys -t "$FRONT_SESSION":"$WINDOW_APPS".1 "encoins-cloud" C-m;
 
 tmux send-keys -t "$FRONT_SESSION":"$WINDOW_APPS".2 "cd $HOST_FRONTEND" C-m;
 tmux send-keys -t "$FRONT_SESSION":"$WINDOW_APPS".2 "clear" C-m ;
-tmux send-keys -t "$FRONT_SESSION":"$WINDOW_APPS".2 "./script/run.sh ";
+tmux send-keys -t "$FRONT_SESSION":"$WINDOW_APPS".2 "./script/run.sh " C-m;
 
 tmux send-keys -t "$FRONT_SESSION":"$WINDOW_APPS".3 "cd $TOOL_APP" C-m;
 tmux send-keys -t "$FRONT_SESSION":"$WINDOW_APPS".3 "clear" C-m ;
