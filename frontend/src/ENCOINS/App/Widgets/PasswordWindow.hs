@@ -252,13 +252,7 @@ passwordInput txt rep isFocus dmPass eError eOpen = mdo
                 then viewPasswordError "Password doesn't match"
                 else viewPasswordError err
         mkEyeAttr showPass = "class" =: ("app-Eye_Input far " <> bool "fa-eye" "fa-eye-slash" showPass)
-        appTextLeft =
-            elAttr
-                "div"
-                ( "class" =: "app-text-normal"
-                    <> "style" =: "justify-content: left;"
-                )
-                . text
+        appTextLeft = divClass "app-Password_InputTitle" . text
         conf eType =
             def
                 & initialAttributes
@@ -286,7 +280,7 @@ cleanCacheDialog eOpen = mdo
                 text "This action will reset password and clean cache (remove known coins)!"
                 br
                 text "Are you sure?"
-            elAttr "div" ("class" =: "w-row app-CleanCache_ButtonContainer") $ do
+            divClass "w-row app-CleanCache_ButtonContainer" $ do
                 btnOk <- btn "button-switching inverted flex-center" "" $ text "Clean"
                 btnCancel <- btn "button-switching flex-center" "" $ text "Cancel"
                 return (btnOk, btnCancel)
