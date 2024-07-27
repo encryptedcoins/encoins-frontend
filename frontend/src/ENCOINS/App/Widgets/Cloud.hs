@@ -4,24 +4,25 @@
 module ENCOINS.App.Widgets.Cloud where
 
 import Backend.Protocol.Types
-import Backend.Wallet(WalletName, toJS)
 import Backend.Servant.Requests (restoreRequest, savePingRequest, saveRequest)
 import Backend.Status
     ( AppStatus (..)
     , CloudIconStatus (..)
     , CloudRestoreStatus (..)
     )
-import Backend.Utility (eventMaybeDynDef, switchHoldDyn, toText, unionWith, hashKeccak256)
-import ENCOINS.App.Widgets.Basic
-    ( elementResultJS
-    , loadAppData
-    , saveAppData
-    , tellAppStatus
+import Backend.Wallet (WalletName, toJS)
+import Common.Events
+import Common.Reflex.Dom.Extra (elementResultJS)
+import Common.Reflex.Extra (eventMaybeDynDef, switchHoldDyn)
+import Common.Utility
+    ( hashKeccak256
+    , toJsonStrict
+    , toText
+    , unionWith
     )
 import ENCOINS.Bulletproofs (Secret (..))
-import ENCOINS.Common.Cache (aesKey)
-import ENCOINS.Common.Events
-import ENCOINS.Common.Utils (toJsonStrict)
+import ENCOINS.Common.Cache (aesKey, loadAppData, saveAppData)
+import ENCOINS.Common.Widgets.Advanced (tellAppStatus)
 import ENCOINS.Crypto.Field (Field (F))
 import qualified JS.App as JS
 
@@ -287,10 +288,13 @@ makeSignedKey ::
 makeSignedKey mPass dWalletName ev = do
     let getKeyElId = "getKeyFromSign2"
     ev2 <- delay 0.1 ev
-    performEvent_ $ JS.getSignedKey getKeyElId <$> tagPromptlyDyn (toJS <$> dWalletName) ev2
-    eSignedKey <- updated <$> elementResultJS
-      getKeyElId
-      id
+    performEvent_ $
+        JS.getSignedKey getKeyElId <$> tagPromptlyDyn (toJS <$> dWalletName) ev2
+    eSignedKey <-
+        updated
+            <$> elementResultJS
+                getKeyElId
+                id
     let eHashedSign = hashKeccak256 <$> eSignedKey
     let eAesKey = MkAesKeyRaw <$> eHashedSign
     eKeySaved <- saveAppData mPass aesKey eAesKey

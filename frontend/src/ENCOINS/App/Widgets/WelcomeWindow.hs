@@ -11,8 +11,8 @@ import qualified Data.Text.Encoding as TE
 import Reflex.Dom
 import Text.RawString.QQ (r)
 
-import Backend.Utility (toText)
-import ENCOINS.App.Widgets.Basic (loadJsonFromStorage, saveJsonToStorage)
+import Common.Utility (toText)
+import ENCOINS.Common.Cache (loadJsonFromStorage, saveJsonToStorage)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Basic (btn, lnkInlineInverted)
 import JS.Website (setElementStyle)

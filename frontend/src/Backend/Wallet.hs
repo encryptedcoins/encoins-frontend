@@ -5,8 +5,8 @@ module Backend.Wallet where
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 
+import Common.Protocol (isMultiAssetOf)
 import Backend.Protocol.Types
-import Backend.Utility (isMultiAssetOf)
 import CSL (TransactionUnspentOutputs)
 import qualified CSL
 import Config.Config (NetworkConfig (..), NetworkId (..), networkConfig)

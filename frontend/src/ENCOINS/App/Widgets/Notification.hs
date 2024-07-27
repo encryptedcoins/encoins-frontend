@@ -11,19 +11,19 @@ import Backend.Status
     ( AppStatus (..)
     , CloudIconStatus (..)
     , WalletStatus (..)
-    , isAppTotalBlock
     , isAppStatusWantReload
-    , isCloudIconStatus
-    , textAppStatus
-    , isTextAppStatus
+    , isAppTotalBlock
     , isAppTxProcessingBlock
+    , isCloudIconStatus
+    , isTextAppStatus
+    , textAppStatus
     )
-import Backend.Utility (space, switchHoldDyn, toText)
 import Backend.Wallet (Wallet (..))
+import Common.Events
+import Common.Reflex.Dom.Extra (elementResultJS)
+import Common.Reflex.Extra (switchHoldDyn)
+import Common.Utility (singletonL, space, toText)
 import Config.Config (NetworkConfig (..), networkConfig)
-import ENCOINS.App.Widgets.Basic (elementResultJS, singletonL)
-
-import ENCOINS.Common.Events
 
 fetchWalletNetworkStatus ::
     (MonadWidget t m) =>
@@ -80,7 +80,12 @@ handleAppStatus dWallet eAppStatusList eOtherTxStatus = do
 
     dCloudIconStatus <- holdDyn NoTokens eCloudIconStatus
 
-    pure (snd <$> dStatusText, dIsBlockAllButtons, dCloudIconStatus, dIsBlockConnectButton)
+    pure
+        ( snd <$> dStatusText
+        , dIsBlockAllButtons
+        , dCloudIconStatus
+        , dIsBlockConnectButton
+        )
 
 handleNotification ::
     [AppStatus] -> (AppStatus, Text) -> Maybe (AppStatus, Text)

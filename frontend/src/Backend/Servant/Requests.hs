@@ -4,9 +4,9 @@ module Backend.Servant.Requests where
 
 import Backend.Protocol.Types
 import Backend.Servant.Client
-import Backend.Utility (normalizeCurrentUrl, normalizePingUrl)
+import Common.Url (normalizeCurrentUrl, normalizePingUrl)
 import Config.Config (saveServerUrl)
-import ENCOINS.Common.Events
+import Common.Events
 import JS.App (pingServer)
 
 import CSL (TransactionInputs)

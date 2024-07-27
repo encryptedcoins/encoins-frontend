@@ -1,5 +1,5 @@
 #!/bin/bash
 
-source ./script/utils.sh
+source ./script/common.sh
 
 build_html

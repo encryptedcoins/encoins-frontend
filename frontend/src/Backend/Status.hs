@@ -2,7 +2,7 @@
 
 module Backend.Status where
 
-import Backend.Utility (column, space, toText)
+import Common.Utility (column, space, toText)
 import Data.Text (Text)
 import qualified Data.Text as T
 

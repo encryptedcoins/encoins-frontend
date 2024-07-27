@@ -3,8 +3,8 @@
 
 module ENCOINS.Common.Widgets.MoreMenu where
 
-import Backend.Utility (space)
-import ENCOINS.Common.Events
+import Common.Utility (space)
+import Common.Events
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Basic (lnk)
 
@@ -17,11 +17,11 @@ data NavMoreMenuClass = NavMoreMenuClass
     , nmmcIcon :: Text
     }
 
-moreMenuWidget ::
+viewMoreMenu ::
     (MonadWidget t m) =>
     NavMoreMenuClass
     -> m (Event t ())
-moreMenuWidget cls = do
+viewMoreMenu cls = do
     elMore <-
         divClass ("menu-item" <> space <> nmmcContainer cls) $
             fmap fst $

@@ -7,7 +7,7 @@ import Data.Text (Text)
 import Reflex.Dom
 
 import Backend.Protocol.Types (EncoinsMode (..))
-import Backend.Utility (column, space, toText)
+import Common.Utility (column, space, toText)
 
 import ENCOINS.Common.Widgets.Basic (br, divClassId, image)
 
@@ -56,11 +56,7 @@ transactionBalanceWidget formula mMode txt = do
             dyn_ $ bool blank (formulaTooltip formula mode) <$> dIsTooltipVisible
 
 formulaTooltip :: (MonadWidget t m) => Formula t -> EncoinsMode -> m ()
-formulaTooltip Formula{..} mode = elAttr
-    "div"
-    ( "class" =: "app-Formula_TooltipWrapper"
-        <> "style" =: "border-top-left-radius: 0px; border-top-right-radius: 0px"
-    )
+formulaTooltip Formula{..} mode = divClass "app-Formula_TooltipWrapper"
     $ do
         divClass "app-text-semibold" $ text "Balance formula"
         elAttr

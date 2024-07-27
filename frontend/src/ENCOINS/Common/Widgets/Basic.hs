@@ -6,7 +6,7 @@ import Data.Text (Text, unpack)
 import qualified Data.Text as T
 import Reflex.Dom
 
-import Backend.Utility (space)
+import Common.Utility (space)
 
 h1 :: (MonadWidget t m) => Text -> m ()
 h1 = elClass "h1" "h1" . text
@@ -173,3 +173,15 @@ notification :: (MonadWidget t m) => Dynamic t Text -> m ()
 notification dNotification = do
     divClass "notification" $ do
         divClass "notification-text" $ dynText dNotification
+
+divClassDyn :: (MonadWidget t m) => Dynamic t Text -> m a -> m a
+divClassDyn = elDynClass "div"
+
+sectionApp :: (MonadWidget t m) => Text -> Text -> m a -> m a
+sectionApp elemId cls =
+    elAttr
+        "div"
+        ("id" =: elemId <> "class" =: "section-app wf-section " `T.append` cls)
+
+containerApp :: (MonadWidget t m) => Text -> m a -> m a
+containerApp cls = divClass ("container-app w-container " `T.append` cls)

@@ -1,11 +1,11 @@
-module ENCOINS.Common.Events where
+module Common.Events where
 
 import Control.Monad.IO.Class (liftIO)
 import Data.Text (Text)
 import Data.Time (NominalDiffTime)
 import Reflex.Dom
 
-import Backend.Utility (toText)
+import Common.Utility (toText)
 import JS.Website (logInfo)
 import Language.Javascript.JSaddle (MonadJSM, liftJSM, toJSVal, (#))
 

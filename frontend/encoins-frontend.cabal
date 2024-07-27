@@ -20,20 +20,22 @@ library
     Backend.Protocol.StrongTypes
     Backend.Protocol.TxValidity
     Backend.Protocol.Types
-    Backend.Protocol.Utility
     Backend.Servant.Client
     Backend.Servant.Requests
     Backend.Status
-    Backend.Utility
     Backend.Wallet
+    Common.Events
+    Common.Protocol
+    Common.Reflex.Dom.Extra
+    Common.Reflex.Extra
+    Common.Url
+    Common.Utility
     Config.Config
     ENCOINS.App
     ENCOINS.App.Body
-    ENCOINS.App.Widgets.Basic
     ENCOINS.App.Widgets.Cloud
     ENCOINS.App.Widgets.CloudWindow
     ENCOINS.App.Widgets.Coin
-    ENCOINS.App.Widgets.ConnectWindow
     ENCOINS.App.Widgets.ImportWindow
     ENCOINS.App.Widgets.InputAddressWindow
     ENCOINS.App.Widgets.MainTabs
@@ -49,10 +51,9 @@ library
     ENCOINS.App.Widgets.TransactionBalance
     ENCOINS.App.Widgets.WelcomeWindow
     ENCOINS.Common.Cache
-    ENCOINS.Common.Events
+    ENCOINS.Common.ConnectWindow
     ENCOINS.Common.Head
     ENCOINS.Common.Language
-    ENCOINS.Common.Utils
     ENCOINS.Common.Widgets.Advanced
     ENCOINS.Common.Widgets.Basic
     ENCOINS.Common.Widgets.Connect
@@ -62,13 +63,13 @@ library
     ENCOINS.Common.Widgets.Wallet
     ENCOINS.DAO
     ENCOINS.DAO.Body
-    ENCOINS.DAO.PollResults
-    ENCOINS.DAO.Polls
     ENCOINS.DAO.Widgets.DelegateWindow
     ENCOINS.DAO.Widgets.DelegateWindow.RelayNames
+    ENCOINS.DAO.Widgets.DelegateWindow.RelayTable
     ENCOINS.DAO.Widgets.Navbar
+    ENCOINS.DAO.Widgets.Poll.PollResults
+    ENCOINS.DAO.Widgets.Poll.Polls
     ENCOINS.DAO.Widgets.PollWidget
-    ENCOINS.DAO.Widgets.RelayTable
     ENCOINS.DAO.Widgets.StatusWidget
     ENCOINS.Website
     ENCOINS.Website.Body

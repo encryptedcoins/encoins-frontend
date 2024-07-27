@@ -18,7 +18,7 @@ import Backend.Status
     , isWalletError
     , textDaoStatus
     )
-import Backend.Utility (space, toText)
+import Common.Utility (space, toText)
 import Backend.Wallet
     ( LucidConfig (..)
     , Wallet (..)
@@ -28,9 +28,10 @@ import Backend.Wallet
     , lucidConfigDao
     )
 import Config.Config (NetworkConfig (dao), networkConfig)
-import ENCOINS.App.Widgets.Basic (elementResultJS, walletError)
-import ENCOINS.Common.Events
-import ENCOINS.Common.Widgets.Advanced (foldDynamicAny)
+import ENCOINS.Common.Widgets.Advanced (walletError)
+import Common.Events
+import Common.Reflex.Extra (foldDynamicAny)
+import Common.Reflex.Dom.Extra (elementResultJS)
 
 handleStatus ::
     (MonadWidget t m) =>

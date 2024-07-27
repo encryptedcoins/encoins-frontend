@@ -13,14 +13,13 @@ import qualified Data.Text as T
 import Reflex.Dom
 
 import Backend.Status (UrlStatus (..), isNotValidUrl)
-import Backend.Utility (toText)
 import Backend.Wallet (LucidConfig (..), Wallet (..), lucidConfigDao, toJS)
-import ENCOINS.App.Widgets.Basic (containerApp)
-import ENCOINS.Common.Events
-import ENCOINS.Common.Utils (checkUrl, stripHostOrRelay)
+import Common.Events
+import Common.Url (checkUrl, stripHostOrRelay)
+import Common.Utility (toText)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
-import ENCOINS.Common.Widgets.Basic (btn, btnWithBlock, divClassId)
-import ENCOINS.DAO.Widgets.RelayTable
+import ENCOINS.Common.Widgets.Basic (btn, btnWithBlock, containerApp, divClassId)
+import ENCOINS.DAO.Widgets.DelegateWindow.RelayTable
     ( fetchDelegatedByAddress
     , fetchRelayTable
     , relayAmountWidget
@@ -50,7 +49,7 @@ delegateWindow eOpen dWallet dRelayNames = mdo
             divClass "dao-DelegateWindow_EnterUrl" $
                 text "Choose a relay URL above or enter a new one below:"
 
-            dInputText <- inputWidget eOpen
+            dInputText <- viewDelegateInput eOpen
             let eInputText = updated dInputText
 
             let eNonEmptyUrl = ffilter (not . T.null) eInputText
@@ -63,7 +62,7 @@ delegateWindow eOpen dWallet dRelayNames = mdo
                         ]
 
             dIsInvalidUrl <- holdDyn UrlEmpty eUrlStatus
-            (eStake, eUnstake) <- stakingButtonWidget dIsInvalidUrl
+            (eStake, eUnstake) <- viewStakingButton dIsInvalidUrl
 
             let eUrlStake = tagPromptlyDyn dInputText eStake
             let eUrlUnstake = unStakeUrl <$ eUnstake
@@ -75,11 +74,11 @@ delegateWindow eOpen dWallet dRelayNames = mdo
             return eUrl
     pure ()
 
-inputWidget ::
+viewDelegateInput ::
     (MonadWidget t m) =>
     Event t ()
     -> m (Dynamic t Text)
-inputWidget eOpen = divClass "w-row" $ do
+viewDelegateInput eOpen = divClass "w-row" $ do
     inp <-
         inputElement $
             def
@@ -93,11 +92,11 @@ inputWidget eOpen = divClass "w-row" $ do
     setFocusDelayOnEvent inp eOpen
     return $ value inp
 
-stakingButtonWidget ::
+viewStakingButton ::
     (MonadWidget t m) =>
     Dynamic t UrlStatus
     -> m (Event t (), Event t ())
-stakingButtonWidget dUrlStatus =
+viewStakingButton dUrlStatus =
     divClass "dao-DelegateWindow_ButtonStatusContainer" $ do
         -- The Stake button disable with invalid url and performant status.
         eStake <-

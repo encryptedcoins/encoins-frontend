@@ -8,9 +8,10 @@ import Reflex.Dom
 
 import Backend.Protocol.Types
 import Backend.Status (AppStatus)
-import Backend.Utility (switchHoldDyn, unionWith)
 import Backend.Wallet (Wallet (..))
-import ENCOINS.App.Widgets.Basic (loadAppDataME)
+import Common.Events
+import Common.Reflex.Extra (switchHoldDyn)
+import Common.Utility (unionWith)
 import ENCOINS.App.Widgets.Cloud
     ( resetTokens
     , restoreValidTokens
@@ -18,8 +19,7 @@ import ENCOINS.App.Widgets.Cloud
 import ENCOINS.App.Widgets.MainTabs (ledgerTab, transferTab, walletTab)
 import ENCOINS.App.Widgets.Migration (migrateTokenCacheV3)
 import ENCOINS.App.Widgets.TabsSelection (AppTab (..), tabsSection)
-import ENCOINS.Common.Cache (encoinsV3)
-import ENCOINS.Common.Events
+import ENCOINS.Common.Cache (encoinsV3, loadAppDataME)
 
 mainWindow ::
     (MonadWidget t m, EventWriter t [AppStatus] m) =>

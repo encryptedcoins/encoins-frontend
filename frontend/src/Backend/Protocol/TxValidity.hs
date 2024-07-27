@@ -8,7 +8,7 @@ import Backend.Status
     ( AppStatus
     , isAppProcess
     )
-import Backend.Utility (space, toText)
+import Common.Utility (space, toText)
 import Backend.Wallet (Wallet (..), WalletName (..), currentNetworkApp)
 import CSL (TransactionUnspentOutput (..), amount, coin)
 import Config.Config (NetworkConfig (..), networkConfig)

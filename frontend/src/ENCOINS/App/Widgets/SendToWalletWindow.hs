@@ -4,7 +4,7 @@ module ENCOINS.App.Widgets.SendToWalletWindow where
 
 import Reflex.Dom
 
-import Backend.Protocol.Utility (secretToHex)
+import Common.Protocol (secretToHex)
 import ENCOINS.Bulletproofs (Secrets)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Basic (br, btn)
@@ -16,23 +16,19 @@ sendToWalletWindow eOpen dSecrets = mdo
         divClass "connect-title-div" $
             divClass "app-text-semibold" $
                 text "Copy and send these keys to your recepient off-chain:"
-        elAttr
-            "div"
-            ( "class" =: "app-text-normal"
-                <> "style" =: "justify-content: space-between;text-align:left;"
-            ) $
+        divClass "app-Transfer_SendToWalletWindow_Secret" $
             dyn_ $
                 mapM ((>> br) . text . secretToHex) <$> dSecrets
         br
         btnOk <-
             btn
                 "button-switching inverted flex-center"
-                "width:30%;display:inline-block;margin-right:5px;" $
-                text "Ok"
+                "width:30%;display:inline-block;margin-right:5px;"
+                $ text "Ok"
         btnCancel <-
             btn
                 "button-switching flex-center"
-                "width:30%;display:inline-block;margin-left:5px;" $
-                text "Cancel"
+                "width:30%;display:inline-block;margin-left:5px;"
+                $ text "Cancel"
         return (btnOk, btnCancel)
     return eOk

@@ -13,20 +13,20 @@ import Data.Time (getCurrentTime)
 import Reflex.Dom
 
 import Backend.Wallet (walletsSupportedInDAO)
-import ENCOINS.App.Widgets.Basic (waitForScripts)
-import ENCOINS.App.Widgets.ConnectWindow (connectWindow)
-import ENCOINS.Common.Events
+import ENCOINS.Common.Widgets.Advanced (waitForScripts)
+import ENCOINS.Common.ConnectWindow (connectWindow)
+import Common.Events
 import ENCOINS.Common.Widgets.Basic (notification)
 import ENCOINS.Common.Widgets.JQuery (jQueryWidget)
 import ENCOINS.Common.Widgets.MoreMenu
     ( WindowMoreMenuClass (..)
     , moreMenuWindow
     )
-import ENCOINS.DAO.Polls
+import ENCOINS.DAO.Widgets.Poll.Polls
 import ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
 import ENCOINS.DAO.Widgets.Navbar (Dao (..), navbarWidget)
 import ENCOINS.DAO.Widgets.PollWidget
-import ENCOINS.DAO.Widgets.RelayTable (fetchRelayNames)
+import ENCOINS.DAO.Widgets.DelegateWindow.RelayTable (fetchRelayNames)
 import ENCOINS.DAO.Widgets.StatusWidget
 import ENCOINS.Website.Widgets.Basic (container, section)
 

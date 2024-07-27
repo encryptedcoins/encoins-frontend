@@ -3,7 +3,7 @@ module Backend.Protocol.StrongTypes
     , toPasswordHash
     ) where
 
-import Backend.Utility (hashKeccak512)
+import Common.Utility (hashKeccak512)
 
 import Data.Text (Text)
 import qualified Data.Text as T

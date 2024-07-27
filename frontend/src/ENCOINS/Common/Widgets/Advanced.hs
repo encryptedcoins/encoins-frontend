@@ -3,8 +3,6 @@
 module ENCOINS.Common.Widgets.Advanced where
 
 import Data.Bool (bool)
-import Data.List ((\\))
-import Data.Maybe (isJust)
 import Data.Text (Text)
 import Data.Time (NominalDiffTime)
 import GHCJS.DOM (currentDocumentUnchecked)
@@ -14,9 +12,16 @@ import GHCJS.DOM.Node (contains)
 import qualified GHCJS.DOM.Types as DOM
 import Reflex.Dom
 
-import Backend.Utility (space, toText)
+import Backend.Status
+    ( AppStatus (..)
+    , WalletStatus (..)
+    )
+import Common.Events
+import Common.Reflex.Dom.Extra (elementResultJS)
+import Common.Utility (singletonL, space, toText)
 import Config.Config (NetworkId)
 import JS.Website (setElementStyle)
+import Reflex.ScriptDependent (widgetHoldUntilDefined)
 
 copyEvent :: (MonadWidget t m) => Event t () -> m (Dynamic t Bool)
 copyEvent e = do
@@ -27,15 +32,15 @@ copyEvent e = do
         (setElementStyle "bottom-notification-copy" "display" "none" <$ e')
     return d
 
-copyButton :: (MonadWidget t m) => m (Event t ())
-copyButton = mdo
+viewCopyButton :: (MonadWidget t m) => m (Event t ())
+viewCopyButton = mdo
     let mkClass = bool "copy-div" "tick-div inverted"
     e <- domEvent Click . fst <$> elDynClass' "div" (fmap mkClass d) blank
     d <- copyEvent e
     return e
 
-copiedNotification :: (MonadWidget t m) => m ()
-copiedNotification =
+viewCopiedNotification :: (MonadWidget t m) => m ()
+viewCopiedNotification =
     elAttr
         "div"
         ( "class" =: "bottom-notification"
@@ -45,8 +50,8 @@ copiedNotification =
         . divClass "notification-content"
         $ text "Copied!"
 
-noRelayNotification :: (MonadWidget t m) => m ()
-noRelayNotification =
+viewNoRelayNotification :: (MonadWidget t m) => m ()
+viewNoRelayNotification =
     elAttr
         "div"
         ( "class" =: "bottom-notification"
@@ -57,8 +62,8 @@ noRelayNotification =
         $ text
             "All available relays are down! Try reloading the page or come back later."
 
-wrongNetworkNotification :: (MonadWidget t m) => NetworkId -> m ()
-wrongNetworkNotification network =
+viewWrongNetworkNotification :: (MonadWidget t m) => NetworkId -> m ()
+viewWrongNetworkNotification network =
     elAttr
         "div"
         ( "class" =: "bottom-notification"
@@ -71,8 +76,8 @@ wrongNetworkNotification network =
             <> toText network
             <> "."
 
-checkboxButton :: (MonadWidget t m) => m (Dynamic t Bool)
-checkboxButton = mdo
+viewCheckboxButton :: (MonadWidget t m) => m (Dynamic t Bool)
+viewCheckboxButton = mdo
     let mkClass = bool "checkbox-div" "checkbox-div checkbox-selected"
     (e, _) <- elDynClass' "div" (fmap mkClass d) blank
     d <- toggle False $ domEvent Click e
@@ -160,33 +165,26 @@ withTooltip mainW tipClass delay1 delay2 innerW = mdo
         showAttrs = constAttrs <> "style" =: "display:inline-block;"
         hideAttrs = constAttrs <> "style" =: "display:none;"
 
-foldDynamicAny :: (Reflex t) => [Dynamic t Bool] -> Dynamic t Bool
-foldDynamicAny = foldr (zipDynWith (||)) (constDyn False)
+waitForScripts :: (MonadWidget t m) => m () -> m () -> m ()
+waitForScripts placeholderWidget actualWidget = do
+    ePB <- getPostBuild
+    _ <-
+        widgetHoldUntilDefined
+            "walletAPI"
+            ("js/ENCOINS.js" <$ ePB)
+            placeholderWidget
+            actualWidget
+    blank
 
-updateUrls ::
-    (MonadWidget t m) =>
-    Dynamic t [Text]
-    -> Event t (Maybe Text)
-    -> m (Dynamic t [Text])
-updateUrls dUrls eFailedUrl = do
-    dFailedUrls <-
-        foldDyn (\mUrl acc -> maybe acc (\u -> u : acc) mUrl) [] eFailedUrl
-    pure $ zipDynWith (\\) dUrls dFailedUrls
+-- Wallet error element
+walletError :: (MonadWidget t m) => m (Event t WalletStatus)
+walletError = do
+    dWalletError <- elementResultJS "walletErrorElement" id
+    let eWalletError = ffilter ("" /=) $ updated dWalletError
+    return $ WalletFail <$> eWalletError
 
--- Fire 'Main event' only when there is some value in Condition event.
-fireWhenJustThenReset ::
-    (MonadWidget t m) =>
-    Event t a -- Main event
-    -> Event t (Maybe b) -- Condition event
-    -> Event t c -- Reset event
-    -> m (Event t ())
-fireWhenJustThenReset eMain eCondition eReset = do
-    -- Hold 'Main event' as True value ,
-    -- and then after 'Reset event' fires
-    -- reset it to False.
-    dIsMain <- holdDyn False $ leftmost [True <$ eMain, False <$ eReset]
-    pure $
-        attachPromptlyDynWithMaybe
-            (\isMain mCondition -> if isMain && isJust mCondition then Just () else Nothing)
-            dIsMain
-            eCondition
+tellAppStatus ::
+    (MonadWidget t m, EventWriter t [AppStatus] m) =>
+    Event t AppStatus
+    -> m ()
+tellAppStatus ev = tellEvent $ singletonL <$> ev

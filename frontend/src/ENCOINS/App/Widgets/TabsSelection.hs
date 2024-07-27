@@ -3,8 +3,7 @@ module ENCOINS.App.Widgets.TabsSelection where
 import Data.Bool (bool)
 import Reflex.Dom
 
-import ENCOINS.App.Widgets.Basic (containerApp, sectionApp)
-import ENCOINS.Common.Widgets.Basic (btnWithBlock, divClassId)
+import ENCOINS.Common.Widgets.Basic (btnWithBlock, containerApp, divClassId, sectionApp)
 
 data AppTab
     = WalletTab

@@ -1,12 +1,9 @@
 {-# LANGUAGE QuasiQuotes #-}
 
-module ENCOINS.Common.Utils where
+module Common.Url where
 
-import Backend.Utility (toText)
+import Config.Config (NetworkId (..), appNetwork)
 
-import Control.Lens ((^.))
-import Control.Monad (guard)
-import Data.Aeson (ToJSON, encode)
 import Data.Attoparsec.Text
     ( Parser
     , char
@@ -17,22 +14,10 @@ import Data.Attoparsec.Text
     , (<?>)
     )
 import qualified Data.Attoparsec.Text as A
-import Data.ByteString (ByteString)
-import Data.ByteString.Lazy (toStrict)
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Encoding (decodeUtf8)
 import Data.Vector (Vector)
 import qualified Data.Vector as V
-import qualified Foreign.JavaScript.Utils as Utils
-import GHCJS.DOM.Blob
-import qualified GHCJS.DOM.Document as D
-import GHCJS.DOM.Element
-import qualified GHCJS.DOM.HTMLElement as DOMHtml
-import GHCJS.DOM.Types hiding (ByteString, Event, Text, toText)
-import GHCJS.DOM.URL
-import qualified Language.Javascript.JSaddle as JS
-import Reflex.Dom
 import Text.RawString.QQ (r)
 import Text.Regex.TDFA
     ( CompOption (lastStarGreedy)
@@ -43,19 +28,6 @@ import Text.Regex.TDFA
     , matchTest
     )
 import Text.Regex.TDFA.Text (compile)
-
-toJsonText :: (ToJSON a) => a -> Text
-toJsonText = decodeUtf8 . toJsonStrict
-
-toJsonStrict :: (ToJSON a) => a -> ByteString
-toJsonStrict = toStrict . encode
-
-safeIndex :: [a] -> Int -> Maybe a
-safeIndex zs n = guard (n >= 0) >> go zs n
-    where
-        go [] _ = Nothing
-        go (x : _) 0 = Just x
-        go (_ : xs) i = go xs (pred i)
 
 checkUrl :: Text -> Bool
 checkUrl = regexPosixOpt urlRegexPosixPattern
@@ -77,35 +49,6 @@ urlRegexPosixPattern :: Text
 urlRegexPosixPattern =
     [r|^https?://((25[0-5]|2[0-4][[:digit:]]|[01]?[[:digit:]][[:digit:]]?)\.(25[0-5]|2[0-4][[:digit:]]|[01]?[[:digit:]][[:digit:]]?)\.(25[0-5]|2[0-4][[:digit:]]|[01]?[[:digit:]][[:digit:]]?)\.(25[0-5]|2[0-4][[:digit:]]|[01]?[[:digit:]][[:digit:]]?)|(([[:alnum:]]+|([[:alnum:]]+\-[[:alnum:]]*)*[[:alnum:]])(\.([[:alnum:]]+|([[:alnum:]]+\-[[:alnum:]]*)*[[:alnum:]]))*\.([[:alpha:]]{2,})))/$|]
 
-triggerDownload ::
-    (MonadJSM m) =>
-    Document
-    -> Text
-    -- ^ mime type
-    -> Text
-    -- ^ file name
-    -> ByteString
-    -- ^ content
-    -> m ()
-triggerDownload doc mime filename s = do
-    t <- Utils.bsToArrayBuffer s
-    o <- JS.liftJSM $ JS.obj ^. JS.jss ("type" :: Text) (mime :: Text)
-    options <- JS.liftJSM $ BlobPropertyBag <$> JS.toJSVal o
-    blob <- newBlob [t] (Just options)
-    (url :: Text) <- createObjectURL blob
-    a <- D.createElement doc ("a" :: Text)
-    setAttribute a ("style" :: Text) ("display: none;" :: Text)
-    setAttribute a ("download" :: Text) filename
-    setAttribute a ("href" :: Text) url
-    DOMHtml.click $ DOMHtml.HTMLElement $ unElement a
-    revokeObjectURL url
-
-downloadVotes ::
-    (MonadWidget t m) => ByteString -> Text -> Int -> Event t () -> m ()
-downloadVotes txt name num e = do
-    doc <- askDocument
-    performEvent_ $ ffor e $ \_ ->
-        triggerDownload doc "application/json" (name <> toText num <> ".json") txt
 
 --------------------------------------------------------------------------------
 -- Remove prefixes 'http(s):// and suffixes '/', ':' and further symbols rom URL
@@ -156,3 +99,16 @@ parseHost = do
                      in (fs, l V.! 0)
                 (ns, c) = unsnoc xss'
              in pure (N $ NormalHost ns c)
+
+normalizePingUrl :: Text -> Text
+normalizePingUrl url = T.append (T.dropWhileEnd (== '/') url) $ case appNetwork of
+    Mainnet ->
+        if T.isInfixOf "execute-api.eu-central-1.amazonaws.com" url
+            then "//"
+            else "/"
+    Testnet -> "/"
+
+normalizeCurrentUrl :: Text -> Text
+normalizeCurrentUrl url = case url of
+    "localhost:3000" -> "http://localhost:3000"
+    u -> u

@@ -1004,6 +1004,26 @@ body {
   color: #000;
 }
 
+.app-DialogWindow_EnterPassword {
+  width: min(90%, 750px);
+  padding-left: min(5%, 70px);
+  padding-right: min(5%, 70px);
+  padding-top: min(5%, 30px);
+  padding-bottom: min(5%, 30px);
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -webkit-flex-direction: column;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  -webkit-box-align: stretch;
+  -webkit-align-items: stretch;
+  -ms-flex-align: stretch;
+  align-items: stretch;
+  border-radius: 37px;
+  background-color: #fff;
+  color: #000;
+}
+
 .dialog-window-title {
   font-size: 24px;
   display: -webkit-box;
@@ -1045,6 +1065,54 @@ body {
   align-items: center;
   -webkit-backdrop-filter: brightness(30%);
   backdrop-filter: brightness(30%);
+}
+
+.app-EnterPasswordWindow {
+  position: fixed;
+  left: 0%;
+  top: 0%;
+  right: 0%;
+  bottom: 0%;
+  z-index: 1000;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+  -webkit-backdrop-filter: brightness(30%);
+  backdrop-filter: brightness(30%);
+  flex-direction: column;
+}
+
+.app-EnterPasswordWindow-none {
+  position: fixed;
+  left: 0%;
+  top: 0%;
+  right: 0%;
+  bottom: 0%;
+  z-index: 1000;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: none;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+  -webkit-backdrop-filter: brightness(30%);
+  backdrop-filter: brightness(30%);
+  flex-direction: column;
 }
 
 .connect-title-div {
@@ -1873,6 +1941,8 @@ body {
   color: #000;
   position: static;
   display: block;
+  border-top-left-radius: 0px; 
+  border-top-right-radius: 0px;
 }
 
 @media screen and (max-width: 767px) {
@@ -2610,4 +2680,67 @@ body {
   justify-content: left;
   gap: 10px;
   margin-top: 10px;
+}
+
+.app-PasswordError_Container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.app-PasswordError_Message {
+  display: flex;
+  color: #ea384c;
+  align-items: center;
+}
+
+.app-Password_InputTitle {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  justify-content: left;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+}
+
+.app-SendButton_Tooltip_TxInvalid {
+  display: block;
+  position: static;
+  z-index: 500;
+  padding: 10px 20px;
+  border-radius: 6px;
+  background-color: #fff;
+  -webkit-filter: brightness(75%);
+  filter: brightness(75%);
+  color: #000;
+  transition: all 1s ease;
+  border-top-left-radius: 0px; 
+  border-top-right-radius: 0px;
+}
+
+.app-Transfer_SendToWalletWindow_Secret {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+  font-family: Poppins, sans-serif;
+  font-size: 18px;
+  line-height: 32px;
+  justify-content: space-between;
+  text-align:left;
 }

@@ -13,38 +13,45 @@ import JS.App (walletSignTx)
 import PlutusTx.Prelude (length)
 import Reflex.Dom hiding (Input)
 import Servant.Reflex (BaseUrl (..))
+import Text.Hex (decodeHex)
 import Witherable (catMaybes)
 import Prelude hiding (length)
 
+import Backend.Protocol.Fees (protocolFees)
 import Backend.Protocol.Setup
-    ( encoinsCurrencySymbol
+    ( bulletproofSetup
+    , emergentChangeAddress
+    , encoinsCurrencySymbol
     , ledgerAddress
     , minAdaTxOutInLedger
     )
 import Backend.Protocol.Types
-import Backend.Protocol.Utility
-    ( getEncoinsInUtxos
-    , mkLedgerRedeemer
-    , mkWalletRedeemer
-    )
 import Backend.Servant.Requests
 import Backend.Status
     ( LedgerTxStatus (..)
     , TransferTxStatus (..)
     , WalletTxStatus (..)
     )
-import Backend.Utility
+import Backend.Wallet (Wallet (..), toJS)
+import Common.Events
+import Common.Protocol
+    ( calculateV
+    , getEncoinsInUtxos
+    )
+import Common.Reflex.Dom.Extra (elementResultJS)
+import Common.Reflex.Extra
     ( eventMaybe
+    , fireWhenJustThenReset
     , switchHoldDyn
-    , toEither
+    , updateUrls
+    )
+import Common.Utility
+    ( toEither
     , toText
     )
-import Backend.Wallet (Wallet (..), toJS)
-import ENCOINS.App.Widgets.Basic (elementResultJS)
 import ENCOINS.BaseTypes
 import ENCOINS.Bulletproofs
-import ENCOINS.Common.Events
-import ENCOINS.Common.Widgets.Advanced (fireWhenJustThenReset, updateUrls)
+import PlutusTx.Builtins
 
 encoinsTxWalletMode ::
     (MonadWidget t m) =>
@@ -394,3 +401,48 @@ encoinsTxLedgerMode
                         <$> leftmost [eStatusError, eServerError]
                     ]
         return (fmap getEncoinsInUtxos dUTXOs, eStatus)
+
+-------------------------------------------------------------------------------
+-- Helpers
+-------------------------------------------------------------------------------
+
+mkWalletRedeemer ::
+    EncoinsMode
+    -> Address
+    -> Address
+    -> BulletproofParams
+    -> Secrets
+    -> [MintingPolarity]
+    -> Randomness
+    -> EncoinsRedeemer
+mkWalletRedeemer mode ledgerAddr changeAddr bp secrets mps rs = red
+    where
+        (_, inputs, proof) = bulletproof bulletproofSetup bp secrets mps rs
+        v = calculateV secrets mps
+        inputs' = map (\(Input g p) -> (fromGroupElement g, p)) inputs
+        sig =
+            toBuiltin $
+                fromJust $
+                    decodeHex ""
+        red = ((ledgerAddr, changeAddr, protocolFees mode v), (v, inputs'), proof, sig)
+
+mkLedgerRedeemer ::
+    EncoinsMode
+    -> Address
+    -> BulletproofParams
+    -> Secrets
+    -> [MintingPolarity]
+    -> Randomness
+    -> Address
+    -> Maybe EncoinsRedeemer
+mkLedgerRedeemer mode ledgerAddr bp secrets mps rs changeAddr =
+    if changeAddr == emergentChangeAddress then Nothing else Just red
+    where
+        (_, inputs, proof) = bulletproof bulletproofSetup bp secrets mps rs
+        v = calculateV secrets mps
+        inputs' = map (\(Input g p) -> (fromGroupElement g, p)) inputs
+        sig =
+            toBuiltin $
+                fromJust $
+                    decodeHex ""
+        red = ((ledgerAddr, changeAddr, protocolFees mode v), (v, inputs'), proof, sig)

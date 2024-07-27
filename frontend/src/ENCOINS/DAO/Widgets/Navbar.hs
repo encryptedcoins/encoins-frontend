@@ -10,7 +10,7 @@ import Backend.Wallet (Wallet (..))
 import Config.Config (NetworkConfig (dao), NetworkId (..), networkConfig)
 import ENCOINS.Common.Widgets.Basic (btnWithBlock, logo)
 import ENCOINS.Common.Widgets.Connect (connectWidget)
-import ENCOINS.Common.Widgets.MoreMenu (NavMoreMenuClass (..), moreMenuWidget)
+import ENCOINS.Common.Widgets.MoreMenu (NavMoreMenuClass (..), viewMoreMenu)
 
 data Dao = Connect | Delegate | MoreMenu
     deriving (Eq, Show)
@@ -54,7 +54,7 @@ navbarWidget w dIsBlocked dIsBlockedConnect = do
                         dIsBlocked
                         (text "DELEGATE")
                 eMore <-
-                    moreMenuWidget
+                    viewMoreMenu
                         (NavMoreMenuClass "common-Nav_Container_MoreMenu" "common-Nav_MoreMenu")
                 pure $ leftmost [Connect <$ eConnect, Delegate <$ eDelegate, MoreMenu <$ eMore]
 
