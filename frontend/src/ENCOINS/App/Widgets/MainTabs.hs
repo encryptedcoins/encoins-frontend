@@ -24,17 +24,13 @@ import Backend.Status
     , WalletTxStatus (..)
     , isAppTotalBlock
     )
-import Backend.Utility (nubWith)
 import Backend.Wallet (Wallet (..))
-import Config.Config (delegateServerUrl)
-import ENCOINS.App.Widgets.Basic
-    ( containerApp
-    , elementResultJS
-    , saveAppData
-    , sectionApp
-    , tellAppStatus
-    , walletError
+import Common.Events
+import Common.Reflex.Dom.Extra
+    ( elementResultJS
     )
+import Common.Utility (nubWith)
+import Config.Config (delegateServerUrl)
 import ENCOINS.App.Widgets.Cloud
 import ENCOINS.App.Widgets.Coin
     ( CoinUpdate (..)
@@ -64,9 +60,12 @@ import ENCOINS.App.Widgets.WelcomeWindow
     , welcomeWindowLedgerStorageKey
     , welcomeWindowTransferStorageKey
     )
-import ENCOINS.Common.Cache (encoinsV3)
-import ENCOINS.Common.Events
-import ENCOINS.Common.Widgets.Basic (btn, divClassId)
+import ENCOINS.Common.Cache (encoinsV3, saveAppData)
+import ENCOINS.Common.Widgets.Advanced
+    ( tellAppStatus
+    , walletError
+    )
+import ENCOINS.Common.Widgets.Basic (btn, containerApp, divClassId, sectionApp)
 
 mainWindowColumnHeader :: (MonadWidget t m) => Text -> m ()
 mainWindowColumnHeader title =

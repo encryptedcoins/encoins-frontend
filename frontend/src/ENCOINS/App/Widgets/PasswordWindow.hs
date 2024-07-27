@@ -12,11 +12,11 @@ import Witherable (catMaybes)
 
 import Backend.Protocol.StrongTypes (PasswordHash (getPassHash), toPasswordHash)
 import Backend.Protocol.Types (PasswordRaw (..))
-import Backend.Utility (hashKeccak512, isHashOfRaw, switchHoldDyn)
-import ENCOINS.App.Widgets.Basic (saveAppData_)
-import ENCOINS.Common.Cache (encoinsV3, passwordStorageKey)
-import ENCOINS.Common.Events
-import ENCOINS.Common.Events (setFocusDelayOnEvent)
+import Common.Events
+import Common.Events (setFocusDelayOnEvent)
+import Common.Reflex.Extra (switchHoldDyn)
+import Common.Utility (hashKeccak512, isHashOfRaw)
+import ENCOINS.Common.Cache (encoinsV3, passwordStorageKey, saveAppData_)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Basic (br, btn, divClassDyn)
 import JS.App (loadCacheValue, saveHashedTextToStorage)
@@ -57,10 +57,12 @@ enterPasswordWindow passHash eResetOk = mdo
         divClassDyn (mkClass <$> dWindowIsOpen) $ mdo
             (eClean, eOk, dPass) <- viewEnterPasswordEntries eError
             let dPassOk = checkPass passHash <$> dPass
-            let eError = leftmost
-                    [ maybe (viewPasswordError "Incorrect password") (const blank) <$> tagPromptlyDyn dPassOk eOk
-                    , blank <$ updated dPassOk
-                    ]
+            let eError =
+                    leftmost
+                        [ maybe (viewPasswordError "Incorrect password") (const blank)
+                            <$> tagPromptlyDyn dPassOk eOk
+                        , blank <$ updated dPassOk
+                        ]
             pure (catMaybes $ tagPromptlyDyn dPassOk eOk, eClean)
     pure ret
     where
@@ -217,7 +219,7 @@ passwordInput ::
     -> m (Dynamic t (Maybe PasswordRaw))
 passwordInput txt rep isFocus dmPass eError eOpen = mdo
     dShowPass <- toggle False (domEvent Click eye)
-    divClass "app-PasswordError_Container" $ do 
+    divClass "app-PasswordError_Container" $ do
         appTextLeft txt
         dyn_ $ mkError <$> value inp <*> deVal <*> dmPass -- view invalid password input error
         widgetHold_ blank eError -- view incorrect password error

@@ -6,11 +6,11 @@ import Data.Text (Text)
 import Reflex.Dom
 
 import Backend.Protocol.Types (AesKeyRaw, PasswordRaw (..), TokenCacheV3)
-import ENCOINS.App.Widgets.Basic (loadAppDataM)
+import Common.Events
+import Common.Utility (toJsonText)
+import ENCOINS.Common.Cache (loadAppDataM)
 import ENCOINS.Bulletproofs (Secret)
 import ENCOINS.Common.Cache (aesKey, encoinsV1, encoinsV2, encoinsV3)
-import ENCOINS.Common.Events
-import ENCOINS.Common.Utils (toJsonText)
 import JS.Website (saveJSON)
 
 -------------------------------------------------------------------------------

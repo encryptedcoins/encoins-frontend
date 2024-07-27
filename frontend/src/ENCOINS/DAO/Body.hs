@@ -13,9 +13,9 @@ import Data.Time (getCurrentTime)
 import Reflex.Dom
 
 import Backend.Wallet (walletsSupportedInDAO)
-import ENCOINS.App.Widgets.Basic (waitForScripts)
-import ENCOINS.App.Widgets.ConnectWindow (connectWindow)
-import ENCOINS.Common.Events
+import ENCOINS.Common.Widgets.Advanced (waitForScripts)
+import ENCOINS.Common.ConnectWindow (connectWindow)
+import Common.Events
 import ENCOINS.Common.Widgets.Basic (notification)
 import ENCOINS.Common.Widgets.JQuery (jQueryWidget)
 import ENCOINS.Common.Widgets.MoreMenu

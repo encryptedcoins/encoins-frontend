@@ -8,9 +8,9 @@ import Reflex.Dom
 
 import Backend.Protocol.Types (PasswordRaw)
 import Backend.Status (CloudIconStatus (..))
-import Backend.Utility (space)
+import Common.Utility (space)
 import Backend.Wallet (Wallet (..), currentNetworkApp)
-import ENCOINS.Common.Events
+import Common.Events
 import ENCOINS.Common.Widgets.Basic (logo)
 import ENCOINS.Common.Widgets.Connect (connectWidget)
 import ENCOINS.Common.Widgets.MoreMenu (NavMoreMenuClass (..), viewMoreMenu)

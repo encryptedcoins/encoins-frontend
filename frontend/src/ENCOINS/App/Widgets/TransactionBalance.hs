@@ -7,7 +7,7 @@ import Data.Text (Text)
 import Reflex.Dom
 
 import Backend.Protocol.Types (EncoinsMode (..))
-import Backend.Utility (column, space, toText)
+import Common.Utility (column, space, toText)
 
 import ENCOINS.Common.Widgets.Basic (br, divClassId, image)
 

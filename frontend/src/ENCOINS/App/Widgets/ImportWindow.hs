@@ -21,11 +21,11 @@ import JS.Website (saveTextFile)
 import Reflex.Dom
 import Witherable (catMaybes)
 
-import Backend.Protocol.Utility (hexToSecret)
-import Backend.Utility (formatCoinTime, switchHoldDyn)
+import Common.Protocol (hexToSecret)
+import Common.Reflex.Extra (switchHoldDyn)
+import Common.Utility (formatCoinTime, toJsonText)
 import ENCOINS.Bulletproofs (Secret)
-import ENCOINS.Common.Events
-import ENCOINS.Common.Utils (toJsonText)
+import Common.Events
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Basic (btn, btnWithBlock)
 
@@ -82,7 +82,7 @@ selectBorderColor mSecret origInput =
         else maybe "border-color: #ff3e31;" (const "border-color: #00cb7a;") mSecret
 
 importCoinFiles :: (MonadWidget t m) => Event t () -> m (Event t [Secret])
-importCoinFiles eImportOpen = do 
+importCoinFiles eImportOpen = do
     (eImportClose, dInputFiles) <- divClass "app-ImportFile_Container" $ do
         divClass "app-ImportWindow_SubTitle" $ text "Choose a file to import coins:"
         let conf =

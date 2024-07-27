@@ -22,10 +22,11 @@ import Reflex.Dom
 
 import Backend.Protocol.Types
 import Backend.Servant.Requests (infoRequestWrapper, serversRequestWrapper)
-import Backend.Utility (switchHoldDyn, toText)
+import Common.Reflex.Extra (switchHoldDyn)
+import Common.Url (stripHostOrRelay)
+import Common.Utility (toText)
 import Config.Config (delegateServerUrl)
-import ENCOINS.Common.Events
-import ENCOINS.Common.Utils (stripHostOrRelay)
+import Common.Events
 import ENCOINS.Common.Widgets.Basic (btnWithBlock)
 
 relayAmountWidget ::
@@ -60,18 +61,18 @@ relayAmountWidget eeRelays emDelegated dRelayNames = do
                             let dRelayName = fromMaybe relay . Map.lookup relay <$> dRelayNames
                             let dDelegateBlock = isDelegated relay <$> dmDelegated
                             let dDelegateTag = dynText $ delegationButtonText relay <$> dmDelegated
-                            ev <- viewDelegateRow 
-                                normalAmount 
-                                dRelayName 
-                                dDelegateBlock 
-                                dDelegateTag 
+                            ev <-
+                                viewDelegateRow
+                                    normalAmount
+                                    dRelayName
+                                    dDelegateBlock
+                                    dDelegateTag
                             pure $ relay <$ ev
                 pure $ leftmost evs
     where
         article = elAttr "article" ("class" =: "dao-DelegateWindow_TableWrapper")
         table = elAttr "table" ("class" =: "dao-DelegateWindow_Table")
         th = elAttr "th" ("class" =: "dao-DelegateWindow_TableHeader")
-
 
 fetchRelayTable ::
     (MonadWidget t m) =>
@@ -101,7 +102,9 @@ mkAmount amount =
 
 delegationButtonText :: Text -> Maybe (Text, Integer) -> Text
 delegationButtonText relay =
-    maybe "Delegate" (\(r, n) -> bool "Delegate" (mkAmount $ normalizeAmount n) (r == relay))
+    maybe
+        "Delegate"
+        (\(r, n) -> bool "Delegate" (mkAmount $ normalizeAmount n) (r == relay))
 
 isDelegated :: Text -> Maybe (Text, Integer) -> Bool
 isDelegated relay = \case
@@ -142,14 +145,14 @@ fetchRelayNames eOpen = do
             pure $ names <$ e
     holdDyn Map.empty eNames
 
-viewDelegateRow :: 
+viewDelegateRow ::
     (MonadWidget t m) =>
     Integer
-    -> Dynamic t Text 
+    -> Dynamic t Text
     -> Dynamic t Bool
     -> m ()
-    -> m (Event t ()) 
-viewDelegateRow normalAmount dRelayName dDelegateBlock dDelegateTag = 
+    -> m (Event t ())
+viewDelegateRow normalAmount dRelayName dDelegateBlock dDelegateTag =
     rainbowTr normalAmount $ do
         tdRelay $ dynText dRelayName
         tdAmount $ text $ mkAmount normalAmount
@@ -173,6 +176,6 @@ viewDelegateRow normalAmount dRelayName dDelegateBlock dDelegateTag =
             | stakedAmount <= 100000 && stakedAmount > 90000 = trYellow
             | stakedAmount <= 90000 && stakedAmount > 50000 = trGreen
             | otherwise = tr
-    
+
 tr :: (DomBuilder t m) => m a -> m a
 tr = elAttr "tr" ("class" =: "dao-DelegateWindow_TableRow")

@@ -13,14 +13,15 @@ import Backend.Protocol.TxValidity
     )
 import Backend.Protocol.Types
 import Backend.Servant.Requests (getRelayUrlE, statusRequestWrapper)
-import Backend.Status (AppStatus, WalletTxStatus (..), LedgerTxStatus (..))
-import Backend.Utility (switchHoldDyn, toEither)
+import Backend.Status (AppStatus, LedgerTxStatus (..), WalletTxStatus (..))
 import Backend.Wallet (Wallet (..))
+import Common.Reflex.Extra (switchHoldDyn)
+import Common.Utility (toEither)
 import ENCOINS.Bulletproofs (Secrets)
-import ENCOINS.Common.Widgets.Advanced (updateUrls)
+import Common.Reflex.Extra (updateUrls)
 import ENCOINS.Common.Widgets.Basic (btn, divClassId)
 
-import ENCOINS.Common.Events
+import Common.Events
 
 sendRequestButtonWallet ::
     (MonadWidget t m) =>
@@ -147,5 +148,6 @@ sendRequestButtonLedger mode dStatus dCoinsToBurn dCoinsToMint e dUrls = mdo
     let eValidTx = () <$ ffilter (== TxValid) (current dTxValidity `tag` eSend)
     pure (LedTxNoRelay <$ eAllRelayDown, eValidTx)
 
-viewTxInvalidTooltip :: MonadWidget t m => Text -> m ()
-viewTxInvalidTooltip = divClass "app-SendButton_Tooltip_TxInvalid" . divClass "app-text-normal" . text 
+viewTxInvalidTooltip :: (MonadWidget t m) => Text -> m ()
+viewTxInvalidTooltip =
+    divClass "app-SendButton_Tooltip_TxInvalid" . divClass "app-text-normal" . text

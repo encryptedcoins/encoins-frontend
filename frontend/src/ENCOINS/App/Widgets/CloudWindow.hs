@@ -5,13 +5,17 @@ module ENCOINS.App.Widgets.CloudWindow where
 
 import Backend.Protocol.Types
 import Backend.Status (CloudIconStatus (..))
-import Backend.Utility (space, switchHoldDyn)
 import Backend.Wallet (WalletName (..))
-import ENCOINS.App.Widgets.Basic (removeCacheKey, saveAppData, saveAppData_)
+import Common.Events
+import Common.Reflex.Extra (switchHoldDyn)
+import Common.Utility (space)
 import ENCOINS.App.Widgets.Cloud (fetchAesKey, genAesKey, makeSignedKey)
-import ENCOINS.Common.Cache (aesKey, isCloudOn)
-import ENCOINS.Common.Events
-import ENCOINS.Common.Widgets.Advanced (viewCopyButton, dialogWindow, withTooltip)
+import ENCOINS.Common.Cache (aesKey, isCloudOn, removeCacheKey, saveAppData, saveAppData_)
+import ENCOINS.Common.Widgets.Advanced
+    ( dialogWindow
+    , viewCopyButton
+    , withTooltip
+    )
 import ENCOINS.Common.Widgets.Basic
     ( br
     , btn

@@ -12,8 +12,8 @@ import Reflex.Dom hiding (Input)
 import Backend.Protocol.Types (checkEmptyText, mkAddressFromPubKeys)
 import Backend.Wallet
 import CSL (TransactionUnspentOutputs)
+import Common.Reflex.Dom.Extra (elementResultJS)
 import Config.Config (NetworkId (..), toNetworkId)
-import ENCOINS.App.Widgets.Basic (elementResultJS)
 import ENCOINS.Common.Widgets.Basic (image)
 
 loadWallet :: (MonadWidget t m) => Event t WalletName -> m (Dynamic t Wallet)

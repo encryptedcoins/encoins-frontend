@@ -10,8 +10,8 @@ import Witherable (catMaybes)
 
 import Backend.Protocol.Types
 import Config.Config (NetworkConfig (..), NetworkId (..), networkConfig)
-import ENCOINS.App.Widgets.Basic (elementResultJS)
-import ENCOINS.Common.Events
+import Common.Reflex.Dom.Extra (elementResultJS)
+import Common.Events
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Basic (btnWithBlock, errDiv)
 import JS.App (addrLoad)

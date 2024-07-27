@@ -13,7 +13,7 @@ import Backend.Protocol.Fees (protocolFees)
 import Backend.Protocol.Setup (ledgerAddress)
 import Backend.Protocol.TxValidity (getAda)
 import Backend.Protocol.Types
-import ENCOINS.App.Widgets.Basic (elementResultJS)
+import Common.Reflex.Dom.Extra (elementResultJS)
 import ENCOINS.Bulletproofs
 import ENCOINS.Crypto.Field (Field (..))
 import JS.App (sha2_256)
@@ -47,7 +47,13 @@ getRandomness :: (MonadWidget t m) => Event t () -> m (Behavior t Randomness)
 getRandomness e = do
     eRandomness <- performEvent $ liftIO randomIO <$ e
     hold
-        ( Randomness (F 3417) (map F [1 .. 20]) (map F [21 .. 40]) (F 8532) (F 16512) (F 1235)
+        ( Randomness
+            (F 3417)
+            (map F [1 .. 20])
+            (map F [21 .. 40])
+            (F 8532)
+            (F 16512)
+            (F 1235)
         )
         eRandomness
 

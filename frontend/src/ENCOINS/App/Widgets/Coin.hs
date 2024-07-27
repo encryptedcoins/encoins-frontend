@@ -21,8 +21,8 @@ import Backend.Protocol.Types
     , SaveStatus (..)
     , TokenCacheV3 (..)
     )
-import Backend.Protocol.Utility (secretToHex)
-import Backend.Utility (toText)
+import Common.Protocol (secretToHex)
+import Common.Utility (toText)
 import ENCOINS.BaseTypes (FieldElement)
 import ENCOINS.Bulletproofs (Secret (..), Secrets, fromSecret)
 import ENCOINS.Common.Widgets.Advanced

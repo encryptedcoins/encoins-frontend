@@ -1,6 +1,6 @@
 {-# LANGUAGE RecursiveDo #-}
 
-module ENCOINS.App.Widgets.ConnectWindow
+module ENCOINS.Common.ConnectWindow
     ( connectWindow
     ) where
 
@@ -8,10 +8,9 @@ import Control.Monad (void)
 import Data.Bool (bool)
 import Reflex.Dom
 
-import Backend.Utility (toText)
 import Backend.Wallet (Wallet (..), WalletName (..), fromJS, toJS)
-import ENCOINS.App.Widgets.Basic (loadAppDataE, saveAppData_)
-import ENCOINS.Common.Cache (currentWallet)
+import Common.Utility (toText)
+import ENCOINS.Common.Cache (currentWallet, loadAppDataE, saveAppData_)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Wallet (loadWallet, walletIcon)
 
@@ -37,24 +36,25 @@ connectWindow supportedWallets eConnectOpen = mdo
         eConnectOpen
         eConnectClose
         "common-ConnectWindow"
-        "Connect Wallet" $ mdo
-        eWalletName <-
-            divClass "common-Connect_WalletContainer" $
-                leftmost . ([eLastWalletName] ++) <$> mapM viewWalletEntry supportedWallets
-        eUpdate <- tag bWalletName <$> tickLossyFromPostBuildTime 10
-        dW <- loadWallet (leftmost [eWalletName, eUpdate]) >>= holdUniqDyn
-        let bWalletName = current $ fmap walletName dW
+        "Connect Wallet"
+        $ mdo
+            eWalletName <-
+                divClass "common-Connect_WalletContainer" $
+                    leftmost . ([eLastWalletName] ++) <$> mapM viewWalletEntry supportedWallets
+            eUpdate <- tag bWalletName <$> tickLossyFromPostBuildTime 10
+            dW <- loadWallet (leftmost [eWalletName, eUpdate]) >>= holdUniqDyn
+            let bWalletName = current $ fmap walletName dW
 
-        -- save/load wallet
-        saveAppData_ Nothing currentWallet $ toJS <$> eWalletName
-        eLastWalletName <-
-            updated
-                <$> loadAppDataE
-                    Nothing
-                    currentWallet
-                    "connectWindow-key-currentWallet"
-                    fromJS
-                    None
+            -- save/load wallet
+            saveAppData_ Nothing currentWallet $ toJS <$> eWalletName
+            eLastWalletName <-
+                updated
+                    <$> loadAppDataE
+                        Nothing
+                        currentWallet
+                        "connectWindow-key-currentWallet"
+                        fromJS
+                        None
 
-        return (void eWalletName, dW)
+            return (void eWalletName, dW)
     return dWallet

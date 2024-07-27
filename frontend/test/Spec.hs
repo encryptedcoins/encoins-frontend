@@ -8,7 +8,7 @@ import Data.Either (isLeft)
 import Data.Text
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import ENCOINS.Common.Utils (checkUrl, stripHost)
+import Common.Url (checkUrl, stripHost)
 import Test.Hspec (Spec, describe, hspec, it, shouldBe, shouldSatisfy)
 
 main :: IO ()

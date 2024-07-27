@@ -10,15 +10,12 @@ import Reflex.Dom
 
 import Backend.Protocol.StrongTypes (toPasswordHash)
 import Backend.Protocol.Types (PasswordRaw (..))
-import Backend.Utility (switchHoldDyn)
-import Backend.Status (AppStatus(..))
-import Backend.Wallet (walletsSupportedInApp, Wallet(walletName))
-import ENCOINS.App.Widgets.Basic
-    ( loadAppDataE
-    , waitForScripts
-    )
+import Backend.Status (AppStatus (..))
+import Backend.Wallet (Wallet (walletName), walletsSupportedInApp)
+import Common.Events
+import Common.Reflex.Extra (switchHoldDyn)
 import ENCOINS.App.Widgets.CloudWindow (cloudSettingsWindow)
-import ENCOINS.App.Widgets.ConnectWindow (connectWindow)
+import ENCOINS.Common.ConnectWindow (connectWindow)
 import ENCOINS.App.Widgets.MainWindow (mainWindow)
 import ENCOINS.App.Widgets.Navbar (navbarWidget)
 import ENCOINS.App.Widgets.Notification
@@ -35,10 +32,10 @@ import ENCOINS.App.Widgets.WelcomeWindow
 import ENCOINS.Common.Cache
     ( aesKey
     , isCloudOn
+    , loadAppDataE
     , passwordStorageKey
     )
-import ENCOINS.Common.Events
-import ENCOINS.Common.Widgets.Advanced (viewCopiedNotification)
+import ENCOINS.Common.Widgets.Advanced (viewCopiedNotification, waitForScripts)
 import ENCOINS.Common.Widgets.Basic (notification)
 import ENCOINS.Common.Widgets.JQuery (jQueryWidget)
 import ENCOINS.Common.Widgets.MoreMenu

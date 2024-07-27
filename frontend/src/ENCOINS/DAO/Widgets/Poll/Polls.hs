@@ -12,7 +12,7 @@ import Data.Time
     )
 import Reflex.Dom
 
-import Backend.Utility (column, space, toText)
+import Common.Utility (column, space, toText)
 import ENCOINS.Common.Widgets.Basic (br, lnkInline)
 import ENCOINS.DAO.Widgets.Poll.PollResults
 

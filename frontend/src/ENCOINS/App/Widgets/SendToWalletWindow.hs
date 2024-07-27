@@ -4,7 +4,7 @@ module ENCOINS.App.Widgets.SendToWalletWindow where
 
 import Reflex.Dom
 
-import Backend.Protocol.Utility (secretToHex)
+import Common.Protocol (secretToHex)
 import ENCOINS.Bulletproofs (Secrets)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Basic (br, btn)

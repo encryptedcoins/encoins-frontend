@@ -8,17 +8,12 @@ import Reflex.Dom
 
 import Backend.Protocol.Types (PasswordRaw (..), TokenCacheV3)
 import Backend.Status (AppStatus (..), MigrateStatus (..))
-import Backend.Utility (switchHoldDyn)
-import ENCOINS.App.Widgets.Basic
-    ( loadAppData
-    , saveAppData
-    , tellAppStatus
-    )
+import Common.Events
+import Common.Reflex.Extra (switchHoldDyn)
 import ENCOINS.App.Widgets.Coin (coinV3)
 import ENCOINS.Bulletproofs (Secret)
-import ENCOINS.Common.Cache (encoinsV1, encoinsV2, encoinsV3)
-import ENCOINS.Common.Events
-
+import ENCOINS.Common.Cache (encoinsV1, encoinsV2, encoinsV3, loadAppData, saveAppData)
+import ENCOINS.Common.Widgets.Advanced (tellAppStatus)
 {-
 Evolutions of encoins cache by key
 1. encoins - first version of cache that contains Secrets only
@@ -79,8 +74,9 @@ migrateCacheV3 mPass ev = do
     -- As V1 and V2 fire two events on load result, fire saving on second one.
     eCacheV3 <- tailE $ updated $ zipDynWith migrateV3 dSecretsV1 dSecretsV2
     eSaved <- saveAppData mPass encoinsV3 eCacheV3
-    eTokensV3 :: Event t [TokenCacheV3] <- updated <$>
-        loadAppData mPass encoinsV3 "migrateCacheV3-key-eSecretsV3" eSaved id []
+    eTokensV3 :: Event t [TokenCacheV3] <-
+        updated
+            <$> loadAppData mPass encoinsV3 "migrateCacheV3-key-eSecretsV3" eSaved id []
 
     -- migration is too quick, that's why we delay Success message
     eMigSuccess <- delay 2 eTokensV3

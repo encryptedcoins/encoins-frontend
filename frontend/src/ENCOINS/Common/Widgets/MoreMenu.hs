@@ -3,8 +3,8 @@
 
 module ENCOINS.Common.Widgets.MoreMenu where
 
-import Backend.Utility (space)
-import ENCOINS.Common.Events
+import Common.Utility (space)
+import Common.Events
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Basic (lnk)
 

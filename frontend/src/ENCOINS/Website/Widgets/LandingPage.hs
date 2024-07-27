@@ -8,7 +8,7 @@ import Data.Text (Text)
 import Reflex.Dom
 import Reflex.ScriptDependent (widgetHoldUntilDefined)
 
-import ENCOINS.Common.Events
+import Common.Events
 import ENCOINS.Common.Widgets.Basic
 import ENCOINS.Website.Widgets.Basic
 import ENCOINS.Website.Widgets.Resourses (ourResourses)

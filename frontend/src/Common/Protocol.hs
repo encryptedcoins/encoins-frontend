@@ -1,4 +1,4 @@
-module Backend.Protocol.Utility where
+module Common.Protocol where 
 
 import Data.Bool (bool)
 import qualified Data.Map as Map
@@ -8,10 +8,8 @@ import qualified Data.Text as Text
 import PlutusTx.Builtins
 import Text.Hex (decodeHex, encodeHex)
 
-import Backend.Protocol.Fees (protocolFees)
 import Backend.Protocol.Setup
     ( bulletproofSetup
-    , emergentChangeAddress
     , encoinsCurrencySymbol
     , ledgerAddress
     )
@@ -33,47 +31,6 @@ getEncoinsInUtxos utxos = map MkAssetName $ Map.keys assets
                 ( mapMaybe (Map.lookup encoinsCurrencySymbol . getMultiAsset) $
                     mapMaybe (CSL.multiasset . CSL.amount . CSL.output) utxos
                 )
-
-mkWalletRedeemer ::
-    EncoinsMode
-    -> Address
-    -> Address
-    -> BulletproofParams
-    -> Secrets
-    -> [MintingPolarity]
-    -> Randomness
-    -> EncoinsRedeemer
-mkWalletRedeemer mode ledgerAddr changeAddr bp secrets mps rs = red
-    where
-        (_, inputs, proof) = bulletproof bulletproofSetup bp secrets mps rs
-        v = calculateV secrets mps
-        inputs' = map (\(Input g p) -> (fromGroupElement g, p)) inputs
-        sig =
-            toBuiltin $
-                fromJust $
-                    decodeHex ""
-        red = ((ledgerAddr, changeAddr, protocolFees mode v), (v, inputs'), proof, sig)
-
-mkLedgerRedeemer ::
-    EncoinsMode
-    -> Address
-    -> BulletproofParams
-    -> Secrets
-    -> [MintingPolarity]
-    -> Randomness
-    -> Address
-    -> Maybe EncoinsRedeemer
-mkLedgerRedeemer mode ledgerAddr bp secrets mps rs changeAddr =
-    if changeAddr == emergentChangeAddress then Nothing else Just red
-    where
-        (_, inputs, proof) = bulletproof bulletproofSetup bp secrets mps rs
-        v = calculateV secrets mps
-        inputs' = map (\(Input g p) -> (fromGroupElement g, p)) inputs
-        sig =
-            toBuiltin $
-                fromJust $
-                    decodeHex ""
-        red = ((ledgerAddr, changeAddr, protocolFees mode v), (v, inputs'), proof, sig)
 
 verifyRedeemer :: BulletproofParams -> Maybe EncoinsRedeemer -> Bool
 verifyRedeemer bp (Just (_, (v, inputs), proof, _)) = verify bulletproofSetup bp v inputs' proof
@@ -113,3 +70,9 @@ hexToSecret = \case
         let n = byteStringToInteger $ toBuiltin bs
             (gamma, v) = n `divMod` (2 ^ (20 :: Integer))
         return $ Secret (toFieldElement gamma) (toFieldElement v)
+
+isMultiAssetOf :: Text -> Text -> CSL.MultiAsset -> Bool
+isMultiAssetOf symbol token (CSL.MultiAsset mp) =
+    case Map.lookup symbol mp of
+        Nothing -> False
+        Just i -> maybe False (const True) $ Map.lookup token i

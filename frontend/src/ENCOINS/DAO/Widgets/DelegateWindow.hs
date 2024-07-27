@@ -13,13 +13,12 @@ import qualified Data.Text as T
 import Reflex.Dom
 
 import Backend.Status (UrlStatus (..), isNotValidUrl)
-import Backend.Utility (toText)
 import Backend.Wallet (LucidConfig (..), Wallet (..), lucidConfigDao, toJS)
-import ENCOINS.App.Widgets.Basic (containerApp)
-import ENCOINS.Common.Events
-import ENCOINS.Common.Utils (checkUrl, stripHostOrRelay)
+import Common.Events
+import Common.Url (checkUrl, stripHostOrRelay)
+import Common.Utility (toText)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
-import ENCOINS.Common.Widgets.Basic (btn, btnWithBlock, divClassId)
+import ENCOINS.Common.Widgets.Basic (btn, btnWithBlock, containerApp, divClassId)
 import ENCOINS.DAO.Widgets.DelegateWindow.RelayTable
     ( fetchDelegatedByAddress
     , fetchRelayTable

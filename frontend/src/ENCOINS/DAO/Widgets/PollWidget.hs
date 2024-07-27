@@ -1,19 +1,28 @@
 module ENCOINS.DAO.Widgets.PollWidget where
 
+import Control.Lens ((^.))
+import Data.ByteString (ByteString)
 import Data.Text (Text, pack)
 import Data.Text.Encoding (encodeUtf8)
 import Data.Time
     ( UTCTime
     )
+import qualified Foreign.JavaScript.Utils as Utils
+import GHCJS.DOM.Blob (newBlob)
+import qualified GHCJS.DOM.Document as D
+import GHCJS.DOM.Element (setAttribute)
+import qualified GHCJS.DOM.HTMLElement as DOMHtml
+import GHCJS.DOM.Types hiding (ByteString, Event, Text, toText)
+import GHCJS.DOM.URL (createObjectURL, revokeObjectURL)
+import qualified Language.Javascript.JSaddle as JS
 import Reflex.Dom
-import Text.Printf
+import Text.Printf (printf)
 
-import Backend.Utility (formatPollTime, toText)
 import Backend.Wallet (LucidConfig (..), Wallet (..), lucidConfigDao, toJS)
-import ENCOINS.App.Widgets.Basic (elementResultJS)
-import ENCOINS.Common.Utils (downloadVotes, toJsonStrict)
+import Common.Reflex.Dom.Extra (elementResultJS)
+import Common.Utility (formatPollTime, toJsonStrict, toText)
 import ENCOINS.Common.Widgets.Basic (btn, btnWithBlock)
-import ENCOINS.DAO.Widgets.Poll.PollResults
+import ENCOINS.DAO.Widgets.Poll.PollResults (VoteResult (..))
 import ENCOINS.DAO.Widgets.Poll.Polls (Poll (..))
 import ENCOINS.Website.Widgets.Basic (container)
 import JS.DAO (daoPollVoteTx)
@@ -90,3 +99,33 @@ viewPollExplainer tagsTitle tagsExplainer endTime = container "" $
         divClass "app-text-small" $
             text $
                 "The vote ends on " <> formatPollTime endTime <> "."
+
+triggerDownload ::
+    (MonadJSM m) =>
+    Document
+    -> Text
+    -- ^ mime type
+    -> Text
+    -- ^ file name
+    -> ByteString
+    -- ^ content
+    -> m ()
+triggerDownload doc mime filename s = do
+    t <- Utils.bsToArrayBuffer s
+    o <- JS.liftJSM $ JS.obj ^. JS.jss ("type" :: Text) (mime :: Text)
+    options <- JS.liftJSM $ BlobPropertyBag <$> JS.toJSVal o
+    blob <- newBlob [t] (Just options)
+    (url :: Text) <- createObjectURL blob
+    a <- D.createElement doc ("a" :: Text)
+    setAttribute a ("style" :: Text) ("display: none;" :: Text)
+    setAttribute a ("download" :: Text) filename
+    setAttribute a ("href" :: Text) url
+    DOMHtml.click $ DOMHtml.HTMLElement $ unElement a
+    revokeObjectURL url
+
+downloadVotes ::
+    (MonadWidget t m) => ByteString -> Text -> Int -> Event t () -> m ()
+downloadVotes txt name num e = do
+    doc <- askDocument
+    performEvent_ $ ffor e $ \_ ->
+        triggerDownload doc "application/json" (name <> toText num <> ".json") txt
