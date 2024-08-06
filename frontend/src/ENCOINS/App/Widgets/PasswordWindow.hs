@@ -21,6 +21,9 @@ import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Basic (br, btn, divClassDyn)
 import JS.App (loadCacheValue, saveHashedTextToStorage)
 
+import I18n.Reflex.I18n
+import Common.Reflex.Dom.Extra
+
 validatePassword :: Text -> Either Text PasswordRaw
 validatePassword txt
     | not $ T.all validPasswordChar txt =
@@ -47,7 +50,10 @@ isSpecial c =
         && not (isAsciiUpper c || isAsciiLower c || isDigit c)
 
 enterPasswordWindow ::
-    (MonadWidget t m) =>
+    forall t m .
+    ( MonadWidget t m
+    , HasLocale t Locale m
+    ) =>
     PasswordHash
     -> Event t ()
     -> m (Event t PasswordRaw, Event t ())
@@ -56,6 +62,7 @@ enterPasswordWindow passHash eResetOk = mdo
     ret@(eClose, _) <- do
         divClassDyn (mkClass <$> dWindowIsOpen) $ mdo
             (eClean, eOk, dPass) <- viewEnterPasswordEntries eError
+            -- dynText_ $ constDyn True
             let dPassOk = checkPass passHash <$> dPass
             let eError =
                     leftmost

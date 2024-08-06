@@ -4,7 +4,6 @@ module ENCOINS.App.Body
     ( bodyWidget
     ) where
 
-import Data.Bifunctor (first)
 import Data.Maybe (isNothing)
 import Reflex.Dom
 
@@ -43,6 +42,8 @@ import ENCOINS.Common.Widgets.MoreMenu
     , moreMenuWindow
     )
 import JS.App (loadCacheValue)
+import I18n.Reflex.I18n
+
 
 bodyContentWidget ::
     (MonadWidget t m) =>
@@ -133,7 +134,9 @@ bodyWidget :: (MonadWidget t m) => m ()
 bodyWidget = waitForScripts blank $ mdo
     mPass <- toPasswordHash <$> loadCacheValue passwordStorageKey
     (ePassOk, eCleanCache) <- case mPass of
-        Just pass -> first (Just <$>) <$> enterPasswordWindow pass eCleanOk
+        Just pass -> do
+            (passRaw, ev) <- runLocalize (constDyn Locale_EN) $ enterPasswordWindow pass eCleanOk
+            pure (Just <$> passRaw, ev)
         Nothing -> do
             ePb <- getPostBuild
             pure (Nothing <$ ePb, never)
