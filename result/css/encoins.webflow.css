@@ -1941,7 +1941,7 @@ body {
   color: #000;
   position: static;
   display: block;
-  border-top-left-radius: 0px; 
+  border-top-left-radius: 0px;
   border-top-right-radius: 0px;
 }
 
@@ -2722,7 +2722,7 @@ body {
   filter: brightness(75%);
   color: #000;
   transition: all 1s ease;
-  border-top-left-radius: 0px; 
+  border-top-left-radius: 0px;
   border-top-right-radius: 0px;
 }
 
@@ -2742,20 +2742,28 @@ body {
   font-size: 18px;
   line-height: 32px;
   justify-content: space-between;
-  text-align:left;
+  text-align: left;
 }
 
 .app-Nav_Dropdown {
+  display: flex;
+  width: 40px;
   font-size: 24px;
   font-weight: bold;
   font-family: Poppins, sans-serif;
-  color:#cccccc;
+  color: #cccccc;
   margin-left: 10px;
   background-color: #000000;
   border: none;
   cursor: pointer;
   text-decoration: none;
   user-select: none;
-  align-self: flex-end;
-
+  align-self: end;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-left: 3px;
+  padding-right: 3px;
+  padding-bottom: 5px;
+  outline: 0px;
 }
