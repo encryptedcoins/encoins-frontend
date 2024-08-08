@@ -14,16 +14,17 @@ import Common.Events
 import ENCOINS.Common.Widgets.Basic (logo)
 import ENCOINS.Common.Widgets.Connect (connectWidget)
 import ENCOINS.Common.Widgets.MoreMenu (NavMoreMenuClass (..), viewMoreMenu)
+import I18n.Reflex.I18n (App, Locale(..))
 
 navbarWidget ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t Wallet
     -> Dynamic t Bool
     -> Maybe PasswordRaw
     -> Dynamic t Bool
     -> Dynamic t CloudIconStatus
     -> Dynamic t Bool
-    -> m (Event t (), Event t (), Event t (), Event t ())
+    -> m (Event t (), Event t (), Event t (), Event t (), Dynamic t Locale)
 navbarWidget w dIsBlockAll mPass dIsCloudOn dCloudStatus dIsBlockConnect = do
     elAttr
         "div"
@@ -49,10 +50,11 @@ navbarWidget w dIsBlockAll mPass dIsCloudOn dCloudStatus dIsBlockConnect = do
                 eConnect <- connectWidget w dIsBlockConnect
                 eCloud <- cloudIconWidget dIsCloudOn dIsBlockAll dCloudStatus
                 eLocker <- lockerWidget mPass dIsBlockAll
+                dLocale <- localeWidget
                 eMore <-
                     viewMoreMenu
                         (NavMoreMenuClass "common-Nav_Container_MoreMenu" "common-Nav_MoreMenu")
-                pure (eLocker, eConnect, eCloud, eMore)
+                pure (eLocker, eConnect, eCloud, eMore, dLocale)
 
 lockerWidget ::
     (MonadWidget t m) =>
@@ -97,3 +99,9 @@ selectIconClass status isOn = case (status, isOn) of
     (Saving, _) -> "app-Cloud_IconSaving"
     (AllSaved, _) -> "app-Cloud_IconAllSaved"
     (FailedSave, _) -> "app-Cloud_IconAttemptExcess"
+
+localeWidget :: App t m => m (Dynamic t Locale)
+localeWidget = do
+    let conf = def {_dropdownConfig_attributes = constDyn $ "class" =: "app-Nav_Dropdown" }
+    res <- dropdown Locale_EN (constDyn ((Locale_EN :: Locale) =: "EN" <> Locale_RU =: "RU")) conf
+    pure $ _dropdown_value res

@@ -39,7 +39,7 @@ data LandMessage
 instance HasI18n Locale LandMessage Text where
   localizeWith locale t = case locale of
     Locale_EN -> showLandMessageEn t
-    Locale_ZH -> showLandMessageEn t -- TODO: update it
+    Locale_RU -> showLandMessageEn t -- TODO: update it
 
 showLandMessageEn :: LandMessage -> Text 
 showLandMessageEn = \case 

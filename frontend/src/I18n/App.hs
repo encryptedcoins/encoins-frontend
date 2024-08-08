@@ -48,7 +48,6 @@ data AppMessage
     | ImportCoins
     | ImportFile
     | ImportNoFile
-    | Ok
     | Export
     | ExportTitle
     | ExportName
@@ -59,7 +58,7 @@ data AppMessage
 instance HasI18n Locale AppMessage Text where
   localizeWith locale t = case locale of
     Locale_EN -> showAppMessageEn t
-    Locale_ZH -> showAppMessageEn t -- TODO: update it
+    Locale_RU -> showAppMessageRu t
 
 showAppMessageEn :: AppMessage -> Text 
 showAppMessageEn = \case 
@@ -110,4 +109,54 @@ showAppMessageEn = \case
     ExportName -> "Enter file name"
     ExportSave -> "Save Selected"
     ExportAll -> "Save all"
+
+showAppMessageRu :: AppMessage -> Text 
+showAppMessageRu = \case 
+    PassProtect -> "Защитить кэш Encoins приложения"
+    PassCurrent -> "Текущий пароль"
+    PassEnter -> "Ввести пароль"
+    PassRepeat -> "Повторить пароль"
+    PassSave -> "Сохранить"
+    PassReset -> "Сбросить пароль"
+    PassClean -> "Отчистить кэш"
+    CleanCacheTitle -> "Отчистка кэша"
+    CleanCacheText -> "Это действие сбросит пароль и отчистить кэш (все известные токены удалятся!"
+    CleanCacheCancel -> "Отмена"
+    TabWallet -> "Кошелек"
+    TabTransfer -> "Отправка"
+    TabLedger -> "Смарт-контракт"
+    Balance -> "Баланс транзакции"
+    BalanceFormula -> "Формула расчета"
+    BalanceBurnAda -> "сумма Ada в токенах для сжигания"
+    BalanceMintAda -> "сумма Ada в токенах для чеканки"
+    BalanceFee -> "комиссия"
+    BalanceCommission -> "комиссия релея"
+    BalanceToWallet -> "в Кошелек"
+    BalanceToLedger -> "на Смарт-контракт"
+    BalanceNumberEncoins -> "количество токенов для отправки"
+    BalanceDeposit -> "возвращаемый депозит для размещения ваших токенов на Смарт-контракте (4 Ada)"
+    BalanceBurnEncoins -> "число токенов для сжигания"
+    BalanceMintEncoins -> "число токенов для чеканки"
+    CoinsInWallet -> "Токены в Кошельке"
+    CoinsMint -> "Токены для чеканки"
+    CoinsInLedger -> "Токены на Смарт-контракте"
+    MintingKey -> "Minting Key"
+    TokenName -> "Full token name"
+    Asset -> "Asset fingerprint"
+    EnterAdaAmount -> "Введите сумму в Ada"
+    ButtonSendRequest -> "Послать запрос"
+    ButtonSentWallet -> "Послать на Кошелек"
+    ButtonSendLedger -> "Послать на Смарт-контракт"
+    ButtonAddChange -> "Добавить сдачу"
+    Import -> "Импорт"
+    ImportTitle -> "Импорт новых токенов"
+    ImportCoin -> "Введите minting key для импорта нового токена"
+    ImportCoins -> "Выберите файл с токенами"
+    ImportFile -> "Выбрать файл"
+    ImportNoFile -> "Файл не выбран"
+    Export -> "Экспорт"
+    ExportTitle -> "Экспорт токены"
+    ExportName -> "Введите имя файла"
+    ExportSave -> "Сохранить выделенное"
+    ExportAll -> "Сохранить все"
 

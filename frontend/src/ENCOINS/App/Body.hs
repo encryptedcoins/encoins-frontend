@@ -4,6 +4,7 @@ module ENCOINS.App.Body
     ( bodyWidget
     ) where
 
+import Data.Align (align)
 import Data.Maybe (isNothing)
 import Reflex.Dom
 
@@ -14,7 +15,6 @@ import Backend.Wallet (Wallet (walletName), walletsSupportedInApp)
 import Common.Events
 import Common.Reflex.Extra (switchHoldDyn)
 import ENCOINS.App.Widgets.CloudWindow (cloudSettingsWindow)
-import ENCOINS.Common.ConnectWindow (connectWindow)
 import ENCOINS.App.Widgets.MainWindow (mainWindow)
 import ENCOINS.App.Widgets.Navbar (navbarWidget)
 import ENCOINS.App.Widgets.Notification
@@ -34,6 +34,7 @@ import ENCOINS.Common.Cache
     , loadAppDataE
     , passwordStorageKey
     )
+import ENCOINS.Common.ConnectWindow (connectWindow)
 import ENCOINS.Common.Widgets.Advanced (viewCopiedNotification, waitForScripts)
 import ENCOINS.Common.Widgets.Basic (notification)
 import ENCOINS.Common.Widgets.JQuery (jQueryWidget)
@@ -41,16 +42,15 @@ import ENCOINS.Common.Widgets.MoreMenu
     ( WindowMoreMenuClass (..)
     , moreMenuWindow
     )
-import JS.App (loadCacheValue)
 import I18n.Reflex.I18n
-
+import JS.App (loadCacheValue)
 
 bodyContentWidget ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Maybe PasswordRaw
-    -> m (Event t (Maybe PasswordRaw))
+    -> m (Event t (Maybe PasswordRaw), Dynamic t Locale)
 bodyContentWidget mPass = mdo
-    (ePassOpen, eConnectOpen, eCloudOpen, eMoreMenuOpen) <-
+    (ePassOpen, eConnectOpen, eCloudOpen, eMoreMenuOpen, dLocale) <-
         navbarWidget
             dWallet
             dIsBlockAllButtons
@@ -128,22 +128,27 @@ bodyContentWidget mPass = mdo
         holdUniqDyn
             =<< (holdDyn Nothing $ leftmost $ map updated [dmOldKeyBody, dNewKeyWindow])
 
-    pure eReEncryptDelayed
+    pure (eReEncryptDelayed, dLocale)
 
 bodyWidget :: (MonadWidget t m) => m ()
 bodyWidget = waitForScripts blank $ mdo
     mPass <- toPasswordHash <$> loadCacheValue passwordStorageKey
     (ePassOk, eCleanCache) <- case mPass of
         Just pass -> do
-            (passRaw, ev) <- runLocalize (constDyn Locale_EN) $ enterPasswordWindow pass eCleanOk
+            (passRaw, ev) <- runLocalize dLocale $ enterPasswordWindow pass eCleanOk
             pure (Just <$> passRaw, ev)
         Nothing -> do
             ePb <- getPostBuild
             pure (Nothing <$ ePb, never)
-    eCleanOk <- cleanCacheDialog eCleanCache
+    eCleanOk <- runLocalize dLocale $ cleanCacheDialog eCleanCache
     dmmPass <-
         holdDyn Nothing $ Just <$> leftmost [ePassOk, Nothing <$ eCleanOk, eNewPass]
-    eNewPass <- switchHoldDyn dmmPass $ \case
-        Nothing -> pure never
-        Just pass -> bodyContentWidget pass
+    eThesePassLocale <- switchHoldDyn dmmPass $ \case
+        Nothing -> pure $ align never never
+        Just pass -> do
+            (ePass, dLocale') <- runLocalize dLocale $ bodyContentWidget pass
+            pure $ align ePass $ updated dLocale'
+    let (eNewPass, eLocale) = fanThese eThesePassLocale
+    logEvent "bodyWidget: eLocale" eLocale
+    dLocale <- holdUniqDyn =<< holdDyn Locale_EN eLocale 
     jQueryWidget

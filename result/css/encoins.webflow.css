@@ -2744,3 +2744,18 @@ body {
   justify-content: space-between;
   text-align:left;
 }
+
+.app-Nav_Dropdown {
+  font-size: 24px;
+  font-weight: bold;
+  font-family: Poppins, sans-serif;
+  color:#cccccc;
+  margin-left: 10px;
+  background-color: #000000;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  user-select: none;
+  align-self: flex-end;
+
+}

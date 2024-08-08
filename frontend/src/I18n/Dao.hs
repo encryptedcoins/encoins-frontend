@@ -24,7 +24,7 @@ data DaoMessage
 instance HasI18n Locale DaoMessage Text where
   localizeWith locale t = case locale of
     Locale_EN -> showDaoMessageEn t
-    Locale_ZH -> showDaoMessageEn t -- TODO: update it
+    Locale_RU -> showDaoMessageEn t -- TODO: update it
 
 showDaoMessageEn :: DaoMessage -> Text 
 showDaoMessageEn = \case 

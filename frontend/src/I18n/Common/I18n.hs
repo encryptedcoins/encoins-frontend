@@ -51,23 +51,23 @@ import Common.Utility (toText)
 class HasI18n locale term target where
   localizeWith :: locale -> term -> target
 
-data Locale = Locale_EN | Locale_ZH
+data Locale = Locale_EN | Locale_RU
   deriving stock (Bounded, Enum, Eq, Ord, Show)
 
 instance HasI18n Locale Locale Text where
   localizeWith _ Locale_EN = "English"
-  localizeWith _ Locale_ZH = "中文"
+  localizeWith _ Locale_RU = "Русский"
 
 instance HasI18n Locale UTCTime Text where
   localizeWith locale t = case locale of
     Locale_EN -> T.pack $ formatTime defaultTimeLocale "%D" t
-    Locale_ZH -> T.pack $ formatTime defaultTimeLocale "%Y年%-m月%-d日" t -- FIXME: ZH TimeLocale
+    Locale_RU -> T.pack $ formatTime defaultTimeLocale "%Y年%-m月%-d日" t -- FIXME: ZH TimeLocale
 
 -- | Handy function when we want to localize only English.
 localizeENWith :: HasI18n Locale a Text => (a -> Text) -> Locale -> a -> Text
 localizeENWith f = \case
   Locale_EN -> f
-  Locale_ZH -> localizeWith Locale_EN -- Not translating Chinese yet
+  Locale_RU -> localizeWith Locale_EN -- Not translating Chinese yet
 
 instance HasI18n Locale Day Text where
   localizeWith _locale = T.pack . show

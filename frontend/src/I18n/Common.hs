@@ -24,7 +24,7 @@ data CommonMessage
 instance HasI18n Locale CommonMessage Text where
   localizeWith locale t = case locale of
     Locale_EN -> showCommonMessageEn t
-    Locale_ZH -> showCommonMessageEn t -- TODO: update it
+    Locale_RU -> showCommonMessageEn t -- TODO: update it
 
 showCommonMessageEn :: CommonMessage -> Text 
 showCommonMessageEn = \case 
