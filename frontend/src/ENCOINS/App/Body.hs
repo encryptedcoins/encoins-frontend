@@ -42,7 +42,8 @@ import ENCOINS.Common.Widgets.MoreMenu
     ( WindowMoreMenuClass (..)
     , moreMenuWindow
     )
-import I18n.Reflex.I18n
+import I18n.I18n (App)
+import I18n.Reflex.I18n (Locale(Locale_EN), runLocalize)
 import JS.App (loadCacheValue)
 
 bodyContentWidget ::
@@ -150,5 +151,5 @@ bodyWidget = waitForScripts blank $ mdo
             pure $ align ePass $ updated dLocale'
     let (eNewPass, eLocale) = fanThese eThesePassLocale
     logEvent "bodyWidget: eLocale" eLocale
-    dLocale <- holdUniqDyn =<< holdDyn Locale_EN eLocale 
+    dLocale <- holdUniqDyn =<< holdDyn Locale_EN eLocale
     jQueryWidget

@@ -22,7 +22,9 @@ import ENCOINS.Common.Widgets.Basic (br, btn, divClassDyn)
 import JS.App (loadCacheValue, saveHashedTextToStorage)
 
 import Common.Reflex.Dom.Extra
-import I18n.Reflex.I18n
+import I18n.I18n (App)
+import qualified I18n.App as I18n
+import qualified I18n.I18n as I18n
 
 validatePassword :: Text -> Either Text PasswordRaw
 validatePassword txt
@@ -106,7 +108,7 @@ viewEnterPasswordEntries eError = divClass "app-DialogWindow_EnterPassword" $ md
     pure (eClean, eSave, dPass')
 
 passwordSettingsWindow ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Event t ()
     -> m (Event t (Maybe PasswordRaw), Event t ())
 passwordSettingsWindow eOpen = mdo
@@ -118,7 +120,7 @@ passwordSettingsWindow eOpen = mdo
         eOpen
         never
         "app-PasswordSettingsWindow"
-        "Protect cache of Encoins app"
+        (I18n.AppTerm I18n.PassWindowProtect)
         $ do
             dPassOk <- passwordChecker dmPassHash eOpen
 
@@ -274,14 +276,14 @@ passwordInput txt rep isFocus dmPass eError eOpen = mdo
                 & inputElementConfig_setValue
                 .~ ("" <$ eOpen)
 
-cleanCacheDialog :: (MonadWidget t m) => Event t () -> m (Event t ())
+cleanCacheDialog :: (App t m) => Event t () -> m (Event t ())
 cleanCacheDialog eOpen = mdo
     (eOk, eCancel) <- dialogWindow
         True
         eOpen
         (leftmost [eOk, eCancel])
         "app-CleanCacheWindow"
-        "Clean cache"
+        (I18n.AppTerm I18n.CleanCacheWindowTitle)
         $ do
             divClass "app-CleanCache_Description" $ do
                 text "This action will reset password and clean cache (remove known coins)!"

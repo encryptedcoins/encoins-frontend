@@ -8,7 +8,7 @@ import Data.Text (Text)
 
 data DaoMessage
     = Delegate
-    | DelegateEncs
+    | DelegateEncsWindowTitle
     | Relay
     | Total
     | UrlText
@@ -19,7 +19,7 @@ data DaoMessage
     | EndDate
     | Download
     | DownloadResults
-    deriving stock (Eq)
+    deriving stock (Eq, Show)
 
 instance HasI18n Locale DaoMessage Text where
   localizeWith locale t = case locale of
@@ -29,7 +29,7 @@ instance HasI18n Locale DaoMessage Text where
 showDaoMessageEn :: DaoMessage -> Text 
 showDaoMessageEn = \case 
     Delegate -> "Delegate"
-    DelegateEncs -> "Delegate Encs"
+    DelegateEncsWindowTitle -> "Delegate Encs"
     Relay -> "Relay"
     Total -> "Total"
     UrlText -> "Choose a relay URL above or enter a new one below"

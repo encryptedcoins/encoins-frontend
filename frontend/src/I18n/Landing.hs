@@ -34,7 +34,7 @@ data LandMessage
     | FootAbout
     | FootFeatures
     | FootLinks
-    deriving stock (Eq)
+    deriving stock (Eq, Show)
 
 instance HasI18n Locale LandMessage Text where
   localizeWith locale t = case locale of

@@ -17,11 +17,13 @@ import Backend.Status
     , WalletStatus (..)
     )
 import Common.Events
-import Common.Reflex.Dom.Extra (elementResultJS)
+import Common.Reflex.Dom.Extra (elementResultJS, textLocale)
 import Common.Utility (singletonL, space, toText)
 import Config.Config (NetworkId)
 import JS.Website (setElementStyle)
 import Reflex.ScriptDependent (widgetHoldUntilDefined)
+import I18n.I18n (LocalizedMessage)
+import I18n.I18n (App)
 
 copyEvent :: (MonadWidget t m) => Event t () -> m (Dynamic t Bool)
 copyEvent e = do
@@ -84,12 +86,12 @@ viewCheckboxButton = mdo
     return d
 
 dialogWindow ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Bool
     -> Event t ()
     -> Event t ()
     -> Text
-    -> Text
+    -> LocalizedMessage
     -> m a
     -> m a
 dialogWindow close eOpen eClose customClass title tags = mdo
@@ -113,7 +115,7 @@ dialogWindow close eOpen eClose customClass title tags = mdo
             let titleCls = if close then "dialog-window-title" else "dialog-window-title-without-cross"
             crossClick <- divClass titleCls $ do
                 elAttr "div" ("style" =: "width: 20px;") blank
-                divClass "app-text-title" $ text title
+                divClass "app-text-title" $ textLocale title
                 if close
                     then domEvent Click . fst <$> elClass' "div" "cross-div inverted" blank
                     else pure never

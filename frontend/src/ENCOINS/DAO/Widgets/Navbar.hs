@@ -10,17 +10,20 @@ import Backend.Wallet (Wallet (..))
 import Config.Config (NetworkConfig (dao), NetworkId (..), networkConfig)
 import ENCOINS.Common.Widgets.Basic (btnWithBlock, logo)
 import ENCOINS.Common.Widgets.Connect (connectWidget)
+import ENCOINS.Common.Widgets.Locale (localeWidget)
 import ENCOINS.Common.Widgets.MoreMenu (NavMoreMenuClass (..), viewMoreMenu)
+import I18n.I18n (App)
+import I18n.Reflex.I18n (Locale)
 
 data Dao = Connect | Delegate | MoreMenu
     deriving (Eq, Show)
 
 navbarWidget ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t Wallet
     -> Dynamic t Bool
     -> Dynamic t Bool
-    -> m (Event t Dao)
+    -> m (Event t Dao, Dynamic t Locale)
 navbarWidget w dIsBlocked dIsBlockedConnect = do
     elAttr
         "div"
@@ -53,10 +56,14 @@ navbarWidget w dIsBlocked dIsBlockedConnect = do
                         ""
                         dIsBlocked
                         (text "DELEGATE")
+                dLocale <- localeWidget
                 eMore <-
                     viewMoreMenu
                         (NavMoreMenuClass "common-Nav_Container_MoreMenu" "common-Nav_MoreMenu")
-                pure $ leftmost [Connect <$ eConnect, Delegate <$ eDelegate, MoreMenu <$ eMore]
+                pure
+                    ( leftmost [Connect <$ eConnect, Delegate <$ eDelegate, MoreMenu <$ eMore]
+                    , dLocale
+                    )
 
 currentNetworkDao :: Text
 currentNetworkDao = case dao networkConfig of

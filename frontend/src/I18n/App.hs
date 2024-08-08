@@ -6,14 +6,14 @@ import I18n.Common.I18n
 import Data.Text (Text)
 
 data AppMessage
-    = PassProtect
+    = PassWindowProtect
     | PassCurrent
     | PassEnter
     | PassRepeat
     | PassSave
     | PassReset
     | PassClean
-    | CleanCacheTitle
+    | CleanCacheWindowTitle
     | CleanCacheText
     | CleanCacheCancel
     | TabWallet
@@ -43,17 +43,35 @@ data AppMessage
     | ButtonSendLedger
     | ButtonAddChange
     | Import
-    | ImportTitle
+    | ImportWindowTitle
     | ImportCoin
     | ImportCoins
     | ImportFile
     | ImportNoFile
     | Export
-    | ExportTitle
+    | ExportWindowTitle
     | ExportName
     | ExportSave
     | ExportAll
-    deriving stock (Eq)
+    | CloudWindowTitle
+    | CloudToggleDescription
+    | CloudStatusTitle
+    | CloudStatusDescriptionSuccess
+    | CloudKeyTitle 
+    | CloudKeyTip
+    | CloudInputPlaceholder
+    | CloudButtonGenerate 
+    | CloudButtonSignKey
+    | CloudButtonEnterTip
+    | CloudButtonGenerateTip
+    | CloudButtonSignKeyTip
+    | CloudButtonDeleteTip
+    | CloudButtonTipDefault
+    | CloudRestoreTitle 
+    | CloudButtonRestore
+    | CloudDeleteWindowTitle
+    | CloudDeleteWindowContent
+    deriving stock (Eq, Show)
 
 instance HasI18n Locale AppMessage Text where
   localizeWith locale t = case locale of
@@ -62,14 +80,14 @@ instance HasI18n Locale AppMessage Text where
 
 showAppMessageEn :: AppMessage -> Text 
 showAppMessageEn = \case 
-    PassProtect -> "Protect cache of Encoins app"
+    PassWindowProtect -> "Protect cache of Encoins app"
     PassCurrent -> "Current password"
     PassEnter -> "Enter password"
     PassRepeat -> "Repeat password"
     PassSave -> "Save"
     PassReset -> "Reset password"
     PassClean -> "Clean cache"
-    CleanCacheTitle -> "Clean cache"
+    CleanCacheWindowTitle -> "Clean cache"
     CleanCacheText -> "This action will reset password and clean cache (remove known coins)!"
     CleanCacheCancel -> "Cancel"
     TabWallet -> "Wallet"
@@ -99,27 +117,45 @@ showAppMessageEn = \case
     ButtonSendLedger -> "Send to Ledger"
     ButtonAddChange -> "Add change"
     Import -> "Import"
-    ImportTitle -> "Import New Encoins"
+    ImportWindowTitle -> "Import New Encoins"
     ImportCoin -> "Enter the minting key to import a new coin"
     ImportCoins -> "Choose the file to import coins"
     ImportFile -> "Choose file"
-    ImportNoFile -> "No file choosen"
+    ImportNoFile -> "No file chosen"
     Export -> "Export"
-    ExportTitle -> "Export Encoins"
+    ExportWindowTitle -> "Export Encoins"
     ExportName -> "Enter file name"
     ExportSave -> "Save Selected"
     ExportAll -> "Save all"
+    CloudWindowTitle -> "Encoins Cloud Backup"
+    CloudToggleDescription -> "Save encoins on cloud"
+    CloudStatusTitle -> "Cloud synchronization status"
+    CloudStatusDescriptionSuccess -> "The synchronization is completed successfully."
+    CloudKeyTitle -> "Your AES key for restoring encoins. Save it to a file and keep it secure!" 
+    CloudKeyTip -> "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
+    CloudInputPlaceholder -> "cloud key should be exactly 64 hexadecimal digits"
+    CloudButtonGenerate -> "Generate" 
+    CloudButtonSignKey -> "SignKey"
+    CloudButtonEnterTip -> "Button 'Enter' confirmes manually input key."
+    CloudButtonGenerateTip -> "Button 'Generate' generates random cloud key."
+    CloudButtonSignKeyTip -> "Button 'SignKey' makes key basing on the sign of connected wallet."
+    CloudButtonDeleteTip -> "Button 'Delete' removes currently set key."
+    CloudButtonTipDefault -> "To see more details, hover over the active button."
+    CloudRestoreTitle -> "Restore all unburned encoins from cloud with your current key" 
+    CloudButtonRestore -> "Restore"
+    CloudDeleteWindowTitle -> "Delete Cloud Key"
+    CloudDeleteWindowContent -> "This action will remove cloud key from the cache! If you won't remember the key you can't recover encoins from remote server! Are you sure?"
 
 showAppMessageRu :: AppMessage -> Text 
 showAppMessageRu = \case 
-    PassProtect -> "Защитить кэш Encoins приложения"
+    PassWindowProtect -> "Защитить кэш Encoins приложения"
     PassCurrent -> "Текущий пароль"
     PassEnter -> "Ввести пароль"
     PassRepeat -> "Повторить пароль"
     PassSave -> "Сохранить"
     PassReset -> "Сбросить пароль"
     PassClean -> "Отчистить кэш"
-    CleanCacheTitle -> "Отчистка кэша"
+    CleanCacheWindowTitle -> "Отчистка кэша"
     CleanCacheText -> "Это действие сбросит пароль и отчистить кэш (все известные токены удалятся!"
     CleanCacheCancel -> "Отмена"
     TabWallet -> "Кошелек"
@@ -149,14 +185,31 @@ showAppMessageRu = \case
     ButtonSendLedger -> "Послать на Смарт-контракт"
     ButtonAddChange -> "Добавить сдачу"
     Import -> "Импорт"
-    ImportTitle -> "Импорт новых токенов"
+    ImportWindowTitle -> "Импорт новых токенов"
     ImportCoin -> "Введите minting key для импорта нового токена"
     ImportCoins -> "Выберите файл с токенами"
     ImportFile -> "Выбрать файл"
     ImportNoFile -> "Файл не выбран"
     Export -> "Экспорт"
-    ExportTitle -> "Экспорт токены"
+    ExportWindowTitle -> "Экспорт токены"
     ExportName -> "Введите имя файла"
     ExportSave -> "Сохранить выделенное"
     ExportAll -> "Сохранить все"
-
+    CloudWindowTitle -> "Encoins Cloud Backup"
+    CloudToggleDescription -> "Save encoins on cloud"
+    CloudStatusTitle -> "Cloud synchronization status"
+    CloudStatusDescriptionSuccess -> "The synchronization is completed successfully."
+    CloudKeyTitle -> "Your AES key for restoring encoins. Save it to a file and keep it secure!" 
+    CloudKeyTip -> "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
+    CloudInputPlaceholder -> "cloud key should be exactly 64 hexadecimal digits"
+    CloudButtonGenerate -> "Generate" 
+    CloudButtonSignKey -> "SignKey"
+    CloudButtonEnterTip -> "Button 'Enter' confirmes manually input key."
+    CloudButtonGenerateTip -> "Button 'Generate' generates random cloud key."
+    CloudButtonSignKeyTip -> "Button 'SignKey' makes key basing on the sign of connected wallet."
+    CloudButtonDeleteTip -> "Button 'Delete' removes currently set key."
+    CloudButtonTipDefault -> "To see more details, hover over the active button."
+    CloudRestoreTitle -> "Restore all unburned encoins from cloud with your current key" 
+    CloudButtonRestore -> "Restore"
+    CloudDeleteWindowTitle -> "Delete Cloud Key"
+    CloudDeleteWindowContent -> "This action will remove cloud key from the cache! If you won't remember the key you can't recover encoins from remote server! Are you sure?"

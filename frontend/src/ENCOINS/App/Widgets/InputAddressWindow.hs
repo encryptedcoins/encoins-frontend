@@ -15,11 +15,13 @@ import Common.Events
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Basic (btnWithBlock, errDiv)
 import JS.App (addrLoad)
+import qualified I18n.I18n as I18n
+import I18n.I18n (App)
 
 inputAddressWindow ::
-    (MonadWidget t m) => Event t () -> m (Event t Address, Dynamic t (Maybe Address))
+    (App t m) => Event t () -> m (Event t Address, Dynamic t (Maybe Address))
 inputAddressWindow eOpen = mdo
-    (eOk, dmAddress) <- dialogWindow True eOpen (void eOk) "app-InputAddressWindow" "" $ mdo
+    (eOk, dmAddress) <- dialogWindow True eOpen (void eOk) "app-InputAddressWindow" I18n.EmptyTerm $ mdo
         divClass "connect-title-div" $
             divClass "app-text-semibold" $
                 text "Enter wallet address in bech32:"

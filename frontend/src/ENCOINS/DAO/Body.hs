@@ -13,33 +13,36 @@ import Data.Time (getCurrentTime)
 import Reflex.Dom
 
 import Backend.Wallet (walletsSupportedInDAO)
-import ENCOINS.Common.Widgets.Advanced (waitForScripts)
-import ENCOINS.Common.ConnectWindow (connectWindow)
 import Common.Events
+import ENCOINS.Common.ConnectWindow (connectWindow)
+import ENCOINS.Common.Widgets.Advanced (waitForScripts)
 import ENCOINS.Common.Widgets.Basic (notification)
 import ENCOINS.Common.Widgets.JQuery (jQueryWidget)
 import ENCOINS.Common.Widgets.MoreMenu
     ( WindowMoreMenuClass (..)
     , moreMenuWindow
     )
-import ENCOINS.DAO.Widgets.Poll.Polls
 import ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
-import ENCOINS.DAO.Widgets.Navbar (Dao (..), navbarWidget)
-import ENCOINS.DAO.Widgets.PollWidget
 import ENCOINS.DAO.Widgets.DelegateWindow.RelayTable (fetchRelayNames)
+import ENCOINS.DAO.Widgets.Navbar (Dao (..), navbarWidget)
+import ENCOINS.DAO.Widgets.Poll.Polls
+import ENCOINS.DAO.Widgets.PollWidget
 import ENCOINS.DAO.Widgets.StatusWidget
 import ENCOINS.Website.Widgets.Basic (container, section)
+import I18n.I18n (App)
+import I18n.Reflex.I18n (Locale, runLocalize)
 
 bodyWidget :: (MonadWidget t m) => m ()
 bodyWidget = waitForScripts blank $ mdo
-    bodyContentWidget
+    dLocale <- runLocalize dLocale $ bodyContentWidget
     jQueryWidget
 
-bodyContentWidget :: (MonadWidget t m) => m ()
+bodyContentWidget :: (App t m) => m (Dynamic t Locale)
 bodyContentWidget = mdo
     eFireNames <- newEvent
     dRelayNames <- fetchRelayNames eFireNames
-    eDao <- navbarWidget dWallet dIsDisableButtons dIsDisableConnectButton
+    (eDao, dLocale) <-
+        navbarWidget dWallet dIsDisableButtons dIsDisableConnectButton
 
     let eMoreMenuOpen = void $ ffilter (== MoreMenu) eDao
     let moreMenuClass =
@@ -73,6 +76,7 @@ bodyContentWidget = mdo
             elAttr "div" pollAttr $
                 text "Concluded polls"
         mapM_ (pollCompletedWidget . snd) $ toDescList archivedPolls
+    pure dLocale
 
 pollAttr :: Map Text Text
 pollAttr =

@@ -24,6 +24,9 @@ import ENCOINS.Common.Widgets.Basic
     , image
     )
 import JS.Website (copyText)
+import I18n.I18n (App)
+import qualified I18n.App as I18n
+import qualified I18n.I18n as I18n
 
 import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO (..))
@@ -35,7 +38,7 @@ import Reflex.Dom
 import Text.Hex (decodeHex)
 
 cloudSettingsWindow ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Maybe PasswordRaw
     -> Dynamic t WalletName
     -> Dynamic t Bool
@@ -48,7 +51,7 @@ cloudSettingsWindow mPass dWalletName cloudCacheFlag dCloudStatus eOpen = mdo
         eOpen
         eCloseByRestore
         "app-Cloud_Window"
-        "Encoins Cloud Backup"
+        (I18n.AppTerm I18n.CloudWindowTitle)
         $ do
             (dIsCloudOn, eCloudChange) <- cloudCheckbox cloudCacheFlag
             cloudStatusIcon dCloudStatus dIsCloudOn
@@ -148,7 +151,7 @@ viewRestoreButton dmKey =
             text "Restore"
 
 cloudKeyWidget ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Maybe PasswordRaw
     -> Dynamic t WalletName
     -> Event t ()
@@ -256,14 +259,14 @@ selectBorderColor mKey mCorrectKey = case (mKey, mCorrectKey) of
     (Nothing, Nothing) -> "display: inline-block; border-color: #ff3e31;"
     (Nothing, Just _) -> "display: inline-block; border-color: #00cb7a;"
 
-deleteKeyDialog :: (MonadWidget t m) => Event t () -> m (Event t ())
+deleteKeyDialog :: (App t m) => Event t () -> m (Event t ())
 deleteKeyDialog eDelete = mdo
     (eOk, eCancel) <- dialogWindow
         True
         eDelete
         (leftmost [eOk, eCancel])
         "app-DeleteKeyWindow"
-        "Delete Cloud Key"
+        (I18n.AppTerm I18n.CloudDeleteWindowTitle)
         $ do
             divClass "app-DeleteKey_Description" $ do
                 text

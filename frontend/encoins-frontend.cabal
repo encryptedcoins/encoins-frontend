@@ -58,6 +58,7 @@ library
     ENCOINS.Common.Widgets.Basic
     ENCOINS.Common.Widgets.Connect
     ENCOINS.Common.Widgets.JQuery
+    ENCOINS.Common.Widgets.Locale
     ENCOINS.Common.Widgets.MoreMenu
     ENCOINS.Common.Widgets.SelectInput
     ENCOINS.Common.Widgets.Wallet
@@ -83,6 +84,7 @@ library
     I18n.Common
     I18n.Common.I18n
     I18n.Dao
+    I18n.I18n
     I18n.Landing
     I18n.Reflex.I18n
     JS.App

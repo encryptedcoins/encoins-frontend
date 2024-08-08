@@ -8,13 +8,15 @@ import Reflex.Dom
 
 import Backend.Protocol.Types (PasswordRaw)
 import Backend.Status (CloudIconStatus (..))
-import Common.Utility (space)
 import Backend.Wallet (Wallet (..), currentNetworkApp)
 import Common.Events
+import Common.Utility (space)
 import ENCOINS.Common.Widgets.Basic (logo)
 import ENCOINS.Common.Widgets.Connect (connectWidget)
+import ENCOINS.Common.Widgets.Locale (localeWidget)
 import ENCOINS.Common.Widgets.MoreMenu (NavMoreMenuClass (..), viewMoreMenu)
-import I18n.Reflex.I18n (App, Locale(..))
+import I18n.I18n (App)
+import I18n.Reflex.I18n (Locale (..))
 
 navbarWidget ::
     (App t m) =>
@@ -99,9 +101,3 @@ selectIconClass status isOn = case (status, isOn) of
     (Saving, _) -> "app-Cloud_IconSaving"
     (AllSaved, _) -> "app-Cloud_IconAllSaved"
     (FailedSave, _) -> "app-Cloud_IconAttemptExcess"
-
-localeWidget :: App t m => m (Dynamic t Locale)
-localeWidget = do
-    let conf = def {_dropdownConfig_attributes = constDyn $ "class" =: "app-Nav_Dropdown" }
-    res <- dropdown Locale_EN (constDyn ((Locale_EN :: Locale) =: "EN" <> Locale_RU =: "RU")) conf
-    pure $ _dropdown_value res

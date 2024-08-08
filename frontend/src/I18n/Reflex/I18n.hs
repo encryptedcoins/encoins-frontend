@@ -85,7 +85,6 @@ import Reflex
     , ffor
     , fmapCheap
     )
-import Reflex.Dom (MonadWidget)
 import Reflex.Dom.Core
     ( DomBuilder
         ( DomBuilderSpace
@@ -109,8 +108,6 @@ import Reflex.Dom.Core
     , WithJSContextSingleton (WithJSContextSingleton)
     )
 import Reflex.Host.Class (MonadReflexCreateTrigger)
-
-type App t m = (MonadWidget t m, HasLocale t Locale m)
 
 -- | A type class for monads that have access to some 'Dynamic' @locale@.
 class (Reflex t, Monad m) => HasLocale t locale m | m -> locale where

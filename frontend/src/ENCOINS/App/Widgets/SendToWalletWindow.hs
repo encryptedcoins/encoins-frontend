@@ -8,11 +8,18 @@ import Common.Protocol (secretToHex)
 import ENCOINS.Bulletproofs (Secrets)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Basic (br, btn)
+import I18n.I18n (App)
+import qualified I18n.I18n as I18n
 
 sendToWalletWindow ::
-    (MonadWidget t m) => Event t () -> Dynamic t Secrets -> m (Event t ())
+    (App t m) => Event t () -> Dynamic t Secrets -> m (Event t ())
 sendToWalletWindow eOpen dSecrets = mdo
-    (eOk, eCancel) <- dialogWindow True eOpen (leftmost [eOk, eCancel]) "app-SendToWalletWindow" "" $ do
+    (eOk, eCancel) <- dialogWindow
+        True
+        eOpen
+        (leftmost [eOk, eCancel])
+        "app-SendToWalletWindow"
+        I18n.EmptyTerm $ do
         divClass "connect-title-div" $
             divClass "app-text-semibold" $
                 text "Copy and send these keys to your recepient off-chain:"

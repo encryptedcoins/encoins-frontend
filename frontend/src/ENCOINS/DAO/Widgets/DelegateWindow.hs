@@ -26,9 +26,12 @@ import ENCOINS.DAO.Widgets.DelegateWindow.RelayTable
     , unStakeUrl
     )
 import qualified JS.DAO as JS
+import qualified I18n.Dao as I18n
+import I18n.I18n (App)
+import qualified I18n.I18n as I18n
 
 delegateWindow ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Event t ()
     -> Dynamic t Wallet
     -> Dynamic t (Map Text Text)
@@ -43,7 +46,7 @@ delegateWindow eOpen dWallet dRelayNames = mdo
         eOpen
         (leftmost [void eUrlOk])
         "dao-DelegateWindow"
-        "Delegate ENCS"
+        (I18n.DaoTerm I18n.DelegateEncsWindowTitle)
         $ mdo
             eUrlTable <- relayAmountWidget eeRelays emDelegated dRelayNames
             divClass "dao-DelegateWindow_EnterUrl" $

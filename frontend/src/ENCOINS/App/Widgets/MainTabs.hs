@@ -66,6 +66,7 @@ import ENCOINS.Common.Widgets.Advanced
     , walletError
     )
 import ENCOINS.Common.Widgets.Basic (btn, containerApp, divClassId, sectionApp)
+import I18n.I18n (App)
 
 mainWindowColumnHeader :: (MonadWidget t m) => Text -> m ()
 mainWindowColumnHeader title =
@@ -74,7 +75,7 @@ mainWindowColumnHeader title =
             text title
 
 walletTab ::
-    (MonadWidget t m, EventWriter t [AppStatus] m) =>
+    (App t m, EventWriter t [AppStatus] m) =>
     Maybe PasswordRaw
     -> Dynamic t Wallet
     -> Dynamic t [TokenCacheV3] -- consider use Map or Set
@@ -201,7 +202,7 @@ walletTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp
                 . text
 
 transferTab ::
-    (MonadWidget t m, EventWriter t [AppStatus] m) =>
+    (App t m, EventWriter t [AppStatus] m) =>
     Maybe PasswordRaw
     -> Dynamic t Wallet
     -> Dynamic t [TokenCacheV3]
@@ -324,7 +325,7 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
                 . text
 
 ledgerTab ::
-    (MonadWidget t m, EventWriter t [AppStatus] m) =>
+    (App t m, EventWriter t [AppStatus] m) =>
     Maybe PasswordRaw
     -> Dynamic t [TokenCacheV3]
     -> Dynamic t Bool
