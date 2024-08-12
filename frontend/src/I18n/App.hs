@@ -10,12 +10,24 @@ data AppMessage
     | PassCurrent
     | PassEnter
     | PassRepeat
-    | PassSave
-    | PassReset
-    | PassClean
+    | PassButtonReset
+    | PassButtonClean
+    | PassNotMatch
+    | PassIncorrect
+    | PassInvalidNotAll
+    | PassInvalidLess10
+    | PassInvalidNoUpper
+    | PassInvalidNoLower
+    | PassInvalidNoNumber
+    | PassInvalidNoSpecial
+    | PassEntry
+    | PassSaved
+    | PassCleared
     | CleanCacheWindowTitle
     | CleanCacheText
-    | CleanCacheCancel
+    | CleanCacheTextQuestion
+    | CleanCacheButtonCancel
+    | CleanCacheButtonClean
     | TabWallet
     | TabTransfer
     | TabLedger
@@ -81,15 +93,28 @@ instance HasI18n Locale AppMessage Text where
 showAppMessageEn :: AppMessage -> Text 
 showAppMessageEn = \case 
     PassWindowProtect -> "Protect cache of Encoins app"
-    PassCurrent -> "Current password"
-    PassEnter -> "Enter password"
-    PassRepeat -> "Repeat password"
-    PassSave -> "Save"
-    PassReset -> "Reset password"
-    PassClean -> "Clean cache"
+    PassCurrent -> "Current password:"
+    PassEnter -> "Enter password:"
+    PassRepeat -> "Repeat password:"
+    PassButtonReset -> "Reset password"
+    PassButtonClean -> "Clean cache"
+    PassNotMatch -> "Password doesn't match"
+    PassIncorrect -> "Incorrect password"
+    PassInvalidNotAll -> "Password must consist of \
+            \uppercase and lowercase letters, numbers, and special characters"
+    PassInvalidLess10 -> "Password must be at least 10 characters long"
+    PassInvalidNoUpper -> "Password must contain at least one upper-case letter"
+    PassInvalidNoLower -> "Password must contain at least one lower-case letter"
+    PassInvalidNoNumber -> "Password must contain at least one number"
+    PassInvalidNoSpecial -> "Password must contain at least one special character"
+    PassEntry -> "Password for the cache of Encoins app"
+    PassSaved -> "Password saved!"
+    PassCleared -> "Password cleared!"
     CleanCacheWindowTitle -> "Clean cache"
     CleanCacheText -> "This action will reset password and clean cache (remove known coins)!"
-    CleanCacheCancel -> "Cancel"
+    CleanCacheTextQuestion -> "Are you sure?"
+    CleanCacheButtonCancel -> "Cancel"
+    CleanCacheButtonClean -> "Clean"
     TabWallet -> "Wallet"
     TabTransfer -> "Transfer"
     TabLedger -> "Ledger"
@@ -148,16 +173,29 @@ showAppMessageEn = \case
 
 showAppMessageRu :: AppMessage -> Text 
 showAppMessageRu = \case 
-    PassWindowProtect -> "Защитить кэш Encoins приложения"
+    PassWindowProtect -> "Защита кэша Encoins приложения"
     PassCurrent -> "Текущий пароль"
-    PassEnter -> "Ввести пароль"
-    PassRepeat -> "Повторить пароль"
-    PassSave -> "Сохранить"
-    PassReset -> "Сбросить пароль"
-    PassClean -> "Отчистить кэш"
+    PassEnter -> "Введите пароль:"
+    PassRepeat -> "Повторите пароль:"
+    PassButtonReset -> "Сбросить пароль"
+    PassButtonClean -> "Отчистить кэш"
+    PassNotMatch -> "Пароль не подходит"
+    PassIncorrect -> "Неправильный пароль"
+    PassInvalidNotAll -> "Пароль должен состоять из \
+            \заглавных и строчных букв, чисел, и специальных символов"
+    PassInvalidLess10 -> "Пароль должен быть длинной не менее 10 символов"
+    PassInvalidNoUpper -> "Пароль должен содержать по крайней мере одну заглавную букву"
+    PassInvalidNoLower -> "Пароль должен содержать по крайней мере одну строчную букву"
+    PassInvalidNoNumber -> "Пароль должен содержать по крайней мере одну цифру"
+    PassInvalidNoSpecial -> "Пароль должен содержать по крайней мере один специальный символ"  
+    PassEntry -> "Пароль для кэша Encoins приложения в браузере"
+    PassSaved -> "Пароль сохранен!"
+    PassCleared -> "Пароль удален!"
     CleanCacheWindowTitle -> "Отчистка кэша"
     CleanCacheText -> "Это действие сбросит пароль и отчистить кэш (все известные токены удалятся!"
-    CleanCacheCancel -> "Отмена"
+    CleanCacheTextQuestion -> "Вы уверены?"
+    CleanCacheButtonCancel -> "Отмена"
+    CleanCacheButtonClean -> "Отчистить"
     TabWallet -> "Кошелек"
     TabTransfer -> "Отправка"
     TabLedger -> "Смарт-контракт"
