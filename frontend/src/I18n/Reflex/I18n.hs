@@ -292,7 +292,7 @@ textL ::
     ) =>
     term -> m ()
 textL term = do
-    termTextD <- showL term
+    termTextD <- showLocale term
     termText0 <- sample (current termTextD)
 
     void $
@@ -305,8 +305,8 @@ textL term = do
 -- | Converts an internationalizable term into a @Dynamic t Text@ in a known locale.
 --
 -- The result is dynamic and will change with the locale.
-showL ::
+showLocale ::
     (HasLocale t locale m, HasI18n locale term Text) => term -> m (Dynamic t Text)
-showL term = do
+showLocale term = do
     localeD <- askLocale
     return $ ffor localeD $ \locale -> localizeWith locale term

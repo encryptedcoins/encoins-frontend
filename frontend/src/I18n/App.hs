@@ -116,7 +116,7 @@ showAppMessageEn = \case
     TabTransfer -> "Transfer"
     TabLedger -> "Ledger"
     Balance -> "Transaction balance"
-    BalanceFormula -> "Balance formule"
+    BalanceFormula -> "Balance formula"
     BalanceBurnAda -> "sum of Ada in the encoins being burned"
     BalanceMintAda -> "sum of Ada in the encoins being minted"
     BalanceFee -> "fee"
