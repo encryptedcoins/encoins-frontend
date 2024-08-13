@@ -22,6 +22,8 @@ data CommonMessage
     | Enter
     | Save
     | Delete
+    | Cancel
+    | AreYouSure
     deriving stock (Eq, Show)
 
 instance HasI18n Locale CommonMessage Text where
@@ -47,6 +49,30 @@ showCommonMessageEn = \case
     Enter -> "Enter"
     Save -> "Save"
     Delete -> "Delete"
+    Cancel -> "Cancel"
+    AreYouSure -> "Are you sure?"
+
+
+showCommonMessageRu :: CommonMessage -> Text 
+showCommonMessageRu = \case 
+    MenuTestnet -> "Testnet"
+    MenuMainnet -> "Mainnet"
+    Connect -> "Подключить"
+    ConnectWalletWindowTitle -> "Подключение кошелька"
+    Disconnect -> "Отключить"
+    TutorialWindowTitle -> "Инструкции"
+    HowDelegate -> "Как делегировать"
+    HowUseWallet -> "Как использовать режим кошелька"
+    HowUseLedger -> "Как использовать режим смарт-контракта"
+    Yes -> "Да"
+    No -> "Нет"
+    Or -> "Или"
+    Ok -> "Ок"
+    Enter -> "Ввод"
+    Save -> "Сохранить"
+    Delete -> "Удалить"
+    Cancel -> "Отменить"
+    AreYouSure -> "Вы уверены?"
 
 data WelcomeMessage 
   = WM_Disclaimer 

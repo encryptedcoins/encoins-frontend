@@ -25,8 +25,6 @@ data AppMessage
     | PassCleared
     | CleanCacheWindowTitle
     | CleanCacheText
-    | CleanCacheTextQuestion
-    | CleanCacheButtonCancel
     | CleanCacheButtonClean
     | TabWallet
     | TabTransfer
@@ -83,6 +81,7 @@ data AppMessage
     | CloudButtonRestore
     | CloudDeleteWindowTitle
     | CloudDeleteWindowContent
+    | TransferCopySendKeys
     deriving stock (Eq, Show)
 
 instance HasI18n Locale AppMessage Text where
@@ -112,8 +111,6 @@ showAppMessageEn = \case
     PassCleared -> "Password cleared!"
     CleanCacheWindowTitle -> "Clean cache"
     CleanCacheText -> "This action will reset password and clean cache (remove known coins)!"
-    CleanCacheTextQuestion -> "Are you sure?"
-    CleanCacheButtonCancel -> "Cancel"
     CleanCacheButtonClean -> "Clean"
     TabWallet -> "Wallet"
     TabTransfer -> "Transfer"
@@ -170,6 +167,7 @@ showAppMessageEn = \case
     CloudButtonRestore -> "Restore"
     CloudDeleteWindowTitle -> "Delete Cloud Key"
     CloudDeleteWindowContent -> "This action will remove cloud key from the cache! If you won't remember the key you can't recover encoins from remote server! Are you sure?"
+    TransferCopySendKeys -> "Copy and send these keys to your recepient off-chain:"
 
 showAppMessageRu :: AppMessage -> Text 
 showAppMessageRu = \case 
@@ -193,8 +191,6 @@ showAppMessageRu = \case
     PassCleared -> "Пароль удален!"
     CleanCacheWindowTitle -> "Отчистка кэша"
     CleanCacheText -> "Это действие сбросит пароль и отчистить кэш (все известные токены удалятся!"
-    CleanCacheTextQuestion -> "Вы уверены?"
-    CleanCacheButtonCancel -> "Отмена"
     CleanCacheButtonClean -> "Отчистить"
     TabWallet -> "Кошелек"
     TabTransfer -> "Отправка"
@@ -214,8 +210,8 @@ showAppMessageRu = \case
     CoinsInWallet -> "Токены в Кошельке"
     CoinsMint -> "Токены для чеканки"
     CoinsInLedger -> "Токены на Смарт-контракте"
-    MintingKey -> "Minting Key"
-    TokenName -> "Full token name"
+    MintingKey -> "Ключ выпуска"
+    TokenName -> "Полное имя токена"
     Asset -> "Asset fingerprint"
     EnterAdaAmount -> "Введите сумму в Ada"
     ButtonSendRequest -> "Послать запрос"
@@ -233,9 +229,9 @@ showAppMessageRu = \case
     ExportName -> "Введите имя файла"
     ExportSave -> "Сохранить выделенное"
     ExportAll -> "Сохранить все"
-    CloudWindowTitle -> "Encoins Cloud Backup"
-    CloudToggleDescription -> "Save encoins on cloud"
-    CloudStatusTitle -> "Cloud synchronization status"
+    CloudWindowTitle -> "Резервное копирование энкойны в облако"
+    CloudToggleDescription -> "Сохранить энкойны в облако"
+    CloudStatusTitle -> "Статус синхронизации с облаком"
     CloudStatusDescriptionSuccess -> "The synchronization is completed successfully."
     CloudKeyTitle -> "Your AES key for restoring encoins. Save it to a file and keep it secure!" 
     CloudKeyTip -> "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
@@ -251,3 +247,4 @@ showAppMessageRu = \case
     CloudButtonRestore -> "Restore"
     CloudDeleteWindowTitle -> "Delete Cloud Key"
     CloudDeleteWindowContent -> "This action will remove cloud key from the cache! If you won't remember the key you can't recover encoins from remote server! Are you sure?"
+    TransferCopySendKeys -> "Скопируйте и отправьте эти ключи вашему получателю по другому каналу связи:"

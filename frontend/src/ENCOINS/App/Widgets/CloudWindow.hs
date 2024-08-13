@@ -7,10 +7,17 @@ import Backend.Protocol.Types
 import Backend.Status (CloudIconStatus (..))
 import Backend.Wallet (WalletName (..))
 import Common.Events
+import Common.Reflex.Dom.Extra (textLocale)
 import Common.Reflex.Extra (switchHoldDyn)
 import Common.Utility (space)
 import ENCOINS.App.Widgets.Cloud (fetchAesKey, genAesKey, makeSignedKey)
-import ENCOINS.Common.Cache (aesKey, isCloudOn, removeCacheKey, saveAppData, saveAppData_)
+import ENCOINS.Common.Cache
+    ( aesKey
+    , isCloudOn
+    , removeCacheKey
+    , saveAppData
+    , saveAppData_
+    )
 import ENCOINS.Common.Widgets.Advanced
     ( dialogWindow
     , viewCopyButton
@@ -23,10 +30,11 @@ import ENCOINS.Common.Widgets.Basic
     , btnWithOverOutBlock
     , image
     )
-import JS.Website (copyText)
-import I18n.I18n (App)
 import qualified I18n.App as I18n
+import qualified I18n.Common as I18n
+import I18n.I18n (App)
 import qualified I18n.I18n as I18n
+import JS.Website (copyText)
 
 import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO (..))
@@ -269,13 +277,12 @@ deleteKeyDialog eDelete = mdo
         (I18n.AppTerm I18n.CloudDeleteWindowTitle)
         $ do
             divClass "app-DeleteKey_Description" $ do
-                text
-                    "This action will remove cloud key from the cache! If you won't remember the key you can't recover encoins from remote server!"
+                textLocale I18n.CloudDeleteWindowContent
                 br
-                text "Are you sure?"
+                textLocale I18n.AreYouSure
             elAttr "div" ("class" =: "w-row app-DeleteKey_ButtonContainer") $ do
-                btnOk <- btn "button-switching inverted flex-center" "" $ text "Delete"
-                btnCancel <- btn "button-switching flex-center" "" $ text "Cancel"
+                btnOk <- btn "button-switching inverted flex-center" "" $ textLocale I18n.Delete
+                btnCancel <- btn "button-switching flex-center" "" $ textLocale I18n.Cancel
                 return (btnOk, btnCancel)
     eKeyRemoved <- removeCacheKey $ aesKey <$ eOk
     return eKeyRemoved

@@ -289,10 +289,10 @@ cleanCacheDialog eOpen = mdo
             divClass "app-CleanCache_Description" $ do
                 textLocale I18n.CleanCacheText
                 br
-                textLocale I18n.CleanCacheTextQuestion
+                textLocale I18n.AreYouSure
             divClass "w-row app-CleanCache_ButtonContainer" $ do
                 btnOk <- btn "button-switching inverted flex-center" "" $ textLocale I18n.CleanCacheButtonClean
-                btnCancel <- btn "button-switching flex-center" "" $ textLocale I18n.CleanCacheButtonCancel
+                btnCancel <- btn "button-switching flex-center" "" $ textLocale I18n.Cancel
                 return (btnOk, btnCancel)
     performEvent_
         (saveHashedTextToStorage passwordStorageKey (hashKeccak512 "") <$ eOk)
