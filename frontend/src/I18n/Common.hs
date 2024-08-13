@@ -32,7 +32,7 @@ instance HasI18n Locale CommonMessage Text where
     Locale_RU -> showCommonMessageEn t -- TODO: update it
 
 showCommonMessageEn :: CommonMessage -> Text 
-showCommonMessageEn = \case 
+showCommonMessageEn = \case
     MenuTestnet -> "Testnet"
     MenuMainnet -> "Mainnet"
     Connect -> "Connect"

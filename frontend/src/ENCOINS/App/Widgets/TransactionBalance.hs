@@ -3,7 +3,6 @@
 module ENCOINS.App.Widgets.TransactionBalance where
 
 import Data.Bool (bool)
-import Data.Text (Text)
 import qualified Data.Text as T
 import Reflex.Dom
 
@@ -29,23 +28,28 @@ transactionBalanceWidget ::
     (App t m) =>
     Formula t
     -> Maybe EncoinsMode
-    -> Text
+    -> Maybe I18n.AppMessage
     -> m ()
-transactionBalanceWidget formula mMode txt = do
+transactionBalanceWidget formula mMode mTargetTerm = do
     let balanceSign bal
             | bal > 0 = "+"
             | bal < 0 = "-"
             | otherwise = ""
-        balanceADA title bal =
-            title
-                <> txt
+        balanceADA title mTarget bal =
+            let target = maybe T.empty (\t -> "(" <> t <> ")") mTarget
+            in title
+                <> space
+                <> target
                 <> column
                 <> space
                 <> balanceSign bal
                 <> toText (abs bal)
                 <> " ADA"
     dBalanceTitle <- I18n.showLocale I18n.Balance
-    let dBalanceAda = balanceADA <$> dBalanceTitle <*> total formula
+    dmTarget <- case mTargetTerm of 
+        Just t -> fmap Just <$> I18n.showLocale t
+        Nothing -> pure $ constDyn Nothing
+    let dBalanceAda = balanceADA <$> dBalanceTitle <*> dmTarget <*> total formula
     case mMode of
         Nothing ->
             divClassId "app-TransactionBalance" "welcome-tx-balance" $
@@ -131,12 +135,12 @@ formulaTooltip Formula{..} mode = divClass "app-Formula_TooltipWrapper" $
                     text "txBalance = (bAda - mAda) + (bEncoins - mEncoins) * deposit - fee"
                     elAttr "ul" ("role" =: "list" <> "class" =: "app-Formula_TooltipLegend ") $ do
                         dBurned <- I18n.showLocale I18n.BalanceBurnAda
-                        dMinted <- I18n.showLocale I18n.BalanceMintAda                        
-                        dBurnedNumber <- I18n.showLocale I18n.BalanceBurnEncoins                        
-                        dMintedNumber <- I18n.showLocale I18n.BalanceMintEncoins   
+                        dMinted <- I18n.showLocale I18n.BalanceMintAda
+                        dBurnedNumber <- I18n.showLocale I18n.BalanceBurnEncoins
+                        dMintedNumber <- I18n.showLocale I18n.BalanceMintEncoins
                         dBalanceDeposit <- I18n.showLocale I18n.BalanceDeposit
                         dFee <- I18n.showLocale I18n.BalanceFee
-                        dCommission <- I18n.showLocale I18n.BalanceCommission                        
+                        dCommission <- I18n.showLocale I18n.BalanceCommission
                         mapM_
                             (el "li" . dynText)
                             [ T.append "bAda = " <$> dBurned

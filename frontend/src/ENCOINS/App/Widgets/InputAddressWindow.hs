@@ -9,54 +9,60 @@ import Reflex.Dom
 import Witherable (catMaybes)
 
 import Backend.Protocol.Types
-import Config.Config (NetworkConfig (..), NetworkId (..), networkConfig)
-import Common.Reflex.Dom.Extra (elementResultJS)
 import Common.Events
+import Common.Reflex.Dom.Extra (elementResultJS)
+import Config.Config (NetworkConfig (..), NetworkId (..), networkConfig)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Basic (btnWithBlock, errDiv)
-import JS.App (addrLoad)
-import qualified I18n.I18n as I18n
 import I18n.I18n (App)
+import qualified I18n.I18n as I18n
+import JS.App (addrLoad)
 
 inputAddressWindow ::
     (App t m) => Event t () -> m (Event t Address, Dynamic t (Maybe Address))
 inputAddressWindow eOpen = mdo
-    (eOk, dmAddress) <- dialogWindow True eOpen (void eOk) "app-InputAddressWindow" I18n.EmptyTerm $ mdo
-        divClass "connect-title-div" $
-            divClass "app-text-semibold" $
-                text "Enter wallet address in bech32:"
-        dAddrInp <- divClass "w-row" $ do
-            inp <-
-                inputElement $
-                    def
-                        & initialAttributes
-                        .~ ( "class" =: "w-input"
-                                <> "style" =: "display: inline-block;"
-                                <> "placeholder" =: addressBech32
-                           )
-                        & inputElementConfig_initialValue
-                        .~ ""
-                        & inputElementConfig_setValue
-                        .~ ("" <$ eOpen)
-            setFocusDelayOnEvent inp eOpen
-            return (value inp)
-        performEvent_ (addrLoad <$> updated dAddrInp)
-        dPubKeyHash <- elementResultJS "addrPubKeyHashElement" id
-        dStakeKeyHash <- elementResultJS "addrStakeKeyHashElement" id
-        let dmAddr =
-                zipDynWith
-                    mkAddr
-                    (traceDyn "dPubKeyHash" $ checkEmptyText <$> dPubKeyHash)
-                    (traceDyn "dStakeKeyHash" $ checkEmptyText <$> dStakeKeyHash)
-            emRes = traceEvent "emRes" $ tagPromptlyDyn dmAddr btnOk
-        btnOk <-
-            btnWithBlock
-                btnAttrs
-                "width:30%;display:inline-block;margin-right:5px;"
-                (isNothing <$> dmAddr)
-                (text "Ok")
-        widgetHold_ blank $ leftmost [maybe err (const blank) <$> emRes, blank <$ eOpen]
-        return (catMaybes emRes, dmAddr)
+    (eOk, dmAddress) <- dialogWindow
+        True
+        eOpen
+        (void eOk)
+        "app-InputAddressWindow"
+        I18n.EmptyTerm
+        $ mdo
+            divClass "connect-title-div" $
+                divClass "app-text-semibold" $
+                    text "Enter wallet address in bech32:"
+            dAddrInp <- divClass "w-row" $ do
+                inp <-
+                    inputElement $
+                        def
+                            & initialAttributes
+                            .~ ( "class" =: "w-input"
+                                    <> "style" =: "display: inline-block;"
+                                    <> "placeholder" =: addressBech32
+                               )
+                            & inputElementConfig_initialValue
+                            .~ ""
+                            & inputElementConfig_setValue
+                            .~ ("" <$ eOpen)
+                setFocusDelayOnEvent inp eOpen
+                return (value inp)
+            performEvent_ (addrLoad <$> updated dAddrInp)
+            dPubKeyHash <- elementResultJS "addrPubKeyHashElement" id
+            dStakeKeyHash <- elementResultJS "addrStakeKeyHashElement" id
+            let dmAddr =
+                    zipDynWith
+                        mkAddr
+                        (traceDyn "dPubKeyHash" $ checkEmptyText <$> dPubKeyHash)
+                        (traceDyn "dStakeKeyHash" $ checkEmptyText <$> dStakeKeyHash)
+                emRes = traceEvent "emRes" $ tagPromptlyDyn dmAddr btnOk
+            btnOk <-
+                btnWithBlock
+                    btnAttrs
+                    "width:30%;display:inline-block;margin-right:5px;"
+                    (isNothing <$> dmAddr)
+                    (text "Ok")
+            widgetHold_ blank $ leftmost [maybe err (const blank) <$> emRes, blank <$ eOpen]
+            return (catMaybes emRes, dmAddr)
     return (eOk, dmAddress)
     where
         btnAttrs = "button-switching inverted flex-center"

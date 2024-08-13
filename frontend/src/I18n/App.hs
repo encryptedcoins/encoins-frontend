@@ -2,8 +2,8 @@
 
 module I18n.App where
 
-import I18n.Common.I18n
 import Data.Text (Text)
+import I18n.Common.I18n
 
 data AppMessage
     = PassWindowProtect
@@ -67,17 +67,17 @@ data AppMessage
     | CloudToggleDescription
     | CloudStatusTitle
     | CloudStatusDescriptionSuccess
-    | CloudKeyTitle 
+    | CloudKeyTitle
     | CloudKeyTip
     | CloudInputPlaceholder
-    | CloudButtonGenerate 
+    | CloudButtonGenerate
     | CloudButtonSignKey
     | CloudButtonEnterTip
     | CloudButtonGenerateTip
     | CloudButtonSignKeyTip
     | CloudButtonDeleteTip
     | CloudButtonTipDefault
-    | CloudRestoreTitle 
+    | CloudRestoreTitle
     | CloudButtonRestore
     | CloudDeleteWindowTitle
     | CloudDeleteWindowContent
@@ -85,12 +85,12 @@ data AppMessage
     deriving stock (Eq, Show)
 
 instance HasI18n Locale AppMessage Text where
-  localizeWith locale t = case locale of
-    Locale_EN -> showAppMessageEn t
-    Locale_RU -> showAppMessageRu t
+    localizeWith locale t = case locale of
+        Locale_EN -> showAppMessageEn t
+        Locale_RU -> showAppMessageRu t
 
-showAppMessageEn :: AppMessage -> Text 
-showAppMessageEn = \case 
+showAppMessageEn :: AppMessage -> Text
+showAppMessageEn = \case
     PassWindowProtect -> "Protect cache of Encoins app"
     PassCurrent -> "Current password:"
     PassEnter -> "Enter password:"
@@ -99,8 +99,9 @@ showAppMessageEn = \case
     PassButtonClean -> "Clean cache"
     PassNotMatch -> "Password doesn't match"
     PassIncorrect -> "Incorrect password"
-    PassInvalidNotAll -> "Password must consist of \
-            \uppercase and lowercase letters, numbers, and special characters"
+    PassInvalidNotAll ->
+        "Password must consist of \
+        \uppercase and lowercase letters, numbers, and special characters"
     PassInvalidLess10 -> "Password must be at least 10 characters long"
     PassInvalidNoUpper -> "Password must contain at least one upper-case letter"
     PassInvalidNoLower -> "Password must contain at least one lower-case letter"
@@ -153,24 +154,26 @@ showAppMessageEn = \case
     CloudToggleDescription -> "Save encoins on cloud"
     CloudStatusTitle -> "Cloud synchronization status"
     CloudStatusDescriptionSuccess -> "The synchronization is completed successfully."
-    CloudKeyTitle -> "Your AES key for restoring encoins. Save it to a file and keep it secure!" 
-    CloudKeyTip -> "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
+    CloudKeyTitle -> "Your AES key for restoring encoins. Save it to a file and keep it secure!"
+    CloudKeyTip ->
+        "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
     CloudInputPlaceholder -> "cloud key should be exactly 64 hexadecimal digits"
-    CloudButtonGenerate -> "Generate" 
+    CloudButtonGenerate -> "Generate"
     CloudButtonSignKey -> "SignKey"
     CloudButtonEnterTip -> "Button 'Enter' confirmes manually input key."
     CloudButtonGenerateTip -> "Button 'Generate' generates random cloud key."
     CloudButtonSignKeyTip -> "Button 'SignKey' makes key basing on the sign of connected wallet."
     CloudButtonDeleteTip -> "Button 'Delete' removes currently set key."
     CloudButtonTipDefault -> "To see more details, hover over the active button."
-    CloudRestoreTitle -> "Restore all unburned encoins from cloud with your current key" 
+    CloudRestoreTitle -> "Restore all unburned encoins from cloud with your current key"
     CloudButtonRestore -> "Restore"
     CloudDeleteWindowTitle -> "Delete Cloud Key"
-    CloudDeleteWindowContent -> "This action will remove cloud key from the cache! If you won't remember the key you can't recover encoins from remote server! Are you sure?"
+    CloudDeleteWindowContent ->
+        "This action will remove cloud key from the cache! If you won't remember the key you can't recover encoins from remote server! Are you sure?"
     TransferCopySendKeys -> "Copy and send these keys to your recepient off-chain:"
 
-showAppMessageRu :: AppMessage -> Text 
-showAppMessageRu = \case 
+showAppMessageRu :: AppMessage -> Text
+showAppMessageRu = \case
     PassWindowProtect -> "Защита кэша Encoins приложения"
     PassCurrent -> "Текущий пароль"
     PassEnter -> "Введите пароль:"
@@ -179,18 +182,20 @@ showAppMessageRu = \case
     PassButtonClean -> "Отчистить кэш"
     PassNotMatch -> "Пароль не подходит"
     PassIncorrect -> "Неправильный пароль"
-    PassInvalidNotAll -> "Пароль должен состоять из \
-            \заглавных и строчных букв, чисел, и специальных символов"
+    PassInvalidNotAll ->
+        "Пароль должен состоять из \
+        \заглавных и строчных букв, чисел, и специальных символов"
     PassInvalidLess10 -> "Пароль должен быть длинной не менее 10 символов"
     PassInvalidNoUpper -> "Пароль должен содержать по крайней мере одну заглавную букву"
     PassInvalidNoLower -> "Пароль должен содержать по крайней мере одну строчную букву"
     PassInvalidNoNumber -> "Пароль должен содержать по крайней мере одну цифру"
-    PassInvalidNoSpecial -> "Пароль должен содержать по крайней мере один специальный символ"  
+    PassInvalidNoSpecial -> "Пароль должен содержать по крайней мере один специальный символ"
     PassEntry -> "Пароль для кэша Encoins приложения в браузере"
     PassSaved -> "Пароль сохранен!"
     PassCleared -> "Пароль удален!"
     CleanCacheWindowTitle -> "Отчистка кэша"
-    CleanCacheText -> "Это действие сбросит пароль и отчистить кэш (все известные токены удалятся!"
+    CleanCacheText ->
+        "Это действие сбросит пароль и отчистить кэш (все известные токены удалятся!"
     CleanCacheButtonClean -> "Отчистить"
     TabWallet -> "Кошелек"
     TabTransfer -> "Отправка"
@@ -204,7 +209,8 @@ showAppMessageRu = \case
     BalanceToWallet -> "в Кошелек"
     BalanceToLedger -> "на Смарт-контракт"
     BalanceNumberEncoins -> "количество токенов для отправки"
-    BalanceDeposit -> "возвращаемый депозит для размещения ваших токенов на Смарт-контракте (4 Ada)"
+    BalanceDeposit ->
+        "возвращаемый депозит для размещения ваших токенов на Смарт-контракте (4 Ada)"
     BalanceBurnEncoins -> "число токенов для сжигания"
     BalanceMintEncoins -> "число токенов для чеканки"
     CoinsInWallet -> "Токены в Кошельке"
@@ -233,18 +239,21 @@ showAppMessageRu = \case
     CloudToggleDescription -> "Сохранить энкойны в облако"
     CloudStatusTitle -> "Статус синхронизации с облаком"
     CloudStatusDescriptionSuccess -> "The synchronization is completed successfully."
-    CloudKeyTitle -> "Your AES key for restoring encoins. Save it to a file and keep it secure!" 
-    CloudKeyTip -> "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
+    CloudKeyTitle -> "Your AES key for restoring encoins. Save it to a file and keep it secure!"
+    CloudKeyTip ->
+        "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
     CloudInputPlaceholder -> "cloud key should be exactly 64 hexadecimal digits"
-    CloudButtonGenerate -> "Generate" 
+    CloudButtonGenerate -> "Generate"
     CloudButtonSignKey -> "SignKey"
     CloudButtonEnterTip -> "Button 'Enter' confirmes manually input key."
     CloudButtonGenerateTip -> "Button 'Generate' generates random cloud key."
     CloudButtonSignKeyTip -> "Button 'SignKey' makes key basing on the sign of connected wallet."
     CloudButtonDeleteTip -> "Button 'Delete' removes currently set key."
     CloudButtonTipDefault -> "To see more details, hover over the active button."
-    CloudRestoreTitle -> "Restore all unburned encoins from cloud with your current key" 
+    CloudRestoreTitle -> "Restore all unburned encoins from cloud with your current key"
     CloudButtonRestore -> "Restore"
     CloudDeleteWindowTitle -> "Delete Cloud Key"
-    CloudDeleteWindowContent -> "This action will remove cloud key from the cache! If you won't remember the key you can't recover encoins from remote server! Are you sure?"
-    TransferCopySendKeys -> "Скопируйте и отправьте эти ключи вашему получателю по другому каналу связи:"
+    CloudDeleteWindowContent ->
+        "This action will remove cloud key from the cache! If you won't remember the key you can't recover encoins from remote server! Are you sure?"
+    TransferCopySendKeys ->
+        "Скопируйте и отправьте эти ключи вашему получателю по другому каналу связи:"

@@ -66,6 +66,7 @@ import ENCOINS.Common.Widgets.Advanced
     , walletError
     )
 import ENCOINS.Common.Widgets.Basic (btn, containerApp, divClassId, sectionApp)
+import qualified I18n.App as I18n
 import I18n.I18n (App)
 
 mainWindowColumnHeader :: (MonadWidget t m) => Text -> m ()
@@ -104,7 +105,7 @@ walletTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp
                 (getAda <$> dToMint)
                 0
                 0
-    containerApp "" $ transactionBalanceWidget formula (Just WalletMode) ""
+    containerApp "" $ transactionBalanceWidget formula (Just WalletMode) Nothing
     (dToBurn, dToMint, eStatusUpdate, dNewTokensV3) <- containerApp "" $
         divClass "w-row" $ mdo
             dImportedSecrets <- foldDyn (++) [] eImportSecret
@@ -219,10 +220,10 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
     welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
     dDepositBalance <- holdUniqDyn $ negate . getDeposit <$> dCoins
     containerApp "" $
-        transactionBalanceWidget (Formula 0 0 0 0 0 0) Nothing " (to Wallet)"
+        transactionBalanceWidget (Formula 0 0 0 0 0 0) Nothing (Just I18n.BalanceToWallet)
     let formula = Formula dDepositBalance 0 0 0 (getCoinNumber <$> dCoins) 0
     containerApp "" $
-        transactionBalanceWidget formula (Just TransferMode) " (to Ledger)"
+        transactionBalanceWidget formula (Just TransferMode) (Just I18n.BalanceToLedger)
     (dCoins, eSendToLedger, eAddr, dTokensV3) <- containerApp "" $ divClass "w-row" $ mdo
         dImportedSecrets <- foldDyn (++) [] eImportSecret
         let dTokenCache =
@@ -355,7 +356,7 @@ ledgerTab mpass dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp "" "" $
                 (getAda <$> dToMint)
                 (getCoinNumber <$> dToBurn)
                 (getCoinNumber <$> dToMint)
-    containerApp "" $ transactionBalanceWidget formula (Just LedgerMode) ""
+    containerApp "" $ transactionBalanceWidget formula (Just LedgerMode) Nothing
 
     (dToBurn, dToMint, dAddr, eStatusUpdate, dNewTokensV3) <- containerApp "" $
         divClassId "w-row" "welcome-ledger" $ mdo
