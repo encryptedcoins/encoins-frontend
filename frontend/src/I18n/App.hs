@@ -99,9 +99,9 @@ instance HasI18n Locale AppMessage Text where
 showAppMessageEn :: AppMessage -> Text
 showAppMessageEn = \case
     PassWindowProtect -> "Protect cache of Encoins app"
-    PassCurrent -> "Current password:"
-    PassEnter -> "Enter password:"
-    PassRepeat -> "Repeat password:"
+    PassCurrent -> "Current password" <> column
+    PassEnter -> "Enter password" <> column
+    PassRepeat -> "Repeat password" <> column
     PassButtonReset -> "Reset password"
     PassButtonClean -> "Clean cache"
     PassNotMatch -> "Password doesn't match"
@@ -182,7 +182,7 @@ showAppMessageEn = \case
     CloudDeleteWindowTitle -> "Delete Cloud Key"
     CloudDeleteWindowContent ->
         "This action will remove cloud key from the cache! If you won't remember the key you can't recover encoins from remote server! Are you sure?"
-    TransferCopySendKeys -> "Copy and send these keys to your recepient off-chain:"
+    TransferCopySendKeys -> "Copy and send these keys to your recipient off-chain:"
 
 showAppMessageRu :: AppMessage -> Text
 showAppMessageRu = \case

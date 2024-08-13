@@ -7,9 +7,8 @@ import Backend.Protocol.Types
 import Backend.Status (CloudIconStatus (..))
 import Backend.Wallet (WalletName (..))
 import Common.Events
-import Common.Reflex.Dom.Extra (textLocale)
+import Common.Reflex.Dom.Extra (textLocale, dynTextLocale)
 import Common.Reflex.Extra (switchHoldDyn)
-import Common.Utility (space)
 import ENCOINS.App.Widgets.Cloud (fetchAesKey, genAesKey, makeSignedKey)
 import ENCOINS.Common.Cache
     ( aesKey
@@ -74,7 +73,7 @@ cloudSettingsWindow mPass dWalletName cloudCacheFlag dCloudStatus eOpen = mdo
                     let eFirstKeyLoad = leftmost [() <$ eCloudChangeValDelayed, eOpen]
                     dmNewKey <- cloudKeyWidget mPass dWalletName eFirstKeyLoad
                     divClass "app-Cloud_Restore_Title" $
-                        text "Restore all unburned encoins from cloud with your current key"
+                        textLocale I18n.CloudRestoreTitle
                     eRestore <- viewRestoreButton dmNewKey
                     pure $ align (updated dmNewKey) eRestore
             dmNewKey <- holdDyn Nothing emNewKey
@@ -99,19 +98,19 @@ cloudStatusIcon ::
 cloudStatusIcon dCloudStatus dIsSave = do
     divClass "app-Cloud_Status_Title" $
         textLocale I18n.CloudStatusTitle
-    divClass "app-Cloud_StatusText" $
-        dynText $
-            zipDynWith selectSaveStatusNote dCloudStatus dIsSave
+    let dStatusTerm = zipDynWith selectSaveStatusNote dCloudStatus dIsSave
+    divClass "app-Cloud_StatusText" $ do 
+        textLocale I18n.CloudStatusBegin
+        dynTextLocale dStatusTerm
 
-selectSaveStatusNote :: CloudIconStatus -> Bool -> Text
+selectSaveStatusNote :: CloudIconStatus -> Bool -> I18n.AppMessage
 selectSaveStatusNote status isCloud =
-    let t = case (status, isCloud) of
-            (_, False) -> "is turned off"
-            (NoTokens, _) -> "is impossible. There are not tokens in the local cache"
-            (Saving, _) -> "is in progress..."
-            (AllSaved, _) -> "is completed successfully."
-            (FailedSave, _) -> "failed"
-     in "The synchronization" <> space <> t
+    case (status, isCloud) of
+            (_, False) -> I18n.CloudStatusOff
+            (NoTokens, _) -> I18n.CloudStatusNoTokens
+            (Saving, _) -> I18n.CloudStatusProgress
+            (AllSaved, _) -> I18n.CloudStatusSuccess
+            (FailedSave, _) -> I18n.CloudStatusFailed
 
 viewCheckbox ::
     (App t m) =>
@@ -221,16 +220,15 @@ cloudKeyWidget mPass dWalletName eFirstLoadKey = mdo
     eKeyRemoved <- deleteKeyDialog eDelete
     let eMouseOutButton = leftmost [eEnterOut, eGenOut, eSignOut, eDelOut]
     dButtonDescription <-
-        holdDyn "To see more details, hover over the active button." $
+        holdDyn I18n.CloudButtonTipDefault $
             leftmost
-                [ "Button 'Enter' confirmes manually input key." <$ eEnterOver
-                , "Button 'Generate' generates random cloud key." <$ eGenOver
-                , "Button 'SignKey' makes key basing on the sign of connected wallet."
-                    <$ eSignOver
-                , "Button 'Delete' removes currently set key." <$ eDelOver
-                , "To see more details, hover over the active button." <$ eMouseOutButton
+                [ I18n.CloudButtonEnterTip <$ eEnterOver
+                , I18n.CloudButtonGenerateTip <$ eGenOver
+                , I18n.CloudButtonSignKeyTip <$ eSignOver
+                , I18n.CloudButtonDeleteTip <$ eDelOver
+                , I18n.CloudButtonTipDefault <$ eMouseOutButton
                 ]
-    divClass "app-Cloud_ButtonDescription" $ dynText dButtonDescription
+    divClass "app-Cloud_ButtonDescription" $ dynTextLocale dButtonDescription
     pure dmKey
 
 viewInputCloudKey ::
