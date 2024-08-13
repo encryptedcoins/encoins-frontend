@@ -3,6 +3,8 @@
 module I18n.App where
 
 import Data.Text (Text)
+
+import Common.Utility (column, space)
 import I18n.Common.I18n
 
 data AppMessage
@@ -65,8 +67,13 @@ data AppMessage
     | ExportAll
     | CloudWindowTitle
     | CloudToggleDescription
+    | CloudStatusBegin
+    | CloudStatusOff
+    | CloudStatusSuccess
+    | CloudStatusNoTokens
+    | CloudStatusProgress
+    | CloudStatusFailed
     | CloudStatusTitle
-    | CloudStatusDescriptionSuccess
     | CloudKeyTitle
     | CloudKeyTip
     | CloudInputPlaceholder
@@ -134,26 +141,31 @@ showAppMessageEn = \case
     MintingKey -> "Minting Key"
     TokenName -> "Full token name"
     Asset -> "Asset fingerprint"
-    EnterAdaAmount -> "Enter Ada amount"
-    ButtonSendRequest -> "Send Request"
-    ButtonSentWallet -> "Send to Wallet"
-    ButtonSendLedger -> "Send to Ledger"
-    ButtonAddChange -> "Add change"
+    EnterAdaAmount -> "Enter ADA amount..."
+    ButtonSendRequest -> "SEND REQUEST"
+    ButtonSentWallet -> space <> "Send to Wallet"
+    ButtonSendLedger -> space <> "Send to Ledger"
+    ButtonAddChange -> "ADD CHANGE"
     Import -> "Import"
     ImportWindowTitle -> "Import New Encoins"
-    ImportCoin -> "Enter the minting key to import a new coin"
-    ImportCoins -> "Choose the file to import coins"
+    ImportCoin -> "Enter the minting key to import a new coin" <> column
+    ImportCoins -> "Choose a file to import coins" <> column
     ImportFile -> "Choose file"
     ImportNoFile -> "No file chosen"
     Export -> "Export"
     ExportWindowTitle -> "Export Encoins"
-    ExportName -> "Enter file name"
+    ExportName -> "Enter file name" <> column
     ExportSave -> "Save Selected"
     ExportAll -> "Save all"
     CloudWindowTitle -> "Encoins Cloud Backup"
     CloudToggleDescription -> "Save encoins on cloud"
     CloudStatusTitle -> "Cloud synchronization status"
-    CloudStatusDescriptionSuccess -> "The synchronization is completed successfully."
+    CloudStatusBegin -> "The synchronization" <> space
+    CloudStatusOff -> "is turned off"
+    CloudStatusSuccess -> "is completed successfully."
+    CloudStatusNoTokens -> "is impossible. There are not tokens in the local cache"
+    CloudStatusProgress -> "is in progress..."
+    CloudStatusFailed -> "failed"
     CloudKeyTitle -> "Your AES key for restoring encoins. Save it to a file and keep it secure!"
     CloudKeyTip ->
         "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
@@ -218,8 +230,8 @@ showAppMessageRu = \case
     CoinsInLedger -> "Токены на Смарт-контракте"
     MintingKey -> "Ключ выпуска"
     TokenName -> "Полное имя токена"
-    Asset -> "Asset fingerprint"
-    EnterAdaAmount -> "Введите сумму в Ada"
+    Asset -> "Отпечаток актива"
+    EnterAdaAmount -> "Введите сумму в Ada..."
     ButtonSendRequest -> "Послать запрос"
     ButtonSentWallet -> "Послать на Кошелек"
     ButtonSendLedger -> "Послать на Смарт-контракт"
@@ -238,8 +250,14 @@ showAppMessageRu = \case
     CloudWindowTitle -> "Резервное копирование энкойны в облако"
     CloudToggleDescription -> "Сохранить энкойны в облако"
     CloudStatusTitle -> "Статус синхронизации с облаком"
-    CloudStatusDescriptionSuccess -> "The synchronization is completed successfully."
-    CloudKeyTitle -> "Your AES key for restoring encoins. Save it to a file and keep it secure!"
+    CloudStatusBegin -> "Синхронизация" <> space
+    CloudStatusOff -> "отключена"
+    CloudStatusSuccess -> "успешно завершена"
+    CloudStatusNoTokens -> "невозможна. Отсутствуют токены в локальном кэше"
+    CloudStatusProgress -> "в процессе"
+    CloudStatusFailed -> "не удалась"
+    CloudKeyTitle ->
+        "Ваш AES-ключ для восстановления encoins. Сохраните его в файле и держите в надежном месте!"
     CloudKeyTip ->
         "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
     CloudInputPlaceholder -> "cloud key should be exactly 64 hexadecimal digits"

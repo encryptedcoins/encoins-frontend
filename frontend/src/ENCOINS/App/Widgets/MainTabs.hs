@@ -26,9 +26,7 @@ import Backend.Status
     )
 import Backend.Wallet (Wallet (..))
 import Common.Events
-import Common.Reflex.Dom.Extra
-    ( elementResultJS
-    )
+import Common.Reflex.Dom.Extra (elementResultJS, textLocale)
 import Common.Utility (nubWith)
 import Config.Config (delegateServerUrl)
 import ENCOINS.App.Widgets.Cloud
@@ -69,11 +67,11 @@ import ENCOINS.Common.Widgets.Basic (btn, containerApp, divClassId, sectionApp)
 import qualified I18n.App as I18n
 import I18n.I18n (App)
 
-mainWindowColumnHeader :: (MonadWidget t m) => Text -> m ()
+mainWindowColumnHeader :: (App t m) => I18n.AppMessage -> m ()
 mainWindowColumnHeader title =
     divClass "app-column-head-div" $
         divClass "app-text-semibold" $
-            text title
+            textLocale title
 
 walletTab ::
     (App t m, EventWriter t [AppStatus] m) =>
@@ -127,14 +125,14 @@ walletTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-wallet-coins" $ do
-                    mainWindowColumnHeader "Coins in the Wallet"
+                    mainWindowColumnHeader I18n.CoinsInWallet
                     dSecretsUniq <- holdUniqDyn dSecretsInTheWallet
                     dyn_ $ fmap noCoinsFoundWidget dSecretsUniq
                     coinBurnCollectionWidget dSecretsUniq
                 eImp <- divClassId "" "welcome-import-export" $ do
                     (eImport, eExport) <-
                         divClass "w-row" $
-                            (,) <$> menuButton "Import" <*> menuButton "Export"
+                            (,) <$> menuButton I18n.Import <*> menuButton I18n.Export
                     exportWindow eExport dCTB (map tcSecret <$> dTokenCache)
                     (eIS, eISAll) <- importWindow eImport
                     pure $ leftmost [eIS, eISAll]
@@ -143,7 +141,7 @@ walletTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp
             (dCoinsToMint, eSend, eSendStatus) <-
                 divClass "app-CoinColumnRight w-col w-col-6" $ mdo
                     dCoinsToMint' <- divClassId "" "welcome-coins-mint" $ mdo
-                        mainWindowColumnHeader "Coins to Mint"
+                        mainWindowColumnHeader I18n.CoinsMint
                         dCoinsToMint'' <-
                             coinMintCollectionV3Widget $
                                 leftmost
@@ -200,7 +198,7 @@ walletTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp
                 . btn
                     "button-switching flex-center"
                     "margin-top:20px;min-width:unset"
-                . text
+                . textLocale
 
 transferTab ::
     (App t m, EventWriter t [AppStatus] m) =>
@@ -220,7 +218,10 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
     welcomeWindow welcomeWindowTransferStorageKey welcomeTransfer
     dDepositBalance <- holdUniqDyn $ negate . getDeposit <$> dCoins
     containerApp "" $
-        transactionBalanceWidget (Formula 0 0 0 0 0 0) Nothing (Just I18n.BalanceToWallet)
+        transactionBalanceWidget
+            (Formula 0 0 0 0 0 0)
+            Nothing
+            (Just I18n.BalanceToWallet)
     let formula = Formula dDepositBalance 0 0 0 (getCoinNumber <$> dCoins) 0
     containerApp "" $
         transactionBalanceWidget formula (Just TransferMode) (Just I18n.BalanceToLedger)
@@ -241,12 +242,12 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
 
         (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
             dCTB <- divClassId "" "welcome-coins-transfer" $ do
-                mainWindowColumnHeader "Coins in the Wallet"
+                mainWindowColumnHeader I18n.CoinsInWallet
                 dyn_ $ fmap noCoinsFoundWidget dSecretsInTheWallet
                 coinBurnCollectionWidget dSecretsInTheWallet
             (eImport, eExport) <-
                 divClass "w-row" $
-                    (,) <$> menuButton "Import" <*> menuButton "Export"
+                    (,) <$> menuButton I18n.Import <*> menuButton I18n.Export
             exportWindow eExport dCTB (map tcSecret <$> dTokenCache)
             (eIS, eISAll) <- importWindow eImport
             return (dCTB, leftmost [eIS, eISAll])
@@ -259,7 +260,7 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
                         (fmap (not . isAppTotalBlock) dStatus)
                     )
                     ""
-                    " Send to Wallet"
+                    I18n.ButtonSentWallet
             eLedger <-
                 sendButton
                     ( zipDynWith
@@ -268,7 +269,7 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
                         (fmap (not . isAppTotalBlock) dStatus)
                     )
                     "margin-top: 20px"
-                    " Send to Ledger"
+                    I18n.ButtonSendLedger
             eWalletOk <- sendToWalletWindow eWallet dCoinsToBurn
             (eAddrOk, _) <- inputAddressWindow eWalletOk
             return (dCoinsToBurn, eLedger, eAddrOk, dTokenCacheUpdated)
@@ -317,13 +318,13 @@ transferTab mpass dWallet dTokenCacheOld dCloudOn dmKey eWasMigration = sectionA
                 . btn
                     "button-switching flex-center"
                     "margin-top:20px;min-width:unset"
-                . text
+                . textLocale
         sendButton dActive stl =
             divClass "app-SendTransferButton"
                 . btn
                     (("button-switching flex-center " <>) . bool "button-disabled" "" <$> dActive)
                     stl
-                . text
+                . textLocale
 
 ledgerTab ::
     (App t m, EventWriter t [AppStatus] m) =>
@@ -377,14 +378,14 @@ ledgerTab mpass dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp "" "" $
 
             (dCoinsToBurn, eImportSecret) <- divClass "w-col w-col-6" $ do
                 dCTB <- divClassId "" "welcome-ledger-coins" $ do
-                    mainWindowColumnHeader "Coins in the Ledger"
+                    mainWindowColumnHeader I18n.CoinsInLedger
                     dSecretsUniq <- holdUniqDyn dSecretsInTheWallet
                     dyn_ $ fmap noCoinsFoundWidget dSecretsUniq
                     coinBurnCollectionWidget dSecretsUniq
                 eImp <- divClass "" $ do
                     (eImport, eExport) <-
                         divClass "w-row" $
-                            (,) <$> menuButton "Import" <*> menuButton "Export"
+                            (,) <$> menuButton I18n.Import <*> menuButton I18n.Export
                     exportWindow eExport dCTB (map tcSecret <$> dTokenCache)
                     (eIS, eISAll) <- importWindow eImport
                     return $ leftmost [eIS, eISAll]
@@ -392,7 +393,7 @@ ledgerTab mpass dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp "" "" $
             (eSendStatus, dCoinsToMint, eSend, dChangeAddr) <-
                 divClassId "app-CoinColumnRight w-col w-col-6" "welcome-ledger-mint" $ mdo
                     dCoinsToMint' <- divClass "" $ mdo
-                        mainWindowColumnHeader "Coins to Mint"
+                        mainWindowColumnHeader I18n.CoinsMint
                         dCoinsToMint'' <-
                             coinMintCollectionV3Widget $
                                 leftmost
@@ -461,13 +462,13 @@ ledgerTab mpass dTokenCacheOld dCloudOn dmKey eWasMigration = sectionApp "" "" $
                 . btn
                     "button-switching flex-center"
                     "margin-top:20px;min-width:unset"
-                . text
+                . textLocale
         calculateChange bal = negate bal - 8
         f v =
             if v < 0
                 then "button-switching flex-center"
                 else "button-not-selected button-disabled flex-center"
-        addChangeButton dBal = btn (f <$> dBal) "margin-top: 10px;" $ text "ADD CHANGE"
+        addChangeButton dBal = btn (f <$> dBal) "margin-top: 10px;" $ textLocale I18n.ButtonAddChange
 
 saveCacheLocally ::
     (MonadWidget t m) =>

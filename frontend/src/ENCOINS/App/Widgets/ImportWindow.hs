@@ -23,6 +23,7 @@ import Witherable (catMaybes)
 
 import Common.Events
 import Common.Protocol (hexToSecret)
+import Common.Reflex.Dom.Extra (textLocale)
 import Common.Reflex.Extra (switchHoldDyn)
 import Common.Utility (formatCoinTime, toJsonText)
 import ENCOINS.Bulletproofs (Secret)
@@ -50,12 +51,12 @@ importWindow eImportOpen = mdo
     pure ((: []) <$> catMaybes s, ss)
 
 importMintingKey ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Event t ()
     -> m (Event t (Maybe Secret))
 importMintingKey eImportOpen = divClass "app-ImportKey_Container" $ mdo
     divClass "app-ImportWindow_SubTitle" $
-        text "Enter the minting key to import a new coin:"
+        textLocale I18n.ImportCoin
     let conf =
             def{_inputElementConfig_setValue = pure ("" <$ eImportOpen)}
                 & ( initialAttributes
@@ -84,10 +85,10 @@ selectBorderColor mSecret origInput =
         then T.empty
         else maybe "border-color: #ff3e31;" (const "border-color: #00cb7a;") mSecret
 
-importCoinFiles :: (MonadWidget t m) => Event t () -> m (Event t [Secret])
+importCoinFiles :: (App t m) => Event t () -> m (Event t [Secret])
 importCoinFiles eImportOpen = do
     (eImportClose, dInputFiles) <- divClass "app-ImportFile_Container" $ do
-        divClass "app-ImportWindow_SubTitle" $ text "Choose a file to import coins:"
+        divClass "app-ImportWindow_SubTitle" $ textLocale I18n.ImportCoins
         let conf =
                 def{_inputElementConfig_setValue = pure ("" <$ eImportOpen)}
                     & (initialAttributes .~ ("class" =: "app-ImportFile_Input" <> "type" =: "file"))
@@ -130,7 +131,7 @@ exportWindow eOpen dSelectedSecrets dAllSecrets = mdo
             elAttr
                 "div"
                 ("class" =: "app-text-normal" <> "style" =: "justify-content: space-between")
-                $ text "Enter file name:"
+                $ textLocale I18n.ExportName
             eTime <- performEvent ((formatCoinTime <$> liftIO getCurrentTime) <$ eOpen)
             logEvent "eTime" eTime
             let eDefaultValue = (\time -> "encoins" <> "-of-" <> time <> ".txt") <$> eTime
@@ -149,10 +150,10 @@ exportWindow eOpen dSelectedSecrets dAllSecrets = mdo
             (eSaveSelected, eSaveAll) <- divClass "app-ExportWindow_ButtonContainer" $ do
                 eSelected <-
                     btn "button-switching inverted flex-center app-ExportSelected_Button" "" $
-                        text "Save Selected"
+                        textLocale I18n.ExportSave
                 eAll <-
                     btn "button-switching inverted flex-center app-ExportAll_Button" "" $
-                        text "Save all"
+                        textLocale I18n.ExportAll
                 pure (eSelected, eAll)
 
             let dSelectedContent = toJsonText <$> dSelectedSecrets

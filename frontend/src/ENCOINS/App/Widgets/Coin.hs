@@ -22,17 +22,21 @@ import Backend.Protocol.Types
     , TokenCacheV3 (..)
     )
 import Common.Protocol (secretToHex)
+import Common.Reflex.Dom.Extra (textLocale)
 import Common.Utility (toText)
 import ENCOINS.BaseTypes (FieldElement)
 import ENCOINS.Bulletproofs (Secret (..), Secrets, fromSecret)
 import ENCOINS.Common.Widgets.Advanced
-    ( viewCheckboxButton
+    ( copyEvent
+    , viewCheckboxButton
     , viewCopyButton
-    , copyEvent
     , withTooltip
     )
 import ENCOINS.Common.Widgets.Basic (image)
 import ENCOINS.Crypto.Field (toFieldElement)
+import qualified I18n.App as I18n
+import I18n.I18n (App)
+import qualified I18n.Reflex.I18n as I18n
 import JS.App (fingerprintFromAssetName)
 import JS.Website (copyText)
 
@@ -113,7 +117,7 @@ partitionByWalletCoinNames knownNames =
 -------------------------------------------- Coins in the Wallet ----------------------------------------
 
 coinBurnWidget ::
-    (MonadWidget t m) =>
+    (App t m) =>
     TokenCacheV3
     -> m (Dynamic t (Maybe (Secret, TokenCacheV3)))
 coinBurnWidget tokenV3@(MkTokenCacheV3 name s _) = mdo
@@ -133,7 +137,7 @@ coinBurnWidget tokenV3@(MkTokenCacheV3 name s _) = mdo
                 void $ copyEvent e
                 performEvent_ (liftIO (copyText secretText) <$ e)
         divClass "key-div" $ withTooltip keyIcon "app-CoinBurn_KeyTip" 0 0 $ do
-            divClass "app-text-semibold" $ text "Minting Key"
+            divClass "app-text-semibold" $ textLocale I18n.MintingKey
             divClass "app-ToolTip_MintingKey" $ do
                 e <- viewCopyButton
                 performEvent_ (liftIO (copyText secretText) <$ e)
@@ -159,7 +163,7 @@ noCoinsFoundWidget =
         . null
 
 coinBurnCollectionWidget ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t [TokenCacheV3]
     -> m (Dynamic t Secrets)
 coinBurnCollectionWidget dlToken = do
@@ -169,7 +173,7 @@ coinBurnCollectionWidget dlToken = do
     dSt <- join <$> holdDyn (constDyn []) edlToken
     pure (map fst <$> dSt)
 
-coinSpoiler :: (MonadWidget t m) => AssetName -> m ()
+coinSpoiler :: (App t m) => AssetName -> m ()
 coinSpoiler (MkAssetName name) = elAttr
     "div"
     ( "class" =: "div-tooltip div-tooltip-always-visible"
@@ -179,7 +183,7 @@ coinSpoiler (MkAssetName name) = elAttr
         let copyTokenIcon = do
                 eCopy <- viewCopyButton
                 performEvent_ (liftIO (copyText name) <$ eCopy)
-        divClass "app-text-semibold" $ text "Full token name"
+        divClass "app-text-semibold" $ textLocale I18n.TokenName
         divClass "app-Tooltip_TokenNameContainer" $ do
             divClass "app-Tooltip_TokenName-copy" copyTokenIcon
             elAttr
@@ -193,7 +197,7 @@ coinSpoiler (MkAssetName name) = elAttr
         let copyAssetIcon = do
                 eCopy <- viewCopyButton
                 performEvent_ (liftIO (copyText fp) <$ eCopy)
-        divClass "app-text-semibold" $ text "Asset fingerprint"
+        divClass "app-text-semibold" $ textLocale I18n.Asset
         divClass "app-Tooltip_AssetContainer" $ do
             divClass "app-Tooltip_Asset-copy" copyAssetIcon
             elAttr
@@ -205,7 +209,7 @@ coinSpoiler (MkAssetName name) = elAttr
 
 --------------------------------- Coins to Mint -------------------------------
 
-coinV3MintWidget :: (MonadWidget t m) => TokenCacheV3 -> m (Event t Secret)
+coinV3MintWidget :: (App t m) => TokenCacheV3 -> m (Event t Secret)
 coinV3MintWidget (MkTokenCacheV3 name s _) = mdo
     (eArrow, ret) <- elDynAttr "div" (mkAttrs <$> dIsSpoilerVisible) $ do
         eCross <- domEvent Click . fst <$> elClass' "div" "cross-div" blank
@@ -228,7 +232,7 @@ coinV3MintWidget (MkTokenCacheV3 name s _) = mdo
                 . bool mempty ("style" =: "background:rgb(50 50 50);")
 
 coinMintCollectionV3Widget ::
-    (MonadWidget t m) => Event t CoinUpdate -> m (Dynamic t Secrets)
+    (App t m) => Event t CoinUpdate -> m (Dynamic t Secrets)
 coinMintCollectionV3Widget eCoinUpdate = mdo
     let f (AddCoin s) lst = lst ++ [s]
         f (RemoveCoin s) lst = s `delete` lst
@@ -248,19 +252,21 @@ coinMintCollectionV3Widget eCoinUpdate = mdo
 
 -- TODO: do not allow to input incorrect values
 coinNewInputWidget ::
-    (MonadWidget t m) =>
-    Text
+    (App t m) =>
+    I18n.AppMessage
     -> (Text -> a)
     -> Event t b
     -> m (InputElement EventResult (DomBuilderSpace m) t, Dynamic t a)
-coinNewInputWidget placeholder convert eReset = do
+coinNewInputWidget placeholderTerm convert eReset = do
+    dPlaceholder <- I18n.showLocale placeholderTerm
+    placeholderText <- sample $ current dPlaceholder
     let conf =
             def{_inputElementConfig_setValue = pure ("" <$ eReset)}
                 & ( initialAttributes
                         .~ ( "class" =: "coin-new-input w-input"
                                 <> "maxlength" =: "7"
                                 <> "type" =: "number"
-                                <> "placeholder" =: placeholder
+                                <> "placeholder" =: placeholderText
                            )
                   )
     t <- inputElement conf
@@ -283,12 +289,12 @@ coinNewButtonWidget dV eEnter widgetNew = do
         eNew = leftmost [eNewClick, eEnter]
     return $ tag bSecret $ ffilter cond (tagPromptlyDyn dV eNew)
 
-coinNewWidget :: (MonadWidget t m) => m (Event t Secret)
+coinNewWidget :: (App t m) => m (Event t Secret)
 coinNewWidget = divClass "coin-new-div" $ mdo
     eNewSecret <- coinNewButtonWidget dV (keypress Enter inp) plusButton
     (inp, dV) <-
         coinNewInputWidget
-            "Enter ADA amount..."
+            I18n.EnterAdaAmount
             (fromMaybe (-1 :: Integer) . readMaybe . unpack)
             eNewSecret
     divClass "app-text-semibold" $ text "ADA"

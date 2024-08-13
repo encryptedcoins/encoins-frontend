@@ -34,6 +34,7 @@ import qualified I18n.App as I18n
 import qualified I18n.Common as I18n
 import I18n.I18n (App)
 import qualified I18n.I18n as I18n
+import qualified I18n.Reflex.I18n as I18n
 import JS.Website (copyText)
 
 import Control.Monad (void)
@@ -81,7 +82,7 @@ cloudSettingsWindow mPass dWalletName cloudCacheFlag dCloudStatus eOpen = mdo
     pure (dCloudOn, dmKey, eCloseByRestore)
 
 cloudCheckbox ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t Bool
     -> m (Dynamic t Bool, Event t Bool)
 cloudCheckbox cloudCacheFlag = do
@@ -91,13 +92,13 @@ cloudCheckbox cloudCacheFlag = do
     pure (dIsChecked, eCloudChange)
 
 cloudStatusIcon ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t CloudIconStatus
     -> Dynamic t Bool
     -> m ()
 cloudStatusIcon dCloudStatus dIsSave = do
     divClass "app-Cloud_Status_Title" $
-        text "Cloud synchronization status"
+        textLocale I18n.CloudStatusTitle
     divClass "app-Cloud_StatusText" $
         dynText $
             zipDynWith selectSaveStatusNote dCloudStatus dIsSave
@@ -113,7 +114,7 @@ selectSaveStatusNote status isCloud =
      in "The synchronization" <> space <> t
 
 viewCheckbox ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Event t Bool
     -> Text
     -> m (Dynamic t Bool, Event t Bool)
@@ -127,11 +128,11 @@ viewCheckbox initial checkBoxClass = divClass "w-row app-Cloud_CheckboxContainer
                    )
                 & inputElementConfig_setChecked
                 .~ initial
-    divClass "app-Save_CheckboxDescription" $ text "Save encoins on cloud"
+    divClass "app-Save_CheckboxDescription" $ textLocale I18n.CloudToggleDescription
     pure (_inputElement_checked inp, _inputElement_checkedChange inp)
 
 showKeyWidget ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t (Maybe AesKeyRaw)
     -> m ()
 showKeyWidget dmKey = do
@@ -145,18 +146,17 @@ showKeyWidget dmKey = do
     divClass "app-Cloud_KeyContainer" $ do
         copyIcon
         withTooltip keyIcon "app-CloudWindow_KeyTip" 0 0 $ do
-            text
-                "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
+            textLocale I18n.CloudKeyTip
         dynText dKey
 
 viewRestoreButton ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t (Maybe AesKeyRaw)
     -> m (Event t ())
 viewRestoreButton dmKey =
     divClass "app-Cloud_Restore_ButtonContainer" $
         btnWithBlock "button-switching inverted flex-center" "" (isNothing <$> dmKey) $
-            text "Restore"
+            textLocale I18n.CloudButtonRestore
 
 cloudKeyWidget ::
     (App t m) =>
@@ -166,7 +166,7 @@ cloudKeyWidget ::
     -> m (Dynamic t (Maybe AesKeyRaw))
 cloudKeyWidget mPass dWalletName eFirstLoadKey = mdo
     divClass "app-Cloud_AesKey_Title" $
-        text "Your AES key for restoring encoins. Save it to a file and keep it secure!"
+        textLocale I18n.CloudKeyTitle
     eLoadKey <-
         delay 0.05 $
             leftmost [eFirstLoadKey, eKeyRemoved, eKeyGenerated, eUserKeySaved, eSignedKey]
@@ -198,25 +198,25 @@ cloudKeyWidget mPass dWalletName eFirstLoadKey = mdo
                 "button-switching inverted flex-center"
                 ""
                 dBlockEnter
-                (text "Enter")
+                (textLocale I18n.Enter)
         eGen <-
             btnWithOverOutBlock
                 "button-switching inverted flex-center"
                 ""
                 (isJust <$> dmKey)
-                (text "Generate")
+                (textLocale I18n.CloudButtonGenerate)
         eSign <-
             btnWithOverOutBlock
                 "button-switching inverted flex-center"
                 ""
                 (zipDynWith (\mKey name -> isJust mKey || name == None) dmKey dWalletName)
-                (text "SignKey")
+                (textLocale I18n.CloudButtonSignKey)
         eDel <-
             btnWithOverOutBlock
                 "button-switching inverted flex-center"
                 ""
                 (isNothing <$> dmKey)
-                (text "Delete")
+                (textLocale I18n.Delete)
         pure (eEnt, eGen, eSign, eDel)
     eKeyRemoved <- deleteKeyDialog eDelete
     let eMouseOutButton = leftmost [eEnterOut, eGenOut, eSignOut, eDelOut]
@@ -234,18 +234,20 @@ cloudKeyWidget mPass dWalletName eFirstLoadKey = mdo
     pure dmKey
 
 viewInputCloudKey ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t Text
     -> Event t ()
     -> m (Dynamic t Text)
 viewInputCloudKey dBorder eOpen = divClass "w-row" $ do
+    pHolder <- I18n.showLocale I18n.CloudInputPlaceholder
+    placeholder <- sample $ current pHolder
     inp <-
         inputElement $
             def
                 & initialAttributes
                 .~ ( "class" =: "w-input"
                         <> "style" =: "display: inline-block;"
-                        <> "placeholder" =: "cloud key should be exactly 64 hexadecimal digits"
+                        <> "placeholder" =: placeholder
                    )
                 & inputElementConfig_setValue
                 .~ ("" <$ eOpen)
