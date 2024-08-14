@@ -23,8 +23,9 @@ navbarWidget ::
     Dynamic t Wallet
     -> Dynamic t Bool
     -> Dynamic t Bool
+    -> Locale
     -> m (Event t Dao, Dynamic t Locale)
-navbarWidget w dIsBlocked dIsBlockedConnect = do
+navbarWidget w dIsBlocked dIsBlockedConnect currentLocale = do
     elAttr
         "div"
         ( "data-animation" =: "default"
@@ -56,7 +57,7 @@ navbarWidget w dIsBlocked dIsBlockedConnect = do
                         ""
                         dIsBlocked
                         (text "DELEGATE")
-                dLocale <- localeWidget
+                dLocale <- localeWidget currentLocale
                 eMore <-
                     viewMoreMenu
                         (NavMoreMenuClass "common-Nav_Container_MoreMenu" "common-Nav_MoreMenu")

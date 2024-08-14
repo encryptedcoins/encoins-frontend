@@ -18,6 +18,7 @@ import ENCOINS.Common.ConnectWindow (connectWindow)
 import ENCOINS.Common.Widgets.Advanced (waitForScripts)
 import ENCOINS.Common.Widgets.Basic (notification)
 import ENCOINS.Common.Widgets.JQuery (jQueryWidget)
+import ENCOINS.Common.Widgets.Locale (cacheLocale, decodeLocale)
 import ENCOINS.Common.Widgets.MoreMenu
     ( WindowMoreMenuClass (..)
     , moreMenuWindow
@@ -31,18 +32,21 @@ import ENCOINS.DAO.Widgets.StatusWidget
 import ENCOINS.Website.Widgets.Basic (container, section)
 import I18n.I18n (App)
 import I18n.Reflex.I18n (Locale, runLocalize)
+import JS.App (loadCacheValue)
+import ENCOINS.Common.Cache (locale)
 
 bodyWidget :: (MonadWidget t m) => m ()
 bodyWidget = waitForScripts blank $ mdo
-    dLocale <- runLocalize dLocale $ bodyContentWidget
+    localeInCache <- decodeLocale <$> loadCacheValue locale
+    dLocale <- runLocalize dLocale $ bodyContentWidget localeInCache
     jQueryWidget
 
-bodyContentWidget :: (App t m) => m (Dynamic t Locale)
-bodyContentWidget = mdo
+bodyContentWidget :: (App t m) => Locale -> m (Dynamic t Locale)
+bodyContentWidget currentLocale = mdo
     eFireNames <- newEvent
     dRelayNames <- fetchRelayNames eFireNames
-    (eDao, dLocale) <-
-        navbarWidget dWallet dIsDisableButtons dIsDisableConnectButton
+    (eDao, dLocaleNew) <-
+        navbarWidget dWallet dIsDisableButtons dIsDisableConnectButton currentLocale
 
     let eMoreMenuOpen = void $ ffilter (== MoreMenu) eDao
     let moreMenuClass =
@@ -76,7 +80,10 @@ bodyContentWidget = mdo
             elAttr "div" pollAttr $
                 text "Concluded polls"
         mapM_ (pollCompletedWidget . snd) $ toDescList archivedPolls
-    pure dLocale
+
+    dLocaleCashed <- cacheLocale dLocaleNew
+
+    pure dLocaleCashed
 
 pollAttr :: Map Text Text
 pollAttr =

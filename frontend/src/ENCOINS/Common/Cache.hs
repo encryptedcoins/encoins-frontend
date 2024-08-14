@@ -47,6 +47,9 @@ isCloudOn = "encoins-save-on"
 passwordStorageKey :: Text
 passwordStorageKey = "password-hash"
 
+locale :: Text 
+locale = "encoins-locale"
+
 -------------------------------------------------------------------------------
 -- Cache functions
 -------------------------------------------------------------------------------

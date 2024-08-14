@@ -26,8 +26,9 @@ navbarWidget ::
     -> Dynamic t Bool
     -> Dynamic t CloudIconStatus
     -> Dynamic t Bool
+    -> Locale
     -> m (Event t (), Event t (), Event t (), Event t (), Dynamic t Locale)
-navbarWidget w dIsBlockAll mPass dIsCloudOn dCloudStatus dIsBlockConnect = do
+navbarWidget w dIsBlockAll mPass dIsCloudOn dCloudStatus dIsBlockConnect currentLocale = do
     elAttr
         "div"
         ( "data-animation" =: "default"
@@ -52,7 +53,7 @@ navbarWidget w dIsBlockAll mPass dIsCloudOn dCloudStatus dIsBlockConnect = do
                 eConnect <- connectWidget w dIsBlockConnect
                 eCloud <- cloudIconWidget dIsCloudOn dIsBlockAll dCloudStatus
                 eLocker <- lockerWidget mPass dIsBlockAll
-                dLocale <- localeWidget
+                dLocale <- localeWidget currentLocale
                 eMore <-
                     viewMoreMenu
                         (NavMoreMenuClass "common-Nav_Container_MoreMenu" "common-Nav_MoreMenu")

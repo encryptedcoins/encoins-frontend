@@ -32,26 +32,29 @@ import ENCOINS.Common.Cache
     ( aesKey
     , isCloudOn
     , loadAppDataE
+    , locale
     , passwordStorageKey
     )
 import ENCOINS.Common.ConnectWindow (connectWindow)
 import ENCOINS.Common.Widgets.Advanced (viewCopiedNotification, waitForScripts)
 import ENCOINS.Common.Widgets.Basic (notification)
 import ENCOINS.Common.Widgets.JQuery (jQueryWidget)
+import ENCOINS.Common.Widgets.Locale (cacheLocale, decodeLocale)
 import ENCOINS.Common.Widgets.MoreMenu
     ( WindowMoreMenuClass (..)
     , moreMenuWindow
     )
 import I18n.I18n (App)
-import I18n.Reflex.I18n (Locale(Locale_EN), runLocalize)
+import I18n.Reflex.I18n (Locale, runLocalize)
 import JS.App (loadCacheValue)
 
 bodyContentWidget ::
     (App t m) =>
     Maybe PasswordRaw
+    -> Locale
     -> m (Event t (Maybe PasswordRaw), Dynamic t Locale)
-bodyContentWidget mPass = mdo
-    (ePassOpen, eConnectOpen, eCloudOpen, eMoreMenuOpen, dLocale) <-
+bodyContentWidget mPass currentLocale = mdo
+    (ePassOpen, eConnectOpen, eCloudOpen, eMoreMenuOpen, dLocaleNew) <-
         navbarWidget
             dWallet
             dIsBlockAllButtons
@@ -59,6 +62,7 @@ bodyContentWidget mPass = mdo
             dCloudOn
             dCloudStatus
             dIsBlockConnectButton
+            currentLocale
 
     let moreMenuClass =
             WindowMoreMenuClass
@@ -129,11 +133,14 @@ bodyContentWidget mPass = mdo
         holdUniqDyn
             =<< (holdDyn Nothing $ leftmost $ map updated [dmOldKeyBody, dNewKeyWindow])
 
-    pure (eReEncryptDelayed, dLocale)
+    dLocaleSaved <- cacheLocale dLocaleNew
+
+    pure (eReEncryptDelayed, dLocaleSaved)
 
 bodyWidget :: (MonadWidget t m) => m ()
 bodyWidget = waitForScripts blank $ mdo
     mPass <- toPasswordHash <$> loadCacheValue passwordStorageKey
+    localeInCache <- decodeLocale <$> loadCacheValue locale
     (ePassOk, eCleanCache) <- case mPass of
         Just pass -> do
             (passRaw, ev) <- runLocalize dLocale $ enterPasswordWindow pass eCleanOk
@@ -147,9 +154,12 @@ bodyWidget = waitForScripts blank $ mdo
     eThesePassLocale <- switchHoldDyn dmmPass $ \case
         Nothing -> pure $ align never never
         Just pass -> do
-            (ePass, dLocale') <- runLocalize dLocale $ bodyContentWidget pass
+            (ePass, dLocale') <- runLocalize dLocale $ bodyContentWidget pass localeInCache
             pure $ align ePass $ updated dLocale'
     let (eNewPass, eLocale) = fanThese eThesePassLocale
-    logEvent "bodyWidget: eLocale" eLocale
-    dLocale <- holdUniqDyn =<< holdDyn Locale_EN eLocale
+    -- logEvent "bodyWidget: eLocale" eLocale
+
+    dLocale <- holdUniqDyn =<< holdDyn localeInCache eLocale
+    -- logDyn "bodyWidget: dLocale" dLocale
+
     jQueryWidget
