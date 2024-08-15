@@ -167,13 +167,13 @@ withTooltip mainW tipClass delay1 delay2 innerW = mdo
         showAttrs = constAttrs <> "style" =: "display:inline-block;"
         hideAttrs = constAttrs <> "style" =: "display:none;"
 
-waitForScripts :: (MonadWidget t m) => m () -> m () -> m ()
-waitForScripts placeholderWidget actualWidget = do
+waitForScripts :: (MonadWidget t m) => String -> String -> m () -> m () -> m ()
+waitForScripts function path placeholderWidget actualWidget = do
     ePB <- getPostBuild
     _ <-
         widgetHoldUntilDefined
-            "walletAPI"
-            ("js/ENCOINS.js" <$ ePB)
+            function
+            (path <$ ePB)
             placeholderWidget
             actualWidget
     blank

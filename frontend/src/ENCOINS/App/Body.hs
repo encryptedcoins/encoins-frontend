@@ -138,7 +138,7 @@ bodyContentWidget mPass currentLocale = mdo
     pure (eReEncryptDelayed, dLocaleSaved)
 
 bodyWidget :: (MonadWidget t m) => m ()
-bodyWidget = waitForScripts blank $ mdo
+bodyWidget = waitForScripts "walletAPI" "js/ENCOINS.js" blank $ mdo
     mPass <- toPasswordHash <$> loadCacheValue passwordStorageKey
     localeInCache <- decodeLocale <$> loadCacheValue locale
     (ePassOk, eCleanCache) <- case mPass of

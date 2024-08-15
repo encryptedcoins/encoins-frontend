@@ -10,8 +10,10 @@ import Reflex.Dom
 import Common.Events
 import ENCOINS.Common.Cache
     ( loadAppData
+    , loadAppDataNoPass
     , locale
     , saveAppData
+    , saveAppDataNoPass
     )
 import I18n.I18n (App)
 import I18n.Reflex.I18n (Locale (..))
@@ -41,6 +43,15 @@ cacheLocale dLocaleNew = do
             id
             Locale_EN
     pure dLocale
+
+cacheLocaleLanding ::
+    (MonadWidget t m) =>
+    Dynamic t Locale
+    -> m (Dynamic t Locale)
+cacheLocaleLanding dLocaleNew = do
+    eLocaleSaved <- saveAppDataNoPass locale $ updated dLocaleNew
+    dmLocale <- loadAppDataNoPass locale eLocaleSaved
+    pure $ fromMaybe Locale_EN <$> dmLocale
 
 decodeLocale :: Text -> Locale
 decodeLocale =
