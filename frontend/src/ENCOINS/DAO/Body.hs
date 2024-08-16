@@ -14,6 +14,8 @@ import Reflex.Dom
 
 import Backend.Wallet (walletsSupportedInDAO)
 import Common.Events
+import Common.Reflex.Dom.Extra (textLocale)
+import ENCOINS.Common.Cache (locale)
 import ENCOINS.Common.ConnectWindow (connectWindow)
 import ENCOINS.Common.Widgets.Advanced (waitForScripts)
 import ENCOINS.Common.Widgets.Basic (notification)
@@ -30,15 +32,18 @@ import ENCOINS.DAO.Widgets.Poll.Polls
 import ENCOINS.DAO.Widgets.PollWidget
 import ENCOINS.DAO.Widgets.StatusWidget
 import ENCOINS.Website.Widgets.Basic (container, section)
+import qualified I18n.Dao as I18n
 import I18n.I18n (App)
 import I18n.Reflex.I18n (Locale, runLocalize)
 import JS.App (loadCacheValue)
-import ENCOINS.Common.Cache (locale)
 
 bodyWidget :: (MonadWidget t m) => m ()
 bodyWidget = waitForScripts "walletAPI" "js/ENCOINS.js" blank $ mdo
+    -- let mLocale = decodeLocale <$> loadCacheValue locale
     localeInCache <- decodeLocale <$> loadCacheValue locale
-    dLocale <- runLocalize dLocale $ bodyContentWidget localeInCache
+    dLocaleNew <- runLocalize dLocale $ bodyContentWidget localeInCache
+    logDyn "bodyWidget: dLocaleNew" dLocaleNew
+    dLocale <- holdUniqDyn =<< holdDyn localeInCache (updated dLocaleNew)
     jQueryWidget
 
 bodyContentWidget :: (App t m) => Locale -> m (Dynamic t Locale)
@@ -71,16 +76,17 @@ bodyContentWidget currentLocale = mdo
     section "" "" $ do
         container "" $
             elAttr "div" pollAttr $
-                text "Active poll"
+                textLocale I18n.ActivePoll
         mapM_ (pollWidget dWallet dIsDisableButtons . snd) $ toDescList activePolls
         blank
 
     section "" "" $ do
         container "" $
             elAttr "div" pollAttr $
-                text "Concluded polls"
+                textLocale I18n.ConcludedPolls
         mapM_ (pollCompletedWidget . snd) $ toDescList archivedPolls
 
+    logDyn "bodyContentWidget: dLocaleNew" dLocaleNew
     dLocaleCashed <- cacheLocale dLocaleNew
 
     pure dLocaleCashed

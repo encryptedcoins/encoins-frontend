@@ -3,7 +3,10 @@
 module I18n.Common where
 
 import I18n.Common.I18n
+import Common.Utility (column, space)
+
 import Data.Text (Text)
+import qualified Data.Text as T
 
 data CommonMessage
     = MenuTestnet
@@ -29,7 +32,7 @@ data CommonMessage
 instance HasI18n Locale CommonMessage Text where
   localizeWith locale t = case locale of
     Locale_EN -> showCommonMessageEn t
-    Locale_RU -> showCommonMessageEn t -- TODO: update it
+    Locale_RU -> showCommonMessageRu t 
 
 showCommonMessageEn :: CommonMessage -> Text 
 showCommonMessageEn = \case
@@ -51,7 +54,6 @@ showCommonMessageEn = \case
     Delete -> "Delete"
     Cancel -> "Cancel"
     AreYouSure -> "Are you sure?"
-
 
 showCommonMessageRu :: CommonMessage -> Text 
 showCommonMessageRu = \case 
@@ -90,7 +92,7 @@ data WelcomeMessage
 instance HasI18n Locale WelcomeMessage Text where
   localizeWith locale t = case locale of
     Locale_EN -> showWelcomeMessageEn t
-    Locale_RU -> showWelcomeMessageEn t -- TODO: update it
+    Locale_RU -> showWelcomeMessageEn t
 
 showWelcomeMessageEn :: WelcomeMessage -> Text 
 showWelcomeMessageEn = \case 
@@ -104,3 +106,18 @@ showWelcomeMessageEn = \case
   WM_SendButtons -> "Send buttons"
   WM_CoinsInLedger -> "Coins in the Ledger"
   WM_LedgerMode -> "Ledger mode"
+
+data StatusMessage 
+  = EmptyStatusMessage
+  | SM_WalletNetworkError 
+  deriving stock (Eq, Show)
+
+instance HasI18n Locale StatusMessage Text where
+  localizeWith locale t = case locale of
+    Locale_EN -> showStatusMessageEn t
+    Locale_RU -> showStatusMessageEn t -- TODO: update it
+
+showStatusMessageEn :: StatusMessage -> Text 
+showStatusMessageEn = \case 
+  EmptyStatusMessage -> T.empty
+  SM_WalletNetworkError -> "Unexpected network! Switch connected wallet to mode" <> column <> space

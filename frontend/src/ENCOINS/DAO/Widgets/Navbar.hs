@@ -7,11 +7,13 @@ import Data.Text (Text)
 import Reflex.Dom
 
 import Backend.Wallet (Wallet (..))
+import Common.Reflex.Dom.Extra (textLocale)
 import Config.Config (NetworkConfig (dao), NetworkId (..), networkConfig)
 import ENCOINS.Common.Widgets.Basic (btnWithBlock, logo)
 import ENCOINS.Common.Widgets.Connect (connectWidget)
 import ENCOINS.Common.Widgets.Locale (localeWidget)
 import ENCOINS.Common.Widgets.MoreMenu (NavMoreMenuClass (..), viewMoreMenu)
+import qualified I18n.Dao as I18n
 import I18n.I18n (App)
 import I18n.Reflex.I18n (Locale)
 
@@ -56,7 +58,7 @@ navbarWidget w dIsBlocked dIsBlockedConnect currentLocale = do
                         "button-switching flex-center"
                         ""
                         dIsBlocked
-                        (text "DELEGATE")
+                        (textLocale I18n.Delegate)
                 dLocale <- localeWidget currentLocale
                 eMore <-
                     viewMoreMenu

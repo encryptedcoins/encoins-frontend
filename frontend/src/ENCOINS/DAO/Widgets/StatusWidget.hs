@@ -195,8 +195,5 @@ processStatus newSt oldSt =
 
 unexpectedNetwork :: Text
 unexpectedNetwork =
-    "Unexpected network! Please switch the wallet to"
-        <> space
+    "Unexpected network! Please switch the wallet to mode: "
         <> toText (dao networkConfig)
-        <> space
-        <> "mode."

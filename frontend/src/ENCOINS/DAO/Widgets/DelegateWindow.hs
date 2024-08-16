@@ -15,20 +15,26 @@ import Reflex.Dom
 import Backend.Status (UrlStatus (..), isNotValidUrl)
 import Backend.Wallet (LucidConfig (..), Wallet (..), lucidConfigDao, toJS)
 import Common.Events
+import Common.Reflex.Dom.Extra (textLocale)
 import Common.Url (checkUrl, stripHostOrRelay)
 import Common.Utility (toText)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
-import ENCOINS.Common.Widgets.Basic (btn, btnWithBlock, containerApp, divClassId)
+import ENCOINS.Common.Widgets.Basic
+    ( btn
+    , btnWithBlock
+    , containerApp
+    , divClassId
+    )
 import ENCOINS.DAO.Widgets.DelegateWindow.RelayTable
     ( fetchDelegatedByAddress
     , fetchRelayTable
     , relayAmountWidget
     , unStakeUrl
     )
-import qualified JS.DAO as JS
 import qualified I18n.Dao as I18n
 import I18n.I18n (App)
 import qualified I18n.I18n as I18n
+import qualified JS.DAO as JS
 
 delegateWindow ::
     (App t m) =>
@@ -50,7 +56,7 @@ delegateWindow eOpen dWallet dRelayNames = mdo
         $ mdo
             eUrlTable <- relayAmountWidget eeRelays emDelegated dRelayNames
             divClass "dao-DelegateWindow_EnterUrl" $
-                text "Choose a relay URL above or enter a new one below:"
+                textLocale I18n.UrlText
 
             dInputText <- viewDelegateInput eOpen
             let eInputText = updated dInputText
@@ -96,7 +102,7 @@ viewDelegateInput eOpen = divClass "w-row" $ do
     return $ value inp
 
 viewStakingButton ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t UrlStatus
     -> m (Event t (), Event t ())
 viewStakingButton dUrlStatus =
@@ -107,11 +113,12 @@ viewStakingButton dUrlStatus =
                 "button-switching inverted flex-center"
                 ""
                 (isNotValidUrl <$> dUrlStatus)
-                (text "Delegate")
+                (textLocale I18n.Delegate)
         divClass "menu-item-button-right" $ do
             containerApp "" $
                 divClassId "app-text-small" "" $
                     dynText $
                         toText <$> dUrlStatus
-        eUnstake <- btn "button-switching inverted flex-center" "" (text "Unstake")
+        eUnstake <-
+            btn "button-switching inverted flex-center" "" (textLocale I18n.Unstake)
         pure (eStake, eUnstake)
