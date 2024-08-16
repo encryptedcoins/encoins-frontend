@@ -59,7 +59,7 @@ navbarWidget w dIsBlocked dIsBlockedConnect currentLocale = do
                         ""
                         dIsBlocked
                         (textLocale I18n.Delegate)
-                dLocale <- localeWidget currentLocale
+                dLocale <- localeWidget "common-Nav_Dropdown" currentLocale
                 eMore <-
                     viewMoreMenu
                         (NavMoreMenuClass "common-Nav_Container_MoreMenu" "common-Nav_MoreMenu")

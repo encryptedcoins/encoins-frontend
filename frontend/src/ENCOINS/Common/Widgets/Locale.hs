@@ -18,9 +18,9 @@ import ENCOINS.Common.Cache
 import I18n.I18n (App)
 import I18n.Reflex.I18n (Locale (..))
 
-localeWidget :: (App t m) => Locale -> m (Dynamic t Locale)
-localeWidget currentLocale = do
-    let conf = def{_dropdownConfig_attributes = constDyn $ "class" =: "common-Nav_Dropdown"}
+localeWidget :: (App t m) => Text -> Locale -> m (Dynamic t Locale)
+localeWidget cls currentLocale = do
+    let conf = def{_dropdownConfig_attributes = constDyn $ "class" =: cls}
     res <-
         dropdown
             currentLocale

@@ -45,7 +45,7 @@ navbarWidget dPageFocus currentLocale = do
                 _ <- menuItemWidget "DAO" "45" "https://dao.encoins.io" False dPage
                 _ <- menuItemWidget "Buy ENCS" "100" "#buy-encoins" False dPage
                 _ <- menuItemWidget "White paper" "120" "docs/whitepaper.pdf" False dPage
-                dLocale <- localeWidget currentLocale
+                dLocale <- localeWidget "common-Nav_Dropdown-Landing" currentLocale
                 let eNavbar = (,"Navbar") <$> eHome
                 pure (eNavbar, dLocale)
 

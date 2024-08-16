@@ -53,7 +53,7 @@ navbarWidget w dIsBlockAll mPass dIsCloudOn dCloudStatus dIsBlockConnect current
                 eConnect <- connectWidget w dIsBlockConnect
                 eCloud <- cloudIconWidget dIsCloudOn dIsBlockAll dCloudStatus
                 eLocker <- lockerWidget mPass dIsBlockAll
-                dLocale <- localeWidget currentLocale
+                dLocale <- localeWidget "common-Nav_Dropdown" currentLocale
                 eMore <-
                     viewMoreMenu
                         (NavMoreMenuClass "common-Nav_Container_MoreMenu" "common-Nav_MoreMenu")

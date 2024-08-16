@@ -2,7 +2,7 @@
 
 module I18n.Dao where
 
-import Common.Utility (column, space)
+import Common.Utility (space)
 import Data.Text (Text)
 import qualified Data.Text as T
 import I18n.Common.I18n

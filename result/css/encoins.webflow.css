@@ -2767,3 +2767,26 @@ body {
   padding-bottom: 5px;
   outline: 0px;
 }
+
+.common-Nav_Dropdown-Landing {
+  display: flex;
+  width: 40px;
+  font-size: 24px;
+  font-weight: bold;
+  font-family: Poppins, sans-serif;
+  color: #cccccc;
+  margin-left: 10px;
+  background-color: #000000;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  user-select: none;
+  align-self: center;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-left: 3px;
+  padding-right: 3px;
+  padding-bottom: 5px;
+  outline: 0px;
+}
