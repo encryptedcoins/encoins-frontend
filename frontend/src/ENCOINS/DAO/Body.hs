@@ -39,7 +39,6 @@ import JS.App (loadCacheValue)
 
 bodyWidget :: (MonadWidget t m) => m ()
 bodyWidget = waitForScripts "walletAPI" "js/ENCOINS.js" blank $ mdo
-    -- let mLocale = decodeLocale <$> loadCacheValue locale
     localeInCache <- decodeLocale <$> loadCacheValue locale
     dLocaleNew <- runLocalize dLocale $ bodyContentWidget localeInCache
     logDyn "bodyWidget: dLocaleNew" dLocaleNew

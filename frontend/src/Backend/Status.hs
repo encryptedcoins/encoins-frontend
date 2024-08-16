@@ -2,9 +2,11 @@
 
 module Backend.Status where
 
-import Common.Utility (column, space, toText)
+import Common.Utility (toText)
+import qualified I18n.Common as I18n
+
 import Data.Text (Text)
-import qualified Data.Text as T
+
 
 data AppStatus
     = AppReady
@@ -18,20 +20,20 @@ data AppStatus
     | WalletInApp WalletStatus
     deriving stock (Eq)
 
-textAppStatus :: AppStatus -> Text
-textAppStatus appStatus =
+messageAppStatus :: AppStatus -> Either I18n.StatusMessage (I18n.StatusMessage, I18n.StatusMessage)
+messageAppStatus appStatus =
     if isAppReady appStatus
-        then T.empty
+        then Left I18n.SM_Empty
         else case appStatus of
-            AppReady -> T.empty
-            CustomStatus t -> t
-            WalletTx s -> "Wallet mode" <> column <> space <> textWalletTxStatus s
-            TransferTx s -> "Transfer mode" <> column <> space <> textTransferTxStatus s
-            LedgerTx s -> "Ledger mode" <> column <> space <> textLedgerTxStatus s
-            CloudIcon s -> toText s
-            CloudRestore s -> "Cloud" <> column <> space <> textCloudRestoreStatus s
-            Migrate s -> "Migration" <> column <> space <> textMigrateStatus s
-            WalletInApp s -> "Wallet" <> column <> space <> textWalletStatus s
+            AppReady -> Left I18n.SM_Empty
+            CustomStatus t -> Left $ I18n.SM_Custom t
+            WalletTx s -> Right $ messageWalletTxStatus s
+            TransferTx s -> Right $ messageTransferTxStatus s
+            LedgerTx s -> Right $ messageLedgerTxStatus s
+            CloudIcon s -> Right (I18n.SM_Cloud, I18n.SM_Custom $ toText s)
+            CloudRestore s -> Right $ messageCloudRestoreStatus s
+            Migrate s -> Right $ messageMigrateStatus s
+            WalletInApp s -> Right $ messageWalletStatus s
 
 data WalletTxStatus
     = -- Default, initial status
@@ -49,15 +51,17 @@ data WalletTxStatus
     | WalTxBackendError Text
     deriving (Eq)
 
-textWalletTxStatus :: WalletTxStatus -> Text
-textWalletTxStatus = \case
-    WalTxReady -> T.empty
-    WalTxConstructing -> "Constructing the transaction..."
-    WalTxSigning -> "Please sign the transaction."
-    WalTxSubmitting -> "Submitting..."
-    WalTxSubmitted -> "Submitted. Pending the confirmation..."
-    WalTxNoRelay -> "All available relays are down!"
-    WalTxBackendError e -> e
+messageWalletTxStatus :: WalletTxStatus -> (I18n.StatusMessage, I18n.StatusMessage)
+messageWalletTxStatus wts = 
+  let s = case wts of
+        WalTxReady -> I18n.SM_Empty
+        WalTxConstructing -> I18n.SM_Constructing
+        WalTxSigning -> I18n.SM_Signing
+        WalTxSubmitting -> I18n.SM_Submitting
+        WalTxSubmitted -> I18n.SM_Submitted
+        WalTxNoRelay -> I18n.SM_NoRelay
+        WalTxBackendError e -> I18n.SM_Custom e
+  in (I18n.SM_WalletMode, s)
 
 data TransferTxStatus
     = -- Default, initial status
@@ -75,15 +79,17 @@ data TransferTxStatus
     | TransTxBackendError Text
     deriving (Eq)
 
-textTransferTxStatus :: TransferTxStatus -> Text
-textTransferTxStatus = \case
-    TransTxReady -> T.empty
-    TransTxConstructing -> "Constructing the transaction..."
-    TransTxSigning -> "Please sign the transaction."
-    TransTxSubmitting -> "Submitting..."
-    TransTxSubmitted -> "Submitted. Pending the confirmation..."
-    TransTxNoRelay -> "All available relays are down!"
-    TransTxBackendError e -> "Error" <> column <> space <> e
+messageTransferTxStatus :: TransferTxStatus -> (I18n.StatusMessage, I18n.StatusMessage)
+messageTransferTxStatus tts = 
+  let s = case tts of
+        TransTxReady -> I18n.SM_Empty
+        TransTxConstructing -> I18n.SM_Constructing
+        TransTxSigning -> I18n.SM_Signing
+        TransTxSubmitting -> I18n.SM_Submitting
+        TransTxSubmitted -> I18n.SM_Submitted
+        TransTxNoRelay -> I18n.SM_NoRelay
+        TransTxBackendError e -> I18n.SM_Custom e
+  in (I18n.SM_TransferMode, s)
 
 data LedgerTxStatus
     = -- Default, initial status
@@ -99,14 +105,16 @@ data LedgerTxStatus
     | LedTxBackendError Text
     deriving (Eq)
 
-textLedgerTxStatus :: LedgerTxStatus -> Text
-textLedgerTxStatus = \case
-    LedTxReady -> T.empty
-    LedTxConstructing -> "Constructing the transaction..."
-    LedTxSubmitted -> "Submitted. Pending the confirmation..."
-    LedTxNoRelay -> "All available relays are down!"
-    LedTxInvalidChangeAddress -> "ChangeAddress is invalid"
-    LedTxBackendError e -> "Error" <> column <> space <> e
+messageLedgerTxStatus :: LedgerTxStatus -> (I18n.StatusMessage, I18n.StatusMessage)
+messageLedgerTxStatus lts = 
+  let s = case lts of 
+        LedTxReady -> I18n.SM_Empty
+        LedTxConstructing -> I18n.SM_Constructing
+        LedTxSubmitted -> I18n.SM_Submitting
+        LedTxNoRelay -> I18n.SM_NoRelay
+        LedTxInvalidChangeAddress -> I18n.SM_InvalidChangeAddress
+        LedTxBackendError e -> I18n.SM_Custom e
+  in (I18n.SM_LedgerMode, s)
 
 data WalletStatus
     = WalletReady
@@ -114,11 +122,14 @@ data WalletStatus
     | WalletFail Text
     deriving (Eq)
 
-textWalletStatus :: WalletStatus -> Text
-textWalletStatus = \case
-    WalletReady -> T.empty
-    WalletNetworkError t -> t
-    WalletFail t -> t
+messageWalletStatus :: WalletStatus -> (I18n.StatusMessage, I18n.StatusMessage)
+messageWalletStatus ws = 
+  let s = case ws of
+        WalletReady -> I18n.SM_Empty
+        WalletNetworkError t -> I18n.SM_Custom t
+        WalletFail t -> I18n.SM_Custom t
+  in (I18n.SM_WalletMode, s)
+  
 
 data MigrateStatus
     = MigReady
@@ -126,19 +137,23 @@ data MigrateStatus
     | MigUpdating
     deriving (Eq)
 
-textMigrateStatus :: MigrateStatus -> Text
-textMigrateStatus = \case
-    MigReady -> T.empty
-    MigSuccess -> "Local cache was updated to the last version"
-    MigUpdating -> "Cache structure is updating. Please wait."
+messageMigrateStatus :: MigrateStatus -> (I18n.StatusMessage, I18n.StatusMessage)
+messageMigrateStatus ms = 
+  let s = case ms of
+        MigReady -> I18n.SM_Empty
+        MigSuccess -> I18n.SM_SuccessMigration
+        MigUpdating -> I18n.SM_MigrationUpdate
+  in (I18n.SM_Migration, s)
 
 data CloudRestoreStatus = RestoreFail | RestoreSuccess Int
     deriving stock (Eq)
 
-textCloudRestoreStatus :: CloudRestoreStatus -> Text
-textCloudRestoreStatus = \case
-    RestoreFail -> "Restoring tokens failed"
-    RestoreSuccess n -> "Restored " <> toText n <> " tokens (with duplicates)"
+messageCloudRestoreStatus :: CloudRestoreStatus -> (I18n.StatusMessage, I18n.StatusMessage)
+messageCloudRestoreStatus crs = 
+  let s = case crs of
+        RestoreFail -> I18n.SM_RestoreFailed
+        RestoreSuccess n -> I18n.SM_RestoreSuccess n
+  in (I18n.SM_Cloud, s)
 
 data DaoStatus
     = DaoReady
@@ -147,15 +162,15 @@ data DaoStatus
     | WalletInDao WalletStatus
     deriving stock (Eq)
 
-textDaoStatus :: DaoStatus -> Text
-textDaoStatus daoStatus =
+messageDaoStatus :: DaoStatus -> Either I18n.StatusMessage (I18n.StatusMessage, I18n.StatusMessage)
+messageDaoStatus daoStatus =
     if isDaoReady daoStatus
-        then T.empty
+        then Left I18n.SM_Empty
         else case daoStatus of
-            DaoReady -> T.empty
-            DelegateTx s -> "Delegate" <> column <> space <> textDelegateTxStatus s
-            VoteTx s -> "Vote" <> column <> space <> textVoteTxStatus s
-            WalletInDao s -> "Wallet" <> column <> space <> textWalletStatus s
+            DaoReady -> Left I18n.SM_Empty
+            DelegateTx s -> Right $ messageDelegateTxStatus s
+            VoteTx s -> Right $ messageVoteTxStatus s
+            WalletInDao s -> Right $ messageWalletStatus s
 
 data DelegateTxStatus
     = DelTxReady
@@ -172,15 +187,17 @@ data DelegateTxStatus
     | DelTxError Text
     deriving (Eq)
 
-textDelegateTxStatus :: DelegateTxStatus -> Text
-textDelegateTxStatus = \case
-    DelTxReady -> T.empty
-    DelTxSuccess -> "Transaction finished successfully"
-    DelTxConstructing -> "Constructing the transaction..."
-    DelTxSigning -> "Please sign the transaction."
-    DelTxSubmitting -> "Submitting..."
-    DelTxSubmitted -> "Submitted. Pending the confirmation..."
-    DelTxError e -> e
+messageDelegateTxStatus :: DelegateTxStatus -> (I18n.StatusMessage, I18n.StatusMessage)
+messageDelegateTxStatus dts = 
+  let s = case dts of
+        DelTxReady -> I18n.SM_Empty
+        DelTxSuccess -> I18n.SM_TransactionSuccess
+        DelTxConstructing -> I18n.SM_Constructing
+        DelTxSigning -> I18n.SM_Signing
+        DelTxSubmitting -> I18n.SM_Submitting
+        DelTxSubmitted -> I18n.SM_Submitted
+        DelTxError e -> I18n.SM_Custom e
+  in (I18n.SM_Delegate, s)
 
 data VoteTxStatus
     = VoteTxReady
@@ -195,14 +212,16 @@ data VoteTxStatus
     | VoteTxError Text
     deriving (Eq)
 
-textVoteTxStatus :: VoteTxStatus -> Text
-textVoteTxStatus = \case
-    VoteTxReady -> T.empty
-    VoteTxConstructing -> "Constructing the transaction..."
-    VoteTxSigning -> "Please sign the transaction."
-    VoteTxSubmitting -> "Submitting..."
-    VoteTxSubmitted -> "Submitted. Pending the confirmation..."
-    VoteTxError e -> "Error" <> column <> space <> e
+messageVoteTxStatus :: VoteTxStatus -> (I18n.StatusMessage, I18n.StatusMessage)
+messageVoteTxStatus vts = 
+  let s = case vts of
+        VoteTxReady -> I18n.SM_Empty
+        VoteTxConstructing -> I18n.SM_Constructing
+        VoteTxSigning -> I18n.SM_Signing
+        VoteTxSubmitting -> I18n.SM_Submitting
+        VoteTxSubmitted -> I18n.SM_Submitted
+        VoteTxError e -> I18n.SM_Custom e
+  in (I18n.SM_Vote, s)
 
 -- Check if status is the performant one.
 -- Performant status fires when background operations are processing.

@@ -2,7 +2,6 @@ module ENCOINS.DAO.Widgets.StatusWidget where
 
 import Data.Bool (bool)
 import Data.Text (Text)
-import qualified Data.Text as T
 import Reflex.Dom
 
 import Backend.Status
@@ -11,14 +10,12 @@ import Backend.Status
     , VoteTxStatus (..)
     , WalletStatus (..)
     , isDaoBuffer
-    , isDaoReady
     , isDaoTotalBlock
     , isDelegateTxProcess
     , isVoteTxProcess
     , isWalletError
-    , textDaoStatus
+    , messageDaoStatus
     )
-import Common.Utility (space, toText)
 import Backend.Wallet
     ( LucidConfig (..)
     , Wallet (..)
@@ -27,14 +24,18 @@ import Backend.Wallet
     , hasToken
     , lucidConfigDao
     )
+import Common.Events
+import Common.Reflex.Dom.Extra (elementResultJS)
+import Common.Reflex.Extra (foldDynamicAny)
+import Common.Utility (toText)
 import Config.Config (NetworkConfig (dao), networkConfig)
 import ENCOINS.Common.Widgets.Advanced (walletError)
-import Common.Events
-import Common.Reflex.Extra (foldDynamicAny)
-import Common.Reflex.Dom.Extra (elementResultJS)
+import qualified I18n.Reflex.I18n as I18n
+import qualified I18n.Common as I18n
+import I18n.I18n (App)
 
 handleStatus ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t Wallet
     -> m (Dynamic t Bool, Dynamic t Bool, Dynamic t Text)
 handleStatus dWallet = do
@@ -67,8 +68,6 @@ handleStatus dWallet = do
                 , isVoteTxProcess <$> dVoteStatus
                 ]
 
-    let flatStatus s = bool (textDaoStatus s) T.empty $ isDaoReady s
-
     let currentStatus =
             leftmost
                 [ VoteTx <$> eVoteStatus
@@ -78,10 +77,25 @@ handleStatus dWallet = do
                 , WalletInDao <$> eWalletError
                 , WalletInDao <$> eHasNotTokenStatus
                 ]
-    logEvent "Current status" $ textDaoStatus <$> currentStatus
     dNotification <- foldDyn processStatus DaoReady currentStatus
 
-    pure (dIsDisableButtons, dIsDisableConnectButton, flatStatus <$> dNotification)
+    dLocale <- I18n.askLocale
+    let localizer ::
+            I18n.Locale
+            -> Either I18n.StatusMessage (I18n.StatusMessage, I18n.StatusMessage)
+            -> Text
+        localizer l = \case
+            Left m -> I18n.localizeWith l m
+            Right (m1, m2) -> I18n.localizeWith l m1 <> I18n.localizeWith l m2
+    let dStatusMessage = messageDaoStatus <$> dNotification
+    let dStatusText = zipDynWith localizer dLocale dStatusMessage
+    logDyn "DaoStatus" $ localizer I18n.Locale_EN <$> dStatusMessage
+
+    pure
+        ( dIsDisableButtons
+        , dIsDisableConnectButton
+        , dStatusText
+        )
 
 voteStatus :: (MonadWidget t m) => m (Event t VoteTxStatus)
 voteStatus = do

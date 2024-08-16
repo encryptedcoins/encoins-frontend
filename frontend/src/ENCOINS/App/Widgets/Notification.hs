@@ -4,7 +4,6 @@ module ENCOINS.App.Widgets.Notification where
 
 import qualified Data.List.NonEmpty as NE
 import Data.Text (Text)
-import qualified Data.Text as T
 import Reflex.Dom
 
 import Backend.Status
@@ -16,7 +15,7 @@ import Backend.Status
     , isAppTxProcessingBlock
     , isCloudIconStatus
     , isTextAppStatus
-    , textAppStatus
+    , messageAppStatus
     )
 import Backend.Wallet (Wallet (..))
 import Common.Events
@@ -24,6 +23,9 @@ import Common.Reflex.Dom.Extra (elementResultJS)
 import Common.Reflex.Extra (switchHoldDyn)
 import Common.Utility (singletonL, space, toText)
 import Config.Config (NetworkConfig (..), networkConfig)
+import I18n.I18n (App)
+import qualified I18n.Reflex.I18n as I18n
+import qualified I18n.Common as I18n
 
 fetchWalletNetworkStatus ::
     (MonadWidget t m) =>
@@ -52,7 +54,7 @@ unexpectedNetworkApp =
         <> "mode."
 
 handleAppStatus ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t Wallet
     -> Event t [AppStatus]
     -> Event t AppStatus
@@ -65,37 +67,48 @@ handleAppStatus dWallet eAppStatusList eOtherTxStatus = do
                 , singletonL . WalletInApp <$> updated dWalletNetworkStatus
                 , singletonL <$> eOtherTxStatus
                 ]
-    logEvent "AppStatus" $ fmap textAppStatus <$> eStatusNotification
 
     eCloudIconStatus <- getLastStatusE isCloudIconStatus eAppStatusList
 
-    dStatusText <-
+    dAppAndStatusMessage <-
         foldDynMaybe
             handleNotification
-            (AppReady, T.empty)
+            AppReady
             eStatusNotification
 
-    let dIsBlockAllButtons = (isAppTotalBlock . fst) <$> dStatusText
-    let dIsBlockConnectButton = (isAppTxProcessingBlock . fst) <$> dStatusText
+    let dIsBlockAllButtons = isAppTotalBlock <$> dAppAndStatusMessage
+    let dIsBlockConnectButton = isAppTxProcessingBlock <$> dAppAndStatusMessage
 
     dCloudIconStatus <- holdDyn NoTokens eCloudIconStatus
 
+    dLocale <- I18n.askLocale
+    let localizer ::
+            I18n.Locale
+            -> Either I18n.StatusMessage (I18n.StatusMessage, I18n.StatusMessage)
+            -> Text
+        localizer l = \case
+            Left m -> I18n.localizeWith l m
+            Right (m1, m2) -> I18n.localizeWith l m1 <> I18n.localizeWith l m2
+    let dStatusMessage = messageAppStatus <$> dAppAndStatusMessage
+    let dStatusText = zipDynWith localizer dLocale dStatusMessage
+    logDyn "AppStatus" (localizer I18n.Locale_EN <$> dStatusMessage)
+
     pure
-        ( snd <$> dStatusText
+        ( dStatusText
         , dIsBlockAllButtons
         , dCloudIconStatus
         , dIsBlockConnectButton
         )
 
 handleNotification ::
-    [AppStatus] -> (AppStatus, Text) -> Maybe (AppStatus, Text)
-handleNotification appStatus previousStatus =
+    [AppStatus]
+    -> AppStatus
+    -> Maybe AppStatus
+handleNotification appStatusList previousStatus =
     -- Hold NoRelay status once it fired until page reloading.
-    if isAppStatusWantReload (fst previousStatus)
+    if isAppStatusWantReload previousStatus
         then Nothing
-        else do
-            s <- getLastStatus isTextAppStatus appStatus
-            pure (s, textAppStatus s)
+        else getLastStatus isTextAppStatus appStatusList
 
 getLastStatus :: (a -> Maybe b) -> [a] -> Maybe b
 getLastStatus f = fmap NE.last . NE.nonEmpty . mapMaybe f

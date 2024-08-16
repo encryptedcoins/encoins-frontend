@@ -157,9 +157,6 @@ bodyWidget = waitForScripts "walletAPI" "js/ENCOINS.js" blank $ mdo
             (ePass, dLocale') <- runLocalize dLocale $ bodyContentWidget pass localeInCache
             pure $ align ePass $ updated dLocale'
     let (eNewPass, eLocale) = fanThese eThesePassLocale
-    -- logEvent "bodyWidget: eLocale" eLocale
-
     dLocale <- holdUniqDyn =<< holdDyn localeInCache eLocale
-    -- logDyn "bodyWidget: dLocale" dLocale
 
     jQueryWidget
