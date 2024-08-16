@@ -8,6 +8,7 @@ import Data.Function (on)
 import Data.Text (Text)
 import Reflex.Dom
 
+import Common.Events
 import ENCOINS.Common.Cache (locale)
 import ENCOINS.Common.Widgets.Advanced (waitForScripts)
 import ENCOINS.Common.Widgets.JQuery (jQueryWidget)
@@ -19,7 +20,7 @@ import I18n.I18n (App)
 import I18n.Reflex.I18n (Locale (..), runLocalize)
 import JS.Website (loadJSONNoPass)
 
-pageSelect :: (MonadWidget t m) => (Text, Text) -> m (Event t (Text, Text))
+pageSelect :: (App t m) => (Text, Text) -> m (Event t (Text, Text))
 pageSelect (page, idFocus) = case page of
     "Home" -> landingPage idFocus
     _ -> return never
@@ -43,5 +44,7 @@ bodyContentWidget currentLocale = mdo
 bodyWidget :: (MonadWidget t m) => m ()
 bodyWidget = waitForScripts "loadCacheValue" "js/LandingCommon.js" blank $ mdo
     localeInCache <- decodeLocale <$> loadJSONNoPass locale
-    dLocale <- runLocalize dLocale $ bodyContentWidget localeInCache
+    dLocaleNew <- runLocalize dLocale $ bodyContentWidget localeInCache
+    dLocale <- holdUniqDyn =<< holdDyn localeInCache (updated dLocaleNew)
+    logDyn "bodyWidget" dLocale
     jQueryWidget

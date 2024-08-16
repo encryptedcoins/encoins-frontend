@@ -7,6 +7,9 @@ import qualified Data.Text as T
 import Reflex.Dom
 
 import Common.Utility (space)
+import I18n.I18n (App)
+import I18n.Common.I18n (HasI18n, Locale)
+import Common.Reflex.Dom.Extra (textLocale)
 
 h1 :: (MonadWidget t m) => Text -> m ()
 h1 = elClass "h1" "h1" . text
@@ -14,14 +17,26 @@ h1 = elClass "h1" "h1" . text
 h1Mini :: (MonadWidget t m) => Text -> m ()
 h1Mini = elClass "h1" "h1 h1-mini" . text
 
+h1Locale :: (App t m, HasI18n Locale a Text) => a -> m ()
+h1Locale = elClass "h1" "h1" . textLocale
+
 h2 :: (MonadWidget t m) => Text -> m ()
 h2 = elClass "h2" "h2" . text
+
+h2Locale :: (App t m, HasI18n Locale a Text) => a -> m ()
+h2Locale = elClass "h2" "h2" . textLocale
 
 h3 :: (MonadWidget t m) => Text -> m ()
 h3 = elClass "h3" "h3" . text
 
+h3Locale :: (App t m, HasI18n Locale a Text) => a -> m ()
+h3Locale = elClass "h3" "h3" . textLocale
+
 h4 :: (MonadWidget t m) => Text -> m ()
 h4 = elClass "h4" "h4" . text
+
+h4Locale :: (App t m, HasI18n Locale a Text) => a -> m ()
+h4Locale = elClass "h4" "h4" . textLocale
 
 h4Invisible :: (MonadWidget t m) => Text -> m ()
 h4Invisible = elClass "h4" "h4 h-invisible" . text
@@ -29,8 +44,14 @@ h4Invisible = elClass "h4" "h4 h-invisible" . text
 h5 :: (MonadWidget t m) => Text -> m ()
 h5 = elClass "h5" "h5" . text
 
+h5Locale :: (App t m, HasI18n Locale a Text) => a -> m ()
+h5Locale = elClass "h5" "h5" . textLocale
+
 h5Bold :: (MonadWidget t m) => Text -> m ()
 h5Bold = elClass "h5" "h5 h-extra-bold" . text
+
+h5BoldLocale :: (App t m, HasI18n Locale a Text) => a -> m ()
+h5BoldLocale = elClass "h5" "h5 h-extra-bold" . textLocale
 
 h6 :: (MonadWidget t m) => Text -> m ()
 h6 = elClass "h6" "h6" . text

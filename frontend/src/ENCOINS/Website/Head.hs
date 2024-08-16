@@ -68,7 +68,7 @@ headWidget = do
         domEvent Load . fst
             <$> elAttr'
                 "script"
-                ( "src" =: "https://unpkg.com/@dexhunterio/swaps@0.0.100/lib/umd/swaps.umd.js"
+                ( "src" =: "https://unpkg.com/@dexhunterio/swaps@0.0.103/lib/umd/swaps.umd.js"
                     <> "type" =: "module"
                 )
                 blank

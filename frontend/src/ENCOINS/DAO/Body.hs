@@ -86,9 +86,8 @@ bodyContentWidget currentLocale = mdo
         mapM_ (pollCompletedWidget . snd) $ toDescList archivedPolls
 
     logDyn "bodyContentWidget: dLocaleNew" dLocaleNew
-    dLocaleCashed <- cacheLocale dLocaleNew
+    cacheLocale dLocaleNew
 
-    pure dLocaleCashed
 
 pollAttr :: Map Text Text
 pollAttr =
