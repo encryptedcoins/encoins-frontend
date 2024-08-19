@@ -119,7 +119,7 @@ lucidConfigDao = case dao networkConfig of
 currentNetworkApp :: Text
 currentNetworkApp = case app networkConfig of
     Mainnet -> "Mainnet"
-    Testnet -> "Testnet Preprod"
+    Testnet -> "Testnet"
 
 hasToken :: Text -> Text -> Wallet -> Bool
 hasToken symbol token =

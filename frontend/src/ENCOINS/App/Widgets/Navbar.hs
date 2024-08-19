@@ -8,23 +8,27 @@ import Reflex.Dom
 
 import Backend.Protocol.Types (PasswordRaw)
 import Backend.Status (CloudIconStatus (..))
-import Common.Utility (space)
 import Backend.Wallet (Wallet (..), currentNetworkApp)
 import Common.Events
+import Common.Utility (space)
 import ENCOINS.Common.Widgets.Basic (logo)
 import ENCOINS.Common.Widgets.Connect (connectWidget)
+import ENCOINS.Common.Widgets.Locale (localeWidget)
 import ENCOINS.Common.Widgets.MoreMenu (NavMoreMenuClass (..), viewMoreMenu)
+import I18n.I18n (App)
+import I18n.Reflex.I18n (Locale (..))
 
 navbarWidget ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t Wallet
     -> Dynamic t Bool
     -> Maybe PasswordRaw
     -> Dynamic t Bool
     -> Dynamic t CloudIconStatus
     -> Dynamic t Bool
-    -> m (Event t (), Event t (), Event t (), Event t ())
-navbarWidget w dIsBlockAll mPass dIsCloudOn dCloudStatus dIsBlockConnect = do
+    -> Locale
+    -> m (Event t (), Event t (), Event t (), Event t (), Dynamic t Locale)
+navbarWidget w dIsBlockAll mPass dIsCloudOn dCloudStatus dIsBlockConnect currentLocale = do
     elAttr
         "div"
         ( "data-animation" =: "default"
@@ -49,10 +53,11 @@ navbarWidget w dIsBlockAll mPass dIsCloudOn dCloudStatus dIsBlockConnect = do
                 eConnect <- connectWidget w dIsBlockConnect
                 eCloud <- cloudIconWidget dIsCloudOn dIsBlockAll dCloudStatus
                 eLocker <- lockerWidget mPass dIsBlockAll
+                dLocale <- localeWidget "common-Nav_Dropdown" currentLocale
                 eMore <-
                     viewMoreMenu
                         (NavMoreMenuClass "common-Nav_Container_MoreMenu" "common-Nav_MoreMenu")
-                pure (eLocker, eConnect, eCloud, eMore)
+                pure (eLocker, eConnect, eCloud, eMore, dLocale)
 
 lockerWidget ::
     (MonadWidget t m) =>

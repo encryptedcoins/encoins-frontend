@@ -3,10 +3,13 @@
 
 module ENCOINS.Common.Widgets.MoreMenu where
 
-import Common.Utility (space)
 import Common.Events
+import Common.Utility (space)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Basic (lnk)
+import qualified I18n.Common as I18n
+import I18n.I18n (App)
+import qualified I18n.I18n as I18n
 
 import Control.Monad (void)
 import Data.Text (Text)
@@ -35,7 +38,7 @@ data WindowMoreMenuClass = WindowMoreMenuClass
     }
 
 moreMenuWindow ::
-    (MonadWidget t m) =>
+    (App t m) =>
     WindowMoreMenuClass
     -> Event t ()
     -> m ()
@@ -45,7 +48,7 @@ moreMenuWindow cls eOpen =
         eOpen
         never
         (wmmcWindow cls)
-        "Encoins' tutorials"
+        (I18n.CommonTerm I18n.TutorialWindowTitle)
         $ do
             divClass (wmmcContainer cls) $ do
                 let linkCls = wmmcLink cls

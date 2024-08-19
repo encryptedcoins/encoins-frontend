@@ -4,7 +4,7 @@ module ENCOINS.App.Body
     ( bodyWidget
     ) where
 
-import Data.Bifunctor (first)
+import Data.Align (align)
 import Data.Maybe (isNothing)
 import Reflex.Dom
 
@@ -15,7 +15,6 @@ import Backend.Wallet (Wallet (walletName), walletsSupportedInApp)
 import Common.Events
 import Common.Reflex.Extra (switchHoldDyn)
 import ENCOINS.App.Widgets.CloudWindow (cloudSettingsWindow)
-import ENCOINS.Common.ConnectWindow (connectWindow)
 import ENCOINS.App.Widgets.MainWindow (mainWindow)
 import ENCOINS.App.Widgets.Navbar (navbarWidget)
 import ENCOINS.App.Widgets.Notification
@@ -33,23 +32,29 @@ import ENCOINS.Common.Cache
     ( aesKey
     , isCloudOn
     , loadAppDataE
+    , locale
     , passwordStorageKey
     )
+import ENCOINS.Common.ConnectWindow (connectWindow)
 import ENCOINS.Common.Widgets.Advanced (viewCopiedNotification, waitForScripts)
 import ENCOINS.Common.Widgets.Basic (notification)
 import ENCOINS.Common.Widgets.JQuery (jQueryWidget)
+import ENCOINS.Common.Widgets.Locale (cacheLocale, decodeLocale)
 import ENCOINS.Common.Widgets.MoreMenu
     ( WindowMoreMenuClass (..)
     , moreMenuWindow
     )
+import I18n.I18n (App)
+import I18n.Reflex.I18n (Locale, runLocalize)
 import JS.App (loadCacheValue)
 
 bodyContentWidget ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Maybe PasswordRaw
-    -> m (Event t (Maybe PasswordRaw))
-bodyContentWidget mPass = mdo
-    (ePassOpen, eConnectOpen, eCloudOpen, eMoreMenuOpen) <-
+    -> Locale
+    -> m (Event t (Maybe PasswordRaw), Dynamic t Locale)
+bodyContentWidget mPass currentLocale = mdo
+    (ePassOpen, eConnectOpen, eCloudOpen, eMoreMenuOpen, dLocaleNew) <-
         navbarWidget
             dWallet
             dIsBlockAllButtons
@@ -57,6 +62,7 @@ bodyContentWidget mPass = mdo
             dCloudOn
             dCloudStatus
             dIsBlockConnectButton
+            currentLocale
 
     let moreMenuClass =
             WindowMoreMenuClass
@@ -127,20 +133,30 @@ bodyContentWidget mPass = mdo
         holdUniqDyn
             =<< (holdDyn Nothing $ leftmost $ map updated [dmOldKeyBody, dNewKeyWindow])
 
-    pure eReEncryptDelayed
+    dLocaleSaved <- cacheLocale dLocaleNew
+
+    pure (eReEncryptDelayed, dLocaleSaved)
 
 bodyWidget :: (MonadWidget t m) => m ()
-bodyWidget = waitForScripts blank $ mdo
+bodyWidget = waitForScripts "walletAPI" "js/ENCOINS.js" blank $ mdo
     mPass <- toPasswordHash <$> loadCacheValue passwordStorageKey
+    localeInCache <- decodeLocale <$> loadCacheValue locale
     (ePassOk, eCleanCache) <- case mPass of
-        Just pass -> first (Just <$>) <$> enterPasswordWindow pass eCleanOk
+        Just pass -> do
+            (passRaw, ev) <- runLocalize dLocale $ enterPasswordWindow pass eCleanOk
+            pure (Just <$> passRaw, ev)
         Nothing -> do
             ePb <- getPostBuild
             pure (Nothing <$ ePb, never)
-    eCleanOk <- cleanCacheDialog eCleanCache
+    eCleanOk <- runLocalize dLocale $ cleanCacheDialog eCleanCache
     dmmPass <-
         holdDyn Nothing $ Just <$> leftmost [ePassOk, Nothing <$ eCleanOk, eNewPass]
-    eNewPass <- switchHoldDyn dmmPass $ \case
-        Nothing -> pure never
-        Just pass -> bodyContentWidget pass
+    eThesePassLocale <- switchHoldDyn dmmPass $ \case
+        Nothing -> pure $ align never never
+        Just pass -> do
+            (ePass, dLocale') <- runLocalize dLocale $ bodyContentWidget pass localeInCache
+            pure $ align ePass $ updated dLocale'
+    let (eNewPass, eLocale) = fanThese eThesePassLocale
+    dLocale <- holdUniqDyn =<< holdDyn localeInCache eLocale
+
     jQueryWidget

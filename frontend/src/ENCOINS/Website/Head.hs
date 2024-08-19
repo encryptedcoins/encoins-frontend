@@ -43,6 +43,9 @@ headWidget = do
     eWebpageLoaded <-
         domEvent Load . fst
             <$> elAttr' "script" ("src" =: "js/Webpage.js" <> "type" =: "text/javascript") blank
+    eWebpageCommonLoaded <-
+        domEvent Load . fst
+            <$> elAttr' "script" ("src" =: "js/LandingCommon.js" <> "type" =: "text/javascript") blank
 
     -- Dex hunter begin
     eReactLoaded <-
@@ -65,7 +68,7 @@ headWidget = do
         domEvent Load . fst
             <$> elAttr'
                 "script"
-                ( "src" =: "https://unpkg.com/@dexhunterio/swaps@0.0.100/lib/umd/swaps.umd.js"
+                ( "src" =: "https://unpkg.com/@dexhunterio/swaps@0.0.103/lib/umd/swaps.umd.js"
                     <> "type" =: "module"
                 )
                 blank
@@ -74,6 +77,7 @@ headWidget = do
 
     dWebFontLoaded <- holdDyn False (True <$ eWebFontLoaded)
     dWebpageLoaded <- holdDyn False (True <$ eWebpageLoaded)
+    dWebpageCommonLoaded <- holdDyn False (True <$ eWebpageCommonLoaded)
 
     -- Dex hunter begin
     dReactLoaded <- holdDyn False (True <$ eReactLoaded)
@@ -89,6 +93,7 @@ headWidget = do
                         (pure True)
                         [ dWebFontLoaded
                         , dWebpageLoaded
+                        , dWebpageCommonLoaded
                         , dReactLoaded
                         , dReactDomLoaded
                         , dSwapsLoaded

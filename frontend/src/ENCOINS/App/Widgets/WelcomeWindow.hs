@@ -15,40 +15,59 @@ import Common.Utility (toText)
 import ENCOINS.Common.Cache (loadJsonFromStorage, saveJsonToStorage)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Basic (btn, lnkInlineInverted)
+import qualified I18n.Common as I18n
+import I18n.I18n (App, LocalizedMessage)
+import qualified I18n.I18n as I18n
 import JS.Website (setElementStyle)
 
 data WelcomeItem = WelcomeItem
     { elemId :: Text
     , border :: Bool
-    , title :: Text
+    , title :: LocalizedMessage
     , message :: [(Text, Text, Text)] -- Text and ref with title for link
     }
 
 welcomeWallet :: [WelcomeItem]
 welcomeWallet =
-    [ WelcomeItem "welcome-disclaimer" False "Disclaimer" [(wDisclaimerText, "", "")]
-    , WelcomeItem "welcome-tabs" False "Tabs" [(wTabs, "", "")]
+    [ WelcomeItem
+        "welcome-disclaimer"
+        False
+        (I18n.WelcomeTerm I18n.WM_Disclaimer)
+        [(wDisclaimerText, "", "")]
+    , WelcomeItem
+        "welcome-tabs"
+        False
+        (I18n.WelcomeTerm I18n.WM_Tabs)
+        [(wTabs, "", "")]
     , WelcomeItem
         "welcome-wallet-coins"
         True
-        "Coins in the Wallet"
+        (I18n.WelcomeTerm I18n.WM_CoinsInWallet)
         [(wCoinsInWallet, "", "")]
-    , WelcomeItem "welcome-coins-mint" True "Coins to mint" [(wCoinsToMint, "", "")]
+    , WelcomeItem
+        "welcome-coins-mint"
+        True
+        (I18n.WelcomeTerm I18n.WM_CoinsToMint)
+        [(wCoinsToMint, "", "")]
     , WelcomeItem
         "welcome-tx-balance"
         False
-        "Transaction balance"
+        (I18n.WelcomeTerm I18n.WM_TransactionBalance)
         [(wTxBalance, "", "")]
-    , WelcomeItem "welcome-send-req" True "Send button" [(wSend, "", "")]
+    , WelcomeItem
+        "welcome-send-req"
+        True
+        (I18n.WelcomeTerm I18n.WM_SendButtons)
+        [(wSend, "", "")]
     , WelcomeItem
         "welcome-import-export"
         False
-        "Import/Export buttons"
+        (I18n.WelcomeTerm I18n.WM_ImportExportButtons)
         [(wImportExport, "", "")]
     , WelcomeItem
         "welcome-read-docs"
         False
-        "Useful links"
+        (I18n.WelcomeTerm I18n.WM_UsefulLinks)
         [
             ( "Full user documentation is always available at "
             , "https://docs.encoins.io"
@@ -73,24 +92,36 @@ welcomeTransfer =
     [ WelcomeItem
         "welcome-coins-transfer"
         True
-        "Coins in the Wallet"
+        (I18n.WelcomeTerm I18n.WM_CoinsInWallet)
         [(tCoinsInWallet, "", "")]
-    , WelcomeItem "welcome-transfer-btns" True "Send buttons" [(tSend, "", "")]
+    , WelcomeItem
+        "welcome-transfer-btns"
+        True
+        (I18n.WelcomeTerm I18n.WM_SendButtons)
+        [(tSend, "", "")]
     ]
 
 welcomeLedger :: [WelcomeItem]
 welcomeLedger =
-    [ WelcomeItem "welcome-ledger" False "Ledger mode" [(ledger, "", "")]
+    [ WelcomeItem
+        "welcome-ledger"
+        False
+        (I18n.WelcomeTerm I18n.WM_LedgerMode)
+        [(ledger, "", "")]
     , WelcomeItem
         "welcome-ledger-coins"
         True
-        "Coins in the Ledger"
+        (I18n.WelcomeTerm I18n.WM_CoinsInLedger)
         [(lCoinsInLedger, "", "")]
-    , WelcomeItem "welcome-ledger-mint" True "Coins to mint" [(lCoinsToMint, "", "")]
+    , WelcomeItem
+        "welcome-ledger-mint"
+        True
+        (I18n.WelcomeTerm I18n.WM_CoinsToMint)
+        [(lCoinsToMint, "", "")]
     ]
 
 welcomeTutorial ::
-    (MonadWidget t m) => [WelcomeItem] -> Event t () -> m (Event t ())
+    (App t m) => [WelcomeItem] -> Event t () -> m (Event t ())
 welcomeTutorial [] eOpen = pure eOpen
 welcomeTutorial (wi : wis) eOpen = do
     eWiNext <- welcomeItemWidget wi eOpen
@@ -98,7 +129,7 @@ welcomeTutorial (wi : wis) eOpen = do
     welcomeTutorial wis eOpenNext
 
 welcomeItemWidget ::
-    (MonadWidget t m) => WelcomeItem -> Event t () -> m (Event t ())
+    (App t m) => WelcomeItem -> Event t () -> m (Event t ())
 welcomeItemWidget WelcomeItem{..} eOpen = mdo
     performEvent_ (setElementStyle elemId "z-index" "2000" <$ eOpen)
     performEvent_ (setElementStyle elemId "position" "relative" <$ eOpen)
@@ -132,7 +163,7 @@ welcomeWindowTransferStorageKey = "encoins-welcome-window-seen-transfer"
 welcomeWindowLedgerStorageKey :: Text
 welcomeWindowLedgerStorageKey = "encoins-welcome-window-seen-ledger"
 
-welcomeWindow :: (MonadWidget t m) => Text -> [WelcomeItem] -> m ()
+welcomeWindow :: (App t m) => Text -> [WelcomeItem] -> m ()
 welcomeWindow key items = do
     let currentHash = toText $ toHash items
     isSeen <- loadJsonFromStorage key
@@ -150,7 +181,7 @@ welcomeWindow key items = do
 toHash :: [WelcomeItem] -> Hash.MD5
 toHash =
     Hash.hash
-        . foldMap (\(WelcomeItem _ _ t ms) -> TE.encodeUtf8 $ t <> flatMessage ms)
+        . foldMap (\(WelcomeItem _ _ t ms) -> TE.encodeUtf8 $ toText t <> flatMessage ms)
     where
         flatMessage = foldMap (\(b, ref, h) -> b <> ref <> h)
 

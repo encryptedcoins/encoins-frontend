@@ -19,16 +19,18 @@ import Reflex.Dom
 import Text.Printf (printf)
 
 import Backend.Wallet (LucidConfig (..), Wallet (..), lucidConfigDao, toJS)
-import Common.Reflex.Dom.Extra (elementResultJS)
+import Common.Reflex.Dom.Extra (elementResultJS, textLocale)
 import Common.Utility (formatPollTime, toJsonStrict, toText)
 import ENCOINS.Common.Widgets.Basic (btn, btnWithBlock)
 import ENCOINS.DAO.Widgets.Poll.PollResults (VoteResult (..))
 import ENCOINS.DAO.Widgets.Poll.Polls (Poll (..))
 import ENCOINS.Website.Widgets.Basic (container)
+import qualified I18n.Dao as I18n
+import I18n.I18n (App)
 import JS.DAO (daoPollVoteTx)
 
 pollWidget ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t Wallet
     -> Dynamic t Bool
     -> Poll m
@@ -53,7 +55,7 @@ pollWidget dWallet dIsBlocked (Poll n question summary answers' _ endTime) = do
     dMsg <- elementResultJS ("elementPoll" <> toText n) id
     container "" $ divClass "app-text-normal" $ dynText dMsg
 
-pollCompletedWidget :: (MonadWidget t m) => Poll m -> m ()
+pollCompletedWidget :: (App t m) => Poll m -> m ()
 pollCompletedWidget (Poll n question summary voteResults fullAnswers endTime) = do
     viewPollExplainer question summary endTime
 
@@ -74,10 +76,10 @@ pollCompletedWidget (Poll n question summary voteResults fullAnswers endTime) = 
             ( "class" =: "h5"
                 <> "style" =: "-webkit-filter: brightness(35%); filter: brightness(35%);"
             )
-        $ text "Download poll results"
+        $ textLocale I18n.DownloadResults
     eDownload <- container "" $
         divClass "dao-VoteDownload" $ do
-            btn "button-switching flex-center" "" $ text "DOWNLOAD"
+            btn "button-switching flex-center" "" $ textLocale I18n.Download
 
     downloadVotes (toJsonStrict voteResults) "result" n eDownload
     downloadVotes (encodeUtf8 fullAnswers) "result_full" n eDownload
@@ -88,7 +90,7 @@ mkVoteList (VoteResult yes no) =
     , ("No", pack $ printf "%.2f%%" no)
     ]
 
-viewPollExplainer :: (MonadWidget t m) => m () -> m () -> UTCTime -> m ()
+viewPollExplainer :: (App t m) => m () -> m () -> UTCTime -> m ()
 viewPollExplainer tagsTitle tagsExplainer endTime = container "" $
     divClass "div-explainer" $ do
         elAttr "h4" ("class" =: "h4" <> "style" =: "margin-bottom: 30px;") tagsTitle
@@ -96,9 +98,9 @@ viewPollExplainer tagsTitle tagsExplainer endTime = container "" $
             "p"
             ("class" =: "p-explainer" <> "style" =: "text-align: justify;")
             tagsExplainer
-        divClass "app-text-small" $
-            text $
-                "The vote ends on " <> formatPollTime endTime <> "."
+        divClass "app-text-small" $ do
+            textLocale I18n.EndDate
+            text $ formatPollTime endTime <> "."
 
 triggerDownload ::
     (MonadJSM m) =>

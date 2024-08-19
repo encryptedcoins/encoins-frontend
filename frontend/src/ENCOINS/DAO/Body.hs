@@ -13,33 +13,44 @@ import Data.Time (getCurrentTime)
 import Reflex.Dom
 
 import Backend.Wallet (walletsSupportedInDAO)
-import ENCOINS.Common.Widgets.Advanced (waitForScripts)
-import ENCOINS.Common.ConnectWindow (connectWindow)
 import Common.Events
+import Common.Reflex.Dom.Extra (textLocale)
+import ENCOINS.Common.Cache (locale)
+import ENCOINS.Common.ConnectWindow (connectWindow)
+import ENCOINS.Common.Widgets.Advanced (waitForScripts)
 import ENCOINS.Common.Widgets.Basic (notification)
 import ENCOINS.Common.Widgets.JQuery (jQueryWidget)
+import ENCOINS.Common.Widgets.Locale (cacheLocale, decodeLocale)
 import ENCOINS.Common.Widgets.MoreMenu
     ( WindowMoreMenuClass (..)
     , moreMenuWindow
     )
-import ENCOINS.DAO.Widgets.Poll.Polls
 import ENCOINS.DAO.Widgets.DelegateWindow (delegateWindow)
-import ENCOINS.DAO.Widgets.Navbar (Dao (..), navbarWidget)
-import ENCOINS.DAO.Widgets.PollWidget
 import ENCOINS.DAO.Widgets.DelegateWindow.RelayTable (fetchRelayNames)
+import ENCOINS.DAO.Widgets.Navbar (Dao (..), navbarWidget)
+import ENCOINS.DAO.Widgets.Poll.Polls
+import ENCOINS.DAO.Widgets.PollWidget
 import ENCOINS.DAO.Widgets.StatusWidget
 import ENCOINS.Website.Widgets.Basic (container, section)
+import qualified I18n.Dao as I18n
+import I18n.I18n (App)
+import I18n.Reflex.I18n (Locale, runLocalize)
+import JS.App (loadCacheValue)
 
 bodyWidget :: (MonadWidget t m) => m ()
-bodyWidget = waitForScripts blank $ mdo
-    bodyContentWidget
+bodyWidget = waitForScripts "walletAPI" "js/ENCOINS.js" blank $ mdo
+    localeInCache <- decodeLocale <$> loadCacheValue locale
+    dLocaleNew <- runLocalize dLocale $ bodyContentWidget localeInCache
+    logDyn "bodyWidget: dLocaleNew" dLocaleNew
+    dLocale <- holdUniqDyn =<< holdDyn localeInCache (updated dLocaleNew)
     jQueryWidget
 
-bodyContentWidget :: (MonadWidget t m) => m ()
-bodyContentWidget = mdo
+bodyContentWidget :: (App t m) => Locale -> m (Dynamic t Locale)
+bodyContentWidget currentLocale = mdo
     eFireNames <- newEvent
     dRelayNames <- fetchRelayNames eFireNames
-    eDao <- navbarWidget dWallet dIsDisableButtons dIsDisableConnectButton
+    (eDao, dLocaleNew) <-
+        navbarWidget dWallet dIsDisableButtons dIsDisableConnectButton currentLocale
 
     let eMoreMenuOpen = void $ ffilter (== MoreMenu) eDao
     let moreMenuClass =
@@ -64,15 +75,19 @@ bodyContentWidget = mdo
     section "" "" $ do
         container "" $
             elAttr "div" pollAttr $
-                text "Active poll"
+                textLocale I18n.ActivePoll
         mapM_ (pollWidget dWallet dIsDisableButtons . snd) $ toDescList activePolls
         blank
 
     section "" "" $ do
         container "" $
             elAttr "div" pollAttr $
-                text "Concluded polls"
+                textLocale I18n.ConcludedPolls
         mapM_ (pollCompletedWidget . snd) $ toDescList archivedPolls
+
+    logDyn "bodyContentWidget: dLocaleNew" dLocaleNew
+    cacheLocale dLocaleNew
+
 
 pollAttr :: Map Text Text
 pollAttr =

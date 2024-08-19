@@ -7,10 +7,16 @@ import Backend.Protocol.Types
 import Backend.Status (CloudIconStatus (..))
 import Backend.Wallet (WalletName (..))
 import Common.Events
+import Common.Reflex.Dom.Extra (textLocale, dynTextLocale)
 import Common.Reflex.Extra (switchHoldDyn)
-import Common.Utility (space)
 import ENCOINS.App.Widgets.Cloud (fetchAesKey, genAesKey, makeSignedKey)
-import ENCOINS.Common.Cache (aesKey, isCloudOn, removeCacheKey, saveAppData, saveAppData_)
+import ENCOINS.Common.Cache
+    ( aesKey
+    , isCloudOn
+    , removeCacheKey
+    , saveAppData
+    , saveAppData_
+    )
 import ENCOINS.Common.Widgets.Advanced
     ( dialogWindow
     , viewCopyButton
@@ -23,6 +29,11 @@ import ENCOINS.Common.Widgets.Basic
     , btnWithOverOutBlock
     , image
     )
+import qualified I18n.App as I18n
+import qualified I18n.Common as I18n
+import I18n.I18n (App)
+import qualified I18n.I18n as I18n
+import qualified I18n.Reflex.I18n as I18n
 import JS.Website (copyText)
 
 import Control.Monad (void)
@@ -35,7 +46,7 @@ import Reflex.Dom
 import Text.Hex (decodeHex)
 
 cloudSettingsWindow ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Maybe PasswordRaw
     -> Dynamic t WalletName
     -> Dynamic t Bool
@@ -48,7 +59,7 @@ cloudSettingsWindow mPass dWalletName cloudCacheFlag dCloudStatus eOpen = mdo
         eOpen
         eCloseByRestore
         "app-Cloud_Window"
-        "Encoins Cloud Backup"
+        (I18n.AppTerm I18n.CloudWindowTitle)
         $ do
             (dIsCloudOn, eCloudChange) <- cloudCheckbox cloudCacheFlag
             cloudStatusIcon dCloudStatus dIsCloudOn
@@ -62,7 +73,7 @@ cloudSettingsWindow mPass dWalletName cloudCacheFlag dCloudStatus eOpen = mdo
                     let eFirstKeyLoad = leftmost [() <$ eCloudChangeValDelayed, eOpen]
                     dmNewKey <- cloudKeyWidget mPass dWalletName eFirstKeyLoad
                     divClass "app-Cloud_Restore_Title" $
-                        text "Restore all unburned encoins from cloud with your current key"
+                        textLocale I18n.CloudRestoreTitle
                     eRestore <- viewRestoreButton dmNewKey
                     pure $ align (updated dmNewKey) eRestore
             dmNewKey <- holdDyn Nothing emNewKey
@@ -70,7 +81,7 @@ cloudSettingsWindow mPass dWalletName cloudCacheFlag dCloudStatus eOpen = mdo
     pure (dCloudOn, dmKey, eCloseByRestore)
 
 cloudCheckbox ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t Bool
     -> m (Dynamic t Bool, Event t Bool)
 cloudCheckbox cloudCacheFlag = do
@@ -80,29 +91,29 @@ cloudCheckbox cloudCacheFlag = do
     pure (dIsChecked, eCloudChange)
 
 cloudStatusIcon ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t CloudIconStatus
     -> Dynamic t Bool
     -> m ()
 cloudStatusIcon dCloudStatus dIsSave = do
     divClass "app-Cloud_Status_Title" $
-        text "Cloud synchronization status"
-    divClass "app-Cloud_StatusText" $
-        dynText $
-            zipDynWith selectSaveStatusNote dCloudStatus dIsSave
+        textLocale I18n.CloudStatusTitle
+    let dStatusTerm = zipDynWith selectSaveStatusNote dCloudStatus dIsSave
+    divClass "app-Cloud_StatusText" $ do 
+        textLocale I18n.CloudStatusBegin
+        dynTextLocale dStatusTerm
 
-selectSaveStatusNote :: CloudIconStatus -> Bool -> Text
+selectSaveStatusNote :: CloudIconStatus -> Bool -> I18n.AppMessage
 selectSaveStatusNote status isCloud =
-    let t = case (status, isCloud) of
-            (_, False) -> "is turned off"
-            (NoTokens, _) -> "is impossible. There are not tokens in the local cache"
-            (Saving, _) -> "is in progress..."
-            (AllSaved, _) -> "is completed successfully."
-            (FailedSave, _) -> "failed"
-     in "The synchronization" <> space <> t
+    case (status, isCloud) of
+            (_, False) -> I18n.CloudStatusOff
+            (NoTokens, _) -> I18n.CloudStatusNoTokens
+            (Saving, _) -> I18n.CloudStatusProgress
+            (AllSaved, _) -> I18n.CloudStatusSuccess
+            (FailedSave, _) -> I18n.CloudStatusFailed
 
 viewCheckbox ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Event t Bool
     -> Text
     -> m (Dynamic t Bool, Event t Bool)
@@ -116,11 +127,11 @@ viewCheckbox initial checkBoxClass = divClass "w-row app-Cloud_CheckboxContainer
                    )
                 & inputElementConfig_setChecked
                 .~ initial
-    divClass "app-Save_CheckboxDescription" $ text "Save encoins on cloud"
+    divClass "app-Save_CheckboxDescription" $ textLocale I18n.CloudToggleDescription
     pure (_inputElement_checked inp, _inputElement_checkedChange inp)
 
 showKeyWidget ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t (Maybe AesKeyRaw)
     -> m ()
 showKeyWidget dmKey = do
@@ -134,28 +145,27 @@ showKeyWidget dmKey = do
     divClass "app-Cloud_KeyContainer" $ do
         copyIcon
         withTooltip keyIcon "app-CloudWindow_KeyTip" 0 0 $ do
-            text
-                "Tip: store it offline and protect with a password / encryption. Enable password protection in the Encoins app."
+            textLocale I18n.CloudKeyTip
         dynText dKey
 
 viewRestoreButton ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t (Maybe AesKeyRaw)
     -> m (Event t ())
 viewRestoreButton dmKey =
     divClass "app-Cloud_Restore_ButtonContainer" $
         btnWithBlock "button-switching inverted flex-center" "" (isNothing <$> dmKey) $
-            text "Restore"
+            textLocale I18n.CloudButtonRestore
 
 cloudKeyWidget ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Maybe PasswordRaw
     -> Dynamic t WalletName
     -> Event t ()
     -> m (Dynamic t (Maybe AesKeyRaw))
 cloudKeyWidget mPass dWalletName eFirstLoadKey = mdo
     divClass "app-Cloud_AesKey_Title" $
-        text "Your AES key for restoring encoins. Save it to a file and keep it secure!"
+        textLocale I18n.CloudKeyTitle
     eLoadKey <-
         delay 0.05 $
             leftmost [eFirstLoadKey, eKeyRemoved, eKeyGenerated, eUserKeySaved, eSignedKey]
@@ -187,54 +197,55 @@ cloudKeyWidget mPass dWalletName eFirstLoadKey = mdo
                 "button-switching inverted flex-center"
                 ""
                 dBlockEnter
-                (text "Enter")
+                (textLocale I18n.Enter)
         eGen <-
             btnWithOverOutBlock
                 "button-switching inverted flex-center"
                 ""
                 (isJust <$> dmKey)
-                (text "Generate")
+                (textLocale I18n.CloudButtonGenerate)
         eSign <-
             btnWithOverOutBlock
                 "button-switching inverted flex-center"
                 ""
                 (zipDynWith (\mKey name -> isJust mKey || name == None) dmKey dWalletName)
-                (text "SignKey")
+                (textLocale I18n.CloudButtonSignKey)
         eDel <-
             btnWithOverOutBlock
                 "button-switching inverted flex-center"
                 ""
                 (isNothing <$> dmKey)
-                (text "Delete")
+                (textLocale I18n.Delete)
         pure (eEnt, eGen, eSign, eDel)
     eKeyRemoved <- deleteKeyDialog eDelete
     let eMouseOutButton = leftmost [eEnterOut, eGenOut, eSignOut, eDelOut]
     dButtonDescription <-
-        holdDyn "To see more details, hover over the active button." $
+        holdDyn I18n.CloudButtonTipDefault $
             leftmost
-                [ "Button 'Enter' confirmes manually input key." <$ eEnterOver
-                , "Button 'Generate' generates random cloud key." <$ eGenOver
-                , "Button 'SignKey' makes key basing on the sign of connected wallet."
-                    <$ eSignOver
-                , "Button 'Delete' removes currently set key." <$ eDelOver
-                , "To see more details, hover over the active button." <$ eMouseOutButton
+                [ I18n.CloudButtonEnterTip <$ eEnterOver
+                , I18n.CloudButtonGenerateTip <$ eGenOver
+                , I18n.CloudButtonSignKeyTip <$ eSignOver
+                , I18n.CloudButtonDeleteTip <$ eDelOver
+                , I18n.CloudButtonTipDefault <$ eMouseOutButton
                 ]
-    divClass "app-Cloud_ButtonDescription" $ dynText dButtonDescription
+    divClass "app-Cloud_ButtonDescription" $ dynTextLocale dButtonDescription
     pure dmKey
 
 viewInputCloudKey ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Dynamic t Text
     -> Event t ()
     -> m (Dynamic t Text)
 viewInputCloudKey dBorder eOpen = divClass "w-row" $ do
+    pHolder <- I18n.showLocale I18n.CloudInputPlaceholder
+    placeholder <- sample $ current pHolder
     inp <-
         inputElement $
             def
                 & initialAttributes
                 .~ ( "class" =: "w-input"
                         <> "style" =: "display: inline-block;"
-                        <> "placeholder" =: "cloud key should be exactly 64 hexadecimal digits"
+                        <> "placeholder" =: placeholder
                    )
                 & inputElementConfig_setValue
                 .~ ("" <$ eOpen)
@@ -256,23 +267,22 @@ selectBorderColor mKey mCorrectKey = case (mKey, mCorrectKey) of
     (Nothing, Nothing) -> "display: inline-block; border-color: #ff3e31;"
     (Nothing, Just _) -> "display: inline-block; border-color: #00cb7a;"
 
-deleteKeyDialog :: (MonadWidget t m) => Event t () -> m (Event t ())
+deleteKeyDialog :: (App t m) => Event t () -> m (Event t ())
 deleteKeyDialog eDelete = mdo
     (eOk, eCancel) <- dialogWindow
         True
         eDelete
         (leftmost [eOk, eCancel])
         "app-DeleteKeyWindow"
-        "Delete Cloud Key"
+        (I18n.AppTerm I18n.CloudDeleteWindowTitle)
         $ do
             divClass "app-DeleteKey_Description" $ do
-                text
-                    "This action will remove cloud key from the cache! If you won't remember the key you can't recover encoins from remote server!"
+                textLocale I18n.CloudDeleteWindowContent
                 br
-                text "Are you sure?"
+                textLocale I18n.AreYouSure
             elAttr "div" ("class" =: "w-row app-DeleteKey_ButtonContainer") $ do
-                btnOk <- btn "button-switching inverted flex-center" "" $ text "Delete"
-                btnCancel <- btn "button-switching flex-center" "" $ text "Cancel"
+                btnOk <- btn "button-switching inverted flex-center" "" $ textLocale I18n.Delete
+                btnCancel <- btn "button-switching flex-center" "" $ textLocale I18n.Cancel
                 return (btnOk, btnCancel)
     eKeyRemoved <- removeCacheKey $ aesKey <$ eOk
     return eKeyRemoved

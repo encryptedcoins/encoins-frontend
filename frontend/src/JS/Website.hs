@@ -10,7 +10,7 @@ import Data.Text (Text)
 
 #ifdef __GHCJS__
 import Data.Maybe (isJust)
-import Language.Javascript.JSaddle (JSString, JSVal, ToJSVal (..), textToStr)
+import Language.Javascript.JSaddle (JSString, JSVal, ToJSVal (..), strToText, JSM, textToStr)
 #endif
 
 -- This script is executed on page load
@@ -151,6 +151,21 @@ saveJSON _ _ _ = error "GHCJS is required!"
 
 #ifdef __GHCJS__
 foreign import javascript unsafe
+  "saveJSONNoPass($1, $2);" saveJSONNoPass_js
+    :: JSString -> JSString -> IO ()
+
+saveJSONNoPass :: MonadIO m => Text -> Text -> m ()
+saveJSONNoPass key val = liftIO $ do
+  saveJSONNoPass_js (textToStr key) (textToStr val)
+#else
+saveJSONNoPass :: MonadIO m => Text -> Text -> m ()
+saveJSONNoPass _ _ = error "GHCJS is required!"
+#endif
+
+-----------------------------------------------------------------
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
   "loadJSON($1, $2, $3, $4);" loadJSON_js
     :: JSString -> JSString -> JSString -> JSVal -> IO ()
 
@@ -191,4 +206,19 @@ setElementStyle elId prop val = liftIO $ do
 #else
 setElementStyle :: MonadIO m => Text -> Text -> Text -> m ()
 setElementStyle _ _ _ = error "GHCJS is required!"
+#endif
+
+-----------------------------------------------------------------
+
+#ifdef __GHCJS__
+foreign import javascript unsafe
+  "loadJSONNoPass($1)"
+  loadJSONNoPass_js :: JSString -> JSM JSString
+
+loadJSONNoPass :: MonadIO m => Text -> m Text
+loadJSONNoPass key =
+  strToText <$> liftIO (loadJSONNoPass_js $ textToStr key)
+#else
+loadJSONNoPass :: MonadIO m => Text -> m Text
+loadJSONNoPass _ = error "GHCJS is required!"
 #endif

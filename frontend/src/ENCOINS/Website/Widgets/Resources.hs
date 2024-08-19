@@ -1,5 +1,5 @@
-module ENCOINS.Website.Widgets.Resourses
-    ( ourResourses
+module ENCOINS.Website.Widgets.Resources
+    ( ourResources
     ) where
 
 import Control.Monad (void)
@@ -18,8 +18,8 @@ resourseButton cls lnk file w =
             void $
                 image (pure file) (pure $ "image " `Text.append` cls) w
 
-ourResourses :: (MonadWidget t m) => Text -> m ()
-ourResourses w = do
+ourResources :: (MonadWidget t m) => Text -> m ()
+ourResources w = do
     resourseButton "" "https://twitter.com/ENCOINS1" "Twitter.svg" w
     resourseButton "" "https://discord.gg/Q3gPP87Tcw" "Discord.svg" w
     resourseButton "" "https://encoins-crypto.medium.com/" "Medium.svg" w

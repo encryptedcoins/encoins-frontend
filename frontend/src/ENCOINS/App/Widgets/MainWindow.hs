@@ -20,9 +20,10 @@ import ENCOINS.App.Widgets.MainTabs (ledgerTab, transferTab, walletTab)
 import ENCOINS.App.Widgets.Migration (migrateTokenCacheV3)
 import ENCOINS.App.Widgets.TabsSelection (AppTab (..), tabsSection)
 import ENCOINS.Common.Cache (encoinsV3, loadAppDataME)
+import I18n.I18n (App)
 
 mainWindow ::
-    (MonadWidget t m, EventWriter t [AppStatus] m) =>
+    (App t m, EventWriter t [AppStatus] m) =>
     Maybe PasswordRaw
     -> Dynamic t Wallet
     -> Dynamic t Bool

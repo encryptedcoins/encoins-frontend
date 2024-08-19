@@ -13,6 +13,9 @@ import Common.Utility (toText)
 import ENCOINS.Common.Cache (currentWallet, loadAppDataE, saveAppData_)
 import ENCOINS.Common.Widgets.Advanced (dialogWindow)
 import ENCOINS.Common.Widgets.Wallet (loadWallet, walletIcon)
+import qualified I18n.Common as I18n
+import I18n.I18n (App)
+import qualified I18n.I18n as I18n
 
 viewWalletEntry :: (MonadWidget t m) => WalletName -> m (Event t WalletName)
 viewWalletEntry w = do
@@ -29,14 +32,14 @@ viewWalletEntry w = do
     return (w <$ domEvent Click e)
 
 connectWindow ::
-    (MonadWidget t m) => [WalletName] -> Event t () -> m (Dynamic t Wallet)
+    (App t m) => [WalletName] -> Event t () -> m (Dynamic t Wallet)
 connectWindow supportedWallets eConnectOpen = mdo
     (eConnectClose, dWallet) <- dialogWindow
         True
         eConnectOpen
         eConnectClose
         "common-ConnectWindow"
-        "Connect Wallet"
+        (I18n.CommonTerm I18n.ConnectWalletWindowTitle)
         $ mdo
             eWalletName <-
                 divClass "common-Connect_WalletContainer" $

@@ -11,10 +11,16 @@ import qualified Data.Text as Text
 import Reflex.Dom
 
 import ENCOINS.Common.Widgets.Basic (logo)
+import ENCOINS.Common.Widgets.Locale (localeWidget)
+import I18n.I18n (App)
+import I18n.Reflex.I18n (Locale)
 
 navbarWidget ::
-    (MonadWidget t m) => Dynamic t (Text, Text) -> m (Event t (Text, Text))
-navbarWidget dPageFocus = do
+    (App t m) =>
+    Dynamic t (Text, Text) 
+    -> Locale
+    -> m (Event t (Text, Text), Dynamic t Locale)
+navbarWidget dPageFocus currentLocale = do
     elAttr
         "div"
         ( "data-animation" =: "default"
@@ -39,7 +45,9 @@ navbarWidget dPageFocus = do
                 _ <- menuItemWidget "DAO" "45" "https://dao.encoins.io" False dPage
                 _ <- menuItemWidget "Buy ENCS" "100" "#buy-encoins" False dPage
                 _ <- menuItemWidget "White paper" "120" "docs/whitepaper.pdf" False dPage
-                return $ (,"Navbar") <$> eHome
+                dLocale <- localeWidget "common-Nav_Dropdown-Landing" currentLocale
+                let eNavbar = (,"Navbar") <$> eHome
+                pure (eNavbar, dLocale)
 
 menuItemWidget ::
     (MonadWidget t m) =>

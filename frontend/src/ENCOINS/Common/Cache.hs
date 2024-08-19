@@ -3,7 +3,13 @@ module ENCOINS.Common.Cache where
 import Backend.Protocol.Types (PasswordRaw (..))
 import Common.Events
 import Common.Utility (toJsonText)
-import JS.Website (loadJSON, removeKey, saveJSON)
+import JS.Website
+    ( loadJSON
+    , loadJSONNoPass
+    , removeKey
+    , saveJSON
+    , saveJSONNoPass
+    )
 
 import Common.Reflex.Dom.Extra (elementResultJS)
 import Control.Monad (void)
@@ -46,6 +52,9 @@ isCloudOn = "encoins-save-on"
 
 passwordStorageKey :: Text
 passwordStorageKey = "password-hash"
+
+locale :: Text
+locale = "encoins-locale"
 
 -------------------------------------------------------------------------------
 -- Cache functions
@@ -145,3 +154,25 @@ loadTextFromStorage :: (MonadDOM m) => Text -> m (Maybe Text)
 loadTextFromStorage key = do
     lc <- currentWindowUnchecked >>= getLocalStorage
     getItem lc key
+
+-- Sync load and save functions without password encoding/decoding.
+
+saveAppDataNoPass_ :: (MonadWidget t m, ToJSON a) => Text -> Event t a -> m ()
+saveAppDataNoPass_ key eVal = void $ saveAppDataNoPass key eVal
+
+saveAppDataNoPass ::
+    (MonadWidget t m, ToJSON a) => Text -> Event t a -> m (Event t ())
+saveAppDataNoPass key eVal = do
+    let eEncodedValue = toJsonText <$> eVal
+    performEvent (saveJSONNoPass key <$> eEncodedValue)
+
+loadAppDataNoPass ::
+    forall t m a.
+    (MonadWidget t m, FromJSON a, Show a) =>
+    Text -- cache key
+    -> Event t ()
+    -> m (Dynamic t (Maybe a))
+loadAppDataNoPass key ev = do
+    eRes <- performEvent (loadJSONNoPass key <$ ev)
+    let emVal = (decodeStrict :: ByteString -> Maybe a) . encodeUtf8 <$> eRes
+    holdDyn Nothing emVal

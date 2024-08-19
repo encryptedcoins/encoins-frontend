@@ -15,16 +15,18 @@ import Backend.Protocol.Types
 import Backend.Servant.Requests (getRelayUrlE, statusRequestWrapper)
 import Backend.Status (AppStatus, LedgerTxStatus (..), WalletTxStatus (..))
 import Backend.Wallet (Wallet (..))
-import Common.Reflex.Extra (switchHoldDyn)
+import Common.Reflex.Dom.Extra (textLocale)
+import Common.Reflex.Extra (switchHoldDyn, updateUrls)
 import Common.Utility (toEither)
 import ENCOINS.Bulletproofs (Secrets)
-import Common.Reflex.Extra (updateUrls)
 import ENCOINS.Common.Widgets.Basic (btn, divClassId)
+import qualified I18n.App as I18n
+import I18n.I18n (App)
 
 import Common.Events
 
 sendRequestButtonWallet ::
-    (MonadWidget t m) =>
+    (App t m) =>
     EncoinsMode
     -> Dynamic t AppStatus
     -> Dynamic t Wallet
@@ -85,13 +87,13 @@ sendRequestButtonWallet
         eSend <-
             divClassId "" "welcome-send-req" $
                 btn (fmap f dTxValidity) (fmap h dTxValidity) $
-                    text "SEND REQUEST"
+                    textLocale I18n.ButtonSendRequest
         dyn_ $ fmap g dTxValidity
         let eValidTx = () <$ ffilter (== TxValid) (current dTxValidity `tag` eSend)
         pure (WalTxNoRelay <$ eAllRelayDown, eValidTx)
 
 sendRequestButtonLedger ::
-    (MonadWidget t m) =>
+    (App t m) =>
     EncoinsMode
     -> Dynamic t AppStatus
     -> Dynamic t Secrets
@@ -143,7 +145,7 @@ sendRequestButtonLedger mode dStatus dCoinsToBurn dCoinsToMint e dUrls = mdo
     eSend <-
         divClassId "" "welcome-send-req" $
             btn (fmap f dTxValidity) (fmap h dTxValidity) $
-                text "SEND REQUEST"
+                textLocale I18n.ButtonSendRequest
     dyn_ $ fmap g dTxValidity
     let eValidTx = () <$ ffilter (== TxValid) (current dTxValidity `tag` eSend)
     pure (LedTxNoRelay <$ eAllRelayDown, eValidTx)

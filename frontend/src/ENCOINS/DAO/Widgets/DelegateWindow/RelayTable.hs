@@ -22,15 +22,18 @@ import Reflex.Dom
 
 import Backend.Protocol.Types
 import Backend.Servant.Requests (infoRequestWrapper, serversRequestWrapper)
+import Common.Events
+import Common.Reflex.Dom.Extra (textLocale)
 import Common.Reflex.Extra (switchHoldDyn)
 import Common.Url (stripHostOrRelay)
 import Common.Utility (toText)
 import Config.Config (delegateServerUrl)
-import Common.Events
 import ENCOINS.Common.Widgets.Basic (btnWithBlock)
+import qualified I18n.Dao as I18n
+import I18n.I18n (App)
 
 relayAmountWidget ::
-    (MonadWidget t m) =>
+    (App t m) =>
     Event t (Either Text [(Text, Integer)])
     -> Event t (Maybe (Text, Integer))
     -> Dynamic t (Map Text Text)
@@ -49,7 +52,12 @@ relayAmountWidget eeRelays emDelegated dRelayNames = do
             let stripedRelays = map (\(u, n) -> (stripHostOrRelay u, n)) relays
             el "thead" $
                 tr $
-                    mapM_ (\h -> th $ text h) ["Relay", "Total", ""]
+                    mapM_
+                        (\h -> th $ textLocale h)
+                        [ I18n.Relay
+                        , I18n.Total
+                        , I18n.EmptyDaoMessage
+                        ]
             el "tbody" $ do
                 evs <- forM stripedRelays $ \(relay, amount) ->
                     if unStakeUrl == relay
